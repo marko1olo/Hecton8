@@ -94,6 +94,8 @@ namespace Hecton8.Modding
         {
             EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeEditorAssemblyReload;
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeEditorAssemblyReload;
         }
 
         private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
@@ -103,6 +105,11 @@ namespace Hecton8.Modding
             {
                 ShutdownRuntimeForLifecycleReset();
             }
+        }
+
+        private static void HandleBeforeEditorAssemblyReload()
+        {
+            ShutdownRuntimeForLifecycleReset();
         }
 #endif
 
@@ -214,9 +221,6 @@ namespace Hecton8.Modding
             GameBootstrapper.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            ModCommandDispatcher.Shutdown();
-            if (!ShouldForceFutureCommandEnvelopeOnly())
-                ModResourceRegistry.Shutdown();
 
             _hooksInstalled = false;
         }
@@ -1345,6 +1349,10 @@ namespace Hecton8.Modding
         {
             ShutdownLoadedMods();
             UninstallHooks();
+            ModCommandDispatcher.Shutdown();
+            if (!ShouldForceFutureCommandEnvelopeOnly())
+                ModResourceRegistry.Shutdown();
+
             _bootstrapped = false;
             _modsInitialized = false;
             _shutdownInvoked = false;

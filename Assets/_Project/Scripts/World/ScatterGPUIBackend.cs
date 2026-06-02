@@ -72,7 +72,15 @@ namespace Hecton8.World
             if (writeBuffer == null)
                 return false;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, source, count);
+            int safeCount = math.min(math.max(0, count), math.min(source.Length, writeBuffer.count));
+            long uploadBytes = GraphicsBufferUploadUtility.EstimateUploadBytes<T>(safeCount);
+            if (!GraphicsBufferUploadUtility.CanUploadBytesThisFrame(uploadBytes))
+            {
+                GraphicsBufferUploadUtility.RecordManualUploadDeferred();
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, source, safeCount);
             _activeInstanceBuffer = writeBuffer;
             _instanceUploadBufferIndex ^= 1;
             return true;
@@ -150,7 +158,7 @@ namespace Hecton8.World
                 return;
 
             _argsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - scatter indirect draw args - owner: ScatterGPUIBackend

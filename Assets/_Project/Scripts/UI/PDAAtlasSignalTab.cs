@@ -1,20 +1,20 @@
 // ============================================================================
-// HECTON-8 — PDAAtlasSignalTab.cs
-// Vkladka PDA: ATLAS SIGNAL — monitoring signala Atlas-6.
+// HECTON-8 - PDAAtlasSignalTab.cs
+// Vkladka PDA: ATLAS SIGNAL - monitoring signala Atlas-6.
 //
 // LOR (lor3 Blok Z):
 //   Signal povtoryaetsya kazhdye 11:23 (683 sek).
-//   Chem blizhe k yadru — tem yasnee soderzhanie.
+//   Chem blizhe k yadru - tem yasnee soderzhanie.
 //   Fazy: 0=net signala, 1=ritm, 2=emotsii, 3=soderzhanie, 4=polnaya rasshifrovka.
 //
 // ARHITEKTURA:
-//   • Protsedurnyy UI — sila signala, faza dekodirovaniya, napravlenie.
-//   • ILateFrameTickable — obnovlenie taymera do sleduyuschego pulsa.
-//   • Slushaet AtlasSignalEvents.
+//   - Protsedurnyy UI - sila signala, faza dekodirovaniya, napravlenie.
+//   - ILateFrameTickable - obnovlenie taymera do sleduyuschego pulsa.
+//   - Slushaet AtlasSignalEvents.
 //
 // ZERO GC:
-//   • Pre-cached strings.
-//   • Dirty-flag obnovlenie.
+//   - Pre-cached strings.
+//   - Dirty-flag obnovlenie.
 // ============================================================================
 
 using System;
@@ -49,15 +49,15 @@ namespace Hecton8.UI
         private static ReadOnlySpan<char> PulseTimerTemplateChars => PulseTimerTemplate.AsSpan();
         private static ReadOnlySpan<char> PulseTimerEmptyChars => "\u2014:\u2014".AsSpan();
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Font ─────────────────────────────────────")]
+        [Header("-- Font -------------------------------------")]
         [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
 
-        [Header("── Colors ───────────────────────────────────")]
+        [Header("-- Colors -----------------------------------")]
         [SerializeField] private Color colorBackground = new Color(0.03f, 0.05f, 0.08f, 0.95f);
         [SerializeField] private Color colorAccent    = new Color(0.20f, 0.80f, 0.60f, 1f);
         [SerializeField] private Color colorWarning   = new Color(0.90f, 0.60f, 0.20f, 1f);
@@ -69,13 +69,13 @@ namespace Hecton8.UI
         [SerializeField] private Color colorPhase3    = new Color(0.60f, 0.70f, 0.80f, 1f);
         [SerializeField] private Color colorPhase4    = new Color(0.20f, 0.80f, 0.60f, 1f);
 
-        [Header("── First-Hour Gate ─────────────────────")]
+        [Header("-- First-Hour Gate ---------------------")]
         [Tooltip("Do not expose stable Atlas telemetry in the PDA before the first-hour spine reaches module-route play.")]
         [SerializeField] private FirstHourMilestone minimumMilestoneToReveal = FirstHourMilestone.FirstModule;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private RectTransform _root;
         private bool _built;
@@ -114,16 +114,16 @@ namespace Hecton8.UI
         private int _lastCountdownSeconds = int.MinValue;
         private int _lastStrengthDisplayMode = int.MinValue;
         private int _lastStrengthPercent = int.MinValue;
-        // COLD ALLOC: char[192] — atlas direction label formatting buffer — owner: PDAAtlasSignalTab
+        // COLD ALLOC: char[192] - atlas direction label formatting buffer - owner: PDAAtlasSignalTab
         private readonly char[] _directionBuffer = new char[192];
-        // COLD ALLOC: char[16] — atlas strength percent formatting buffer — owner: PDAAtlasSignalTab
+        // COLD ALLOC: char[16] - atlas strength percent formatting buffer - owner: PDAAtlasSignalTab
         private readonly char[] _strengthNumericBuffer = new char[16];
-        // COLD ALLOC: char[16] — atlas pulse timer formatting buffer — owner: PDAAtlasSignalTab
+        // COLD ALLOC: char[16] - atlas pulse timer formatting buffer - owner: PDAAtlasSignalTab
         private readonly char[] _pulseTimerBuffer = new char[16];
-        // COLD ALLOC: char[1024] — atlas cached label copy buffer for runtime TMP SetCharArray paths — owner: PDAAtlasSignalTab
+        // COLD ALLOC: char[1024] - atlas cached label copy buffer for runtime TMP SetCharArray paths - owner: PDAAtlasSignalTab
         private readonly char[] _labelTextBuffer = new char[1024];
 
-        // Pre-cached strings — zero GC
+        // Pre-cached strings - zero GC
         private static readonly string[] PhaseNames =
         {
             "NET SIGNALA",
@@ -183,9 +183,9 @@ namespace Hecton8.UI
         private const string SignalBeaconContactMessage = "AUP SIGNAL CONTACT\n\nTriangulated carrier strength is active.\nUse sonar breadcrumbs to locate the source.";
         private const string SignalBeaconStaticMessage = "AUP SIGNAL CONTACT\n\nCave interference is corrupting the carrier.\nStatic shader gain is elevated.";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -226,9 +226,9 @@ namespace Hecton8.UI
             PDAEvents.AssertUnregistered(this, nameof(PDAAtlasSignalTab));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ILateFrameTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -254,9 +254,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
@@ -302,16 +302,16 @@ namespace Hecton8.UI
 
         private void HandlePDAOpened(int tab) => _dirty = true;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  BUILD UI
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -319,7 +319,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -532,9 +532,9 @@ namespace Hecton8.UI
                 new Vector2(12, 0), new Vector2(0, 0));
         }
 
-        // ═════════════════════��════════════════════════════════════
+        // --------------------------------------------------------------------------
         //  REFRESH
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void RefreshAll()
         {
@@ -902,9 +902,9 @@ namespace Hecton8.UI
                 : east ? 5 : 7;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  UI HELPERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private RectTransform CreateRect(string name, RectTransform parent)
         {

@@ -2,7 +2,7 @@
 
 - Route ID: `SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE` Date: 2026-05-21 Owner: `SHINOBU_271` Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge Owning file/system: `PhysicalHandController`,
 - `VRInteractionKinematicBridge`,
-- `VRPhysicsInquisition` Status: `YELLOW / LOOP 14 DOTNET SOLUTION GREEN;
+- `VRPhysicsInquisition` Status: `YELLOW / LOOP 14 CLI DOTNET SOLUTION EXIT 0;
 - PENDING UNITY IMPORT,
 - PLAY MODE,
 - PROFILER,
@@ -77,6 +77,7 @@ Compile proof:
 - `dotnet build Hecton8.Core.csproj --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_core_loop14_12.log` with `29 Warning(s)`, `0 Error(s)`.
 - `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop14_13.log` with `175 Warning(s)`, `0 Error(s)`.
 - Loop 14 compile repair added `RasterCommandBufferStaticTextureBridge` for Visor static texture call sites that were repeatedly restored by concurrent/stale build churn.
+- This is CLI build evidence for that loop only. It is not Unity import, Play Mode, profiler, GC, or device proof.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.

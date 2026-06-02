@@ -38,6 +38,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _effectActive;
+        private bool _activePaddingPrimed;
         private float _waveTime;
 
         private void OnEnable()
@@ -56,7 +57,15 @@ namespace Hecton8.UI
 
             _target = target;
             EnsureMaterialInstance();
-            ApplyIdleState();
+            if (_effectActive)
+            {
+                PrimeActiveMeshPadding();
+                ApplyActiveState(0f);
+            }
+            else
+            {
+                ApplyIdleState();
+            }
         }
 
         /// <summary>
@@ -73,6 +82,7 @@ namespace Hecton8.UI
             if (_effectActive)
             {
                 EnsureMaterialInstance();
+                PrimeActiveMeshPadding();
                 ApplyActiveState(0f);
                 return;
             }
@@ -171,6 +181,7 @@ namespace Hecton8.UI
                 hideFlags = HideFlags.DontSave
             };
             _target.fontSharedMaterial = _materialInstance;
+            _activePaddingPrimed = false;
         }
 
         private void ApplyIdleState()
@@ -190,12 +201,16 @@ namespace Hecton8.UI
             _materialInstance.SetFloat(GlowOuterId, 0f);
             _materialInstance.SetFloat(GlowInnerId, 0f);
             _target.UpdateMeshPadding();
+            _activePaddingPrimed = false;
         }
 
         private void ApplyActiveState(float phase)
         {
             if (_materialInstance == null)
                 return;
+
+            if (!_activePaddingPrimed)
+                PrimeActiveMeshPadding();
 
             float offsetX = phase * OffsetAmplitude;
             float offsetY = EvaluateCheapWaveSigned((_waveTime * (OffsetFrequency * 0.61f)) + HalfPi) * (OffsetAmplitude * 0.35f);
@@ -210,7 +225,22 @@ namespace Hecton8.UI
             _materialInstance.SetColor(GlowColorId, MadnessGlowColor);
             _materialInstance.SetFloat(GlowOuterId, glowOuter);
             _materialInstance.SetFloat(GlowInnerId, glowInner);
+        }
+
+        private void PrimeActiveMeshPadding()
+        {
+            if (_activePaddingPrimed || _materialInstance == null || _target == null)
+                return;
+
+            _materialInstance.SetColor(UnderlayColorId, MadnessUnderlayColor);
+            _materialInstance.SetFloat(UnderlayOffsetXId, OffsetAmplitude);
+            _materialInstance.SetFloat(UnderlayOffsetYId, OffsetAmplitude * 0.35f);
+            _materialInstance.SetFloat(UnderlaySoftnessId, BaseUnderlaySoftness);
+            _materialInstance.SetColor(GlowColorId, MadnessGlowColor);
+            _materialInstance.SetFloat(GlowOuterId, BaseGlowOuter + 0.06f);
+            _materialInstance.SetFloat(GlowInnerId, BaseGlowInner + 0.015f);
             _target.UpdateMeshPadding();
+            _activePaddingPrimed = true;
         }
 
         private void ReleaseMaterialInstance()
@@ -227,6 +257,7 @@ namespace Hecton8.UI
                 DestroyImmediate(_materialInstance);
 
             _materialInstance = null;
+            _activePaddingPrimed = false;
         }
 
         private void RegisterToTickManager()
@@ -234,7 +265,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -242,7 +273,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 

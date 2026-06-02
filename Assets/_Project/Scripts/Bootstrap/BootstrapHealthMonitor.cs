@@ -1,5 +1,8 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Hecton8.Core;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,6 +25,9 @@ namespace Hecton8.Bootstrap
         private const int StepCapacity = 8;
         private const int ServiceCapacity = 32;
         private const float SlowServiceMilliseconds = 10f;
+#if UNITY_EDITOR
+        private const string ShowTimelineOverlayEditorPref = "Hecton8.BootstrapHealthMonitor.ShowTimelineOverlay";
+#endif
 
         // COLD ALLOC: Color32[128] - developer bootstrap timeline pixels - owner: BootstrapHealthMonitor
         private static readonly Color32[] _pixels = new Color32[TextureWidth * TextureHeight];
@@ -74,7 +80,7 @@ namespace Hecton8.Bootstrap
 
         private static BootstrapHealthMonitor EnsureRuntime()
         {
-            if (!Application.isPlaying || Application.isBatchMode)
+            if (!Application.isPlaying || Application.isBatchMode || !ShouldCreateTimelineOverlay())
                 return null;
 
             if (_runtime != null)
@@ -84,6 +90,15 @@ namespace Hecton8.Bootstrap
             BootstrapHealthMonitor monitor = root.AddComponent<BootstrapHealthMonitor>();
             GameBootstrapper.PersistRuntimeService(monitor);
             return monitor;
+        }
+
+        private static bool ShouldCreateTimelineOverlay()
+        {
+#if UNITY_EDITOR
+            return EditorPrefs.GetBool(ShowTimelineOverlayEditorPref, false);
+#else
+            return false;
+#endif
         }
 
         private void Awake()

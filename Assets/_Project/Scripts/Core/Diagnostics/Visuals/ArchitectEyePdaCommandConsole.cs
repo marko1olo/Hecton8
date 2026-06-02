@@ -14,6 +14,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private const int KeyRowCount = 4;
         private const int KeyCount = KeyColumnCount * KeyRowCount;
         private const int TextCapacity = 96;
+        private const float DefaultKeyboardWidth = 480f;
+        private const float DefaultKeyboardHeight = 168f;
 
         private static readonly char[] s_keyMap =
         {
@@ -43,7 +45,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (inputEvent.PanelId != panelId)
                 return;
 
-            if ((inputEvent.EventType & DiegeticPanelInputEventType.Down) == 0)
+            if (DiegeticPanelInputEvent.ResolvePrimaryPointerAction(inputEvent.EventType) != DiegeticPanelInputEventType.Down)
                 return;
 
             CacheLayout();
@@ -104,9 +106,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private int ResolveKeyIndex(float2 canvasPosition)
         {
-            float x = canvasPosition.x - keyboardMin.x;
-            float y = canvasPosition.y - keyboardMin.y;
-            if (x < 0f || y < 0f || x > keyboardSize.x || y > keyboardSize.y)
+            if (!math.all(math.isfinite(canvasPosition)))
+                return -1;
+
+            float2 safeKeyboardMin = ResolveSafeKeyboardMin();
+            float2 safeKeyboardSize = ResolveSafeKeyboardSize();
+            float x = canvasPosition.x - safeKeyboardMin.x;
+            float y = canvasPosition.y - safeKeyboardMin.y;
+            if (x < 0f || y < 0f || x > safeKeyboardSize.x || y > safeKeyboardSize.y)
                 return -1;
 
             int column = (int)math.floor(x * _invKeyWidth);
@@ -122,13 +129,31 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (_layoutCached)
                 return;
 
-            float safeWidth = math.max(1f, math.isfinite(keyboardSize.x) ? keyboardSize.x : 480f);
-            float safeHeight = math.max(1f, math.isfinite(keyboardSize.y) ? keyboardSize.y : 168f);
-            _keyWidth = safeWidth * (1f / KeyColumnCount);
-            _keyHeight = safeHeight * (1f / KeyRowCount);
+            float2 safeKeyboardSize = ResolveSafeKeyboardSize();
+            _keyWidth = safeKeyboardSize.x * (1f / KeyColumnCount);
+            _keyHeight = safeKeyboardSize.y * (1f / KeyRowCount);
             _invKeyWidth = SafeRcp(_keyWidth);
             _invKeyHeight = SafeRcp(_keyHeight);
             _layoutCached = true;
+        }
+
+        private float2 ResolveSafeKeyboardMin()
+        {
+            return new float2(
+                SanitizeFinite(keyboardMin.x, 16f),
+                SanitizeFinite(keyboardMin.y, 42f));
+        }
+
+        private float2 ResolveSafeKeyboardSize()
+        {
+            return new float2(
+                math.max(1f, SanitizeFinite(keyboardSize.x, DefaultKeyboardWidth)),
+                math.max(1f, SanitizeFinite(keyboardSize.y, DefaultKeyboardHeight)));
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
         }
 
         private static float SafeRcp(float value)

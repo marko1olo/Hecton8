@@ -540,10 +540,7 @@ namespace Hecton8.UI
             if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredToTickManager = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private bool TryRegisterRuntime()
@@ -577,7 +574,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 

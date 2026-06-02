@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Teni Games dark wave avatar">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#031110"/>
+      <stop offset="0.55" stop-color="#061816"/>
+      <stop offset="1" stop-color="#010706"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.70"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <path d="M690 0 L504 1024 H1024 V0 Z" fill="#081b19" opacity="0.48"/>
+  <path d="M48 112 H976" stroke="#2d5550" stroke-width="3" opacity="0.8"/>
+  <path d="M48 870 H976" stroke="#2d5550" stroke-width="3" opacity="0.8"/>
+  <g fill="none" stroke="#315f59" stroke-width="3" opacity="0.72">
+    <path d="M-80 596 C180 500 354 596 544 548 C718 504 858 382 1120 340"/>
+    <path d="M-80 636 C190 542 372 628 560 584 C740 542 876 428 1120 388"/>
+    <path d="M-80 676 C202 590 390 670 576 626 C758 584 894 482 1120 446"/>
+    <path d="M-80 718 C218 640 410 714 594 672 C774 632 912 536 1120 504"/>
+    <path d="M-80 760 C232 694 430 760 612 718 C796 676 930 594 1120 560"/>
+  </g>
+  <g filter="url(#soft)">
+    <text x="352" y="496" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, Noto Sans JP, Arial, sans-serif" font-size="330" font-weight="800" fill="#e8eedf" letter-spacing="6">天衣</text>
+    <text x="604" y="352" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" fill="#e8eedf" letter-spacing="5">TENI</text>
+    <text x="604" y="432" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" fill="#e8eedf" letter-spacing="5">GAMES</text>
+    <text x="610" y="506" font-family="Yu Gothic UI, Meiryo, Noto Sans JP, Arial, sans-serif" font-size="35" fill="#8fb7ad" letter-spacing="5">テニゲームス / 天意</text>
+  </g>
+  <rect x="728" y="590" width="206" height="206" fill="none" stroke="#2d5550" stroke-width="3" opacity="0.88"/>
+  <text x="831" y="718" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, Noto Sans JP, Arial, sans-serif" font-size="88" font-weight="800" fill="#9abdb4" opacity="0.95">天意</text>
+  <path d="M608 548 H886" stroke="#e8eedf" stroke-width="2" opacity="0.56"/>
+  <text x="610" y="610" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#668981" letter-spacing="4">SUBMERGE | BLACK WATER</text>
+</svg>

@@ -51,6 +51,33 @@ Machine gate: `owned_audience_permission_gate = HOLD_NO_OWNED_AUDIENCE`. The onl
 
 Do not publish a signup form, send list email, import contacts, or count signup signal until the official inbox/list provider is owner-controlled, unsubscribe/delete works, `consent_provenance` is recorded, and every linked Steam/demo/playtest/feedback URL passes `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` or the relevant private access route passes `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`.
 
+## 2026-05-31 Draft Form Build Packet V1
+
+This can be prepared before screenshots. It cannot be published before the owned-audience gate passes.
+
+| Draft component | Required value |
+|---|---|
+| Signup mode | Pick exactly one: `DEMO_ALERT`, `PLAYTEST_WAITLIST`, `DEVLOG_DIGEST`, or `PRESS_CREATOR_CONTACT`. |
+| Public promise | One narrow promise; no release window, no guaranteed access, no performance claim. |
+| Required fields | Email and consent checkbox. |
+| Optional fields | Language, platform preference, hardware opt-in only for playtest mode. |
+| Consent text | Names the signup mode and send cadence before submit. |
+| Unsubscribe/delete | Must be tested before publication. |
+| Export custody | Owner-controlled storage; do not mix with CRM or press tracker by default. |
+| Route fields | `route_class` and `consent_provenance` planned before any count is reported. |
+
+Recommended pre-screenshot draft mode:
+
+```text
+DEMO_ALERT draft only.
+
+Get one email when the HECTON-8 demo or playtest opens.
+
+HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. Proof-first updates only; no weekly filler.
+```
+
+Do not add this form to a public site, social bio, Discord, or Steam page before `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
+
 ### Form Provider Custody Gate V0
 
 Do not publish a form from a personal Google account, agent account, disposable form provider, or unrecorded workspace.

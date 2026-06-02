@@ -1,0 +1,30 @@
+---
+packet_id: P033_CABLE_REEF_SYMBIOSIS
+article_id: hecton8.cable_reef_symbiosis
+locale: de_DE
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Kabelriff-Symbiose
+
+Kabelriff-Symbiose macht aufgegebene Infrastruktur zu einem lesbaren Öko-Industrie-Hybrid.
+
+## Scanner
+
+Flora wächst auf Stromstämmen und Signalleitungen. Das Riff nutzt Kolonieverkabelung als Skelett.
+
+## Terminal
+
+Wartung: Kabelwurzelmatten mindern Abrieb und halten Signal, ziehen aber Drohnen und Weidefauna an.
+
+## Audio
+
+Ein lebendes Riff lernte die Form eines Servicekorridors.
+
+## Field Note
+
+Die erste Verschmelzung ist nützlich, bevor sie entsetzlich wird.
+
+<!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/de_DE. -->

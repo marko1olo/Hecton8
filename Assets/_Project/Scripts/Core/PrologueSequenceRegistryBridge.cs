@@ -31,7 +31,7 @@ namespace Hecton8.Core
         private const uint ShallowWaterChunkHash = 0x53484C57u; // SHLW
         private const int SurvivalProxyHysteresisFrames = 150;
         private const int SurvivalProxyProbeIntervalFrames = 30;
-        private const int StandaloneOrbitWhiteoutFallbackFrames = 180;
+        private const int StandaloneOrbitWhiteoutFallbackFrames = 48;
         private const byte CriticalMemoryPressureSeverity = 2;
         private const float ForcedMemoryPressureThreshold01 = 0.85f;
         private const float MassiveImpactSeverity = 1f;
@@ -53,6 +53,7 @@ namespace Hecton8.Core
         private CancellationTokenSource _runCancellationSource;
         private bool _registeredService;
         private bool _registeredHotSwap;
+        private bool _autoRunPending;
         private bool _isDevelopmentBuild;
         private float _cachedSurvivalProxyPressure01;
         private float _pendingSurvivalProxyPressure01;
@@ -85,7 +86,7 @@ namespace Hecton8.Core
         {
             get
             {
-                return ResolveSurvivalProxyPressureWithHysteresis();
+                return _hasSurvivalProxyCache ? _cachedSurvivalProxyPressure01 : 0f;
             }
         }
 
@@ -114,26 +115,7 @@ namespace Hecton8.Core
         {
             get
             {
-                if (!IsDevelopmentBuild)
-                    return false;
-
-                if (!_skipRequested)
-                    ConsumeSkipInputSignals();
-
-                if (_skipRequested)
-                    return true;
-
-                IInputService input = _inputService;
-                if (input == null)
-                    return false;
-
-                if (!input.IsInitialized)
-                    return false;
-
-                PlayerInputState state = input.GetState();
-                return state.HasAction(PlayerInputAction.Dash) &&
-                       state.HasAction(PlayerInputAction.PrimaryFire) &&
-                       state.HasAction(PlayerInputAction.SecondaryFire);
+                return IsDevelopmentBuild && _skipRequested;
             }
         }
 
@@ -157,7 +139,10 @@ namespace Hecton8.Core
             }
 
             _service.Configure(this);
-            GlobalRegistry.RegisterPrologueSequenceRuntime(_service);
+            if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready)
+                GlobalRegistry.ReplacePrologueSequenceRuntime(_service);
+            else
+                GlobalRegistry.RegisterPrologueSequenceRuntime(_service);
             _registeredService = ReferenceEquals(GlobalRegistry.PrologueSequence, _service);
             if (!_registeredService)
             {
@@ -172,16 +157,12 @@ namespace Hecton8.Core
             RegisterHotSwap();
 
             if (autoRunOnEnable && Application.isPlaying)
-            {
-                DisposeRunCancellationSource();
-                // COLD ALLOC: CancellationTokenSource[1] - owner-run cancel source; disable/destroy cancels explicitly - owner: PrologueSequenceRegistryBridge
-                _runCancellationSource = new CancellationTokenSource();
-                _ = RunAutoSequenceAsync(_service, _runCancellationSource);
-            }
+                TryStartAutoSequenceRun();
         }
 
         private void OnDisable()
         {
+            _autoRunPending = false;
             RequestRunCancellation(PrologueCancelReasons.ExplicitCancel);
 
             if (_registeredService && _service != null)
@@ -284,6 +265,9 @@ namespace Hecton8.Core
             if (TryConsumeManualReleaseInput(out snapshot))
                 return true;
 
+            if (TryConsumeOrbitalWhiteoutFallback(frame, out snapshot))
+                return true;
+
             if (TryConsumePendingStandaloneWhiteoutFallback(frame, out snapshot))
                 return true;
 
@@ -319,26 +303,36 @@ namespace Hecton8.Core
 
         public bool IsOceanSurfaceReady(bool allowProxy)
         {
-            if (_observedHighResSurfaceReady || (allowProxy && _observedProxySurfaceReady))
-                return true;
+            return _observedHighResSurfaceReady || (allowProxy && _observedProxySurfaceReady);
+        }
 
-            if (allowProxy && allowStandaloneOrbitHydrationProxy && _standaloneOrbitSceneActive)
-            {
-                _observedProxySurfaceReady = true;
-                return true;
-            }
+        public void RefreshHydrationState(bool allowProxy)
+        {
+            if (_observedHighResSurfaceReady)
+                return;
+
+            RefreshSurvivalProxyPressureForFrame(SystemDispatcher.CurrentFrameIndex);
 
             IStreamingBackpressureService streaming = _streamingBackpressure;
             if (oceanSurfaceChunkId != 0 && streaming != null && streaming.IsChunkResident(oceanSurfaceChunkId))
             {
                 _observedHighResSurfaceReady = true;
-                return true;
+                return;
+            }
+
+            if (allowProxy && _observedProxySurfaceReady)
+                return;
+
+            if (allowProxy && allowStandaloneOrbitHydrationProxy && _standaloneOrbitSceneActive)
+            {
+                _observedProxySurfaceReady = true;
+                return;
             }
 
             if (allowProxy && streaming != null && streaming.ActiveImpostorCount > 0)
             {
                 _observedProxySurfaceReady = true;
-                return true;
+                return;
             }
 
             ReadOnlySpan<SectorResidencyHydratedSignal> signals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
@@ -362,15 +356,27 @@ namespace Hecton8.Core
                     _observedHighResSurfaceReady = true;
 
                 if (!proxy || allowProxy)
-                    return true;
+                    return;
             }
-
-            return false;
         }
 
         public void PrepareSequenceRun()
         {
             ResetTransientSequenceState();
+            RefreshSurvivalProxyPressureForFrame(SystemDispatcher.CurrentFrameIndex);
+        }
+
+        public void RefreshFrameState()
+        {
+            if (!_isDevelopmentBuild || _skipRequested)
+                return;
+
+            ConsumeSkipInputSignals();
+            if (_skipRequested)
+                return;
+
+            if (IsImmediateSkipInputHeld())
+                _skipRequested = true;
         }
 
         public Awaitable DelayDilatedAsync(float seconds, CancellationToken cancellationToken)
@@ -536,6 +542,9 @@ namespace Hecton8.Core
                     _tickDispatcher = currentService as ITickDispatcher;
                     break;
             }
+
+            if (_autoRunPending && isActiveAndEnabled)
+                TryStartAutoSequenceRun();
         }
 
         private void OpenOrDiscoverServiceForOwnerRoute()
@@ -603,6 +612,26 @@ namespace Hecton8.Core
             ResetSurvivalProxyCache();
         }
 
+        private bool TryStartAutoSequenceRun()
+        {
+            if (!autoRunOnEnable || !Application.isPlaying || _runCancellationSource != null)
+                return false;
+
+            IPrologueSequenceService service = _service;
+            if (service == null || _tickDispatcher == null)
+            {
+                _autoRunPending = true;
+                return false;
+            }
+
+            _autoRunPending = false;
+            DisposeRunCancellationSource();
+            // COLD ALLOC: CancellationTokenSource[1] - owner-run cancel source; disable/destroy cancels explicitly - owner: PrologueSequenceRegistryBridge
+            _runCancellationSource = new CancellationTokenSource();
+            _ = RunAutoSequenceAsync(service, _runCancellationSource);
+            return true;
+        }
+
         private void ResetSurvivalProxyCache()
         {
             _cachedSurvivalProxyPressure01 = 0f;
@@ -658,6 +687,18 @@ namespace Hecton8.Core
                 HandleSkipRequested();
                 return;
             }
+        }
+
+        private bool IsImmediateSkipInputHeld()
+        {
+            IInputService input = _inputService;
+            if (input == null || !input.IsInitialized)
+                return false;
+
+            PlayerInputState state = input.GetState();
+            return state.HasAction(PlayerInputAction.Dash) &&
+                   state.HasAction(PlayerInputAction.PrimaryFire) &&
+                   state.HasAction(PlayerInputAction.SecondaryFire);
         }
 
         private void BaselineSkipInputSignalSequence()
@@ -731,8 +772,46 @@ namespace Hecton8.Core
                 signal.Frame,
                 signal.WhiteoutHoldSeconds,
                 signal.Sequence,
-                signal.Phase,
+                PrologueCompleteSignal.PhaseOceanHandoff,
                 signal.Flags);
+        }
+
+        private bool TryConsumeOrbitalWhiteoutFallback(int frame, out PrologueCompleteSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!allowStandaloneOrbitWhiteoutFallback ||
+                !_standaloneOrbitSceneActive ||
+                _orbitalDirector == null)
+            {
+                return false;
+            }
+
+            if (!_orbitalDirector.TryGetSnapshot(out OrbitalDirectorSnapshot orbital) ||
+                !IsValidStandaloneOrbitWhiteoutSnapshot(in orbital))
+            {
+                ClearStandaloneWhiteoutFallback();
+                return false;
+            }
+
+            if (!_hasStandaloneWhiteoutFallback)
+            {
+                _hasStandaloneWhiteoutFallback = true;
+                _standaloneWhiteoutFallbackFirstFrame = frame;
+                _standaloneWhiteoutFallbackSnapshot = new PrologueCompleteSnapshot(
+                    CurrentFrame,
+                    0.25f,
+                    NextNonZeroSequence(),
+                    PrologueCompleteSignal.PhaseOceanHandoff,
+                    PrologueCompleteSignal.FlagForceWhiteout);
+                return false;
+            }
+
+            if (frame - _standaloneWhiteoutFallbackFirstFrame < StandaloneOrbitWhiteoutFallbackFrames)
+                return false;
+
+            snapshot = _standaloneWhiteoutFallbackSnapshot;
+            ClearStandaloneWhiteoutFallback();
+            return true;
         }
 
         private bool TryConsumePendingStandaloneWhiteoutFallback(int frame, out PrologueCompleteSnapshot snapshot)
@@ -758,6 +837,14 @@ namespace Hecton8.Core
             _standaloneWhiteoutFallbackSnapshot = default;
         }
 
+        private static bool IsValidStandaloneOrbitWhiteoutSnapshot(in OrbitalDirectorSnapshot snapshot)
+        {
+            return math.isfinite(snapshot.CloudWhiteout01) &&
+                   math.isfinite(snapshot.PlanetDistanceMeters) &&
+                   snapshot.CloudWhiteout01 >= 0.98f &&
+                   snapshot.PlanetDistanceMeters <= 1f;
+        }
+
         private static bool IsManualReleaseCommand(byte command)
         {
             return command == PlayerInputSignalCommands.Interact ||
@@ -781,11 +868,10 @@ namespace Hecton8.Core
             return string.Equals(sceneName, StandaloneOrbitSceneName, StringComparison.Ordinal);
         }
 
-        private float ResolveSurvivalProxyPressureWithHysteresis()
+        private void RefreshSurvivalProxyPressureForFrame(int frame)
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
             bool forcedLowMemory;
-            float requestedPressure01 = ResolveObservedSurvivalProxyPressure(frame, out forcedLowMemory);
+            float requestedPressure01 = RefreshObservedSurvivalProxyPressure(frame, out forcedLowMemory);
 
             if (!_hasSurvivalProxyCache)
             {
@@ -793,7 +879,7 @@ namespace Hecton8.Core
                 _pendingSurvivalProxyPressure01 = requestedPressure01;
                 _survivalProxyCandidateFrame = frame;
                 _hasSurvivalProxyCache = true;
-                return _cachedSurvivalProxyPressure01;
+                return;
             }
 
             if (forcedLowMemory &&
@@ -802,7 +888,7 @@ namespace Hecton8.Core
                 _cachedSurvivalProxyPressure01 = 1f;
                 _pendingSurvivalProxyPressure01 = 1f;
                 _survivalProxyCandidateFrame = frame;
-                return _cachedSurvivalProxyPressure01;
+                return;
             }
 
             bool requestedProxy = requestedPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
@@ -812,7 +898,7 @@ namespace Hecton8.Core
                 _cachedSurvivalProxyPressure01 = requestedPressure01;
                 _pendingSurvivalProxyPressure01 = requestedPressure01;
                 _survivalProxyCandidateFrame = frame;
-                return _cachedSurvivalProxyPressure01;
+                return;
             }
 
             bool pendingProxy = _pendingSurvivalProxyPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
@@ -820,7 +906,7 @@ namespace Hecton8.Core
             {
                 _pendingSurvivalProxyPressure01 = requestedPressure01;
                 _survivalProxyCandidateFrame = frame;
-                return _cachedSurvivalProxyPressure01;
+                return;
             }
 
             if (frame - _survivalProxyCandidateFrame >= SurvivalProxyHysteresisFrames)
@@ -829,11 +915,9 @@ namespace Hecton8.Core
                 _pendingSurvivalProxyPressure01 = requestedPressure01;
                 _survivalProxyCandidateFrame = frame;
             }
-
-            return _cachedSurvivalProxyPressure01;
         }
 
-        private float ResolveObservedSurvivalProxyPressure(int frame, out bool forcedLowMemory)
+        private float RefreshObservedSurvivalProxyPressure(int frame, out bool forcedLowMemory)
         {
             if (TryObserveCriticalMemoryPressure(frame))
             {
@@ -937,6 +1021,7 @@ namespace Hecton8.Core
             while (remainingSeconds > 0d)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                RefreshFrameState();
                 if (ShouldSkipPrologue)
                 {
                     RequestRunCancellation(PrologueCancelReasons.DevSkip);

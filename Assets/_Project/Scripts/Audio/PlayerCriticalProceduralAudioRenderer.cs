@@ -161,14 +161,24 @@ namespace Hecton8.Audio
         private const float GranularTuningFmModulationMaximum = 4f;
         private const int HullCreakMinimumGrainSamples = 96;
         private const float HullCreakMetalGroanWindowSeconds = 1.35f;
-        private const float PrologueClosedLowPassHertz = 400f;
+        private const float PrologueClosedLowPassHertz = 150f;
         private const float PrologueOpenLowPassHertz = 22000f;
         private const float PrologueLfeHertz = 40f;
         private const float PrologueLfeOutputGain = 0.24f;
+        private const float ProloguePlasmaOutputGain = 0.28f;
+        private const float ProloguePlasmaBandPassMinimumHertz = 180f;
+        private const float ProloguePlasmaBandPassMaximumHertz = 2100f;
+        private const float ProloguePlasmaBandPassQ = 1.15f;
+        private const float ProloguePlasmaLfoMinimumHertz = 0.21f;
+        private const float ProloguePlasmaLfoMaximumHertz = 1.37f;
+        private const float ProloguePlasmaLfoDepthMinimum = 0.38f;
+        private const float ProloguePlasmaLfoDepthMaximum = 0.76f;
+        private const float ProloguePlasmaMinimumQualityGain = 0.78f;
         private const float PrologueSplashdownDurationSeconds = 0.1f;
         private const float PrologueSplashdownSweepStartHertz = 40f;
         private const float PrologueSplashdownSweepEndHertz = 56f;
         private const float PrologueSplashdownOutputGain = 0.82f;
+        private const float PrologueSplashdownCavitationNoiseGain = 0.46f;
         private const float ProloguePortalFdnSend = 0.28f;
         private const float HullCreakGrainSeconds = 0.045f;
         private const float HullSubBassMinimumHertz = 25f;
@@ -1238,6 +1248,7 @@ namespace Hecton8.Audio
         private float _audioBubbleBoilIntensity;
         private float _audioPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
         private float _audioPrologueLfeGain;
+        private float _audioPrologueGranularStress;
         private float _audioProloguePortalBlend01;
         private uint _audioPrologueSplashdownSequence;
         private int _prologueSplashdownRemainingSamples;
@@ -1319,6 +1330,7 @@ namespace Hecton8.Audio
         private ImpactEchoSynthesisState _impactEchoSynthesisState;
         private HeartbeatSynthesisState _heartbeatSynthesisState;
         private ThrusterSynthesisState _thrusterSynthesisState;
+        private ProloguePlasmaSynthesisState _prologuePlasmaSynthesisState;
         private SabineReverbSynthesisState _sabineReverbSynthesisState;
         private CaveConvolutionReverbSynthesisState _caveConvolutionReverbSynthesisState;
         private InteriorFdnReverbSynthesisState _interiorFdnReverbSynthesisState;
@@ -1840,10 +1852,8 @@ namespace Hecton8.Audio
             public int PrologueStage;
             [FieldOffset(216)]
             public int PrologueFlags;
-            [FieldOffset(220)] private byte _pad0;
-            [FieldOffset(221)] private byte _pad1;
-            [FieldOffset(222)] private byte _pad2;
-            [FieldOffset(223)] private byte _pad3;
+            [FieldOffset(220)]
+            public float GlobalQualityWeight;
             [FieldOffset(224)] private byte _pad4;
             [FieldOffset(225)] private byte _pad5;
             [FieldOffset(226)] private byte _pad6;
@@ -2684,6 +2694,35 @@ namespace Hecton8.Audio
             [FieldOffset(255)] private byte _pad123;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
+        private struct ProloguePlasmaSynthesisState
+        {
+            [FieldOffset(0)]
+            public double LfoPhase;
+            [FieldOffset(8)]
+            public float PinkB0;
+            [FieldOffset(12)]
+            public float PinkB1;
+            [FieldOffset(16)]
+            public float PinkB2;
+            [FieldOffset(20)]
+            public float PinkB3;
+            [FieldOffset(24)]
+            public float PinkB4;
+            [FieldOffset(28)]
+            public float PinkB5;
+            [FieldOffset(32)]
+            public float PinkB6;
+            [FieldOffset(36)]
+            public float BandPassInput1;
+            [FieldOffset(40)]
+            public float BandPassInput2;
+            [FieldOffset(44)]
+            public float BandPassOutput1;
+            [FieldOffset(48)]
+            public float BandPassOutput2;
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct SabineReverbSynthesisState
         {
@@ -2889,7 +2928,7 @@ namespace Hecton8.Audio
             RefreshAudioConfiguration();
             CacheColdRegistryReferences();
             ResolveListenerReverbFilterCold();
-            TryBindFromBootstrap();
+            TryBindFromCachedRuntimeContext();
         }
 
         private void OnEnable()
@@ -2907,7 +2946,7 @@ namespace Hecton8.Audio
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
             TryRegister();
-            TryBindFromBootstrap();
+            TryBindFromCachedRuntimeContext();
             StartAudioProducerThread();
         }
 
@@ -3230,7 +3269,7 @@ namespace Hecton8.Audio
             if (deltaTime <= 0f)
                 return;
 
-            TryBindFromBootstrap();
+            TryBindFromCachedRuntimeContext();
             EnsureAudioQualityPolicyCached();
             UpdateCaveReverb(deltaTime);
             ConsumeLaserCutterEventSignals();
@@ -3370,7 +3409,7 @@ namespace Hecton8.Audio
 
         public void SlowTick()
         {
-            TryBindFromBootstrap();
+            TryBindFromCachedRuntimeContext();
             UpdatePsychoMetricsHeartbeatCache();
             UpdateApexHeartbeatThreatCache();
 
@@ -4443,6 +4482,7 @@ namespace Hecton8.Audio
             _targetPrologueFlags = 0;
             _audioPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
             _audioPrologueLfeGain = 0f;
+            _audioPrologueGranularStress = 0f;
             _audioProloguePortalBlend01 = 0f;
             _audioPrologueSplashdownSequence = 0u;
             _prologueSplashdownRemainingSamples = 0;
@@ -5167,7 +5207,7 @@ namespace Hecton8.Audio
             Transform originTransform = _boundPlayerTransform;
             if (originTransform == null)
             {
-                TryBindFromBootstrap();
+                TryBindFromCachedRuntimeContext();
                 originTransform = _boundPlayerTransform;
             }
 
@@ -5728,7 +5768,7 @@ namespace Hecton8.Audio
                 return;
 
             if (_boundPlayerTransform == null)
-                TryBindFromBootstrap();
+                TryBindFromCachedRuntimeContext();
 
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_sonarEchoCompositeFrame != frame)
@@ -7226,12 +7266,9 @@ namespace Hecton8.Audio
             ResolveStructuralHullReadModelCold(lifecycleOwner);
         }
 
-        private void TryBindFromBootstrap()
+        private void TryBindFromCachedRuntimeContext()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext == null || !playerContext.IsInitialized)
-                playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
-
             if (playerContext == null || !playerContext.IsInitialized || playerContext.PlayerObject == null)
                 return;
 
@@ -9318,6 +9355,13 @@ namespace Hecton8.Audio
                 PrologueOpenLowPassHertz);
             float startPrologueLfeGain = math.saturate(_audioPrologueLfeGain);
             float endPrologueLfeGain = math.saturate(parameters.PrologueLfeGain);
+            float startPrologueGranularStress = math.saturate(_audioPrologueGranularStress);
+            bool prologuePlasmaActive =
+                parameters.PrologueStage == AudioTransitionState.StagePlasma ||
+                parameters.PrologueStage == AudioTransitionState.StageWhiteout;
+            float endPrologueGranularStress = prologuePlasmaActive
+                ? math.saturate(FiniteOrZero(parameters.PrologueGranularStress))
+                : 0f;
             float startProloguePortalBlend = math.saturate(_audioProloguePortalBlend01);
             float endProloguePortalBlend = math.saturate(parameters.ProloguePortalBlend01);
             uint targetSplashdownSequence = parameters.PrologueSplashdownSequence;
@@ -9414,6 +9458,30 @@ namespace Hecton8.Audio
             float openCutoff = _sampleRate * 0.45f;
             float muffledRangeInv = math.rcp(math.max(openCutoff - AcousticOcclusionUtility.MinimumLowPassCutoffHertz, 0.001f));
             float leviathanLfeAlpha = ResolveOnePoleLowPassCoefficient(LeviathanLfeBypassCutoffHertz, _sampleRate);
+            ProloguePlasmaSynthesisState prologuePlasmaState = _prologuePlasmaSynthesisState;
+            float blockProloguePlasmaDrive = math.saturate(math.max(startPrologueGranularStress, endPrologueGranularStress));
+            float prologuePlasmaQuality = SmoothQuality01(parameters.GlobalQualityWeight);
+            float plasmaBpB0 = 0f;
+            float plasmaBpB1 = 0f;
+            float plasmaBpB2 = 0f;
+            float plasmaBpA1 = 0f;
+            float plasmaBpA2 = 0f;
+            if (blockProloguePlasmaDrive > HullNoiseFloor)
+            {
+                float plasmaBandPassCenter = math.lerp(
+                    ProloguePlasmaBandPassMinimumHertz,
+                    ProloguePlasmaBandPassMaximumHertz,
+                    blockProloguePlasmaDrive);
+                ComputeBandPassCoefficients(
+                    plasmaBandPassCenter,
+                    ProloguePlasmaBandPassQ,
+                    _sampleRate,
+                    out plasmaBpB0,
+                    out plasmaBpB1,
+                    out plasmaBpB2,
+                    out plasmaBpA1,
+                    out plasmaBpA2);
+            }
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -9482,8 +9550,20 @@ namespace Hecton8.Audio
                 float prologueLfe = prologueLfeGain > HullNoiseFloor
                     ? AdvanceSine(ref _prologueLfePhase, PrologueLfeHertz, invSampleRate) * prologueLfeGain * PrologueLfeOutputGain
                     : 0f;
+                float prologuePlasmaDrive = math.saturate(math.lerp(startPrologueGranularStress, endPrologueGranularStress, frameT));
+                float prologuePlasma = RenderProloguePlasmaSample(
+                    ref prologuePlasmaState,
+                    (uint)math.max(0L, sampleFrame),
+                    prologuePlasmaDrive,
+                    prologuePlasmaQuality,
+                    invSampleRate,
+                    plasmaBpB0,
+                    plasmaBpB1,
+                    plasmaBpB2,
+                    plasmaBpA1,
+                    plasmaBpA2);
                 float prologueSplashdown = RenderPrologueSplashdownSample(invSampleRate);
-                mixed = FastSoftClip(mixed + prologueLfe + prologueSplashdown);
+                mixed = FastSoftClip(mixed + prologueLfe + prologuePlasma + prologueSplashdown);
 
                 if (sabineReverbActive)
                 {
@@ -9550,6 +9630,7 @@ namespace Hecton8.Audio
             _interiorFdnReverbSynthesisState = interiorFdnState;
             _tinnitusSynthesisState = tinnitusState;
             _leviathanGranularSynthesisState = leviathanState;
+            _prologuePlasmaSynthesisState = prologuePlasmaState;
             _criticalSidechainCompressorState = sidechainState;
             _audioAbyssalLowPassMix = endMix;
             _audioAbsoluteDepthMeters = endAbsoluteDepthMeters;
@@ -9559,7 +9640,79 @@ namespace Hecton8.Audio
             _audioLeviathanRoarPitchScale = endLeviathanPitchScale;
             _audioPrologueLowPassCutoffHertz = endPrologueLowPassCutoff;
             _audioPrologueLfeGain = endPrologueLfeGain;
+            _audioPrologueGranularStress = endPrologueGranularStress;
             _audioProloguePortalBlend01 = endProloguePortalBlend;
+        }
+
+        private static float RenderProloguePlasmaSample(
+            ref ProloguePlasmaSynthesisState state,
+            uint sampleIndex,
+            float drive01,
+            float quality01,
+            double invSampleRate,
+            float b0,
+            float b1,
+            float b2,
+            float a1,
+            float a2)
+        {
+            float drive = math.saturate(FiniteOrZero(drive01));
+            if (drive <= HullNoiseFloor)
+                return 0f;
+
+            float whiteNoise = HashSigned(sampleIndex ^ 0xA621F35Bu);
+            float pinkNoise = ApplyPaulKelletPink(ref state, whiteNoise);
+            if (!math.isfinite(pinkNoise))
+            {
+                ResetProloguePlasmaState(ref state);
+                return 0f;
+            }
+
+            float lfoRate = math.lerp(ProloguePlasmaLfoMinimumHertz, ProloguePlasmaLfoMaximumHertz, drive);
+            float lfoDepth = math.lerp(
+                ProloguePlasmaLfoDepthMinimum,
+                ProloguePlasmaLfoDepthMaximum,
+                math.saturate(FiniteOrZero(quality01)));
+            float lfo = 1f - (lfoDepth * (1f - AdvanceTriangle01(ref state.LfoPhase, lfoRate, invSampleRate)));
+            float bandPassed = ProcessBiquad(
+                pinkNoise * lfo,
+                b0,
+                b1,
+                b2,
+                a1,
+                a2,
+                ref state.BandPassInput1,
+                ref state.BandPassInput2,
+                ref state.BandPassOutput1,
+                ref state.BandPassOutput2);
+            if (!math.isfinite(bandPassed))
+            {
+                ResetProloguePlasmaState(ref state);
+                return 0f;
+            }
+
+            float qualityGain = math.lerp(
+                ProloguePlasmaMinimumQualityGain,
+                1f,
+                math.saturate(FiniteOrZero(quality01)));
+            float sample = FastSoftClip(bandPassed * math.lerp(1.4f, 2.8f, drive)) * drive * ProloguePlasmaOutputGain * qualityGain;
+            return math.isfinite(sample) ? sample : 0f;
+        }
+
+        private static void ResetProloguePlasmaState(ref ProloguePlasmaSynthesisState state)
+        {
+            state.LfoPhase = 0d;
+            state.PinkB0 = 0f;
+            state.PinkB1 = 0f;
+            state.PinkB2 = 0f;
+            state.PinkB3 = 0f;
+            state.PinkB4 = 0f;
+            state.PinkB5 = 0f;
+            state.PinkB6 = 0f;
+            state.BandPassInput1 = 0f;
+            state.BandPassInput2 = 0f;
+            state.BandPassOutput1 = 0f;
+            state.BandPassOutput2 = 0f;
         }
 
         private float RenderPrologueSplashdownSample(double invSampleRate)
@@ -9575,12 +9728,21 @@ namespace Hecton8.Audio
             float fadeOut = 1f - t;
             float envelope = math.saturate(fadeOut * fadeOut);
             float frequency = math.lerp(PrologueSplashdownSweepStartHertz, PrologueSplashdownSweepEndHertz, t);
-            float sample = AdvanceSine(ref _prologueSplashdownPhase, frequency, invSampleRate) *
-                           envelope *
-                           _prologueSplashdownGain *
-                           PrologueSplashdownOutputGain;
+            float thud = AdvanceSine(ref _prologueSplashdownPhase, frequency, invSampleRate) *
+                         envelope *
+                         _prologueSplashdownGain *
+                         PrologueSplashdownOutputGain;
+            uint sampleIndex = unchecked((uint)elapsedSamples + (_audioPrologueSplashdownSequence * 4099u));
+            float cavitationEnvelope = envelope * math.saturate(1f - t * 0.65f);
+            float cavitation =
+                (LayeredBrownLike(sampleIndex ^ 0x51C0A51Du) * 0.72f +
+                 HighBandNoise(sampleIndex ^ 0x7A91D3E5u) * 0.28f) *
+                cavitationEnvelope *
+                _prologueSplashdownGain *
+                PrologueSplashdownCavitationNoiseGain;
+            float sample = FastSoftClip(thud + cavitation);
             _prologueSplashdownRemainingSamples--;
-            return sample;
+            return math.isfinite(sample) ? sample : 0f;
         }
 
         private bool TryReadGranularTelemetryRing(out NativeArray<GranularAudioTelemetryEntry>.ReadOnly ring)
@@ -13095,6 +13257,12 @@ namespace Hecton8.Audio
             return FastSine01((float)AdvancePhase(ref phase, frequencyHz, invSampleRate));
         }
 
+        private static float AdvanceTriangle01(ref double phase, double frequencyHz, double invSampleRate)
+        {
+            float phase01 = (float)AdvancePhase(ref phase, frequencyHz, invSampleRate);
+            return 1f - math.abs((phase01 * 2f) - 1f);
+        }
+
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float FastSineRadians(float radians)
         {
@@ -13144,6 +13312,20 @@ namespace Hecton8.Audio
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ApplyPaulKelletPink(ref ThrusterSynthesisState state, float white)
+        {
+            state.PinkB0 = 0.99886f * state.PinkB0 + white * 0.0555179f;
+            state.PinkB1 = 0.99332f * state.PinkB1 + white * 0.0750759f;
+            state.PinkB2 = 0.96900f * state.PinkB2 + white * 0.1538520f;
+            state.PinkB3 = 0.86650f * state.PinkB3 + white * 0.3104856f;
+            state.PinkB4 = 0.55000f * state.PinkB4 + white * 0.5329522f;
+            state.PinkB5 = -0.7616f * state.PinkB5 - white * 0.0168980f;
+            float pink = state.PinkB0 + state.PinkB1 + state.PinkB2 + state.PinkB3 + state.PinkB4 + state.PinkB5 + state.PinkB6 + white * 0.5362f;
+            state.PinkB6 = white * 0.115926f;
+            return pink * 0.11f;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static float ApplyPaulKelletPink(ref ProloguePlasmaSynthesisState state, float white)
         {
             state.PinkB0 = 0.99886f * state.PinkB0 + white * 0.0555179f;
             state.PinkB1 = 0.99332f * state.PinkB1 + white * 0.0750759f;
@@ -13664,7 +13846,8 @@ namespace Hecton8.Audio
                 ProloguePortalBlend01 = _targetProloguePortalBlend01,
                 PrologueSplashdownSequence = unchecked((uint)_targetPrologueSplashdownSequence),
                 PrologueStage = _targetPrologueStage,
-                PrologueFlags = _targetPrologueFlags
+                PrologueFlags = _targetPrologueFlags,
+                GlobalQualityWeight = SanitizeQuality01(_cachedAudioQualityWeight01)
             };
 
             int inactiveIndex = Volatile.Read(ref _audioParameterSnapshotReadIndex) ^ 1;

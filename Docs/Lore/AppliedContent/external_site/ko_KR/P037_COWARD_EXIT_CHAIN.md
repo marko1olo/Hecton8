@@ -1,0 +1,30 @@
+---
+packet_id: P037_COWARD_EXIT_CHAIN
+article_id: hecton8.coward_exit_chain
+locale: ko_KR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 비겁한 탈출 사슬
+
+이 엔딩 계열은 선택권을 존중하지만 무지를 너무 깨끗하게 보상하지 않는다. 가짜 게임오버가 아닌 실제 경로다.
+
+## Scanner
+
+이 탈출은 진짜지만 얇다. 수리한 캡슐, 좁은 날씨, 진실 없음, 깨끗한 보상 없음.
+
+## Terminal
+
+상승 사슬은 선체 봉합, 배터리 예비, 중계 ping, 폭풍 틈 예측 후 가능. 계약 장부: 불완전 회수.
+
+## Audio
+
+도망칠 수 있다. 뒤의 바다는 스스로를 설명하지 않는다.
+
+## Field Note
+
+일찍 떠나는 것은 해결이지 만족이 아니다.
+
+<!-- External Site; generated from P037_COWARD_EXIT_CHAIN/ko_KR. -->

@@ -17,9 +17,9 @@ namespace Hecton8.UI
     {
         private const float MainCameraResolveRetryInterval = 1f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== REFERENCES ===")]
         [SerializeField] private Camera mainCamera;
@@ -29,9 +29,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Debounce time for live updates (seconds)")]
         private float debounceTime = 0.05f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool _registered;
         private bool _hotSwapRegistered;
@@ -50,9 +50,9 @@ namespace Hecton8.UI
         private bool _hasBaselineBloom;
         private bool _hasBaselineMotionBlur;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
@@ -79,9 +79,9 @@ namespace Hecton8.UI
             TryUnregister();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Queue FOV change for live preview.
@@ -145,23 +145,19 @@ namespace Hecton8.UI
             RefreshTickRegistration();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LATE FRAME
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
             float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             if (_mainCameraResolveRetryTimer > 0f)
-            {
-                _mainCameraResolveRetryTimer -= dt;
-                if (_mainCameraResolveRetryTimer <= 0f)
-                    TryResolveMainCameraCold();
-            }
+                _mainCameraResolveRetryTimer = Mathf.Max(0f, _mainCameraResolveRetryTimer - dt);
 
             if (!_isDirty)
             {
-                RefreshTickRegistration();
+                RefreshTickRegistrationFromLateFrame();
                 return;
             }
 
@@ -181,16 +177,16 @@ namespace Hecton8.UI
             if (!_isDirty)
                 ClearPreviewBaseline();
 
-            RefreshTickRegistration();
+            RefreshTickRegistrationFromLateFrame();
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PRIVATE — APPLY
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // PRIVATE - APPLY
+        // ----------------------------------------------------------
 
         private bool ApplyFOV()
         {
-            if (mainCamera == null && !TryResolveMainCameraCold())
+            if (mainCamera == null && !TryResolveMainCameraCachedOnly())
             {
                 return false;
             }
@@ -203,13 +199,31 @@ namespace Hecton8.UI
             return true;
         }
 
-        private bool TryResolveMainCameraCold()
+        private bool TryResolveMainCameraCachedOnly()
         {
             if (mainCamera != null)
                 return true;
 
             if (_mainCameraResolveRetryTimer > 0f)
                 return false;
+
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera == null)
+            {
+                _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
+                return false;
+            }
+
+            mainCamera = playerCamera;
+            _mainCameraResolveRetryTimer = 0f;
+            return true;
+        }
+
+        private bool TryResolveMainCameraCold()
+        {
+            if (mainCamera != null)
+                return true;
 
             _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
 
@@ -404,10 +418,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -415,7 +426,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -425,6 +436,14 @@ namespace Hecton8.UI
                 TryRegister();
             else
                 TryUnregister();
+        }
+
+        private void RefreshTickRegistrationFromLateFrame()
+        {
+            if (_isDirty || _mainCameraResolveRetryTimer > 0f)
+                return;
+
+            TryUnregister();
         }
     }
 }

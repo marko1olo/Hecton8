@@ -294,7 +294,7 @@ Historical fatal finding:
 
 
 - `STATIC_DATA_MISSING` for `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` in the old capture.
-- Current 2026-05-28 filesystem state is different: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists and is `1,064,384` bytes. Route-specific Unity boot proof remains pending.
+- Current 2026-06-01 filesystem state is different: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists and is `1,804,864` bytes. Route-specific Unity boot proof remains pending.
 
 Current 2026-05-28 scoped payload/schema recheck:
 

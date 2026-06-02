@@ -20,9 +20,9 @@ namespace Hecton8.UI
     [DefaultExecutionOrder(-30990)]
     public sealed class SettingsManager : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private const string QualityLevelKey = "Hecton_QualityLevel";
         private const string MasterVolumeKey = "Hecton_MasterVolume";
@@ -44,6 +44,8 @@ namespace Hecton8.UI
         private const string GraphicsPresetKey = "Hecton_GraphicsPreset";
         private const string MenuVisualStyleKey = "Hecton_MenuVisualStyle";
         private const string MenuVisualConceptKey = "Hecton_MenuVisualConcept";
+        private const string TextScaleKey = "Hecton_TextScale";
+        private const string UiMotionScaleKey = "Hecton_UiMotionScale";
         private const string VrComfortModeKey = "Hecton_VRComfortMode";
         private const string VrSnapTurnKey = "Hecton_VRSnapTurn";
         private const string VrHorizonLockKey = "Hecton_VRHorizonLock";
@@ -59,9 +61,9 @@ namespace Hecton8.UI
         private const float DefaultVrHeadRelativeSwimBias = 0.55f;
         public const int MaxContinuousQualityLevel = 3;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // REGISTRY CACHE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private static bool _isShuttingDown;
         private static SettingsManager s_runtimeInstance;
@@ -90,9 +92,9 @@ namespace Hecton8.UI
             return instance != null;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== AUDIO MIXER ===")]
         [SerializeField] private AudioMixer audioMixer;
@@ -134,6 +136,8 @@ namespace Hecton8.UI
         private int _cachedGraphicsPreset = DefaultGraphicsPreset;
         private int _cachedMenuVisualStyleIndex = DefaultMenuVisualStyleIndex;
         private int _cachedMenuVisualConceptIndex = DefaultMenuVisualConceptIndex;
+        private float _cachedTextScale = AccessibilitySettings.DefaultTextScale;
+        private float _cachedUiMotionScale = AccessibilitySettings.DefaultUiMotionScale;
         private bool _cachedVrComfortMode = true;
         private bool _cachedVrSnapTurn = true;
         private bool _cachedVrHorizonLock = true;
@@ -145,9 +149,9 @@ namespace Hecton8.UI
         public event Action<MenuVisualStyle> MenuVisualStyleChanged;
         public event Action<MenuVisualConcept> MenuVisualConceptChanged;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -241,9 +245,9 @@ namespace Hecton8.UI
             RetryStandbyBindings();
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PUBLIC API — GRAPHICS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // PUBLIC API - GRAPHICS
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Gets or sets the user quality preference.
@@ -268,6 +272,42 @@ namespace Hecton8.UI
         /// Gets the currently persisted graphics preset (0=Low, 1=Medium, 2=High, 3=Ultra).
         /// </summary>
         public int GraphicsPreset => _cachedGraphicsPreset;
+
+        /// <summary>
+        /// Gets or sets the persisted accessibility text scale for PDA and diegetic UI.
+        /// </summary>
+        public float TextScale
+        {
+            get => _cachedTextScale;
+            set
+            {
+                float clamped = ValidateTextScale(value);
+                if (Mathf.Approximately(_cachedTextScale, clamped))
+                    return;
+
+                _cachedTextScale = clamped;
+                TryApplyAccessibilityTextScale(clamped);
+                SaveFloat(TextScaleKey, clamped);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the persisted UI motion comfort scalar (0=no UI shake, 1=authored motion).
+        /// </summary>
+        public float UiMotionScale
+        {
+            get => _cachedUiMotionScale;
+            set
+            {
+                float clamped = ValidateUiMotionScale(value);
+                if (Mathf.Approximately(_cachedUiMotionScale, clamped))
+                    return;
+
+                _cachedUiMotionScale = clamped;
+                TryApplyAccessibilityUiMotionScale(clamped);
+                SaveFloat(UiMotionScaleKey, clamped);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the presentation-only menu visual style.
@@ -529,9 +569,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PUBLIC API — AUDIO
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // PUBLIC API - AUDIO
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Gets or sets whether VR comfort locomotion rules are allowed to engage when an XR runtime is active.
@@ -695,9 +735,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PUBLIC API — RESET
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // PUBLIC API - RESET
+        // ----------------------------------------------------------
 
         public void BeginPersistenceBatch()
         {
@@ -753,6 +793,8 @@ namespace Hecton8.UI
                 _persistence.DeleteKey(GraphicsPresetKey);
                 _persistence.DeleteKey(MenuVisualStyleKey);
                 _persistence.DeleteKey(MenuVisualConceptKey);
+                _persistence.DeleteKey(TextScaleKey);
+                _persistence.DeleteKey(UiMotionScaleKey);
                 _persistence.DeleteKey(VrComfortModeKey);
                 _persistence.DeleteKey(VrSnapTurnKey);
                 _persistence.DeleteKey(VrHorizonLockKey);
@@ -794,6 +836,8 @@ namespace Hecton8.UI
             _cachedMenuVisualConceptIndex = DefaultMenuVisualConceptIndex;
             SaveInt(MenuVisualConceptKey, _cachedMenuVisualConceptIndex);
             MenuVisualConceptChanged?.Invoke(MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex));
+            TextScale = AccessibilitySettings.DefaultTextScale;
+            UiMotionScale = AccessibilitySettings.DefaultUiMotionScale;
             ApplyWorldQualityPreset(_cachedGraphicsPreset);
 
             Resolution defaultRes = Screen.currentResolution;
@@ -888,9 +932,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PRIVATE — LOAD/SAVE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // PRIVATE - LOAD/SAVE
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Load all settings from persistence with validation and repair.
@@ -922,6 +966,8 @@ namespace Hecton8.UI
             _cachedGraphicsPreset = ValidateGraphicsPreset(LoadInt(GraphicsPresetKey, DefaultGraphicsPreset));
             _cachedMenuVisualStyleIndex = ValidateMenuVisualStyleIndex(LoadInt(MenuVisualStyleKey, DefaultMenuVisualStyleIndex));
             _cachedMenuVisualConceptIndex = ValidateMenuVisualConceptIndex(LoadInt(MenuVisualConceptKey, DefaultMenuVisualConceptIndex));
+            _cachedTextScale = ValidateTextScale(LoadFloat(TextScaleKey, AccessibilitySettings.DefaultTextScale));
+            _cachedUiMotionScale = ValidateUiMotionScale(LoadFloat(UiMotionScaleKey, AccessibilitySettings.DefaultUiMotionScale));
             _cachedVrComfortMode = LoadBool(VrComfortModeKey, true);
             _cachedVrSnapTurn = LoadBool(VrSnapTurnKey, true);
             _cachedVrHorizonLock = LoadBool(VrHorizonLockKey, true);
@@ -930,9 +976,9 @@ namespace Hecton8.UI
 
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // VALIDATION HELPERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private static int ValidateQualityLevel(int value)
         {
@@ -1069,6 +1115,38 @@ namespace Hecton8.UI
             return value;
         }
 
+        private static float ValidateTextScale(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0f)
+                return AccessibilitySettings.DefaultTextScale;
+
+            if (value < AccessibilitySettings.MinimumTextScale || value > AccessibilitySettings.MaximumTextScale)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[SettingsManager] Invalid text scale; clamping.");
+#endif
+                return Mathf.Clamp(value, AccessibilitySettings.MinimumTextScale, AccessibilitySettings.MaximumTextScale);
+            }
+
+            return value;
+        }
+
+        private static float ValidateUiMotionScale(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                return AccessibilitySettings.DefaultUiMotionScale;
+
+            if (value < AccessibilitySettings.MinimumUiMotionScale || value > AccessibilitySettings.MaximumUiMotionScale)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[SettingsManager] Invalid UI motion scale; clamping.");
+#endif
+                return Mathf.Clamp(value, AccessibilitySettings.MinimumUiMotionScale, AccessibilitySettings.MaximumUiMotionScale);
+            }
+
+            return value;
+        }
+
         /// <summary>
         /// Apply all cached settings to Unity systems with comprehensive error handling.
         /// Returns true if all settings applied successfully, false if any failed.
@@ -1127,6 +1205,18 @@ namespace Hecton8.UI
                 failureCount++;
             }
 
+            if (!TryApplyAccessibilityTextScale(_cachedTextScale))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            if (!TryApplyAccessibilityUiMotionScale(_cachedUiMotionScale))
+            {
+                success = false;
+                failureCount++;
+            }
+
             ApplyWorldQualityPreset(_cachedGraphicsPreset);
 
             // Camera FOV
@@ -1172,9 +1262,9 @@ namespace Hecton8.UI
             return success;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // SAFE APPLICATION HELPERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private static bool TryApplyQualityLevel(int level)
         {
@@ -1195,6 +1285,49 @@ namespace Hecton8.UI
         {
             float normalized = Mathf.Clamp01(level / (float)MaxContinuousQualityLevel);
             return normalized * normalized * (3f - 2f * normalized);
+        }
+
+        private static bool TryApplyAccessibilityTextScale(float scale)
+        {
+            try
+            {
+                float safeScale = ValidateTextScale(scale);
+                AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
+                if (accessibilitySettings != null)
+                {
+                    accessibilitySettings.SetTextScale(safeScale);
+                    return true;
+                }
+
+                return FontStreamingManager.RequestAccessibilityTextScale(safeScale);
+            }
+            catch (System.Exception ex)
+            {
+                LogApplyAccessibilityTextScaleFailed(ex);
+                return false;
+            }
+        }
+
+        private static bool TryApplyAccessibilityUiMotionScale(float scale)
+        {
+            try
+            {
+                float safeScale = ValidateUiMotionScale(scale);
+                AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
+                if (accessibilitySettings != null)
+                {
+                    accessibilitySettings.SetUiMotionScale(safeScale);
+                    return true;
+                }
+
+                UIScreenShake.SetGlobalMotionScale(safeScale);
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                LogApplyAccessibilityUiMotionScaleFailed(ex);
+                return false;
+            }
         }
 
         private static bool TryApplyVSync(bool enabled)
@@ -1408,6 +1541,24 @@ namespace Hecton8.UI
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             H8Debug.LogError("[SettingsManager] Failed to apply texture quality.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyAccessibilityTextScaleFailed(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogError("[SettingsManager] Failed to apply accessibility text scale.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyAccessibilityUiMotionScaleFailed(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogError("[SettingsManager] Failed to apply accessibility UI motion scale.");
 #endif
         }
 

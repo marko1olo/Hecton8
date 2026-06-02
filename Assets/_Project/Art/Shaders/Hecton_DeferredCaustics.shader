@@ -122,9 +122,9 @@ Shader "Hidden/Hecton8/DeferredCaustics"
         float CausticLineLayer(float2 uv)
         {
             float distanceSqToCell = VoronoiDistanceSq(uv);
-            float line = saturate(1.0 - distanceSqToCell * 1.85);
-            line *= line;
-            return line * line;
+            float lineMask = saturate(1.0 - distanceSqToCell * 1.85);
+            lineMask *= lineMask;
+            return lineMask * lineMask;
         }
 
         float SampleCaveVoxelSignedDistance(float3 positionWS)

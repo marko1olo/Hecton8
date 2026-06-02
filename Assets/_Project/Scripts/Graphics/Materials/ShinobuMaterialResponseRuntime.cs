@@ -13,6 +13,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Graphics.Materials
@@ -304,6 +307,26 @@ namespace Hecton8.Graphics.Materials
             s_pendingSaltLineDepth = 0.0f;
             s_pendingDebugMode = 0u;
         }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InstallEditorLifecycleShutdownHook()
+        {
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActive;
+            AssemblyReloadEvents.beforeAssemblyReload += ShutdownActive;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActive();
+            }
+        }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallRuntime()
@@ -1299,17 +1322,7 @@ namespace Hecton8.Graphics.Materials
             if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<T>())
                 return;
 
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            try
-            {
-                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
-                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            GraphicsBufferUploadUtility.TryUploadNativeArrayRange(destination, source, 0, 0, safeCount);
         }
 
         private static void UploadConstants(GraphicsBuffer destination, GlobalShaderConstantsDTO constants)
@@ -1317,15 +1330,7 @@ namespace Hecton8.Graphics.Materials
             if (destination == null)
                 return;
 
-            NativeArray<GlobalShaderConstantsDTO> mapped = destination.LockBufferForWrite<GlobalShaderConstantsDTO>(0, 1);
-            try
-            {
-                mapped[0] = constants;
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<GlobalShaderConstantsDTO>(1);
-            }
+            GraphicsBufferUploadUtility.TryUploadSingle(destination, constants);
         }
 
         private GraphicsBuffer SelectMaterialStateBuffer(int index)

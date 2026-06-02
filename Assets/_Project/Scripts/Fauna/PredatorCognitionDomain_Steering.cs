@@ -1754,162 +1754,16 @@ namespace Hecton8.AI
 
     internal static class OOP_Movement_Scanner
     {
-        private const string SharedReportSectionName = "shinobu303LeviathanSteering";
-
         [MenuItem("HECTON-8/AI/Run OOP Movement Scanner")]
         private static void Run()
         {
             string root = Directory.GetCurrentDirectory();
             string scripts = Path.Combine(root, "Assets", "_Project", "Scripts");
-            string reportPath = Path.Combine(root, "Docs", "Reports", "AI_OPTIMIZATION_REPORT.json");
-            string stableReportPath = Path.Combine(root, "Docs", "Reports", "SHINOBU_303_AI_OPTIMIZATION_REPORT.json");
             int updateScopes = 0;
             int violations = 0;
             ScanDirectory(scripts, ref updateScopes, ref violations);
-            string sectionJson = BuildScannerReportSection(updateScopes, violations);
-            WriteStableScannerReport(stableReportPath, sectionJson);
-            UpsertSharedScannerReport(reportPath, sectionJson);
-            AssetDatabase.Refresh();
-        }
-
-        private static string BuildScannerReportSection(int updateScopes, int violations)
-        {
-            return "{\n" +
-                   "    \"scanner\": \"OOP_Movement_Scanner\",\n" +
-                   "    \"agent\": \"SHINOBU_303\",\n" +
-                   "    \"domain\": \"LEVIATHAN_STEERING_MOTOR\",\n" +
-                   "    \"summary\": \"OOP Steering Mechanisms Eradicated\",\n" +
-                   "    \"status\": \"STATIC_SCANNER_EDITOR_RUN\",\n" +
-                   "    \"newHotPath\": \"Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs\",\n" +
-                   "    \"newRuntimeRoute\": \"PredatorCognitionDomain -> GlobalDataVault steering buffers -> Burst SDF whiskers -> KinematicStateDTO\",\n" +
-                   "    \"dtoLayout\": \"SteeringParamsDTO=32 bytes: MaxSpeed@0 TurnSpeed@4 LungeMultiplier@8 ObstacleAvoidanceWeight@12 CurrentTargetDirection@16 pad@28\",\n" +
-                   "    \"updateScopesScanned\": " + updateScopes + ",\n" +
-                   "    \"oOPSteeringViolations\": " + violations + ",\n" +
-                   "    \"globalQualityWeightContinuous\": true,\n" +
-                   "    \"activeWhiskersAtQualityZero\": 6,\n" +
-                   "    \"activeWhiskersAtQualityOne\": 26,\n" +
-                   "    \"blackBoxTelemetryFrames\": 300\n" +
-                   "  }";
-        }
-
-        private static void WriteStableScannerReport(string path, string sectionJson)
-        {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            File.WriteAllText(path, sectionJson + "\n");
-        }
-
-        private static void UpsertSharedScannerReport(string path, string sectionJson)
-        {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            string existing = File.Exists(path) ? File.ReadAllText(path) : "{\n}\n";
-            string trimmed = existing.Trim();
-            if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[trimmed.Length - 1] != '}')
-                trimmed = "{\n}";
-
-            trimmed = RemoveJsonObjectProperty(trimmed, SharedReportSectionName).Trim();
-            int insert = trimmed.LastIndexOf('}');
-            if (insert < 0)
-                trimmed = "{\n}";
-
-            insert = trimmed.LastIndexOf('}');
-            string prefix = trimmed.Substring(0, insert).TrimEnd();
-            string suffix = trimmed.Substring(insert);
-            bool hasExistingProperties = prefix.Length > 1;
-            string comma = hasExistingProperties ? ",\n" : "\n";
-            string property = "  \"" + SharedReportSectionName + "\": " + sectionJson;
-            File.WriteAllText(path, prefix + comma + property + "\n" + suffix + "\n");
-        }
-
-        private static string RemoveJsonObjectProperty(string json, string propertyName)
-        {
-            string token = "\"" + propertyName + "\"";
-            int nameIndex = json.IndexOf(token, StringComparison.Ordinal);
-            if (nameIndex < 0)
-                return json;
-
-            int colon = json.IndexOf(':', nameIndex + token.Length);
-            if (colon < 0)
-                return json;
-
-            int objectStart = FindNextNonWhitespace(json, colon + 1);
-            if (objectStart < 0 || json[objectStart] != '{')
-                return json;
-
-            int objectEnd = FindJsonObjectEnd(json, objectStart);
-            if (objectEnd < objectStart)
-                return json;
-
-            int removeStart = nameIndex;
-            while (removeStart > 0 && char.IsWhiteSpace(json[removeStart - 1]))
-                removeStart--;
-
-            int removeEnd = objectEnd + 1;
-            int after = FindNextNonWhitespace(json, removeEnd);
-            if (after >= 0 && json[after] == ',')
-            {
-                removeEnd = after + 1;
-            }
-            else
-            {
-                int before = removeStart - 1;
-                while (before >= 0 && char.IsWhiteSpace(json[before]))
-                    before--;
-                if (before >= 0 && json[before] == ',')
-                    removeStart = before;
-            }
-
-            return json.Remove(removeStart, removeEnd - removeStart);
-        }
-
-        private static int FindNextNonWhitespace(string text, int start)
-        {
-            for (int i = start; i < text.Length; i++)
-            {
-                if (!char.IsWhiteSpace(text[i]))
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private static int FindJsonObjectEnd(string text, int objectStart)
-        {
-            int depth = 0;
-            bool inString = false;
-            bool escape = false;
-            for (int i = objectStart; i < text.Length; i++)
-            {
-                char c = text[i];
-                if (inString)
-                {
-                    if (escape)
-                        escape = false;
-                    else if (c == '\\')
-                        escape = true;
-                    else if (c == '"')
-                        inString = false;
-                    continue;
-                }
-
-                if (c == '"')
-                    inString = true;
-                else if (c == '{')
-                    depth++;
-                else if (c == '}')
-                {
-                    depth--;
-                    if (depth == 0)
-                        return i;
-                }
-            }
-
-            return -1;
+            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
+                      " steeringViolations=" + violations.ToString());
         }
 
         private static void ScanDirectory(string directory, ref int updateScopes, ref int violations)

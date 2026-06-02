@@ -44,6 +44,8 @@ namespace Hecton.UI.MainMenu
         private bool _runtimeBindingsReady;
         private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
+        private string _customConfirmLabel;
+        private string _customCancelLabel;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -192,13 +194,22 @@ namespace Hecton.UI.MainMenu
         private void RefreshButtonLabels()
         {
             ILocalizationTextReadModel loc = _localization;
-            if (loc == null) return;
 
             if (confirmButtonLabel != null)
-                TmpTextNoAlloc.Set(confirmButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CONFIRM, "CONFIRM"));
+            {
+                if (!string.IsNullOrEmpty(_customConfirmLabel))
+                    TmpTextNoAlloc.Set(confirmButtonLabel, _customConfirmLabel);
+                else
+                    TmpTextNoAlloc.Set(confirmButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CONFIRM, "CONFIRM"));
+            }
 
             if (cancelButtonLabel != null)
-                TmpTextNoAlloc.Set(cancelButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CANCEL, "CANCEL"));
+            {
+                if (!string.IsNullOrEmpty(_customCancelLabel))
+                    TmpTextNoAlloc.Set(cancelButtonLabel, _customCancelLabel);
+                else
+                    TmpTextNoAlloc.Set(cancelButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CANCEL, "CANCEL"));
+            }
         }
 
         private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel manager, string key, ReadOnlySpan<char> fallback)
@@ -450,14 +461,10 @@ namespace Hecton.UI.MainMenu
 
             _cachedOnConfirm = onConfirm;
             _cachedOnCancel  = onCancel;
+            _customConfirmLabel = customConfirmLabel;
+            _customCancelLabel = customCancelLabel;
 
             RefreshButtonLabels();
-
-            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
-                TmpTextNoAlloc.Set(confirmButtonLabel, customConfirmLabel);
-
-            if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
-                TmpTextNoAlloc.Set(cancelButtonLabel, customCancelLabel);
 
             if (btnCancel != null)
             {
@@ -493,14 +500,10 @@ namespace Hecton.UI.MainMenu
 
             _cachedOnConfirm = onConfirm;
             _cachedOnCancel  = onCancel;
+            _customConfirmLabel = customConfirmLabel;
+            _customCancelLabel = customCancelLabel;
 
             RefreshButtonLabels();
-
-            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
-                TmpTextNoAlloc.Set(confirmButtonLabel, customConfirmLabel);
-
-            if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
-                TmpTextNoAlloc.Set(cancelButtonLabel, customCancelLabel);
 
             if (btnCancel != null)
             {
@@ -526,6 +529,8 @@ namespace Hecton.UI.MainMenu
 
             _cachedOnConfirm = null;
             _cachedOnCancel  = null;
+            _customConfirmLabel = null;
+            _customCancelLabel = null;
         }
 
         // ══════════════════════════════════════════════

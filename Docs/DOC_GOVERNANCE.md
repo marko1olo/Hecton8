@@ -11,15 +11,16 @@ Purpose: keep active docs small, source-backed, and free of work-log noise.
 
 1. `../AGENTS.md`
 2. `../TASTE.md`
-3. `.agents-skills/README.md`
-4. task-relevant `.agents-skills/*` mandates
-5. current source under `Assets/_Project`
-6. `Docs/PROJECT_BASELINE.md`
-7. `Docs/ARCHITECTURE/README.md`
-8. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-9. active architecture contracts
-10. fresh verification artifacts
-11. dated reports and archives
+3. `../textes.md` for public copy only
+4. `.agents-skills/README.md`
+5. task-relevant `.agents-skills/*` mandates
+6. current source under `Assets/_Project`
+7. `Docs/PROJECT_BASELINE.md`
+8. `Docs/ARCHITECTURE/README.md`
+9. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+10. active architecture contracts
+11. fresh verification artifacts
+12. dated reports and archives
 
 ## Placement Rules
 
@@ -27,6 +28,7 @@ Root may contain only:
 
 - `AGENTS.md`
 - `TASTE.md`
+- `textes.md`
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
 

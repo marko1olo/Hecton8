@@ -18,7 +18,7 @@ namespace Hecton8.Audio.Editor
             Gizmos.DrawWireSphere(origin, system.IsWarningActive ? 0.6f : 0.35f);
             Handles.Label(
                 origin + Vector3.up * 0.75f,
-                $"VWS word {system.PendingCount}/{system.EditorQueueCapacity}\nID {system.CurrentWarningId} P {system.EditorCurrentPriorityScore:0.0}\n{FormatPriorityEntry(system, 0)}\n{FormatPriorityEntry(system, 1)}\n{FormatPriorityEntry(system, 2)}");
+                $"VWS mask {system.PendingCount}/{system.EditorQueueCapacity}\nID {system.CurrentWarningId} P {system.EditorCurrentPriorityScore:0.0}\n{FormatPriorityEntry(system, 0)}\n{FormatPriorityEntry(system, 1)}\n{FormatPriorityEntry(system, 2)}");
             Gizmos.color = previous;
         }
 

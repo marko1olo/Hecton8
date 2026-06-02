@@ -1,0 +1,67 @@
+---
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+---
+
+# Полевой архив HECTON-8
+
+- [Полка крушения](P001_CRASH_SHELF.md) `P001_CRASH_SHELF`
+- [Контакт Black Keel](P002_BLACK_KEEL_CONTACT.md) `P002_BLACK_KEEL_CONTACT`
+- [Метка Barnard](P003_BARNARD_MARK.md) `P003_BARNARD_MARK`
+- [Blue Debt](P004_BLUE_DEBT.md) `P004_BLUE_DEBT`
+- [Ремонтный шрам](P005_REPAIR_SCAR.md) `P005_REPAIR_SCAR`
+- [Кэш мертвого claim](P006_DEAD_CLAIM_CACHE.md) `P006_DEAD_CLAIM_CACHE`
+- [Brine Stair](P007_BRINE_STAIR.md) `P007_BRINE_STAIR`
+- [Удержанная эвакуация](P008_EVACUATION_HOLD.md) `P008_EVACUATION_HOLD`
+- [Донная фабрика](P009_BOTTOM_FACTORY.md) `P009_BOTTOM_FACTORY`
+- [Окно полезной нагрузки](P010_PAYLOAD_WINDOW.md) `P010_PAYLOAD_WINDOW`
+- [Метки доменов 2190](P011_DOMAIN_MARKS_2190.md) `P011_DOMAIN_MARKS_2190`
+- [Relay Spine](P012_RELAY_SPINE.md) `P012_RELAY_SPINE`
+- [Классы околосветовых кораблей](P013_NEARLIGHT_SHIP_CLASSES.md) `P013_NEARLIGHT_SHIP_CLASSES`
+- [Окно маршрута Aegir](P014_AEGIR_ROUTE_WINDOW.md) `P014_AEGIR_ROUTE_WINDOW`
+- [Реестр Black Keel](P015_BLACK_KEEL_LEDGER.md) `P015_BLACK_KEEL_LEDGER`
+- [Звезда системы Aegir](P016_AEGIR_HOST_STAR.md) `P016_AEGIR_HOST_STAR`
+- [Лунная лестница Aegir](P017_AEGIR_MOON_LADDER.md) `P017_AEGIR_MOON_LADDER`
+- [Затопленная геология](P018_HECTON8_DROWNED_GEOLOGY.md) `P018_HECTON8_DROWNED_GEOLOGY`
+- [Стек ресурсов](P019_HECTON8_RESOURCE_STACK.md) `P019_HECTON8_RESOURCE_STACK`
+- [Регистр экологии](P020_HECTON8_ECOLOGY_REGISTRY.md) `P020_HECTON8_ECOLOGY_REGISTRY`
+- [Опека Black Keel](P021_BLACK_KEEL_CUSTODY.md) `P021_BLACK_KEEL_CUSTODY`
+- [Повреждение спусковой капсулы](P022_DROP_CAPSULE_DAMAGE.md) `P022_DROP_CAPSULE_DAMAGE`
+- [Возвратная претензия Deep Reach](P023_DEEP_REACH_RETURN_CLAIM.md) `P023_DEEP_REACH_RETURN_CLAIM`
+- [Материальный выход](P024_FALSE_EXIT_MATERIAL.md) `P024_FALSE_EXIT_MATERIAL`
+- [Профессиональный мотив](P025_PROFESSIONAL_MOTIVE.md) `P025_PROFESSIONAL_MOTIVE`
+- [Реестр шести доменов](P026_SIX_DOMAIN_LEDGER.md) `P026_SIX_DOMAIN_LEDGER`
+- [Происхождение: Barnard Yards](P027_BARNARD_YARDS_ORIGIN.md) `P027_BARNARD_YARDS_ORIGIN`
+- [Математика полета без FTL](P028_NO_FTL_TRANSIT_MATH.md) `P028_NO_FTL_TRANSIT_MATH`
+- [Доктрина Seed Ship](P029_SEED_SHIP_DOCTRINE.md) `P029_SEED_SHIP_DOCTRINE`
+- [Долговая цепь relay custody](P030_RELAY_CUSTODY_DEBT_CHAIN.md) `P030_RELAY_CUSTODY_DEBT_CHAIN`
+- [Жизнь светового шельфа](P031_PHOTIC_SHELF_LIFE.md) `P031_PHOTIC_SHELF_LIFE`
+- [Лестница давления](P032_PRESSURE_LADDER_DEPTH_BANDS.md) `P032_PRESSURE_LADDER_DEPTH_BANDS`
+- [Симбиоз кабельного рифа](P033_CABLE_REEF_SYMBIOSIS.md) `P033_CABLE_REEF_SYMBIOSIS`
+- [Абиссальная ремонтная фауна](P034_ABYSSAL_REPAIR_FAUNA.md) `P034_ABYSSAL_REPAIR_FAUNA`
+- [Порог фабрики-храма](P035_FACTORY_TEMPLE_THRESHOLD.md) `P035_FACTORY_TEMPLE_THRESHOLD`
+- [Окно возвратного вектора](P036_RETURN_VECTOR_WINDOW.md) `P036_RETURN_VECTOR_WINDOW`
+- [Цепочка трусливого выхода](P037_COWARD_EXIT_CHAIN.md) `P037_COWARD_EXIT_CHAIN`
+- [Реестр материальной выплаты](P038_MATERIAL_PAYOUT_LEDGER.md) `P038_MATERIAL_PAYOUT_LEDGER`
+- [Приказ Deep Reach на зачистку](P039_DEEP_REACH_CLEANSE_ORDER.md) `P039_DEEP_REACH_CLEANSE_ORDER`
+- [Финальный аргумент Atlas](P040_ATLAS_FINAL_ARGUMENT.md) `P040_ATLAS_FINAL_ARGUMENT`
+- [Ряд рабочих шкафов](P041_WORKER_LOCKER_ROW.md) `P041_WORKER_LOCKER_ROW`
+- [Режим напорных коек](P042_PRESSURE_BUNK_ROUTINE.md) `P042_PRESSURE_BUNK_ROUTINE`
+- [Сменная доска удержаний маршрута](P043_SHIFT_BOARD_ROUTE_HOLDS.md) `P043_SHIFT_BOARD_ROUTE_HOLDS`
+- [Задержка медицинского шлюза](P044_MEDICAL_LOCK_DELAY.md) `P044_MEDICAL_LOCK_DELAY`
+- [Стек имен черных ящиков](P045_BLACK_BOX_NAME_STACK.md) `P045_BLACK_BOX_NAME_STACK`
+- [Pump Room Handshake](P046_PUMP_ROOM_HANDSHAKE.md) `P046_PUMP_ROOM_HANDSHAKE`
+- [Hatch Seal Ledger](P047_HATCH_SEAL_LEDGER.md) `P047_HATCH_SEAL_LEDGER`
+- [Cable Splice Scar](P048_CABLE_SPLICE_SCAR.md) `P048_CABLE_SPLICE_SCAR`
+- [Sonar Return Route](P049_SONAR_RETURN_ROUTE.md) `P049_SONAR_RETURN_ROUTE`
+- [Salvage Tool Custody](P050_SALVAGE_TOOL_CUSTODY.md) `P050_SALVAGE_TOOL_CUSTODY`
+- [Light-Delay Authority](P051_LIGHT_DELAY_AUTHORITY.md) `P051_LIGHT_DELAY_AUTHORITY`
+- [Black Keel Tariff Table](P052_BLACK_KEEL_TARIFF_TABLE.md) `P052_BLACK_KEEL_TARIFF_TABLE`
+- [Marauder Graffiti Masks](P053_MARAUDER_GRAFFITI_MASKS.md) `P053_MARAUDER_GRAFFITI_MASKS`
+- [Relay Queue Drift](P054_RELAY_QUEUE_DRIFT.md) `P054_RELAY_QUEUE_DRIFT`
+- [Corporate Response Ledger](P055_CORPORATE_RESPONSE_LEDGER.md) `P055_CORPORATE_RESPONSE_LEDGER`
+
+<!-- Generated localized index for external_site/ru_RU. -->

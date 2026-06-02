@@ -328,6 +328,7 @@ namespace Hecton8.Audio.Synthesis
         private int _lastAudioChannels = DefaultAudioChannels;
         private int _audioUnderrunCount;
         private int _audioOverflowCount;
+        private int _invalidAudioFilterHost;
 #if UNITY_EDITOR
         private int _csvPollCountdown;
 #endif
@@ -622,6 +623,9 @@ namespace Hecton8.Audio.Synthesis
 
         private void Awake()
         {
+            if (RejectInvalidAudioFilterHostCold())
+                return;
+
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
             EnsureVaultStorage();
@@ -638,6 +642,9 @@ namespace Hecton8.Audio.Synthesis
 
         private void OnEnable()
         {
+            if (RejectInvalidAudioFilterHostCold())
+                return;
+
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
             EnsureVaultStorage();
@@ -667,6 +674,31 @@ namespace Hecton8.Audio.Synthesis
         {
             UnregisterRuntime();
             DisposeVaultStorage();
+        }
+
+        private bool RejectInvalidAudioFilterHostCold()
+        {
+            if (!TryGetComponent<AudioListener>(out _))
+            {
+                Volatile.Write(ref _invalidAudioFilterHost, 0);
+                return false;
+            }
+
+            if (_hostSource == null)
+                TryGetComponent(out _hostSource);
+            if (_hostSource != null)
+            {
+                _hostSource.playOnAwake = false;
+                _hostSource.loop = false;
+                if (_hostSource.isPlaying)
+                    _hostSource.Stop();
+            }
+
+            Volatile.Write(ref _invalidAudioFilterHost, 1);
+            if (ReferenceEquals(_activeInstance, this))
+                _activeInstance = null;
+            enabled = false;
+            return true;
         }
 
         public void Tick(float deltaTime)
@@ -731,6 +763,13 @@ namespace Hecton8.Audio.Synthesis
 
         private void OnAudioFilterRead(float[] data, int channels)
         {
+            if (Volatile.Read(ref _invalidAudioFilterHost) != 0)
+            {
+                if (data != null && data.Length > 0)
+                    ZeroManagedAudioBuffer(data, 0, data.Length);
+                return;
+            }
+
             int safeChannels = math.clamp(channels, 1, 2);
             Volatile.Write(ref _lastAudioChannels, safeChannels);
             Volatile.Write(ref _lastAudioRequestSamples, math.min(data != null ? data.Length : 0, OutputSampleCapacity));
@@ -1207,6 +1246,16 @@ namespace Hecton8.Audio.Synthesis
         {
             if (_hostSource == null)
                 return;
+
+            if (Volatile.Read(ref _invalidAudioFilterHost) != 0)
+            {
+                _hostSource.playOnAwake = false;
+                _hostSource.loop = false;
+                if (_hostSource.isPlaying)
+                    _hostSource.Stop();
+                Volatile.Write(ref _audioHostConfigDirty, 0);
+                return;
+            }
 
             int sampleRate = math.max(8000, AudioSettings.outputSampleRate);
             _hostSource.playOnAwake = true;

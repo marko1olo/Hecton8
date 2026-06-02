@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "repo_root": "C:/hades/Hecton8",
+  "created_at": "2026-06-01",
+  "rules": [
+    "Read C:/hades/Hecton8/textes.md before changing text.",
+    "English public copy only unless the owner asks otherwise.",
+    "No Steam, demo, release, wishlist, performance, or gameplay-screenshot claim without proof.",
+    "If the post feels like a brand manager wrote it, do not publish it."
+  ],
+  "items": [
+    {
+      "id": "20260601_002_devnote_cutting_frames",
+      "status": "PUBLISHED",
+      "publish_gate": "POSTED_BLOCK_REPEAT",
+      "text": "Opened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.",
+      "platforms": {
+        "x": {
+          "enabled": true,
+          "media": "none",
+          "out": "x_devnote_cutting_frames_20260601"
+        },
+        "bluesky": {
+          "enabled": true,
+          "media": "none",
+          "out": "bsky_devnote_cutting_frames_20260601"
+        }
+      },
+      "published": {
+        "x": {
+          "profile_url": "https://x.com/submerge_game",
+          "public_proof": "MarketingAssets/99_BrowserWork/cdp_pages/x_public_after_devnote_cutting_frames_20260601.png"
+        },
+        "bluesky": {
+          "profile_url": "https://bsky.app/profile/teni-games.bsky.social",
+          "public_proof": "MarketingAssets/99_BrowserWork/cdp_pages/bsky_public_after_devnote_cutting_frames_20260601.png"
+        }
+      },
+      "why": "Second public note after the intro. It admits the account is early and makes the screenshot standard concrete."
+    },
+    {
+      "id": "20260601_003_brand_art_instagram",
+      "status": "HOLD_PLATFORM",
+      "publish_gate": "BLOCK",
+      "text": "Profile art for Teni Games.\nNot gameplay. Just the account getting dressed before the real shots are worth posting.",
+      "media": "MarketingAssets/00_Brand/PlatformExports/instagram_profile_1080.png",
+      "platforms": {
+        "instagram": {
+          "enabled": false,
+          "reason": "Instagram web posting is foreground-heavy and easy to botch; use only after a verified post flow or mobile pass."
+        }
+      },
+      "why": "Good caption, but the platform path is not reliable enough for unattended posting yet."
+    },
+    {
+      "id": "20260601_004_screenshot_rule",
+      "status": "HOLD_ASSET",
+      "publish_gate": "BLOCK",
+      "text": "Current rule for Submerge screenshots:\nif the frame does not tell you what the player should worry about, it is not ready.",
+      "platforms": {
+        "x": {
+          "enabled": false,
+          "reason": "Stronger with the first real screenshot or rejected-shot comparison."
+        },
+        "bluesky": {
+          "enabled": false,
+          "reason": "Stronger with the first real screenshot or rejected-shot comparison."
+        }
+      },
+      "why": "Useful positioning, but it should land with proof instead of becoming abstract filler."
+    },
+    {
+      "id": "20260601_005_ocean_not_hook",
+      "status": "HOLD_CADENCE",
+      "publish_gate": "BLOCK",
+      "text": "The ocean is not the hook.\nThe machine failing under it is.",
+      "platforms": {
+        "x": {
+          "enabled": false,
+          "reason": "Good short line, but too slogan-like as a third same-day post before screenshots."
+        },
+        "bluesky": {
+          "enabled": false,
+          "reason": "Good short line, but too slogan-like as a third same-day post before screenshots."
+        }
+      },
+      "why": "Keep for later, after a clip or machinery shot can carry it."
+    },
+    {
+      "id": "20260601_006_pressure_room_first_proof",
+      "status": "HOLD_ASSET",
+      "publish_gate": "BLOCK",
+      "text": "The first useful Submerge screenshot is probably not the big ocean shot.\n\nIt is a pump, a hatch, a gauge, and a way back that already looks worse than the way in.",
+      "platforms": {
+        "x": {
+          "enabled": false,
+          "reason": "Needs a pressure-room/current-build image. Text alone would sound like positioning instead of proof."
+        },
+        "bluesky": {
+          "enabled": false,
+          "reason": "Needs a pressure-room/current-build image. Text alone would sound like positioning instead of proof."
+        },
+        "telegram": {
+          "enabled": false,
+          "reason": "Can become a dev-feed post only with a rough frame or rejected-shot comparison."
+        }
+      },
+      "why": "Current best next public beat: first proof should sell machinery/pressure/return-route readability, not ocean mood."
+    },
+    {
+      "id": "20260601_007_pretty_ocean_kill_rule",
+      "status": "HOLD_ASSET",
+      "publish_gate": "BLOCK",
+      "text": "A pretty ocean shot is easy to make.\n\nA useful one tells you what will fail first.",
+      "platforms": {
+        "x": {
+          "enabled": false,
+          "reason": "Use with a rejected beauty frame or side-by-side proof, not as a third text-only post."
+        },
+        "bluesky": {
+          "enabled": false,
+          "reason": "Use with a rejected beauty frame or side-by-side proof, not as a third text-only post."
+        }
+      },
+      "why": "Keeps the public standard human and concrete while avoiding empty daily posting."
+    },
+    {
+      "id": "20260601_008_salvage_tool_witness",
+      "status": "HOLD_ASSET",
+      "publish_gate": "BLOCK",
+      "text": "The salvage tool should not feel like a loot vacuum.\n\nIt should feel like a witness.",
+      "platforms": {
+        "x": {
+          "enabled": false,
+          "reason": "Requires a tool/salvage image or clip where the object, scar, route, and risk are visible."
+        },
+        "bluesky": {
+          "enabled": false,
+          "reason": "Requires a tool/salvage image or clip where the object, scar, route, and risk are visible."
+        },
+        "reddit": {
+          "enabled": false,
+          "reason": "Could become a critique question after subreddit rule checks and a real salvage frame."
+        }
+      },
+      "why": "Future differentiator: salvage as evidence/risk, not resource sparkle."
+    }
+  ]
+}

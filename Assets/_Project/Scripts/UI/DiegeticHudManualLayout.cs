@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -25,6 +26,10 @@ namespace Hecton8.UI
         // COLD ALLOC: DiegeticHudManualLayout[128] - registered diegetic HUD layouts for signal-driven rescale - owner: DiegeticHudManualLayout
         private static readonly DiegeticHudManualLayout[] s_registeredLayouts = new DiegeticHudManualLayout[128];
         private static int s_registeredCount;
+        private static uint s_lastRescaleFrame;
+        private static uint s_lastRescaleSourceHash;
+        private static uint s_lastRescaleFontScaleBits;
+        private static ushort s_lastRescaleReason;
 
         [SerializeField] private Transform[] targets;
         [SerializeField] private DiegeticHudLayoutAxis axis;
@@ -43,6 +48,10 @@ namespace Hecton8.UI
                 s_registeredLayouts[i] = null;
 
             s_registeredCount = 0;
+            s_lastRescaleFrame = 0u;
+            s_lastRescaleSourceHash = 0u;
+            s_lastRescaleFontScaleBits = 0u;
+            s_lastRescaleReason = 0;
         }
 
         private void OnEnable()
@@ -105,13 +114,48 @@ namespace Hecton8.UI
 
         public static void FlushGlobalRescaleRequests()
         {
+            ReadOnlySpan<UIRescaleRequestSignal> signals = SignalBus<UIRescaleRequestSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
             bool rebuild = false;
-            while (SignalBus<UIRescaleRequestSignal>.TryConsumeFrame(out UIRescaleRequestSignal _))
-                rebuild = true;
+            for (int i = 0; i < signals.Length; i++)
+                rebuild |= TryRecordRescaleSignal(in signals[i]);
 
             if (!rebuild)
                 return;
 
+            RebuildRegisteredLayouts();
+        }
+
+        public static void ApplyGlobalRescaleRequest(in UIRescaleRequestSignal signal)
+        {
+            if (!TryRecordRescaleSignal(in signal))
+                return;
+
+            RebuildRegisteredLayouts();
+        }
+
+        private static bool TryRecordRescaleSignal(in UIRescaleRequestSignal signal)
+        {
+            uint fontScaleBits = math.asuint(signal.FontScale);
+            if (signal.Frame == s_lastRescaleFrame &&
+                signal.SourceHash == s_lastRescaleSourceHash &&
+                fontScaleBits == s_lastRescaleFontScaleBits &&
+                signal.Reason == s_lastRescaleReason)
+            {
+                return false;
+            }
+
+            s_lastRescaleFrame = signal.Frame;
+            s_lastRescaleSourceHash = signal.SourceHash;
+            s_lastRescaleFontScaleBits = fontScaleBits;
+            s_lastRescaleReason = signal.Reason;
+            return true;
+        }
+
+        private static void RebuildRegisteredLayouts()
+        {
             for (int i = 0; i < s_registeredCount; i++)
             {
                 DiegeticHudManualLayout layout = s_registeredLayouts[i];

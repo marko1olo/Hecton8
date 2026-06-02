@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PDAConstructionTab.cs
+// HECTON-8 - PDAConstructionTab.cs
 // Dedicated PDA construction tab: module catalog, active buildable, cost/readiness,
 // and direct selection flow for the real PlayerBuilder backend.
 // ============================================================================
@@ -138,9 +138,9 @@ namespace Hecton8.UI
             playerPDA != null &&
             playerPDA.ActiveTab == constructionTabIndex;
 
-        // ══════════════════════════════════════════════════════════
-        //  CACHED STRING OPERATIONS — ZERO GC
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  CACHED STRING OPERATIONS - ZERO GC
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -891,21 +891,17 @@ namespace Hecton8.UI
         private void RegisterTick()
         {
             if (!Application.isPlaying)
-            {
-                if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
-                    _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
                 return;
-            }
 
             if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
         {
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
@@ -2093,7 +2089,7 @@ namespace Hecton8.UI
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = cost.item.PersistentHashId;
                 if (itemHashId == 0)
                     continue;
 

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teni Games Animated Avatar Preview</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      background: #071313;
+      color: #edf3e7;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #061111;
+    }
+
+    main {
+      width: min(1120px, calc(100vw - 32px));
+      display: grid;
+      gap: 20px;
+      padding: 28px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    figure {
+      margin: 0;
+      padding: 14px;
+      border: 1px solid rgba(147, 185, 176, 0.28);
+      background: rgba(1, 10, 10, 0.62);
+    }
+
+    img,
+    video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #020909;
+    }
+
+    figcaption {
+      margin-top: 10px;
+      color: #9fc2b9;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Teni Games / 天衣 animated avatar previews</h1>
+    <section class="grid">
+      <figure>
+        <img src="Teni_Games_DarkWave_Avatar_Animated_512.gif" alt="Clean animated Teni Games avatar">
+        <figcaption>Clean GIF loop. Use when motion is needed but glitch is too noisy.</figcaption>
+      </figure>
+      <figure>
+        <img src="Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif" alt="Subtle glitch animated Teni Games avatar">
+        <figcaption>Preferred social motion version: sine/sonar movement plus small horizontal glitch.</figcaption>
+      </figure>
+      <figure>
+        <video src="Teni_Games_DarkWave_Avatar_GlitchSubtle_512.mp4" autoplay muted loop playsinline></video>
+        <figcaption>Preferred compact MP4 for site/game UI.</figcaption>
+      </figure>
+      <figure>
+        <img src="Teni_Games_DarkWave_Avatar_GlitchSubtle_PhasePreview.png" alt="Glitch avatar motion phase preview">
+        <figcaption>Four phase stills for quick review without playing the GIF.</figcaption>
+      </figure>
+    </section>
+  </main>
+</body>
+</html>

@@ -406,9 +406,8 @@ namespace Hecton8.World.FloraAmbientSway
             TryColdBootstrapVault();
 
             _visualSyncSystem = new VisualSyncUploadSystem(this); // COLD ALLOC: VisualSyncUploadSystem[1] - dispatcher phase adapter - owner: FloraAmbientSwayRuntime.
-            _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
-            _visualRegistered = GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncSystem);
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+            TryRegisterDispatcherSystems();
         }
 
         private void Start()
@@ -435,17 +434,7 @@ namespace Hecton8.World.FloraAmbientSway
 
         public void OnServiceShutdown()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterDispatcherSystem(this);
-                _registered = false;
-            }
-
-            if (_visualRegistered)
-            {
-                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncSystem);
-                _visualRegistered = false;
-            }
+            TryUnregisterDispatcherSystems();
 
             if (_hotSwapRegistered)
             {
@@ -475,6 +464,14 @@ namespace Hecton8.World.FloraAmbientSway
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterDispatcherSystems();
+                if (currentService != null)
+                    TryRegisterDispatcherSystems();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -495,6 +492,35 @@ namespace Hecton8.World.FloraAmbientSway
             _tuningDirty = true;
             if (currentVault != null)
                 TryColdBootstrapVault();
+        }
+
+        private void TryRegisterDispatcherSystems()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_visualSyncSystem == null)
+                _visualSyncSystem = new VisualSyncUploadSystem(this); // COLD ALLOC: VisualSyncUploadSystem[1] - dispatcher phase adapter - owner: FloraAmbientSwayRuntime.
+
+            if (!_registered && GlobalRegistry.TryRegisterDispatcherSystem(this))
+                _registered = true;
+            if (!_visualRegistered && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncSystem))
+                _visualRegistered = true;
+        }
+
+        private void TryUnregisterDispatcherSystems()
+        {
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(this);
+                _registered = false;
+            }
+
+            if (_visualRegistered)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncSystem);
+                _visualRegistered = false;
+            }
         }
 
         private bool TryClaimRuntime()

@@ -4,7 +4,7 @@
 //
 // PURPOSE:
 //   - Single container for game-session parameters passed between
-//     New Game: 00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD.
+//     New Game: 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD.
 //     Load Game: 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD.
 //   - Replaces scattered static TargetSaveSlot strings and PlayerPrefs handoff.
 //   - Stores start mode, save slot, spawn mode, and intro context.
@@ -184,13 +184,37 @@ namespace Hecton8.Core
         private const string PersistKeySpawnMode = "GameStartContext.SpawnMode";
         private const string PersistKeyIntroSceneName = "GameStartContext.IntroSceneName";
         private const string PersistKeyLandingPresetName = "GameStartContext.LandingPresetName";
+        private const string PersistKeyTargetSceneName = "GameStartContext.TargetSceneName";
         private const string PersistKeyIssuedAtUtcTicks = "GameStartContext.IssuedAtUtcTicks";
         private const string PersistKeyIssuedAtUtcTicksHigh = "GameStartContext.IssuedAtUtcTicks.High";
         private const string PersistKeyIssuedAtUtcTicksLow = "GameStartContext.IssuedAtUtcTicks.Low";
-        private const double PersistedHandoffMaxAgeSeconds = 45d;
+        // Cold handoff must survive editor domain reloads and slow first-run shader/import work.
+        // It is still explicitly cleared after bootstrap consumes the session context.
+        private const double PersistedHandoffMaxAgeSeconds = 900d;
 
         /// <summary>Current game session context.</summary>
         public static GameStartContext Current { get; set; }
+
+        /// <summary>Cold handoff target scene used when bootstrap must recover the route.</summary>
+        public static string PendingTargetSceneName { get; private set; }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorPlayModeReset()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+        }
+
+        private static void OnEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                Reset();
+            }
+        }
+#endif
 
         /// <summary>
         /// Stores the active handoff context in memory and in a cold persistence
@@ -198,7 +222,18 @@ namespace Hecton8.Core
         /// </summary>
         public static void SetCurrent(GameStartContext context)
         {
+            SetCurrent(context, string.Empty);
+        }
+
+        /// <summary>
+        /// Stores the active handoff context and the scene selected by the menu.
+        /// </summary>
+        /// <param name="context">Game-start context.</param>
+        /// <param name="targetSceneName">Scene selected by the menu route.</param>
+        public static void SetCurrent(GameStartContext context, string targetSceneName)
+        {
             Current = context;
+            PendingTargetSceneName = targetSceneName ?? string.Empty;
             PersistCurrentContext();
         }
 
@@ -216,6 +251,42 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns the pending menu-selected scene without allocating or searching the scene.
+        /// </summary>
+        /// <param name="sceneName">Resolved pending scene name.</param>
+        /// <returns>True when a non-empty pending target is available.</returns>
+        public static bool TryGetPendingTargetSceneName(out string sceneName)
+        {
+            sceneName = PendingTargetSceneName;
+            if (!string.IsNullOrEmpty(sceneName))
+                return true;
+
+            GameStartContext restoredContext;
+            if (!TryRestorePersistedContext(out restoredContext))
+            {
+                sceneName = string.Empty;
+                return false;
+            }
+
+            sceneName = PendingTargetSceneName;
+            return !string.IsNullOrEmpty(sceneName);
+        }
+
+        /// <summary>
+        /// Reads and clears the cold scene handoff once bootstrap has accepted
+        /// ownership of the route. The game-start context remains available.
+        /// </summary>
+        public static bool TryConsumePendingTargetSceneName(out string sceneName)
+        {
+            if (!TryGetPendingTargetSceneName(out sceneName))
+                return false;
+
+            PendingTargetSceneName = string.Empty;
+            ClearPersistedHandoff();
+            return true;
+        }
+
+        /// <summary>
         /// Clears only the cold persisted handoff snapshot after bootstrap has
         /// consumed it, leaving the in-memory runtime context intact.
         /// </summary>
@@ -227,6 +298,7 @@ namespace Hecton8.Core
             PlayerPrefs.DeleteKey(PersistKeySpawnMode);
             PlayerPrefs.DeleteKey(PersistKeyIntroSceneName);
             PlayerPrefs.DeleteKey(PersistKeyLandingPresetName);
+            PlayerPrefs.DeleteKey(PersistKeyTargetSceneName);
             PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicks);
             PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicksHigh);
             PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicksLow);
@@ -239,6 +311,7 @@ namespace Hecton8.Core
         public static void Reset()
         {
             Current = default;
+            PendingTargetSceneName = string.Empty;
             ClearPersistedHandoff();
         }
 
@@ -266,6 +339,7 @@ namespace Hecton8.Core
             PlayerPrefs.SetInt(PersistKeySpawnMode, (int)Current.SpawnMode);
             PlayerPrefs.SetString(PersistKeyIntroSceneName, Current.IntroSceneName ?? string.Empty);
             PlayerPrefs.SetString(PersistKeyLandingPresetName, Current.LandingPresetName ?? string.Empty);
+            PlayerPrefs.SetString(PersistKeyTargetSceneName, PendingTargetSceneName ?? string.Empty);
             long issuedAtTicks = DateTime.UtcNow.Ticks;
             PlayerPrefs.SetInt(PersistKeyIssuedAtUtcTicksHigh, (int)(issuedAtTicks >> 32));
             PlayerPrefs.SetInt(PersistKeyIssuedAtUtcTicksLow, unchecked((int)(issuedAtTicks & 0xFFFFFFFFL)));
@@ -318,6 +392,7 @@ namespace Hecton8.Core
             }
 
             Current = context;
+            PendingTargetSceneName = PlayerPrefs.GetString(PersistKeyTargetSceneName, string.Empty);
             return true;
         }
 

@@ -1103,27 +1103,27 @@ namespace Hecton8.UI
 
         private void TryRegisterTickHandlers()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandlers()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
         }

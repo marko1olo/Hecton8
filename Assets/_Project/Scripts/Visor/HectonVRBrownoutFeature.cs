@@ -406,8 +406,8 @@ namespace Hecton8.Visor
         private void OnEnable()
         {
             CacheGraphicsCapabilitiesCold();
-            TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
+            TryRegisterLateFrameTickable();
             CachePresentationGlobalsLate();
         }
 
@@ -430,15 +430,21 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             CacheGraphicsCapabilitiesCold();
-            _pass.PrepareResources();
-            TryRegisterLateFrameTickable();
+            if (Application.isPlaying)
+                _pass.PrepareResources();
+            else
+                _pass.Dispose();
             TryRegisterHotSwapListener();
+            TryRegisterLateFrameTickable();
             CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (!Application.isPlaying)
+                return;
+
             if (settings == null || _pass == null || _material == null)
                 return;
 
@@ -450,6 +456,9 @@ namespace Hecton8.Visor
 
             Camera renderCamera = renderingData.cameraData.camera;
             if (!TryBuildRuntimeState(renderCamera, renderingData.cameraData.xr, out RuntimeState runtimeState))
+                return;
+
+            if (!_pass.PrepareResources())
                 return;
 
             _pass.Setup(settings, _material, runtimeState);
@@ -526,7 +535,7 @@ namespace Hecton8.Visor
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_lateFrameRegistered)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

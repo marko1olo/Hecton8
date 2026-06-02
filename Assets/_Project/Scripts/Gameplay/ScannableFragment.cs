@@ -9,7 +9,7 @@
 //   • UnityEvents for scan completion.
 //
 // ZERO GC:
-//   • No Update() — event-driven via OnScan().
+//   • No Update loop — event-driven via OnScan().
 //   • Cached Transform, Renderer.
 //   • MaterialPropertyBlock for VFX.
 //   • Pre-cached interaction text.
@@ -63,6 +63,10 @@ namespace Hecton8.Gameplay
         private const byte QuarterLoreStageBit = 1 << 0;
         private const byte HalfLoreStageBit = 1 << 1;
         private const byte FinalLoreStageBit = 1 << 2;
+        private const byte PendingScanEventStarted = 1 << 0;
+        private const byte PendingScanEventStopped = 1 << 1;
+        private const byte PendingScanEventComplete = 1 << 2;
+        private const byte PendingScanEventProgress = 1 << 3;
         private const string DefaultResearchCategory = "Research";
         private const string DefaultResearchSummary = "Scientific scan archived to the suit research ledger.";
 
@@ -82,6 +86,16 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Optional scientific research contract that owns scan duration, lore unlock stages, and reward hashes.")]
         [SerializeField] private ResearchDataTemplate researchData;
+
+        [Header("── Applied Lore ────────────────────────────────")]
+        [Tooltip("Optional AppliedContent packet unlocked when scan progress crosses 25%.")]
+        [SerializeField] private uint appliedLoreQuarterPacketHash;
+
+        [Tooltip("Optional AppliedContent packet unlocked when scan progress crosses 50%.")]
+        [SerializeField] private uint appliedLoreHalfPacketHash;
+
+        [Tooltip("Optional AppliedContent packet unlocked when scan completes.")]
+        [SerializeField] private uint appliedLoreFinalPacketHash;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — VISUALS
@@ -173,10 +187,13 @@ namespace Hecton8.Gameplay
         private bool _pendingFragmentDisable;
         private bool _pendingRendererEnableDirty;
         private bool _pendingRendererEnabled;
+        private byte _pendingScanEventMask;
         private float _pendingScanVisualProgress;
         private float _pendingScanVisualPulse;
+        private float _pendingProgressEventValue;
         private Vector3 _pendingCompleteParticlePosition;
         private Mesh _cachedSharedMesh;
+        private string _pendingCompleteEventUnlockId;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -234,7 +251,7 @@ namespace Hecton8.Gameplay
         public uint DiscoveryHash => _discoveryHash;
 
         /// <summary>Resolved scan duration in seconds.</summary>
-        public float ScanDurationSeconds => ResolveScanDuration();
+        public float ScanDurationSeconds => researchData != null ? researchData.ScanDuration : Mathf.Max(0.5f, scanTime);
 
         /// <summary>Cold-cached source mesh used by archaeology reconstruction.</summary>
         public Mesh CachedSharedMesh => _cachedSharedMesh;
@@ -269,6 +286,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            RegisterLateFrameTickingCold();
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshDiscoveryHash();
@@ -283,6 +301,7 @@ namespace Hecton8.Gameplay
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
+            ClearQueuedLateFrameWork();
             StopLateFrameTicking();
             UnregisterScanRenderProxy();
             LocalizationEvents.UnregisterLanguageListener(this);
@@ -293,6 +312,7 @@ namespace Hecton8.Gameplay
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
+            ClearQueuedLateFrameWork();
             StopLateFrameTicking();
         }
 
@@ -381,8 +401,7 @@ namespace Hecton8.Gameplay
             // Update visuals
             QueueScanVisuals(currentProgressNormalized, AdvanceScanPulse(safeProgressDelta));
 
-            // Fire progress event
-            OnProgressChanged?.Invoke(currentProgressNormalized);
+            QueueProgressChangedEvent(currentProgressNormalized);
 
             // Check for completion
             if (_currentProgress >= scanDuration)
@@ -406,8 +425,7 @@ namespace Hecton8.Gameplay
             // Reset visuals
             QueueScanVisualReset();
 
-            // Fire stopped event
-            OnScanStopped?.Invoke();
+            QueueScanStoppedEvent();
         }
 
         /// <summary>
@@ -432,7 +450,7 @@ namespace Hecton8.Gameplay
             _currentProgress = math.min(restoredProgress, duration);
             TryUnlockLoreStages(previousProgressNormalized, ProgressNormalized);
             QueueScanVisuals(ProgressNormalized, AdvanceScanPulse(0f));
-            OnProgressChanged?.Invoke(ProgressNormalized);
+            QueueProgressChangedEvent(ProgressNormalized);
         }
 
         /// <summary>
@@ -467,8 +485,7 @@ namespace Hecton8.Gameplay
 
             QueueScanAudio(complete: false);
 
-            // Fire started event
-            OnScanStarted?.Invoke();
+            QueueScanStartedEvent();
         }
 
         private void CompleteScan()
@@ -480,12 +497,10 @@ namespace Hecton8.Gameplay
 
             QueueCompletePresentation();
 
-            // Fire completion event with unlock ID
-            OnScanComplete?.Invoke(unlockId);
+            QueueScanCompleteEvent(unlockId);
             EmitResearchDiscoveryEvent();
 
-            // Fire final progress event
-            OnProgressChanged?.Invoke(1f);
+            QueueProgressChangedEvent(1f);
 
             // Disable the fragment
             QueueFragmentDisable();
@@ -553,6 +568,9 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (!HasPendingLateFrameWork())
+                return;
+
             if (_pendingScanProxyDirty)
             {
                 _pendingScanProxyDirty = false;
@@ -610,7 +628,7 @@ namespace Hecton8.Gameplay
                 DisableFragment();
             }
 
-            StopLateFrameTicking();
+            FlushQueuedScanEvents();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -619,6 +637,7 @@ namespace Hecton8.Gameplay
 
         private void ResetState()
         {
+            ClearQueuedLateFrameWork();
             QueueScanRenderProxyState(false);
             _state = canBeScanned ? FragmentState.Scannable : FragmentState.Locked;
             _currentProgress = 0f;
@@ -669,7 +688,87 @@ namespace Hecton8.Gameplay
             StartLateFrameTicking();
         }
 
+        private bool HasPendingLateFrameWork()
+        {
+            return _pendingScanProxyDirty ||
+                   _pendingScanVisualDirty ||
+                   _pendingRendererEnableDirty ||
+                   _pendingScanningAudio ||
+                   _pendingCompleteAudio ||
+                   _pendingCompleteParticles ||
+                   _pendingFragmentDisable ||
+                   _pendingScanEventMask != 0;
+        }
+
+        private void QueueScanStartedEvent()
+        {
+            _pendingScanEventMask |= PendingScanEventStarted;
+        }
+
+        private void QueueScanStoppedEvent()
+        {
+            _pendingScanEventMask |= PendingScanEventStopped;
+        }
+
+        private void QueueScanCompleteEvent(string completedUnlockId)
+        {
+            _pendingCompleteEventUnlockId = completedUnlockId ?? string.Empty;
+            _pendingScanEventMask |= PendingScanEventComplete;
+        }
+
+        private void QueueProgressChangedEvent(float normalizedProgress)
+        {
+            _pendingProgressEventValue = math.saturate(normalizedProgress);
+            _pendingScanEventMask |= PendingScanEventProgress;
+        }
+
+        private void FlushQueuedScanEvents()
+        {
+            byte mask = _pendingScanEventMask;
+            if (mask == 0)
+                return;
+
+            float progress = _pendingProgressEventValue;
+            string completedUnlockId = _pendingCompleteEventUnlockId;
+            _pendingScanEventMask = 0;
+            _pendingProgressEventValue = 0f;
+            _pendingCompleteEventUnlockId = null;
+
+            if ((mask & PendingScanEventStarted) != 0)
+                OnScanStarted?.Invoke();
+            if ((mask & PendingScanEventProgress) != 0)
+                OnProgressChanged?.Invoke(progress);
+            if ((mask & PendingScanEventComplete) != 0)
+                OnScanComplete?.Invoke(completedUnlockId ?? string.Empty);
+            if ((mask & PendingScanEventStopped) != 0)
+                OnScanStopped?.Invoke();
+        }
+
+        private void ClearQueuedLateFrameWork()
+        {
+            _pendingScanProxyActive = false;
+            _pendingScanProxyDirty = false;
+            _pendingScanVisualProgress = 0f;
+            _pendingScanVisualPulse = 0f;
+            _pendingScanVisualDirty = false;
+            _pendingScanVisualReset = false;
+            _pendingRendererEnableDirty = false;
+            _pendingScanningAudio = false;
+            _pendingCompleteAudio = false;
+            _pendingCompleteParticles = false;
+            _pendingFragmentDisable = false;
+            _pendingCompleteParticlePosition = default;
+            _pendingScanEventMask = 0;
+            _pendingProgressEventValue = 0f;
+            _pendingCompleteEventUnlockId = null;
+        }
+
         private void StartLateFrameTicking()
+        {
+            // Registration is lifecycle-cold in OnEnable. Hot scan/event paths only set fixed pending fields.
+        }
+
+        private void RegisterLateFrameTickingCold()
         {
             if (_lateFrameRegistered || !Application.isPlaying)
                 return;
@@ -911,8 +1010,11 @@ namespace Hecton8.Gameplay
 
         private void TryUnlockLoreStages(float previousProgressNormalized, float currentProgressNormalized)
         {
-            LoreDatabaseManager loreDatabase = _loreDatabase;
-            if (researchData == null || loreDatabase == null)
+            bool hasResearchLoreStages = researchData != null && _loreDatabase != null;
+            bool hasAppliedLoreStages = appliedLoreQuarterPacketHash != 0u ||
+                                        appliedLoreHalfPacketHash != 0u ||
+                                        appliedLoreFinalPacketHash != 0u;
+            if (!hasResearchLoreStages && !hasAppliedLoreStages)
                 return;
 
             TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 0.25f, QuarterLoreStageBit, 0);
@@ -940,6 +1042,36 @@ namespace Hecton8.Gameplay
                 packedBits != 0UL)
             {
                 _loreDatabase?.UnlockByPackedBits(packedBits);
+            }
+
+            uint packetHash = ResolveAppliedLoreStagePacketHash(stageIndex);
+            if (packetHash != 0u)
+            {
+                uint sourceId = _discoveryHash != 0u ? _discoveryHash : H8AppliedLoreRuntime.UnlockSourceId;
+                AbsoluteUniversePosition aup = _transform != null
+                    ? AbsoluteUniversePosition.FromRuntimePosition(_transform.position)
+                    : AbsoluteUniversePosition.Invalid();
+                H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(
+                    packetHash,
+                    in aup,
+                    sourceId,
+                    0,
+                    (byte)ScanEntryKind.Scannable);
+            }
+        }
+
+        private uint ResolveAppliedLoreStagePacketHash(int stageIndex)
+        {
+            switch (stageIndex)
+            {
+                case 0:
+                    return appliedLoreQuarterPacketHash;
+                case 1:
+                    return appliedLoreHalfPacketHash;
+                case 2:
+                    return appliedLoreFinalPacketHash;
+                default:
+                    return 0u;
             }
         }
     }

@@ -52,10 +52,12 @@ namespace Hecton8.UI
         private const int EdgeRotationDownRight = 5;
         private const int EdgeRotationUpLeft = 6;
         private const int EdgeRotationDownLeft = 7;
+        private const uint WaypointLabelHashSeed = 2166136261u;
+        private const uint WaypointLabelHashPrime = 16777619u;
 
         private static readonly uint _WaypointSolveBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HUD_AR_WAYPOINT_SOLVE_OVER_BUDGET"));
         private static readonly uint _WaypointSolveBudgetContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ARWaypointOverlay.Solve"));
-        private static readonly uint DefaultExternalLabelHash = unchecked((uint)Hecton.Localization.LocHash.Compute(DefaultExternalLabel));
+        private static readonly uint DefaultExternalLabelHash = ComputeWaypointLabelHash(DefaultExternalLabel.AsSpan());
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
         private static ARWaypointOverlay s_activeRuntimeInstance;
@@ -1270,10 +1272,7 @@ namespace Hecton8.UI
             if (_registeredTick || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredTick = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void RegisterToSlowTickManager()
@@ -1281,10 +1280,7 @@ namespace Hecton8.UI
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1292,7 +1288,7 @@ namespace Hecton8.UI
             if (!_registeredTick)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredTick = false;
         }
 
@@ -1301,7 +1297,7 @@ namespace Hecton8.UI
             if (!_registeredSlowTick)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredSlowTick = false;
         }
 
@@ -1511,7 +1507,19 @@ namespace Hecton8.UI
         {
             return label.Length <= 0
                 ? DefaultExternalLabelHash
-                : unchecked((uint)Hecton.Localization.LocHash.Compute(label));
+                : ComputeWaypointLabelHash(label);
+        }
+
+        private static uint ComputeWaypointLabelHash(ReadOnlySpan<char> label)
+        {
+            uint hash = WaypointLabelHashSeed;
+            for (int i = 0; i < label.Length; i++)
+            {
+                hash ^= label[i];
+                hash *= WaypointLabelHashPrime;
+            }
+
+            return hash;
         }
 
         private static int ResolveRenderedLabelLength(int sourceLength)

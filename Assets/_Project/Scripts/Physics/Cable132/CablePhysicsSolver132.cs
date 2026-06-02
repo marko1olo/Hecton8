@@ -1185,7 +1185,7 @@ namespace Hecton8.Physics
         public static GraphicsBuffer CreateSplineIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 VerletCableLayout.TetherSplineIndirectArgsStrideBytes);

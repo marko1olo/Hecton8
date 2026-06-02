@@ -19,6 +19,7 @@ namespace Hecton8.Core.Bridge
         private static int s_inputRequestCount;
         private static int s_prefabRequestCount;
         private static bool s_registered;
+        private static bool s_hotSwapRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -27,6 +28,7 @@ namespace Hecton8.Core.Bridge
             ClearInputRequests();
             ClearPrefabRequests();
             s_registered = false;
+            s_hotSwapRegistered = false;
         }
 
         public static bool RequestDesignSync(
@@ -109,14 +111,48 @@ namespace Hecton8.Core.Bridge
 
         private static bool RegisterRunnerCold()
         {
-            if (s_registered)
-                return true;
-
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return false;
 
-            s_registered = GlobalRegistry.TryRegisterLateFrameTickable(s_runner, PriorityLayer.Core);
-            return s_registered;
+            if (!s_registered)
+                s_registered = GlobalRegistry.TryRegisterLateFrameTickable(s_runner, PriorityLayer.Core);
+
+            if (!s_hotSwapRegistered)
+                s_hotSwapRegistered = GlobalRegistry.IsHotSwapListenerRegistered(s_runner) ||
+                                      GlobalRegistry.TryRegisterHotSwapListener(s_runner);
+
+            return s_registered && s_hotSwapRegistered;
+        }
+
+        private static bool HasPendingRequests()
+        {
+            return s_designRequestCount > 0 ||
+                   s_inputRequestCount > 0 ||
+                   s_prefabRequestCount > 0;
+        }
+
+        private static void HandleGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ClearDesignRequests();
+                ClearInputRequests();
+                ClearPrefabRequests();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MacroDatabase)
+            {
+                ClearDesignRequests();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                s_registered = false;
+                if (HasPendingRequests())
+                    RegisterRunnerCold();
+            }
         }
 
         private static void FlushLateFrame()
@@ -241,11 +277,19 @@ namespace Hecton8.Core.Bridge
             }
         }
 
-        private sealed class Runner : ILateFrameTickable
+        private sealed class Runner : ILateFrameTickable, IGlobalRegistryHotSwapListener
         {
             public void LateFrameTick()
             {
                 FlushLateFrame();
+            }
+
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                HandleGlobalRegistryServiceReplaced(serviceSlot);
             }
         }
     }

@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.AbyssalScatter1614.Editor",
+    "rootNamespace": "Hecton8.Editor.Generators.World",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -26,18 +26,26 @@ namespace Hecton8.Power
         public const uint NodeFlagFlooded = 1u << 4;
         public const uint NodeFlagBrownout = 1u << 5;
         public const uint NodeFlagOffline = 1u << 6;
+        public const uint NodeFlagCascadeShed = 1u << 7;
+        public const uint NodeFlagOverloaded = 1u << 8;
         public const uint EdgeFlagSealed = 1u << 0;
         public const uint EdgeFlagDamaged = 1u << 1;
         public const uint EdgeFlagShortCircuit = 1u << 2;
+        public const uint EdgeFlagThermalTrip = 1u << 3;
+        public const uint EdgeFlagSparking = 1u << 4;
         public const uint ProfileFlagGenerator = 1u << 0;
         public const uint ProfileFlagBattery = 1u << 1;
         public const uint TelemetryReasonNonFinite = 1u << 0;
         public const uint TelemetryReasonBrownout = 1u << 1;
+        public const uint TelemetryReasonCascadeShed = 1u << 2;
+        public const uint TelemetryReasonSparkContact = 1u << 3;
         public const float MinimumConductance = 0.000001f;
         public const float MaximumConductance = 4096f;
         public const float MaximumNetCurrentAbs = 1048576f;
         public const float MaximumTickDeltaSeconds = 1f;
         public const float BrownoutThreshold01 = 0.20f;
+        public const float CascadeShedThreshold01 = 0.10f;
+        public const float SparkLeakConductance = 0.00025f;
     }
 
     public static class PowerGridBufferIds
@@ -516,14 +524,23 @@ namespace Hecton8.Power
 
         private float ResolveConductance(in PowerGridEdgeDTO edge)
         {
-            if ((edge.Flags & (PowerGridJacobiConstants.EdgeFlagSealed | PowerGridJacobiConstants.EdgeFlagDamaged | PowerGridJacobiConstants.EdgeFlagShortCircuit)) != 0u)
-                return 0f;
             uint sourceFlags = Nodes[edge.SourceNodeIndex].Flags;
             uint destinationFlags = Nodes[edge.DestinationNodeIndex].Flags;
-            if (((sourceFlags | destinationFlags) & PowerGridJacobiConstants.NodeFlagDamaged) != 0u)
-                return 0f;
-
-            return math.clamp(math.select(0f, edge.Conductance, math.isfinite(edge.Conductance)), 0f, PowerGridJacobiConstants.MaximumConductance);
+            uint hardEdgeMask = PowerGridJacobiConstants.EdgeFlagSealed |
+                                PowerGridJacobiConstants.EdgeFlagShortCircuit |
+                                PowerGridJacobiConstants.EdgeFlagThermalTrip;
+            uint hardNodeMask = PowerGridJacobiConstants.NodeFlagDamaged |
+                                PowerGridJacobiConstants.NodeFlagOffline;
+            bool hardBlocked = (edge.Flags & hardEdgeMask) != 0u ||
+                               ((sourceFlags | destinationFlags) & hardNodeMask) != 0u;
+            bool damagedContact = (edge.Flags & PowerGridJacobiConstants.EdgeFlagDamaged) != 0u;
+            bool sparkingContact = (edge.Flags & PowerGridJacobiConstants.EdgeFlagSparking) != 0u;
+            float baseConductance = math.clamp(math.select(0f, edge.Conductance, math.isfinite(edge.Conductance)), 0f, PowerGridJacobiConstants.MaximumConductance);
+            float contactMask = math.select(1f, 0f, damagedContact);
+            float hardMask = math.select(1f, 0f, hardBlocked);
+            float sparkLeakConductance = PowerGridJacobiConstants.SparkLeakConductance *
+                                         math.select(0f, 1f, sparkingContact & !hardBlocked);
+            return math.max(baseConductance * contactMask * hardMask, sparkLeakConductance);
         }
     }
 
@@ -554,12 +571,9 @@ namespace Hecton8.Power
 
             ref PowerNodeDTO node = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + index);
             uint flags = node.Flags;
-            if ((flags & (PowerGridJacobiConstants.NodeFlagOffline | PowerGridJacobiConstants.NodeFlagDamaged)) != 0u)
-            {
-                node.Potential = 0f;
-                BackPotential[index] = 0f;
-                return;
-            }
+            bool hardOffline = (flags & (PowerGridJacobiConstants.NodeFlagOffline | PowerGridJacobiConstants.NodeFlagDamaged)) != 0u;
+            bool sourceNode = (flags & PowerGridJacobiConstants.NodeFlagSource) != 0u;
+            float nodeActiveMask = math.select(1f, 0f, hardOffline);
 
             int edgeReadLimit = math.min(EdgeDestinations.Length, EdgeConductance.Length);
             int edgeStart = math.clamp(NodeEdgeOffsets[index], 0, edgeReadLimit);
@@ -577,16 +591,17 @@ namespace Hecton8.Power
                 float conductance = math.clamp(math.select(0f, EdgeConductance[edgeCursor], math.isfinite(EdgeConductance[edgeCursor])), 0f, PowerGridJacobiConstants.MaximumConductance);
                 conductance *= math.select(0f, 1f, validDestination);
                 conductance *= math.select(1f, 0f, conductance <= PowerGridJacobiConstants.MinimumConductance);
+                conductance *= nodeActiveMask;
 
                 weightedPotential += conductance * Sanitize01(FrontPotential[safeDestination]);
                 conductanceSum += conductance;
             }
 
-            float generatorRate = math.select(0f, 1f, (flags & PowerGridJacobiConstants.NodeFlagSource) != 0u);
+            float generatorRate = math.select(0f, 1f, sourceNode) * nodeActiveMask;
             float demandRaw = DemandRate.IsCreated && (uint)index < (uint)DemandRate.Length
                 ? DemandRate[index]
                 : 0f;
-            float demandRate = math.saturate(math.max(0f, math.select(0f, demandRaw, math.isfinite(demandRaw))));
+            float demandRate = math.saturate(math.max(0f, math.select(0f, demandRaw, math.isfinite(demandRaw)))) * nodeActiveMask;
             float targetPotential = (weightedPotential + generatorRate - demandRate) * math.rcp(math.max(conductanceSum + 1f, 1f));
             float currentPotential = Sanitize01(FrontPotential[index]);
             float q = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
@@ -594,9 +609,19 @@ namespace Hecton8.Power
             float smoothing = math.clamp(smoothingInput * math.lerp(0.35f, 1f, q), 0.05f, 1f);
             float solvedPotential = currentPotential + (targetPotential - currentPotential) * smoothing;
             solvedPotential = Sanitize01(solvedPotential);
+            bool cascadeShed = !sourceNode &&
+                                demandRate > PowerGridJacobiConstants.MinimumConductance &&
+                                solvedPotential < PowerGridJacobiConstants.CascadeShedThreshold01;
+            solvedPotential = math.select(solvedPotential, 0f, hardOffline | cascadeShed);
+            bool brownout = !hardOffline &&
+                            solvedPotential < PowerGridJacobiConstants.BrownoutThreshold01;
+            uint resolvedFlags = flags & ~(PowerGridJacobiConstants.NodeFlagBrownout | PowerGridJacobiConstants.NodeFlagCascadeShed);
+            resolvedFlags = math.select(resolvedFlags, resolvedFlags | PowerGridJacobiConstants.NodeFlagBrownout, brownout);
+            resolvedFlags = math.select(resolvedFlags, resolvedFlags | PowerGridJacobiConstants.NodeFlagCascadeShed, cascadeShed);
+            resolvedFlags = math.select(resolvedFlags, flags & ~(PowerGridJacobiConstants.NodeFlagBrownout | PowerGridJacobiConstants.NodeFlagCascadeShed), hardOffline);
 
             node.Potential = solvedPotential;
-            node.Flags = math.select(flags & ~PowerGridJacobiConstants.NodeFlagBrownout, flags | PowerGridJacobiConstants.NodeFlagBrownout, solvedPotential < PowerGridJacobiConstants.BrownoutThreshold01);
+            node.Flags = resolvedFlags;
             BackPotential[index] = solvedPotential;
         }
 
@@ -763,6 +788,7 @@ namespace Hecton8.Power
             float minPotential = nodeLimit > 0 ? 1f : 0f;
             float maxPotential = 0f;
             int brownoutCount = 0;
+            int cascadeShedCount = 0;
             uint stateHash = 2166136261u;
             uint reasonFlags = ReasonFlags;
 
@@ -784,14 +810,19 @@ namespace Hecton8.Power
                 maxPotential = math.max(maxPotential, potential);
                 if (potential < PowerGridJacobiConstants.BrownoutThreshold01)
                     brownoutCount++;
+                if ((node.Flags & PowerGridJacobiConstants.NodeFlagCascadeShed) != 0u)
+                    cascadeShedCount++;
 
                 stateHash = Mix(stateHash, node.NodeHash);
                 stateHash = Mix(stateHash, math.asuint(potential));
                 stateHash = Mix(stateHash, math.asuint(demand));
+                stateHash = Mix(stateHash, node.Flags & (PowerGridJacobiConstants.NodeFlagBrownout | PowerGridJacobiConstants.NodeFlagCascadeShed));
             }
 
             if (brownoutCount > 0)
                 reasonFlags |= PowerGridJacobiConstants.TelemetryReasonBrownout;
+            if (cascadeShedCount > 0)
+                reasonFlags |= PowerGridJacobiConstants.TelemetryReasonCascadeShed;
 
             float averagePotential = nodeLimit > 0
                 ? potentialSum * math.rcp(math.max(1, nodeLimit))

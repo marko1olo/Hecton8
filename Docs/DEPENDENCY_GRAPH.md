@@ -1,7 +1,7 @@
 ﻿# Dependency Graph
 
-Date: 2026-05-28
-Status: GENERATED ARTIFACT STUB
+Date: 2026-06-02
+Status: GENERATED ARTIFACT STUB / GENERATED COUNTS STALE
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / GENERATED_SOURCE_INDEX
 
@@ -44,7 +44,13 @@ python Tools/AtlasCheck.py --atlas Docs/Generated/DEPENDENCY_GRAPH.md
 
 - `python Tools/BuildArchitectureAtlas.py` rewrote `Docs/Generated/DEPENDENCY_GRAPH.md`, `.json`, and `.cache.json`.
 - `python Tools/AtlasCheck.py` returned `ATLAS_CHECK_PASS references=5807`.
-- Generated graph reports `220` asmdefs scanned and `167` first-party asmdefs under `Assets/_Project`.
+- Generated graph reported `220` asmdefs scanned and `167` first-party asmdefs under `Assets/_Project`; those generated counts are historical until the graph is regenerated.
+
+Current source-backed static filesystem check:
+
+- `rg --files Assets/_Project -g '*.asmdef'` reports `171` first-party asmdefs.
+- Generated graph regeneration was not run in this pass; generated graph counts remain historical until `BuildArchitectureAtlas.py` is rerun.
+- For current onboarding, use `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` before citing graph counts.
 
 This is static reference integrity only. It does not prove compile, Unity import, Play Mode, profiler, GC, player build, save/load, platform, or visual correctness.
 

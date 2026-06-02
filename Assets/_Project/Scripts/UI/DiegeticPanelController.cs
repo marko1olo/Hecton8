@@ -96,6 +96,23 @@ namespace Hecton8.UI
         /// </summary>
         [FieldOffset(20)]
         public float Timestamp;
+
+        public static DiegeticPanelInputEventType ResolvePrimaryPointerAction(DiegeticPanelInputEventType eventType)
+        {
+            if ((eventType & DiegeticPanelInputEventType.Up) != 0)
+                return DiegeticPanelInputEventType.Up;
+
+            if ((eventType & DiegeticPanelInputEventType.Down) != 0)
+                return DiegeticPanelInputEventType.Down;
+
+            if ((eventType & DiegeticPanelInputEventType.Hold) != 0)
+                return DiegeticPanelInputEventType.Hold;
+
+            if ((eventType & DiegeticPanelInputEventType.Hover) != 0)
+                return DiegeticPanelInputEventType.Hover;
+
+            return DiegeticPanelInputEventType.None;
+        }
     }
 
     /// <summary>
@@ -243,7 +260,7 @@ namespace Hecton8.UI
             public float LastInteractTime;
         }
 
-        [Header("── References ─────────────────────────────")]
+        [Header("-- References -----------------------------")]
         [SerializeField, Tooltip("World-space canvas driven by this panel controller.")]
         private Canvas targetCanvas;
 
@@ -280,11 +297,11 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Optional component implementing IPanelPowerSource to drive panel power visuals.")]
         private MonoBehaviour panelPowerSource;
 
-        [Header("── Identity ───────────────────────────────")]
+        [Header("-- Identity -------------------------------")]
         [SerializeField, Tooltip("Stable panel identifier forwarded to receivers and power sources.")]
         private int panelId = 1;
 
-        [Header("── Interaction ────────────────────────────")]
+        [Header("-- Interaction ----------------------------")]
         [SerializeField, Tooltip("Maximum world-space distance for cursor interaction.")]
         private float maxInteractionDistance = DefaultMaxInteractionDistance;
 
@@ -322,7 +339,7 @@ namespace Hecton8.UI
         [SerializeField, Min(0.001f), Tooltip("Maximum panel-local Z distance that keeps the physical cursor hovering over the panel.")]
         private float fingerHoverDistance = DefaultFingerHoverDistance;
 
-        [Header("── Render Texture ────────────────────────")]
+        [Header("-- Render Texture ------------------------")]
         [SerializeField, Tooltip("Enables the RT-backed panel path for physical screen meshes.")]
         private bool enableRenderTexturePresentation = true;
 
@@ -350,7 +367,7 @@ namespace Hecton8.UI
         [SerializeField, Range(MinPhosphorDecay, MaxPhosphorDecay), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
         private float phosphorDecay = DefaultPhosphorDecay;
 
-        [Header("── Occlusion ─────────────────────────────")]
+        [Header("-- Occlusion -----------------------------")]
         [SerializeField, Tooltip("Enables depth-fade integration on the panel output material.")]
         private bool enableDepthOcclusion = true;
 
@@ -367,7 +384,7 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Layer assigned to the world-space canvas hierarchy when RT presentation is active.")]
         private int panelCanvasLayer = 5;
 
-        [Header("── Proxy Light ─────────────────────────")]
+        [Header("-- Proxy Light -------------------------")]
         [SerializeField, Tooltip("Registers a lightweight diegetic proxy light while the panel is powered.")]
         private bool enableProxyLight = true;
 
@@ -383,7 +400,7 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, MaxProxyLightFlicker), Tooltip("Small unscaled flicker amount synchronized with panel power.")]
         private float proxyLightFlicker = DefaultProxyLightFlicker;
 
-        // COLD ALLOC: DiegeticPanelInputEvent[16] — fixed panel input ring buffer — owner: DiegeticPanelController
+        // COLD ALLOC: DiegeticPanelInputEvent[16] - fixed panel input ring buffer - owner: DiegeticPanelController
         private readonly DiegeticPanelInputEvent[] _inputEvents = new DiegeticPanelInputEvent[InputEventCapacity];
 
         private PanelData _panelData;
@@ -651,41 +668,43 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            AdvancePanelInteractionPresentation(SystemDispatcher.CurrentFrameDeltaTime);
-
             _applyingLateFramePresentation = true;
-            if (_pendingPanelViewEnabledDirty)
+            try
             {
-                _pendingPanelViewEnabledDirty = false;
-                ApplyPanelViewEnabled(_pendingPanelViewEnabled);
+                AdvancePanelInteractionPresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
+                if (_pendingPanelViewEnabledDirty)
+                {
+                    _pendingPanelViewEnabledDirty = false;
+                    ApplyPanelViewEnabled(_pendingPanelViewEnabled);
+                }
+
+                if (_pendingCursorPoseDirty && cursorTransform != null)
+                {
+                    _pendingCursorPoseDirty = false;
+                    cursorTransform.SetPositionAndRotation(_pendingCursorWorldPosition, _pendingCursorWorldRotation);
+                }
+
+                if (_pendingCursorVisibilityDirty)
+                {
+                    _pendingCursorVisibilityDirty = false;
+                    ApplyCursorVisible(_pendingCursorVisible);
+                }
+
+                FlushQueuedProxyLightRegistration();
+
+                if (_presentationPausedByOwner)
+                    return;
+
+                FlushQueuedMaterialState();
+
+                if (ShouldUsePhosphorDecay() && _panelRenderTexture != null)
+                    ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
             }
-
-            if (_pendingCursorPoseDirty && cursorTransform != null)
-            {
-                _pendingCursorPoseDirty = false;
-                cursorTransform.SetPositionAndRotation(_pendingCursorWorldPosition, _pendingCursorWorldRotation);
-            }
-
-            if (_pendingCursorVisibilityDirty)
-            {
-                _pendingCursorVisibilityDirty = false;
-                ApplyCursorVisible(_pendingCursorVisible);
-            }
-
-            FlushQueuedProxyLightRegistration();
-
-            if (_presentationPausedByOwner)
+            finally
             {
                 _applyingLateFramePresentation = false;
-                return;
             }
-
-            FlushQueuedMaterialState();
-
-            if (ShouldUsePhosphorDecay() && _panelRenderTexture != null)
-                ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
-
-            _applyingLateFramePresentation = false;
         }
 
         /// <inheritdoc />
@@ -788,14 +807,23 @@ namespace Hecton8.UI
         /// <returns>True when the panel basis is valid.</returns>
         public bool TryProjectCanvasPointToWorld(float2 canvasPosition, float surfaceOffset, out Vector3 worldPosition)
         {
+            worldPosition = default;
             RefreshPanelData(forceRefresh: false);
 
-            float2 uv = math.clamp(canvasPosition * _panelData.InvReferenceSize, 0f, 1f);
+            if (!IsPanelProjectionDataFinite() || !IsCanvasPointInsideReference(canvasPosition))
+                return false;
+
+            float2 uv = canvasPosition * _panelData.InvReferenceSize;
 
             float2 localXY = (uv * _panelData.CanvasSize) - _panelData.HalfSize;
 
-            float3 localPoint = new float3(localXY.x, localXY.y, surfaceOffset);
-            worldPosition = math.transform(_panelData.LocalToWorld, localPoint);
+            float safeSurfaceOffset = math.isfinite(surfaceOffset) ? surfaceOffset : 0f;
+            float3 localPoint = new float3(localXY.x, localXY.y, safeSurfaceOffset);
+            float3 projectedWorld = math.transform(_panelData.LocalToWorld, localPoint);
+            if (!math.all(math.isfinite(projectedWorld)))
+                return false;
+
+            worldPosition = projectedWorld;
             return true;
         }
 
@@ -879,6 +907,8 @@ namespace Hecton8.UI
         public Vector2Int ReferenceResolutionPixels => new Vector2Int(
             math.max(1, _panelData.ReferenceWidth),
             math.max(1, _panelData.ReferenceHeight));
+
+        public int PanelId => panelId;
 
         internal bool TryGetFocusGateData(out Vector3 panelOrigin, out Vector3 panelNormal)
         {
@@ -977,6 +1007,40 @@ namespace Hecton8.UI
         internal void OverrideInteractionMode(PanelInteractionMode mode)
         {
             interactionMode = mode;
+        }
+
+        internal void OverrideInteractionCamera(Camera camera)
+        {
+            interactionCamera = camera;
+            CacheInteractionCamera(camera != null && camera.isActiveAndEnabled ? camera : null, fromExplicit: camera != null);
+            _canvasSettingsApplied = false;
+            ApplyCanvasWorldSpaceSettings();
+        }
+
+        internal void OverrideReferenceResolution(int width, int height)
+        {
+            referenceResolution = new Vector2Int(math.max(1, width), math.max(1, height));
+            RefreshPanelData(forceRefresh: true);
+        }
+
+        internal void OverrideMaxInteractionDistance(float meters)
+        {
+            maxInteractionDistance = math.clamp(
+                math.isfinite(meters) ? meters : DefaultMaxInteractionDistance,
+                MinInteractionDistanceMeters,
+                MaximumInteractionReachMeters);
+        }
+
+        internal void OverrideRenderTexturePresentation(bool enabled)
+        {
+            if (enableRenderTexturePresentation == enabled)
+                return;
+
+            enableRenderTexturePresentation = enabled;
+            if (!enabled)
+                ReleaseRenderTexture();
+            else
+                QueueRenderTextureRefresh(forceRefresh: true);
         }
 
 #if UNITY_EDITOR
@@ -1980,7 +2044,12 @@ namespace Hecton8.UI
         {
             double maxDistanceSq = (double)maxDistance * maxDistance;
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
-            return ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin) <= maxDistanceSq;
+            double aupDistanceSq = ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin);
+            if (!double.IsNaN(aupDistanceSq) && !double.IsInfinity(aupDistanceSq) && aupDistanceSq < double.MaxValue)
+                return aupDistanceSq <= maxDistanceSq;
+
+            float3 delta = ((float3)panelOrigin) - rayOriginWs;
+            return math.lengthsq(delta) <= (float)maxDistanceSq;
         }
 
         private float ResolveEffectiveInteractionDistance()
@@ -2088,51 +2157,98 @@ namespace Hecton8.UI
             localHit = float3.zero;
             worldHit = float3.zero;
 
+            if (!math.all(math.isfinite(rayOriginWs)) ||
+                !math.all(math.isfinite(rayDirectionWs)) ||
+                !IsPanelProjectionDataFinite())
+                return false;
+
             float3 rayDirection = rayDirectionWs;
             float directionLengthSq = 1f;
             if (!rayDirectionIsNormalized)
             {
                 directionLengthSq = math.lengthsq(rayDirection);
-                if (directionLengthSq <= 0.0001f)
+                if (!math.isfinite(directionLengthSq) || directionLengthSq <= 0.0001f)
                     return false;
             }
 
             float3 panelNormal = _panelData.PanelNormal;
             float3 panelOrigin = _panelData.LocalToWorld.c3.xyz;
             float denom = math.dot(rayDirection, panelNormal);
-            if (math.abs(denom) < 0.01f)
+            if (!math.isfinite(denom) || math.abs(denom) < 0.01f)
                 return false;
 
             float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) * math.rcp(denom);
-            float maxDistanceSafe = math.max(0.001f, maxDistance);
+            if (!math.isfinite(planeDistance))
+                return false;
+
+            float maxDistanceSafe = math.isfinite(maxDistance) ? math.max(0.001f, maxDistance) : 0.001f;
             float maxDistanceSq = maxDistanceSafe * maxDistanceSafe;
             float planeDistanceSq = planeDistance * planeDistance;
             float travelDistanceSq = rayDirectionIsNormalized ? planeDistanceSq : planeDistanceSq * directionLengthSq;
-            if (planeDistance < 0f || travelDistanceSq > maxDistanceSq)
+            if (!math.isfinite(travelDistanceSq) || planeDistance < 0f || travelDistanceSq > maxDistanceSq)
                 return false;
 
             worldHit = rayOriginWs + rayDirection * planeDistance;
+            if (!math.all(math.isfinite(worldHit)))
+                return false;
+
             localHit = math.transform(_panelData.WorldToLocal, worldHit);
+            if (!math.all(math.isfinite(localHit)))
+                return false;
+
             return TryProjectLocalHitToCanvas(localHit, out canvasPos);
         }
 
         private bool TryProjectLocalHitToCanvas(float3 localHit, out float2 canvasPos)
         {
-            float2 uv = new float2(
-                (localHit.x + _panelData.HalfSize.x) * _panelData.InvCanvasSize.x,
-                (localHit.y + _panelData.HalfSize.y) * _panelData.InvCanvasSize.y);
-
-            if (uv.x < 0f || uv.x > 1f || uv.y < 0f || uv.y > 1f)
+            if (!math.all(math.isfinite(localHit)) || !IsPanelProjectionDataFinite())
             {
                 canvasPos = float2.zero;
                 return false;
             }
 
-            uv = math.clamp(uv, 0f, 1f);
+            float2 uv = new float2(
+                (localHit.x + _panelData.HalfSize.x) * _panelData.InvCanvasSize.x,
+                (localHit.y + _panelData.HalfSize.y) * _panelData.InvCanvasSize.y);
+
+            if (!math.all(math.isfinite(uv)) || uv.x < 0f || uv.x > 1f || uv.y < 0f || uv.y > 1f)
+            {
+                canvasPos = float2.zero;
+                return false;
+            }
+
             canvasPos = new float2(
                 uv.x * _panelData.ReferenceWidth,
                 uv.y * _panelData.ReferenceHeight);
             return true;
+        }
+
+        private bool IsPanelProjectionDataFinite()
+        {
+            return math.all(math.isfinite(_panelData.PanelNormal)) &&
+                   math.all(math.isfinite(_panelData.CanvasSize)) &&
+                   math.all(math.isfinite(_panelData.InvCanvasSize)) &&
+                   math.all(math.isfinite(_panelData.HalfSize)) &&
+                   math.all(math.isfinite(_panelData.InvReferenceSize)) &&
+                   math.all(math.isfinite(_panelData.LocalToWorld.c0)) &&
+                   math.all(math.isfinite(_panelData.LocalToWorld.c1)) &&
+                   math.all(math.isfinite(_panelData.LocalToWorld.c2)) &&
+                   math.all(math.isfinite(_panelData.LocalToWorld.c3)) &&
+                   math.all(math.isfinite(_panelData.WorldToLocal.c0)) &&
+                   math.all(math.isfinite(_panelData.WorldToLocal.c1)) &&
+                   math.all(math.isfinite(_panelData.WorldToLocal.c2)) &&
+                   math.all(math.isfinite(_panelData.WorldToLocal.c3)) &&
+                   _panelData.ReferenceWidth > 0 &&
+                   _panelData.ReferenceHeight > 0;
+        }
+
+        private bool IsCanvasPointInsideReference(float2 canvasPosition)
+        {
+            return math.all(math.isfinite(canvasPosition)) &&
+                   canvasPosition.x >= 0f &&
+                   canvasPosition.y >= 0f &&
+                   canvasPosition.x <= _panelData.ReferenceWidth &&
+                   canvasPosition.y <= _panelData.ReferenceHeight;
         }
 
         private bool TryResolveFingerInteraction(
@@ -2318,7 +2434,9 @@ namespace Hecton8.UI
 
                 _wasPressedLastFrame = isPressed;
                 analogDelta = new float2(state.ScrollDelta.x, state.ScrollDelta.y);
-                if (math.lengthsq(analogDelta) > 0.000001f)
+                if (!math.all(math.isfinite(analogDelta)))
+                    analogDelta = float2.zero;
+                else if (math.lengthsq(analogDelta) > 0.000001f)
                     eventType |= DiegeticPanelInputEventType.Scroll;
             }
             else
@@ -2403,11 +2521,15 @@ namespace Hecton8.UI
 
         private void DispatchReleaseBeforeClear()
         {
+            bool shouldRelease = _wasPressedLastFrame || _fingerPressedLastFrame;
+            _inputEventHead = 0;
+            _inputEventTail = 0;
+            _inputEventCount = 0;
+
             if (_panelInteractable == null)
                 return;
 
-            DispatchInputEvents(_inputEventCount);
-            if (!_wasPressedLastFrame && !_fingerPressedLastFrame)
+            if (!shouldRelease)
                 return;
 
             DiegeticPanelInputEvent releaseEvent = new DiegeticPanelInputEvent
@@ -2530,6 +2652,18 @@ namespace Hecton8.UI
 
         private void SetPanelViewEnabled(bool enabled)
         {
+            if (!enabled &&
+                (!Application.isPlaying ||
+                 !isActiveAndEnabled ||
+                 !_dispatcherAvailableCold))
+            {
+                _pendingPanelViewEnabled = false;
+                _pendingPanelViewEnabledDirty = false;
+                ApplyPanelViewEnabled(false);
+                RefreshLateFrameRegistration();
+                return;
+            }
+
             if (_applyingLateFramePresentation)
             {
                 ApplyPanelViewEnabled(enabled);
@@ -2571,12 +2705,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (GlobalRegistry.Dispatcher == null)
-            {
-                _dispatcherAvailableCold = false;
-                return;
-            }
-
             _dispatcherAvailableCold = true;
             _tickRegistered = true;
             RefreshLateFrameRegistration();
@@ -2589,18 +2717,14 @@ namespace Hecton8.UI
             if (_slowTickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-            {
-                _dispatcherAvailableCold = false;
-                return;
-            }
-
             _dispatcherAvailableCold = true;
-            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void RefreshLateFrameRegistration()
         {
+            bool dispatcherAvailable = _dispatcherAvailableCold;
+
             bool hasPendingLateFrameWork =
                 _pendingCursorVisibilityDirty ||
                 _pendingCursorPoseDirty ||
@@ -2610,7 +2734,7 @@ namespace Hecton8.UI
             bool shouldRegisterLateFrame =
                 isActiveAndEnabled &&
                 Application.isPlaying &&
-                _dispatcherAvailableCold &&
+                dispatcherAvailable &&
                 (_tickRegistered ||
                  hasPendingLateFrameWork ||
                  (ShouldUsePhosphorDecay() &&
@@ -2624,13 +2748,13 @@ namespace Hecton8.UI
                 if (_lateFrameRegistered)
                     return;
 
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
                 return;
             }
 
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
         }
@@ -2656,7 +2780,7 @@ namespace Hecton8.UI
         {
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
@@ -2668,7 +2792,7 @@ namespace Hecton8.UI
             if (!_slowTickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _slowTickRegistered = false;
         }
 

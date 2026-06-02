@@ -6,7 +6,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Valve Wheel Handle")]
-    public sealed class VRValveWheelHandle : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class VRValveWheelHandle : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float RadiansPerDegree = 0.0174532924f;
         private const float HalfPi = 1.57079637f;
@@ -47,8 +47,11 @@ namespace Hecton8.Interaction
         private bool _hasPreviousVector;
         private bool _grabPoseCached;
         private bool _registeredMomentumTick;
+        private bool _registeredLateFrame;
         private bool _momentumTickDormant;
         private bool _registeredHotSwap;
+        private bool _dispatcherAvailable;
+        private bool _visualDirty;
 
         public float IsOpen01 => _isOpen01;
         public bool IsGrabbed => _grabbed;
@@ -67,6 +70,7 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             EnsureReferences();
             RefreshCachedLocalAxis();
             CacheScalarConfig();
@@ -84,10 +88,15 @@ namespace Hecton8.Interaction
                 return;
 
             bool shouldRestoreTick = (_registeredMomentumTick && !_momentumTickDormant) || ShouldRunMomentumTick();
+            bool shouldRestoreLateFrame = _registeredLateFrame || _visualDirty;
+            _dispatcherAvailable = currentService != null;
             _registeredMomentumTick = false;
+            _registeredLateFrame = false;
             _momentumTickDormant = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterMomentumTick();
+            if (shouldRestoreLateFrame && currentService != null && isActiveAndEnabled)
+                TryRegisterLateFrameTick();
         }
 
         public void BeginGrab(Vector3 controllerWorldPosition)
@@ -239,8 +248,29 @@ namespace Hecton8.Interaction
 
         private void ApplyWheelVisual()
         {
+            _visualDirty = true;
+            if (!Application.isPlaying)
+            {
+                FlushWheelVisual();
+                return;
+            }
+
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushWheelVisual()
+        {
             EnsureReferences();
             _resolvedVisual.localRotation = _closedLocalRotation * ApproximateAxisRotationNoTrig(_resolvedLocalAxis, _accumulatedDegrees * RadiansPerDegree);
+            _visualDirty = false;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_visualDirty)
+                FlushWheelVisual();
+            if (!_visualDirty && !ShouldRunMomentumTick())
+                TryUnregisterLateFrameTick();
         }
 
         private void EnsureReferences()
@@ -421,7 +451,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterMomentumTick()
         {
-            if (_registeredMomentumTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredMomentumTick || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registeredMomentumTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -437,6 +467,23 @@ namespace Hecton8.Interaction
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredMomentumTick = false;
             _momentumTickDormant = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || !_dispatcherAvailable)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
         }
 
         private bool ShouldRunMomentumTick()
@@ -471,7 +518,9 @@ namespace Hecton8.Interaction
             _previousPlaneVector = Vector3.zero;
             _angularVelocityDegreesPerSecond = 0f;
             TryUnregisterMomentumTick();
+            TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
+            _visualDirty = false;
         }
 
 #if UNITY_EDITOR

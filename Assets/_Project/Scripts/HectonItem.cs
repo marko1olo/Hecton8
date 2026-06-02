@@ -84,6 +84,7 @@ namespace Hecton8.Items
         private SettlePhase _settlePhase;
         private float       _settleTimer;
         private bool        _isTickRegistered;
+        private bool        _registeredPhysicsBodyTracking;
 
         // Cached
         private InteractionHighlighter _highlighter;
@@ -141,9 +142,7 @@ namespace Hecton8.Items
 
             if (_rb != null)
             {
-                if (!_rb.isKinematic)
-                    s_physicsStateEvents?.RegisterBodyStateTracking(_rb);
-
+                TryRegisterPhysicsBodyTracking();
                 _rb.WakeUp();
                 BeginSettle();
             }
@@ -162,8 +161,7 @@ namespace Hecton8.Items
             // Guaranteed unsubscribe on pooled deactivation.
             // Reset phase so the next OnEnable starts clean.
             StopSettle();
-            if (_rb != null)
-                s_physicsStateEvents?.UnregisterBodyStateTracking(_rb);
+            TryUnregisterPhysicsBodyTracking();
             ClearPersistentWorldRecord();
         }
 
@@ -179,10 +177,34 @@ namespace Hecton8.Items
 
         public void FixedTick(float fixedDeltaTime)
         {
+            TryRegisterPhysicsBodyTracking();
+
             if (_settlePhase == SettlePhase.Idle || _settlePhase == SettlePhase.Done)
                 return;
 
             TickSettle(fixedDeltaTime);
+        }
+
+        private void TryRegisterPhysicsBodyTracking()
+        {
+            if (_registeredPhysicsBodyTracking || _rb == null || _rb.isKinematic || !Application.isPlaying)
+                return;
+
+            IPhysicsStateEventService physicsStateEvents = s_physicsStateEvents;
+            if (physicsStateEvents == null || !physicsStateEvents.IsInitialized)
+                return;
+
+            physicsStateEvents.RegisterBodyStateTracking(_rb);
+            _registeredPhysicsBodyTracking = true;
+        }
+
+        private void TryUnregisterPhysicsBodyTracking()
+        {
+            if (!_registeredPhysicsBodyTracking)
+                return;
+
+            s_physicsStateEvents?.UnregisterBodyStateTracking(_rb);
+            _registeredPhysicsBodyTracking = false;
         }
 
         private void TickSettle(float deltaTime)
@@ -261,7 +283,7 @@ namespace Hecton8.Items
         private void StartTicking()
         {
             if (_isTickRegistered) return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+            if (!Application.isPlaying || GlobalRegistry.TickDispatcher == null) return;
 
             _isTickRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
@@ -590,7 +612,7 @@ namespace Hecton8.Items
 
         public string GetInteractText()
         {
-            return itemData != null ? itemData.GetInteractText() : "???";
+            return itemData != null ? itemData.GetInteractText() : "UNKNOWN ITEM";
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)

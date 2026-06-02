@@ -21,17 +21,18 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private static readonly int ProceduralBoneMatricesId = Shader.PropertyToID("_H8ProceduralBoneMatrices");
         private static readonly int ProceduralBoneGlobalsId = Shader.PropertyToID("_H8ProceduralBoneGlobals");
-        private const uint JobPinRigs = 1u << 0;
-        private const uint JobPinFrameInputs = 1u << 1;
-        private const uint JobPinParentIndices = 1u << 2;
-        private const uint JobPinBindPoses = 1u << 3;
-        private const uint JobPinBoneStates = 1u << 4;
-        private const uint JobPinBoneMatrices = 1u << 5;
-        private const uint JobPinFrameStats = 1u << 6;
-        private const uint JobPinTelemetryRing = 1u << 7;
-        private const uint JobPinTelemetryCursor = 1u << 8;
-        private const uint JobPinTuning = 1u << 9;
-        private const uint JobPinMockAiSignals = 1u << 10;
+        private const ulong JobBufferMutationGuardMask =
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.Rigs & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.FrameInputs & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.ParentIndices & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.BindPoses & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.BoneStates & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.BoneMatrices & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.FrameStats & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.TelemetryRing & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.TelemetryCursor & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.Tuning & 31)) |
+            (1UL << ((int)ProceduralBoneBlenderBufferIds.MockAiSignals & 31));
         private const int ProceduralBoneGlobalsScalars0Offset = 0;
         private const int ProceduralBoneGlobalsScalars1Offset = 16;
 
@@ -76,8 +77,8 @@ namespace Hecton8.Animation.FaunaProcedural
         private int _uploadedMatrixCount;
         private int _publishedSkinningMatrixCount = -1;
         private int _uploadedSkeletonCount;
-        private uint _jobBufferPinMask;
-        private IDataVault _jobBufferPinVault;
+        private IDataVault _jobBufferGuardVault;
+        private bool _jobBufferGuardHeld;
         private float _uploadedQuality = -1f;
         private bool _solverScheduled;
         private bool _registeredUpdate;
@@ -350,7 +351,7 @@ namespace Hecton8.Animation.FaunaProcedural
             NativeArray<ProceduralBoneRigTuningDTO> tuningArray;
             NativeArray<MockAiVelocitySignal> mockSignals;
 
-            if (!TryLockJobBuffersAndResolveBuffers(
+            if (!TryGuardJobBuffersAndResolveBuffers(
                     vault,
                     out rigs,
                     out inputs,
@@ -863,7 +864,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return true;
         }
 
-        private bool TryLockJobBuffersAndResolveBuffers(
+        private bool TryGuardJobBuffersAndResolveBuffers(
             IDataVault vault,
             out NativeArray<ProceduralBoneRigDTO> rigs,
             out NativeArray<ProceduralBoneFrameInputDTO> inputs,
@@ -888,28 +889,17 @@ namespace Hecton8.Animation.FaunaProcedural
             cursor = default;
             tuning = default;
             mockSignals = default;
-            _jobBufferPinMask = 0u;
-            _jobBufferPinVault = null;
+            _jobBufferGuardVault = null;
+            _jobBufferGuardHeld = false;
             if (vault == null || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            _jobBufferPinVault = vault;
             bool resolved = false;
             try
             {
-                if (!TryLockJobBuffer(ProceduralBoneBlenderBufferIds.Rigs, JobPinRigs) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.FrameInputs, JobPinFrameInputs) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.ParentIndices, JobPinParentIndices) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BindPoses, JobPinBindPoses) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BoneStates, JobPinBoneStates) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BoneMatrices, JobPinBoneMatrices) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.FrameStats, JobPinFrameStats) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.TelemetryRing, JobPinTelemetryRing) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.TelemetryCursor, JobPinTelemetryCursor) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.Tuning, JobPinTuning) ||
-                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.MockAiSignals, JobPinMockAiSignals))
+                if (!TryAcquireJobBufferMutationGuard(vault))
                 {
                     return false;
                 }
@@ -941,48 +931,31 @@ namespace Hecton8.Animation.FaunaProcedural
             }
         }
 
-        private bool TryLockJobBuffer(BufferID bufferId, uint pinBit)
+        private bool TryAcquireJobBufferMutationGuard(IDataVault vault)
         {
-            IDataVault vault = _jobBufferPinVault;
-            if (vault == null || bufferId == BufferID.Unknown)
+            if (_jobBufferGuardHeld)
+                return ReferenceEquals(_jobBufferGuardVault, vault);
+
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(JobBufferMutationGuardMask))
+            {
                 return false;
+            }
 
-            if ((_jobBufferPinMask & pinBit) != 0u)
-                return true;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.AnimationFauna))
-                return false;
-
-            _jobBufferPinMask |= pinBit;
+            _jobBufferGuardVault = vault;
+            _jobBufferGuardHeld = true;
             return true;
         }
 
         private void ReleaseJobBufferPins()
         {
-            IDataVault vault = _jobBufferPinVault;
-            uint mask = _jobBufferPinMask;
-            _jobBufferPinVault = null;
-            _jobBufferPinMask = 0u;
-            if (vault == null || mask == 0u)
-                return;
-
-            TryUnlockJobBuffer(vault, mask, JobPinMockAiSignals, ProceduralBoneBlenderBufferIds.MockAiSignals);
-            TryUnlockJobBuffer(vault, mask, JobPinTuning, ProceduralBoneBlenderBufferIds.Tuning);
-            TryUnlockJobBuffer(vault, mask, JobPinTelemetryCursor, ProceduralBoneBlenderBufferIds.TelemetryCursor);
-            TryUnlockJobBuffer(vault, mask, JobPinTelemetryRing, ProceduralBoneBlenderBufferIds.TelemetryRing);
-            TryUnlockJobBuffer(vault, mask, JobPinFrameStats, ProceduralBoneBlenderBufferIds.FrameStats);
-            TryUnlockJobBuffer(vault, mask, JobPinBoneMatrices, ProceduralBoneBlenderBufferIds.BoneMatrices);
-            TryUnlockJobBuffer(vault, mask, JobPinBoneStates, ProceduralBoneBlenderBufferIds.BoneStates);
-            TryUnlockJobBuffer(vault, mask, JobPinBindPoses, ProceduralBoneBlenderBufferIds.BindPoses);
-            TryUnlockJobBuffer(vault, mask, JobPinParentIndices, ProceduralBoneBlenderBufferIds.ParentIndices);
-            TryUnlockJobBuffer(vault, mask, JobPinFrameInputs, ProceduralBoneBlenderBufferIds.FrameInputs);
-            TryUnlockJobBuffer(vault, mask, JobPinRigs, ProceduralBoneBlenderBufferIds.Rigs);
-        }
-
-        private static void TryUnlockJobBuffer(IDataVault vault, uint mask, uint pinBit, BufferID bufferId)
-        {
-            if ((mask & pinBit) != 0u)
-                vault.TryUnlockBuffer(bufferId, SystemID.AnimationFauna);
+            IDataVault vault = _jobBufferGuardVault;
+            bool held = _jobBufferGuardHeld;
+            _jobBufferGuardVault = null;
+            _jobBufferGuardHeld = false;
+            if (held)
+                vault?.ReleaseMutationGuard(JobBufferMutationGuardMask);
         }
 
         private float ResolveGlobalQualityWeight(IDataVault vault)

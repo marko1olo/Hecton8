@@ -1,0 +1,18 @@
+{
+    "name": "Hecton8.AbyssalGeology1606.Editor",
+    "rootNamespace": "Hecton8.Editor.Generators.Geology",
+    "references": [
+        "Hecton8.World.OfflineGeology.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

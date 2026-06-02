@@ -22,9 +22,9 @@ namespace Hecton8.QA.Headless.Editor
         private const string BlackboxManifestRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
-        private const string ExitCodeJsonKey = "\"exitCode\"";
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
         private const int ResultSchemaVersion = 8;
+        private const int ResultReadBufferSize = 16384;
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxHeaderSizeBytes = 16;
         private const int BlackboxHeaderOffsetMagic = 0;
@@ -51,6 +51,8 @@ namespace Hecton8.QA.Headless.Editor
         private const double PollIntervalSeconds = 0.25;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessStressFractureBatchRunner
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static readonly byte[] ResultReadBuffer = new byte[ResultReadBufferSize];
+        private static readonly byte[] ExitCodeJsonKeyBytes = { (byte)'"', (byte)'e', (byte)'x', (byte)'i', (byte)'t', (byte)'C', (byte)'o', (byte)'d', (byte)'e', (byte)'"' };
         private static double _nextPollTime;
 
         static HeadlessStressFractureBatchRunner()
@@ -109,7 +111,10 @@ namespace Hecton8.QA.Headless.Editor
         private static void Tick()
         {
             if (!SessionState.GetBool(ActiveKey, false))
+            {
+                Detach();
                 return;
+            }
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
@@ -212,18 +217,17 @@ namespace Hecton8.QA.Headless.Editor
             exitCode = 1;
             try
             {
-                bool parsed = false;
-                foreach (string line in File.ReadLines(resultPath))
+                int bytesRead;
+                using (FileStream stream = new FileStream(resultPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
-                    if (!TryParseExitCode(line, out exitCode))
-                        continue;
-
-                    parsed = true;
-                    break;
+                    bytesRead = stream.Read(ResultReadBuffer, 0, ResultReadBuffer.Length);
                 }
 
-                if (!parsed)
+                if (!TryParseExitCode(ResultReadBuffer, bytesRead, out exitCode))
+                {
                     WriteRunnerStatus("result_exit_code_invalid");
+                    exitCode = 1;
+                }
 
                 return true;
             }
@@ -239,36 +243,82 @@ namespace Hecton8.QA.Headless.Editor
             }
         }
 
-        private static bool TryParseExitCode(string result, out int exitCode)
+        private static bool TryParseExitCode(byte[] result, int length, out int exitCode)
         {
             exitCode = 1;
-            if (string.IsNullOrEmpty(result))
+            if (result == null || length <= 0)
                 return false;
 
-            int keyIndex = result.IndexOf(ExitCodeJsonKey, StringComparison.Ordinal);
+            int keyIndex = IndexOf(result, length, ExitCodeJsonKeyBytes, 0);
             if (keyIndex < 0)
                 return false;
 
-            int colonIndex = result.IndexOf(':', keyIndex + ExitCodeJsonKey.Length);
+            int colonIndex = IndexOf(result, length, (byte)':', keyIndex + ExitCodeJsonKeyBytes.Length);
             if (colonIndex < 0)
                 return false;
 
             int valueStart = colonIndex + 1;
-            while (valueStart < result.Length && char.IsWhiteSpace(result[valueStart]))
+            while (valueStart < length && IsJsonWhitespace(result[valueStart]))
                 valueStart++;
 
             int valueEnd = valueStart;
-            if (valueEnd < result.Length && (result[valueEnd] == '-' || result[valueEnd] == '+'))
+            int sign = 1;
+            if (valueEnd < length && (result[valueEnd] == (byte)'-' || result[valueEnd] == (byte)'+'))
+            {
+                if (result[valueEnd] == (byte)'-')
+                    sign = -1;
+
                 valueEnd++;
+            }
 
             int digitStart = valueEnd;
-            while (valueEnd < result.Length && result[valueEnd] >= '0' && result[valueEnd] <= '9')
+            int parsed = 0;
+            while (valueEnd < length && result[valueEnd] >= (byte)'0' && result[valueEnd] <= (byte)'9')
+            {
+                parsed = (parsed * 10) + (result[valueEnd] - (byte)'0');
                 valueEnd++;
+            }
 
             if (valueEnd == digitStart)
                 return false;
 
-            return int.TryParse(result.AsSpan(valueStart, valueEnd - valueStart), NumberStyles.Integer, CultureInfo.InvariantCulture, out exitCode);
+            exitCode = parsed * sign;
+            return true;
+        }
+
+        private static int IndexOf(byte[] source, int length, byte[] pattern, int startIndex)
+        {
+            if (pattern.Length == 0 || length < pattern.Length)
+                return -1;
+
+            int lastStart = length - pattern.Length;
+            for (int i = startIndex; i <= lastStart; i++)
+            {
+                int j = 0;
+                while (j < pattern.Length && source[i + j] == pattern[j])
+                    j++;
+
+                if (j == pattern.Length)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int IndexOf(byte[] source, int length, byte value, int startIndex)
+        {
+            for (int i = startIndex; i < length; i++)
+            {
+                if (source[i] == value)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool IsJsonWhitespace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n';
         }
 
         private static bool TryWriteFlagFile()

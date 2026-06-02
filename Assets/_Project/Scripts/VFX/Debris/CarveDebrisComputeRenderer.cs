@@ -911,7 +911,7 @@ namespace Hecton8.VFX.Debris
             if (_indirectArgsBuffer == null || !_indirectArgsBuffer.IsValid())
             {
                 _indirectArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - compute-written indirect rock debris args - owner: VFX_SDF_CARVE_DEBRIS
             }

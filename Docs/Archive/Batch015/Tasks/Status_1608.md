@@ -1,0 +1,231 @@
+# Status 1608 - Interior Detail And Instrument Finisher
+
+Date: 2026-06-01
+Agent: 1608
+Domain: INTERIOR_DETAIL_AND_INSTRUMENT_FINISHER
+Status: PENDING VERIFICATION
+
+## Batch Source
+
+- Prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="1608">`
+- Task count: 20
+- Domain boundary: Echelon 8 presentation/offline interior detailing. Edits are restricted to Editor-only interior generator code and directly required generated docs/status artifacts.
+- Current batch hygiene: extracted `<AGENT_PROMPT id="1608">` from `CURRENT_BATCH.md` lines 716-794 via CLI; task count confirmed at 20. Ignore neighboring prompts.
+
+## Mandates Read
+
+- `DATA_Runtime_Struct_Layout_ARM64.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
+- `STRM_Async_Asset_Upload_Texture_Settings.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `UI_Diegetic_Physical_Interfaces.txt`
+- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `MATH_Deterministic_RNG_SlotMachine.txt`
+- `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+## Checklist
+
+- [x] Task 01 - EXHAUSTIVE_INSTRUMENT_LIBRARY_ANALYSIS
+  - DOD practice: `InteriorInstrumentLibraryBuilder1608` scans `Assets/_Project/Prefabs/Instruments/` and creates fallback schema if absent; C# tests and generated assets are the proof surface. Alternative rejected: waiting for missing prefabs. Estimate: 1800 us/editor scan per small library, PENDING UNITY PROFILE.
+- [x] Task 02 - DECORATIVE_SOCKET_PARSING_LOGIC
+  - DOD practice: `InteriorSocketParser1608` parses `DecorativeSocket`/`Socket_` transform markers and generates deterministic wall, ceiling cable, floor conduit, and micro-stamp fallback slots from bounds. Alternative rejected: hard dependency on absent 1607 DTO type. Estimate: 900 us for 128 transforms, PENDING UNITY PROFILE.
+- [x] Task 03 - NORMAL_MAP_STAMPING_MATH_DESIGN
+  - DOD practice: tangent-space stamp projection is encoded in socket-first `NormalMapStampingJob1608`; sub-5 cm details become normal/grime pixels. Alternative rejected: physical rivet meshes and per-pixel scan over every socket. Estimate: PENDING UNITY PROFILE.
+- [x] Task 04 - UV_ATLAS_REMAPPING_STRATEGY
+  - DOD practice: `PackInstrumentAtlas` publishes actual packed/cropped UV rects and `WeldInstrumentBasesJob1608` remaps fused UVs during static base fusion. Alternative rejected: stale full-cell `ApplyAtlasRects`, per-material UV preservation, and unused standalone remap pass. Estimate: fused-pass cost only, PENDING VERIFICATION.
+- [x] Task 05 - TELEMETRY_AND_REPORTING_ARCHITECTURE
+  - DOD practice: `InteriorBakeCountersDTO1608` carries in-memory generation metrics; generated prefab/mesh/texture assets and source-audit tests are the proof surface. Alternative rejected: JSON proof files after user revoked them. Estimate: no runtime cost.
+- [x] Task 06 - UNMANAGED_DTO_AND_PLACEMENT_MATERIALIZATION
+  - DOD practice: ARM64-aligned DTOs and `PopulateSocketsJob1608` implemented. Alternative rejected: managed placement classes. Estimate: 1000 sockets under 150 ms target, test added.
+- [x] Task 07 - STATIC_BASE_FUSION_JOB
+  - DOD practice: `WeldInstrumentBasesJob1608` appends transformed base geometry into `NativeList` buffers. Alternative rejected: prefab hierarchy retention. Estimate: 1000 cube bases under 150 ms target, test added.
+- [x] Task 08 - NORMAL_MAP_STAMPING_EXECUTION
+  - DOD practice: offline `NormalMapStampingJob1608` implemented with atlas-space placement wear, micro-socket grime output, and bounded stamp-rect writes. Alternative rejected: runtime decals/tiny mesh stamps and `pixels * sockets` scanning. Estimate: PENDING UNITY PROFILE.
+- [x] Task 09 - PROCEDURAL_CABLE_GENERATION_ROUTINE
+  - DOD practice: `GenerateCableBundles` creates static tubular catenary meshes with triangle-wave noise, and `CreateCableBundleMeshAsset` now routes ceiling sockets to floor conduit sockets before loose cable fallback, then integrates the result into one static prefab child. Alternative rejected: runtime cable physics/joints. Estimate: cold mesh generation only.
+- [x] Task 10 - ASSET_DATABASE_TEXTURE_PACKING
+  - DOD practice: `InteriorAtlasPacker1608` writes atlas PNG and enforces BC7 import settings. Alternative rejected: unique texture per instrument. Estimate: cold import only.
+- [x] Task 11 - BURST_COMPILED_UV_REMAPPING_JOB
+  - DOD practice: atlas rect bounds test plus fused vertex UV containment test. Alternative rejected: CPU-side per-mesh material overrides. Estimate: PENDING VERIFICATION.
+- [x] Task 12 - DIRT_AND_GRIME_OCCLUSION_BAKING
+  - DOD practice: `BakeGrimeVertexColorJob1608` and normal-stamp occlusion/grime map implemented with white default occlusion, atlas-space placement wear, and local darkened pore stamps. Alternative rejected: runtime dirt decals. Estimate: cold editor pass only.
+- [x] Task 13 - BATCH_GENERATOR_WINDOW_UI
+  - DOD practice: `Interior Finisher Studio` EditorWindow exposes module prefab, seed, density, quality, texture size, metrics. Alternative rejected: command-only tool. Estimate: UI cold path only.
+- [x] Task 14 - FAIL_CLOSED_GENERATION_SAFETY
+  - DOD practice: fatal masks abort placement/fusion/atlas overflow with explicit error. Alternative rejected: silent downscale/blurry atlas. Estimate: zero runtime cost.
+- [ ] Task 15 - BATCHED_COMPILATION_AND_SYNTAX_ASSERTION
+  - DOD practice: CPU/compiler gate sampled. Alternative rejected: launching build during active compiler/runtime contention. Estimate: BLOCKED_BY_CONTENTION; active `dotnet` process detected.
+- [x] Task 16 - MOCK_1000_INSTRUMENT_FUZZER_TEST
+  - DOD practice: `InteriorFinisher1608EditTests.PopulateAndFuse_OneThousandSockets_EliminatesStaticBaseGameObjects`. Alternative rejected: visual-only manual check. Estimate: edit test target under 150 ms, PENDING TEST RUN.
+- [x] Task 17 - UV_ATLAS_INTEGRITY_ASSERTION
+  - DOD practice: `RemapInstrumentUvs_StaysInsideAssignedAtlasRectangle`. Alternative rejected: eyeballing atlas UVs. Estimate: edit test PENDING RUN.
+- [x] Task 18 - ZERO_GC_EDITOR_HOT_PATH_VERIFICATION
+  - DOD practice: source audit test forbids managed containers/random/coroutines in Contracts math core. Alternative rejected: trusting code review only. Estimate: static scan complete, profiler not applicable.
+- [x] Task 19 - HIERARCHY_DEPTH_REDUCTION_AUDIT
+  - DOD practice: in-memory counters record hierarchy before/after, eliminated static base count, and one optional static cable child. Alternative rejected: counting visual objects by eye. Estimate: cold prefab scan only.
+- [x] Task 20 - AUTOMATED_METRIC_VALIDATOR_REPORT
+  - DOD practice: source-audit tests validate Apex dependency, phase, lock, texture role, and handle proxy contracts. Alternative rejected: generated JSON/SHA proof files after user revoked report artifacts. Estimate: edit-test cold path only.
+
+## Verification
+
+- Unity import: PENDING VERIFICATION.
+- Unity MCP execution: BLOCKED. `mcpforunity://editor/state` returned `ping not answered`; no safe Editor API bake was possible.
+- Unity MCP update: telemetry is enabled, but console read returned `no_unity_session`; no Unity import/test/profiler proof exists.
+- Compile: BLOCKED_BY_CONTENTION. Active `dotnet` processes detected. No build launched.
+- Static mesh upload audit: FIXED. `InteriorMeshVertexDTO1608` remains 64-byte job DTO; `InteriorRenderVertexDTO1608` packs to 56-byte Unity vertex declaration before `SetVertexBufferData`.
+- Apex dependency audit: PASS for 1608 source. Hot job `Execute` bodies contain no `GlobalRegistry`, component lookup, scene search, DataVault write lock, `.Complete(`, process launch, or build command.
+- Phase audit: PASS for 1608 source. Interior generator is `UNITY_EDITOR` only and exposes no runtime `Tick`, `FixedTick`, `LateFrameTick`, `Update`, `LateUpdate`, or `FixedUpdate`.
+- Lock flattening audit: PASS for 1608 source. No DataVault writes or locks are present in the interior pipeline.
+- JSON proof removal: FIXED. Interior generator no longer writes `InstrumentLibrary_1608.json` or `INTERIOR_DETAILING_REPORT_1608.json`; generated Unity assets and C# tests are the proof surface.
+- Texture import audit: FIXED. Atlas role remains sRGB BC7; normal role is linear BC5 normal map; grime/occlusion role is linear BC7 data map.
+- Material polish audit: FIXED. Generated material now sets bump scale, occlusion strength, metallic, and smoothness when the selected shader exposes those properties.
+- Movable handle audit: FIXED. `MOV_InstrumentHandle_*` objects now receive a shared generated mesh proxy and renderer; shadow casting is off for sub-0.5m handles.
+- Movable ABI slice audit: FIXED. Movable rules keep `InstrumentMovableFlag`/`Interactivity`, but `MovingVertexStart` and `MovingVertexCount` are zero because handle geometry is supplied by the shared proxy mesh, not a per-rule moving vertex slice.
+- Socket route audit: FIXED. Named switches, dials, valves, gauges, panels, lights, meters, terminals, and screens resolve to wall-panel sockets; floor/conduit instruments resolve before cable/ceiling to prevent `Floor_Cable` misrouting; fallback sockets now include floor conduit endpoints for cable bundles.
+- Cable route pairing audit: FIXED. Cable bundle generation splits ceiling/floor socket arrays and connects ceiling-to-floor routes first; loose sequential pairing is used only when one route side is absent.
+- Editor texture lifetime audit: FIXED. Atlas/normal/grime `Texture2D` objects are destroyed in `finally` blocks after PNG writes, preventing cold editor leaks during failed batch generation.
+- Atlas overwrite audit: FIXED. Instrument atlas path now includes sanitized `OutputName`, preventing multi-cabin bakes in one folder from overwriting a shared `TX_InteriorInstrumentAtlas_1608.png`.
+- Socket parser cold allocation audit: FIXED. Transform marker scans now use a static scratch `List<Transform>` cleared in `finally`, not per-bake allocation.
+- Atlas packer cold allocation audit: FIXED. Instrument atlas cell fill now reuses one `Color32[]` block buffer instead of allocating one block per instrument rule.
+- Normal stamping complexity audit: FIXED. Stamping now iterates micro-sockets and bounded pixel rectangles instead of scanning every micro-socket from every texture pixel.
+- Atlas-space wear audit: FIXED. `NormalMapStampingJob1608` now stamps deterministic wear inside each `InstrumentPlacementDTO1608.AtlasScaleOffset` rect so the normal/occlusion maps align with fused static-base atlas UVs.
+- Placement hash edge audit: FIXED. Atlas-space wear no longer disappears if `PlacementHash` is zero; the stamping salt falls back to instrument/socket/index data.
+- Cable material isolation audit: FIXED. `GEN_CableBundles_1608` now uses `MAT_InteriorCable_1608`, a dark matte material without atlas texture sampling, so cables no longer inherit random instrument atlas colors.
+- Normal/grime counter audit: FIXED. Texture write counters now mark normal/grime maps as written when either micro-socket stamps or atlas-space placement wear exists.
+- Socket density hint audit: FIXED. `PopulateSocketsJob1608` now multiplies global density by per-socket `DensityHint`, so authored sparse/dense decorative slots affect placement continuously.
+- Authored marker density audit: FIXED. `InteriorSocketParser1608` now derives `DensityHint` from marker names such as `Sparse`, `NoAuto`, `Dense`, `Hero`, `MediumDensity`, and cable/floor defaults.
+- Texture upload heap audit: FIXED. Normal/grime texture writes and atlas clear now pack through temporary `NativeArray<Color32>` plus `SetPixelData`, eliminating two full-texture managed `Color32[]` allocations during bake.
+- Texture platform import audit: FIXED. Generated interior textures now set explicit platform overrides: Standalone BC5/BC7, Android ASTC 6x6, iPhone ASTC 6x6, with a 2048 mobile cap.
+- Cable density gate audit: FIXED. Cable bundle route sockets now use the same deterministic density gate as instrument sockets, so `NoAuto` and sparse cable markers affect generated cable bundles.
+- Material map binding audit: FIXED. Generated instrument materials now bind atlas textures explicitly to URP `_BaseMap` and Standard `_MainTex`, set white base color, and clear cable texture slots to prevent stale material maps.
+- Authored atlas texture audit: FIXED. Atlas packing now samples discovered instrument texture assets through a temporary render target and `GetPixelData<Color32>`, falling back to procedural gauge glyphs only when no visible source texture exists.
+- Instrument texture discovery audit: FIXED. Prefab library scanning now checks explicit albedo texture properties (`_BaseMap`, `_MainTex`, `_BaseColorMap`, `_AlbedoMap`) before `mainTexture`, so authored URP/material variants feed the atlas.
+- Authored static mesh extraction audit: FIXED. Prefab library scanning now extracts real `MeshFilter.sharedMesh` vertices, normals, tangents, UVs, triangle indices, child-local-to-root transforms, and negative-scale winding into the fused static base source buffers; bounds-box geometry is fallback-only for empty/non-mesh prefabs.
+- Movable mesh exclusion audit: FIXED. Authored child meshes named as movable handles/levers/knobs/actuators/needles are skipped during static mesh extraction so moving presentation proxies do not become baked wall geometry.
+- Micro mesh amortization audit: FIXED. Authored child meshes named as screws/rivets/bolts/seams/labels/text/engraving/decals or measuring below 5 cm are skipped from physical static fusion, preserving the micro-detail baking rule.
+- Atlas alpha squeeze audit: FIXED. Authored source textures now resolve their visible alpha bounds, crop transparent margins, scale visible pixels into the atlas cell with padding, and report visible area instead of full-cell area.
+- Atlas aspect preservation audit: FIXED. Cropped authored texture blocks now scale into atlas cells with preserved aspect ratio and centered padding, preventing stretched gauges, labels, and dials while keeping the fixed-grid UV contract.
+- Atlas padding color audit: FIXED. Authored texture padding now fills from opaque edge color or a dark panel fallback, preventing transparent-black bars when the shared instrument material renders as opaque.
+- Atlas inner-alpha audit: FIXED. Transparent pixels inside authored crops now preserve the prefilled panel padding instead of overwriting it with transparent black.
+- Atlas packed-rect UV audit: FIXED. Atlas packing now publishes the actual centered/cropped write rectangle back into `InstrumentRuleDTO1608.UvMin/UvMax` before placement, so fused UVs sample the visible authored pixels instead of the full padded grid cell.
+- Stale atlas rect API audit: FIXED. Public `ApplyAtlasRects` was removed after packed rect ownership moved into `PackInstrumentAtlas`, preventing future full-cell UV assignment from bypassing authored alpha/aspect squeeze.
+- Movable handle material audit: FIXED. Generated moving handle proxies now use `MAT_InteriorHandle_1608`, a matte non-atlas material, instead of sampling arbitrary instrument atlas cells.
+- Instrument rule fail-closed audit: FIXED. `SelectInstrumentRule` now returns `-1` if the weighted fitting pass does not select a rule, preventing a silent fallback to rule zero for sockets that did not receive a mathematically selected compatible instrument.
+- Instrument weight saturation audit: FIXED. Authored `InstrumentRuleDTO1608.Weight` now rejects non-finite/negative input, clamps to `MaxRuleWeightUnits`, and avoids stale float-to-int overflow in rule selection.
+- Zero-length native buffer audit: FIXED. `ToNative<T>` now preserves empty lists as zero-length `NativeArray<T>` buffers instead of fabricating one uninitialized element, preventing phantom micro-socket stamps.
+- Normal/grime counter truth audit: FIXED. Stamp write counters now depend on `counterValue.PlacementCount > 0u` or real micro sockets, not placement buffer capacity.
+- Moving handle scale audit: FIXED. Moving handle proxy children now extract uniform scale from the placement matrix so interactive handles match their fused static bases.
+- Material overwrite audit: FIXED. Main instrument material asset path now includes sanitized `OutputName`, matching atlas scoping and preventing later cabin bakes in the same folder from rebinding older prefabs to a new atlas.
+- Atlas grid squeeze audit: FIXED. `ResolveAtlasGrid` now selects the smallest power-of-two atlas size that fits the instrument count at the current cell lane, halving cell size only when required by the target size.
+- Atlas wear de-duplication audit: FIXED. Atlas-space normal/grime wear now stamps each rule atlas cell once, preventing repeated placements of the same instrument from over-darkening the shared texture cell.
+- Fallback socket hash audit: FIXED. Generated fallback socket stable hashes now include tag and socket kind, preventing wall/cable/micro fallback ordinals from colliding under the same root name.
+- Fallback density parity audit: FIXED. Generated fallback sockets now use the same `ResolveDensityHint` semantic defaults as authored socket markers instead of hardcoding density 255 for every kind.
+- Authored socket radius audit: FIXED. Authored decorative socket marker root-relative scale now controls placement radius through `ResolveSocketRadius`, with micro sockets clamped to 0.004-0.05m and wall/control sockets clamped to 0.05-0.45m.
+- Fallback box index audit: FIXED. `AppendBox` now offsets quad triangle indices by `localBaseIndex = vertices.Count - ruleVertexStart`, preserving the relative-to-rule index contract consumed by `WeldInstrumentBasesJob1608`.
+- Fallback vertex identity audit: FIXED. Fallback box vertices now receive `instrumentHash = HashString(name)` instead of socket type hash, so render vertex identity matches `InstrumentRuleDTO1608.InstrumentHash`.
+- Socket fit scale audit: FIXED. `PopulateSocketsJob1608` now scales placed instruments by `socket.Radius / fitRadius` with a 0.55-2.25 clamp, and rejects non-finite `rule.BoundsExtents` before placement.
+- Static bounds ownership audit: FIXED. Authored prefab rule bounds now prefer `TryResolveStaticLocalBounds`, which uses the same movable/micro mesh filters as static-base fusion; renderer bounds remain fallback only for empty or invalid static geometry.
+- Rule bounds fail-closed audit: FIXED. `RuleFitsSocket` now rejects negative `BoundsExtents` before socket fit math, preventing impossible DTO geometry from entering placement selection.
+- Renderer bounds finite audit: FIXED. Renderer fallback bounds in prefab rule scanning and decorative socket parsing now skip non-finite bounds and prefab rules fall back to a compact deterministic default bound if no finite geometry remains.
+- Native conversion contract audit: FIXED. `ToNative<T>` helpers now require `where T : unmanaged`, not only `struct`.
+- Atlas UV integration audit: FIXED. Atlas rects are applied to rules before placement and fused vertices remap `Uv0` into the instrument cell.
+- Mesh fusion fail-closed audit: FIXED. Source vertex and triangle slices are validated before any fused vertex/index writes, preventing partial corrupt meshes on NaN or invalid index data.
+- Instrument atlas visual audit: FIXED. Generated fallback atlas cells now include deterministic gauge rings, tick marks, needle marks, edges, and screw centers instead of flat color blocks.
+- Occlusion map audit: FIXED. Grime/occlusion texture now initializes to white and only darkens stamped pores; source test asserts white untouched pixels and dark stamped pixels.
+- Cable integration audit: FIXED. Ceiling/floor cable sockets now produce a single combined static `GEN_CableBundles_1608` mesh child in the generated prefab.
+- Mesh read/write audit: FIXED. Static bases, generated cable mesh, and movable handle proxy now call `UploadMeshData(true)` after bake; temporary cable part meshes keep CPU data only until combine.
+- Static syntax audit: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes for 1608 contracts, studio, and edit tests after the movable ABI/socket route/texture lifetime pass.
+- Static syntax audit update: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after placement hash fallback polish.
+- Static syntax audit update 2: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after cable material isolation and normal/grime counter polish.
+- Static syntax audit update 3: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after density-hint placement polish.
+- Static syntax audit update 4: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after authored marker density parsing.
+- Static syntax audit update 5: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after texture upload heap polish.
+- Static syntax audit update 6: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after texture platform import polish.
+- Static syntax audit update 7: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after cable density gate polish.
+- Static syntax audit update 8: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after material map binding polish.
+- Static syntax audit update 9: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after authored atlas texture sampling.
+- Static syntax audit update 10: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after instrument texture discovery polish.
+- Static syntax audit update 11: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after authored static mesh extraction.
+- Static syntax audit update 12: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after movable child mesh exclusion.
+- Static syntax audit update 13: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after atlas alpha squeeze, micro mesh amortization, and handle material isolation.
+- Static syntax audit update 14: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after instrument rule fail-closed selection.
+- Static syntax audit update 15: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after instrument weight saturation.
+- Static syntax audit update 16: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after zero-length native buffer preservation.
+- Static syntax audit update 17: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after normal/grime counter correction.
+- Static syntax audit update 18: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after moving handle scale propagation.
+- Static syntax audit update 19: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after material path scoping.
+- Static syntax audit update 20: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after atlas grid squeeze correction.
+- Static syntax audit update 21: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after atlas-space wear de-duplication.
+- Static syntax audit update 22: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after fallback socket hash salting.
+- Static syntax audit update 23: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after fallback density parity.
+- Static syntax audit update 24: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after authored socket radius scaling.
+- Static syntax audit update 25: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after fallback box index correction.
+- Static syntax audit update 26: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after fallback vertex identity correction.
+- Static syntax audit update 27: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after socket fit scaling.
+- Static syntax audit update 28: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after static-bound ownership filtering.
+- Static syntax audit update 29: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after negative rule-bound rejection.
+- Static syntax audit update 30: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after atlas aspect-preserving authored texture packing.
+- Static syntax audit update 31: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after authored atlas padding color fallback.
+- Static syntax audit update 32: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after inner-alpha copy preservation.
+- Static syntax audit update 33: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after packed atlas rect ownership.
+- Static syntax audit update 34: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after stale full-cell atlas API removal.
+- Static syntax audit update 35: PASS. In-memory comment/string-aware brace scan returned depth 0 and no negative closes after renderer bounds finite fallback.
+- Static forbidden scan update: PASS for 1608 production source except documented cold Editor `GetComponentsInChildren(true, scratchList)` scans. No `GlobalRegistry`, `TryGetComponent`, `GameObject.Find`, DataVault lock, `UploadMeshData(false)`, stale movable vertex slice assignment, stale global atlas filename, `JsonUtility`, `WriteAllText`, `.Complete(`, process launch, or build command in production generator.
+- Static forbidden scan update 2: PASS for 1608 production source. No hot registry lookup, scene lookup, DataVault lock, `.Complete(`, JSON proof write, process launch, build command, stale atlas filename, stale cable material assignment, or `UploadMeshData(false)` remains.
+- Static forbidden scan update 3: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns were found after density-hint placement polish.
+- Static forbidden scan update 4: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns were found after authored marker density parsing.
+- Static forbidden scan update 5: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale full-texture managed color arrays were found after texture upload heap polish.
+- Static forbidden scan update 6: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale full-texture managed color arrays, or missing mobile texture platform override patterns were found after texture platform import polish.
+- Static forbidden scan update 7: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale texture/cable/material patterns were found after cable density gate polish.
+- Static forbidden scan update 8: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale texture/cable/material patterns were found after material map binding polish.
+- Static forbidden scan update 9: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale texture/cable/material patterns, or managed `GetPixels32` sample path were found after authored atlas texture sampling.
+- Static forbidden scan update 10: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale texture/cable/material patterns, or managed texture sample arrays were found after instrument texture discovery polish.
+- Static forbidden scan update 11: PASS for 1608 production source. No hot registry lookup, scene search, DataVault lock, `.Complete(`, JSON/report writer, process/build launch, stale box-only prefab geometry path, `Mesh.vertices`, or `Mesh.triangles` getter remains after mesh extraction.
+- Static forbidden scan update 12: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale mesh extraction getters remain after movable child mesh exclusion.
+- Static forbidden scan update 13: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale mesh extraction getters, stale moving-handle atlas material assignment, or stale full-texture managed upload arrays remain after the latest polish pass.
+- Static forbidden scan update 14: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale `return maxRules > 0 ? 0 : -1` fallback remain after selection fail-close.
+- Static forbidden scan update 15: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale rule-zero fallback, or stale `return (uint)math.max(1, (int)math.round` weight conversion remain after saturation.
+- Static forbidden scan update 16: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale weight conversion, or stale `Math.Max(1, values.Count)` native conversion remain.
+- Static forbidden scan update 17: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale native conversion, or stale `(placements.IsCreated && placements.Length > 0)` counter proxy remain.
+- Static forbidden scan update 18: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale counter/native/selection patterns remain after moving handle scale propagation.
+- Static forbidden scan update 19: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale counter/native/selection patterns, or stale fixed `MAT_InteriorFinisher_1608.mat` material path remain after material scoping.
+- Static forbidden scan update 20: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale material path, or stale atlas area-average grid formula remain after atlas grid squeeze correction.
+- Static forbidden scan update 21: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale atlas/material/native/counter patterns remain after atlas-space wear de-duplication.
+- Static forbidden scan update 22: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale atlas/material/native/counter patterns remain after fallback socket hash salting.
+- Static forbidden scan update 23: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale `socket.DensityHint = 255` fallback assignment remain after density parity.
+- Static forbidden scan update 24: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale density assignment, or stale hardcoded authored socket radius assignment remain after radius scaling.
+- Static forbidden scan update 25: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale density/radius assignments, or stale un-offset `AppendQuad(triangles, 0, 1, 2, 3)` box indices remain after index correction.
+- Static forbidden scan update 26: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale density/radius assignments, stale un-offset box indices, or fallback `AppendBox(b, typeHash, ...)` identity drift remain.
+- Static forbidden scan update 27: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale geometry/material/texture/report/build patterns remain after socket fit scaling.
+- Static forbidden scan update 28: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale direct `Bounds localBounds = ResolveLocalBounds(prefab);`, or stale mesh getter/full-texture patterns remain after static-bound ownership filtering.
+- Static forbidden scan update 29: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns or stale geometry/material/texture/report/build patterns remain after negative bound rejection.
+- Static forbidden scan update 30: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale geometry/material/texture/report/build patterns, or stale square-stretch atlas crop loops remain after aspect preservation.
+- Static forbidden scan update 31: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale square-stretch atlas crop loops, stale transparent-black `ClearBlock(block)`, or stale `block[i] = default` padding remain.
+- Static forbidden scan update 32: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale transparent-black padding, or stale direct `block[y * cell + x] = source[...]` copy remains.
+- Static forbidden scan update 33: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale pre-placement `ApplyAtlasRects(library, settings.TextureSize)`, stale full-cell visible area, or stale centered-write temp names remain after packed atlas rect ownership.
+- Static forbidden scan update 34: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, public `ApplyAtlasRects`, stale full-cell rect call, stale full-cell visible area, or stale centered-write temp names remain after stale API removal.
+- Static forbidden scan update 35: PASS for 1608 production source. No forbidden APEX/runtime/report/build patterns, stale full-cell atlas API, stale full-cell rect call, stale centered-write temp names, or unguarded renderer bounds fallback patterns remain after renderer bounds finite fallback.
+- Whitespace audit update: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches.
+- Whitespace audit update 2: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after atlas aspect preservation.
+- Whitespace audit update 3: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after atlas padding fallback.
+- Whitespace audit update 4: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after inner-alpha preservation.
+- Whitespace audit update 5: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after packed atlas rect ownership.
+- Whitespace audit update 6: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after stale full-cell atlas API removal.
+- Whitespace audit update 7: PASS. Trailing whitespace scan over 1608 source, tests, status, rationale, and log returned no matches after renderer bounds finite fallback.
+- Unity MCP update: UNSTABLE. `manage_editor telemetry_status` returned enabled; `read_console` returned `ping not answered` on the latest pass.
+- Compile throttle update: BLOCKED_BY_CONTENTION. Active `dotnet` process detected and CPU sampled at 99-100 after final source scans. No build launched; Roslyn AST host deferred under parser/compile throttle.
+- Compile throttle update 2: BLOCKED_BY_CONTENTION. CPU sampled at 89.2% and active `dotnet` PID 3756 was present after source scans. No build launched.
+- Compile throttle update 3: BLOCKED_BY_CONTENTION. CPU sampled at 94.2% and active `dotnet` PID 3756 was present after final source scans. No build launched.
+- Compile throttle update 4: BLOCKED_BY_CONTENTION. CPU sampled at 99.8% and active `dotnet` PID 30640 was present after final source scans. No build launched.
+- Compile throttle update 5: BLOCKED_BY_CONTENTION. CPU sampled at 95%; no compiler process was present, but CPU remained above the 50% build gate. No build launched.
+- Compile throttle update 6: BLOCKED_BY_CONTENTION. CPU sampled at 99.1% and active `dotnet` PID 18584 was present after static-bound ownership scans. No build launched.
+- Compile throttle update 7: BLOCKED_BY_CONTENTION. CPU sampled at 61.7% and active `dotnet` PID 18584 was present after negative bound scans. No build launched.
+- Compile throttle update 8: BLOCKED_BY_CONTENTION. CPU sampled at 100.0% and active `dotnet` PIDs 28064 and 28180 were present after atlas aspect scans. No build launched.
+- Compile throttle update 9: BLOCKED_BY_CONTENTION. CPU sampled at 78.9% and active `dotnet` PID 28064 was present after atlas padding scans. No build launched.
+- Compile throttle update 10: BLOCKED_BY_CONTENTION. CPU sampled at 46.4%, but active `dotnet` PID 28064 was still present after inner-alpha scans. No build launched.
+- Compile throttle update 11: BLOCKED_BY_CONTENTION. CPU sampled at 96.7% and active `dotnet` PID 28064 was present after packed atlas rect scans. No build launched.
+- Compile throttle update 12: POLICY_DEFERRED. CPU sampled at 41.4% and no compiler process was active after stale API removal, but the change was narrow source/test cleanup and user explicitly forbids `dotnet build` after small edits. Static syntax and forbidden scans were used instead.
+- Compile throttle update 13: BLOCKED_BY_CONTENTION. CPU sampled at 100.0% and active `dotnet` PIDs 10780 and 18100 were present after renderer bounds finite scans. No build launched.
+- Runtime: not applicable to Editor-only generator until generated assets are imported.

@@ -802,7 +802,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         void IPhysicsStateEventService.SetHydrodynamicSubmersion(Rigidbody body, float submersionFactor)
         {
-            if (body == null)
+            if (body == null || !_isInitialized || !HasRequiredNativeState())
                 return;
 
             SetHydrodynamicSubmersionInternal(body, submersionFactor);
@@ -811,13 +811,16 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         void IPhysicsStateEventService.RegisterBodyStateTracking(Rigidbody body)
         {
+            if (body == null || !_isInitialized || !HasRequiredNativeState())
+                return;
+
             RegisterTrackedBodyInternal(body, PhysicsCullingFlags.None);
         }
 
         /// <inheritdoc />
         void IPhysicsStateEventService.UnregisterBodyStateTracking(Rigidbody body)
         {
-            if (body == null)
+            if (body == null || !_isInitialized || !HasRequiredNativeState())
                 return;
 
             UnregisterTrackedBodyInternal(body);
@@ -1654,7 +1657,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredFixedTick || !Application.isPlaying)
+            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.TickDispatcher == null)
                 return;
 
             _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Core);
@@ -1662,7 +1665,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterLateFrameTick()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying)
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.TickDispatcher == null)
                 return;
 
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
@@ -1670,7 +1673,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterPostFixedTick()
         {
-            if (_registeredPostFixedTick || !Application.isPlaying)
+            if (_registeredPostFixedTick || !Application.isPlaying || GlobalRegistry.TickDispatcher == null)
                 return;
 
             _registeredPostFixedTick = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core);

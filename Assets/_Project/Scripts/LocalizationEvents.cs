@@ -294,6 +294,17 @@ namespace Hecton.Localization
             _overflowWarningQueued = false;
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+        }
+#endif
+
         /// <summary>
         /// Registers a language-change listener.
         /// </summary>

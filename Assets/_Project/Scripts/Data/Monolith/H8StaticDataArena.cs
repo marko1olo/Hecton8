@@ -35,7 +35,9 @@ namespace Hecton8.Data
         private const int StaticLocalizationBiomesSection = 2;
         private const int StaticLocalizationGhostModulesSection = 3;
         private const int StaticLocalizationSopErrorsSection = 4;
-        private const int StaticLocalizationSectionCount = 5;
+        private const int StaticLocalizationAppliedLoreSection = 5;
+        private const int StaticLocalizationSectionCount = 6;
+        private const uint DefaultAppliedLoreLocalizationLocaleHash = 0x6C199F07u; // en_US
         private const BufferID DataMonolithPayloadBufferId = BufferID.DataMonolithPayload;
         private const BufferID DataMonolithTelemetryRingBufferId = BufferID.DataMonolithTelemetryRing;
         private const BufferID DataMonolithTelemetryCursorBufferId = BufferID.DataMonolithTelemetryCursor;
@@ -48,6 +50,8 @@ namespace Hecton8.Data
         private const uint PathFlagStreamingUriStagingCancelled = 64u;
         private const uint PathFlagAndroidAssetManager = 128u;
         private const uint PathFlagAndroidJavaAssetManager = 256u;
+        private const string DataMonolithTelemetryDumpFileName = "Dump_H8StaticDataArena_Telemetry.bin";
+        private const string DataMonolithTelemetryDumpRelativePath = "Docs\\AgentLogs\\Dump_H8StaticDataArena_Telemetry.bin";
 #if UNITY_EDITOR
         private const int EditorHotReloadSnapshotChunkBytes = 64 * 1024;
 #endif
@@ -81,6 +85,10 @@ namespace Hecton8.Data
         private static int _telemetryFrame;
         private static long _lastReadTicks;
         private static uint _lastReadPathFlags;
+        private static uint _lastFailureStage;
+        private static uint _lastFailureDetail0;
+        private static uint _lastFailureDetail1;
+        private static uint _lastFailureDetail2;
 
         /// <summary>True when a valid blob is resident.</summary>
         public static bool IsLoaded => Volatile.Read(ref _loaded) != 0;
@@ -516,9 +524,17 @@ namespace Hecton8.Data
                 return false;
             }
 
-            AdoptVaultForLoad(vault);
+            if (!TryAdoptVaultForLoad(vault))
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(7u, _arenaHandle.BufferID, _telemetryHandle.BufferID, _telemetryCursorHandle.BufferID);
+                RecordFailureTelemetry(status, inheritedPathFlags);
+                return false;
+            }
+
             if (!TryProbeExistingBlobLength(absolutePath, out long blobLength, out status))
             {
+                SetFailureTelemetry(1u, (uint)status, inheritedPathFlags, 0u);
                 if (status == H8DataBlobLoadStatus.Missing)
                 {
                     if (failIfMissing)
@@ -549,11 +565,13 @@ namespace Hecton8.Data
 
             int blobBytes = (int)blobLength;
             IDataVault activeVault = _vault;
-            ShutdownArenaOnly();
-            _vault = activeVault;
+            if (!TryShutdownArenaBeforeReplacement(activeVault, inheritedPathFlags, out status))
+                return false;
+
             if (!TryAllocateArena(blobBytes))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(2u, (uint)Math.Max(0, blobBytes), (uint)ComputeArenaCapacity(blobBytes), _arenaHandle.BufferID);
                 RecordFailureTelemetry(status, inheritedPathFlags);
                 return false;
             }
@@ -687,7 +705,14 @@ namespace Hecton8.Data
                 return false;
             }
 
-            AdoptVaultForLoad(vault);
+            if (!TryAdoptVaultForLoad(vault))
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(7u, _arenaHandle.BufferID, _telemetryHandle.BufferID, _telemetryCursorHandle.BufferID);
+                RecordFailureTelemetry(status, 0u);
+                return false;
+            }
+
             if (source == null || sourceBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
                 status = H8DataBlobLoadStatus.FileTooSmall;
@@ -703,11 +728,13 @@ namespace Hecton8.Data
             }
 
             IDataVault activeVault = _vault;
-            ShutdownArenaOnly();
-            _vault = activeVault;
+            if (!TryShutdownArenaBeforeReplacement(activeVault, 0u, out status))
+                return false;
+
             if (!TryAllocateArena(sourceBytes))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(2u, (uint)Math.Max(0, sourceBytes), (uint)ComputeArenaCapacity(sourceBytes), _arenaHandle.BufferID);
                 RecordFailureTelemetry(status, 0u);
                 return false;
             }
@@ -715,6 +742,7 @@ namespace Hecton8.Data
             if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(3u, _arenaHandle.BufferID, _arenaHandle.Generation, _arenaHandle.SystemID);
                 RecordFailureTelemetry(status, 0u);
                 ShutdownArenaOnly();
                 return false;
@@ -738,6 +766,7 @@ namespace Hecton8.Data
             if (!copied || !writeLockReleased)
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(writeLockReleased ? 6u : 4u, copied ? 1u : 0u, _arenaHandle.BufferID, _arenaHandle.Generation);
                 RecordTelemetry(status, 0L, 0L, 0u);
                 DumpTelemetry(status);
                 ShutdownArenaOnly();
@@ -953,6 +982,243 @@ namespace Hecton8.Data
             fixed (H8ItemRecord* ptr = records)
             {
                 return TryFindByHash(ptr, records.Length, hashId, out record);
+            }
+        }
+
+        /// <summary>
+        /// Resolves one localized applied-lore packet by packet and locale hash.
+        /// Applied lore records are sorted by PacketHash, then LocaleHash at bake time.
+        /// </summary>
+        public static bool TryFindAppliedLorePacket(
+            uint packetHash,
+            uint localeHash,
+            out H8AppliedLorePacketRecord record)
+        {
+            record = default;
+            if (packetHash == 0u || localeHash == 0u)
+                return false;
+
+            ReadOnlySpan<H8AppliedLorePacketRecord> records = GetSectionSpan<H8AppliedLorePacketRecord>(H8DataSectionId.AppliedLorePackets);
+            if (records.Length <= 0)
+                return false;
+
+            int low = 0;
+            int high = records.Length - 1;
+            while (low <= high)
+            {
+                int index = low + ((high - low) >> 1);
+                H8AppliedLorePacketRecord candidate = records[index];
+                int compare = CompareAppliedLoreKey(candidate.PacketHash, candidate.LocaleHash, packetHash, localeHash);
+                if (compare == 0)
+                {
+                    record = candidate;
+                    return true;
+                }
+
+                if (compare < 0)
+                    low = index + 1;
+                else
+                    high = index - 1;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves a bounded UTF-8 slice for one applied-lore surface.
+        /// </summary>
+        public static bool TryGetAppliedLoreUtf8(
+            in H8AppliedLorePacketRecord record,
+            H8AppliedLoreSurface surface,
+            out ReadOnlySpan<byte> utf8Bytes)
+        {
+            utf8Bytes = ReadOnlySpan<byte>.Empty;
+            uint offset;
+            uint length;
+            switch (surface)
+            {
+                case H8AppliedLoreSurface.Title:
+                    offset = record.TitleUtf8Offset;
+                    length = record.TitleUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.Scanner:
+                    offset = record.ScannerUtf8Offset;
+                    length = record.ScannerUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.Terminal:
+                    offset = record.TerminalUtf8Offset;
+                    length = record.TerminalUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.Audio:
+                    offset = record.AudioUtf8Offset;
+                    length = record.AudioUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.InGameWiki:
+                    offset = record.WikiUtf8Offset;
+                    length = record.WikiUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.ExternalSite:
+                    offset = record.SiteUtf8Offset;
+                    length = record.SiteUtf8ByteLength;
+                    break;
+                case H8AppliedLoreSurface.FieldNote:
+                    offset = record.FieldNoteUtf8Offset;
+                    length = record.FieldNoteUtf8ByteLength;
+                    break;
+                default:
+                    return false;
+            }
+
+            if (length == 0u || length > int.MaxValue)
+                return false;
+
+            return TryGetLocalizedUtf8Span(offset, (int)length, out utf8Bytes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int CompareAppliedLoreKey(uint leftPacketHash, uint leftLocaleHash, uint rightPacketHash, uint rightLocaleHash)
+        {
+            if (leftPacketHash < rightPacketHash)
+                return -1;
+            if (leftPacketHash > rightPacketHash)
+                return 1;
+            if (leftLocaleHash < rightLocaleHash)
+                return -1;
+            if (leftLocaleHash > rightLocaleHash)
+                return 1;
+            return 0;
+        }
+
+        /// <summary>
+        /// Resolves one baked applied-lore route by route-card hash.
+        /// Applied lore routes are sorted by RouteCardHash at bake time.
+        /// </summary>
+        public static bool TryFindAppliedLoreRoute(uint routeCardHash, out H8AppliedLoreRouteRecord record)
+        {
+            record = default;
+            if (routeCardHash == 0u)
+                return false;
+
+            ReadOnlySpan<H8AppliedLoreRouteRecord> records = GetSectionSpan<H8AppliedLoreRouteRecord>(H8DataSectionId.AppliedLoreRoutes);
+            if (records.Length <= 0)
+                return false;
+
+            int low = 0;
+            int high = records.Length - 1;
+            while (low <= high)
+            {
+                int index = low + ((high - low) >> 1);
+                H8AppliedLoreRouteRecord candidate = records[index];
+                if (candidate.RouteCardHash == routeCardHash)
+                {
+                    record = candidate;
+                    return true;
+                }
+
+                if (candidate.RouteCardHash < routeCardHash)
+                    low = index + 1;
+                else
+                    high = index - 1;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the current baked applied-lore route count.
+        /// </summary>
+        public static int GetAppliedLoreRouteCount()
+        {
+            return GetSectionSpan<H8AppliedLoreRouteRecord>(H8DataSectionId.AppliedLoreRoutes).Length;
+        }
+
+        /// <summary>
+        /// Resolves one applied-lore route by sorted record index.
+        /// </summary>
+        public static bool TryGetAppliedLoreRouteAt(int index, out H8AppliedLoreRouteRecord record)
+        {
+            record = default;
+            ReadOnlySpan<H8AppliedLoreRouteRecord> records = GetSectionSpan<H8AppliedLoreRouteRecord>(H8DataSectionId.AppliedLoreRoutes);
+            if ((uint)index >= (uint)records.Length)
+                return false;
+
+            record = records[index];
+            return record.RouteCardHash != 0u;
+        }
+
+        /// <summary>
+        /// Resolves the first baked applied-lore route that directly references a packet hash.
+        /// </summary>
+        public static bool TryFindAppliedLoreRouteForPacket(uint packetHash, out H8AppliedLoreRouteRecord record)
+        {
+            record = default;
+            if (packetHash == 0u)
+                return false;
+
+            ReadOnlySpan<H8AppliedLoreRouteRecord> records = GetSectionSpan<H8AppliedLoreRouteRecord>(H8DataSectionId.AppliedLoreRoutes);
+            for (int i = 0; i < records.Length; i++)
+            {
+                H8AppliedLoreRouteRecord candidate = records[i];
+                if (candidate.RouteCardHash == 0u)
+                    continue;
+
+                if (AppliedLoreRouteContainsPacket(in candidate, packetHash))
+                {
+                    record = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns true when a baked applied-lore route directly references the packet hash.
+        /// </summary>
+        public static bool AppliedLoreRouteContainsPacket(in H8AppliedLoreRouteRecord record, uint packetHash)
+        {
+            if (packetHash == 0u || record.PacketCount == 0u)
+                return false;
+
+            uint count = math.min(record.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+            for (uint i = 0u; i < count; i++)
+                if (GetAppliedLoreRoutePacketHash(in record, i) == packetHash)
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reads one inline packet hash from an applied-lore route record.
+        /// </summary>
+        public static uint GetAppliedLoreRoutePacketHash(in H8AppliedLoreRouteRecord record, uint index)
+        {
+            switch (index)
+            {
+                case 0u: return record.PacketHash0;
+                case 1u: return record.PacketHash1;
+                case 2u: return record.PacketHash2;
+                case 3u: return record.PacketHash3;
+                case 4u: return record.PacketHash4;
+                case 5u: return record.PacketHash5;
+                case 6u: return record.PacketHash6;
+                case 7u: return record.PacketHash7;
+                default: return 0u;
+            }
+        }
+
+        /// <summary>
+        /// Reads one inline prerequisite packet hash from an applied-lore route record.
+        /// </summary>
+        public static uint GetAppliedLoreRouteRequiredPacketHash(in H8AppliedLoreRouteRecord record, uint index)
+        {
+            switch (index)
+            {
+                case 0u: return record.RequiredPacketHash0;
+                case 1u: return record.RequiredPacketHash1;
+                case 2u: return record.RequiredPacketHash2;
+                case 3u: return record.RequiredPacketHash3;
+                default: return 0u;
             }
         }
 
@@ -1552,6 +1818,10 @@ namespace Hecton8.Data
                         found = TryGetNextSopErrorLocalizationReference(ref cursor.RecordIndex, out reference);
                         break;
 
+                    case StaticLocalizationAppliedLoreSection:
+                        found = TryGetNextAppliedLoreLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
                     default:
                         return false;
                 }
@@ -1670,6 +1940,31 @@ namespace Hecton8.Data
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].ErrorHash, records[index].MessageUtf8Offset, records[index].MessageUtf8ByteLength, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextAppliedLoreLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            ReadOnlySpan<H8AppliedLorePacketRecord> records = GetSectionSpan<H8AppliedLorePacketRecord>(H8DataSectionId.AppliedLorePackets);
+            if (records.Length <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < records.Length)
+            {
+                int index = recordIndex++;
+                if (records[index].LocaleHash != DefaultAppliedLoreLocalizationLocaleHash)
+                    continue;
+
+                if (TryBuildStaticLocalizationReference(records[index].PacketHash, records[index].TitleUtf8Offset, records[index].TitleUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -2121,13 +2416,18 @@ namespace Hecton8.Data
                 return false;
             }
 
-            AdoptVaultForLoad(vault);
             uint pathFlags = PathFlagVaultBacked | PathFlagAndroidAssetManager | PathFlagAndroidJavaAssetManager;
             long readStart = Stopwatch.GetTimestamp();
             bool arenaReplaced = false;
             status = H8DataBlobLoadStatus.ReadFailed;
             _lastReadTicks = 0L;
             _lastReadPathFlags = pathFlags;
+            if (!TryAdoptVaultForLoad(vault))
+            {
+                SetFailureTelemetry(7u, _arenaHandle.BufferID, _telemetryHandle.BufferID, _telemetryCursorHandle.BufferID);
+                RecordFailureTelemetry(status, pathFlags);
+                return false;
+            }
 
             int assetNameCapacity = H8DataLayoutConstants.DefaultStreamingAssetsRelativePath.Length + 1;
             byte* assetName = stackalloc byte[assetNameCapacity];
@@ -2232,9 +2532,10 @@ namespace Hecton8.Data
                     }
 
                     IDataVault activeVault = _vault;
-                    ShutdownArenaOnly();
+                    if (!TryShutdownArenaBeforeReplacement(activeVault, pathFlags, out status))
+                        return false;
+
                     arenaReplaced = true;
-                    _vault = activeVault;
                     if (!TryAllocateArena(blobBytes))
                     {
                         status = H8DataBlobLoadStatus.ReadFailed;
@@ -2400,7 +2701,14 @@ namespace Hecton8.Data
                 return false;
             }
 
-            AdoptVaultForLoad(vault);
+            if (!TryAdoptVaultForLoad(vault))
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(7u, _arenaHandle.BufferID, _telemetryHandle.BufferID, _telemetryCursorHandle.BufferID);
+                RecordFailureTelemetry(status, 0u);
+                return false;
+            }
+
             char* path = stackalloc char[NativePathCapacity];
             if (!TryBuildWindowsPlayerMonolithPath(path, NativePathCapacity))
             {
@@ -2436,8 +2744,9 @@ namespace Hecton8.Data
 
             int blobBytes = (int)blobLength;
             IDataVault activeVault = _vault;
-            ShutdownArenaOnly();
-            _vault = activeVault;
+            if (!TryShutdownArenaBeforeReplacement(activeVault, 0u, out status))
+                return false;
+
             if (!TryAllocateArena(blobBytes))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
@@ -2564,6 +2873,7 @@ namespace Hecton8.Data
             if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(3u, _arenaHandle.BufferID, _arenaHandle.Generation, _arenaHandle.SystemID);
                 return false;
             }
 
@@ -2625,6 +2935,7 @@ namespace Hecton8.Data
             if (!writeLockReleased)
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
+                SetFailureTelemetry(4u, ok ? 1u : 0u, _arenaHandle.BufferID, _arenaHandle.Generation);
                 _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
                 _lastReadPathFlags = pathFlags;
                 return false;
@@ -2773,7 +3084,7 @@ namespace Hecton8.Data
 
         private static unsafe bool IsDirectoryValid()
         {
-            const ushort ExpectedSectionCount = (ushort)H8DataSectionId.PhysicsConstants;
+            const ushort ExpectedSectionCount = (ushort)H8DataSectionId.AppliedLoreRoutes;
             if (_directory.SectionCount != ExpectedSectionCount)
                 return false;
 
@@ -2886,8 +3197,6 @@ namespace Hecton8.Data
                     return false;
             }
 
-            _arenaHandle = default;
-
             if (vault != null)
             {
                 _arenaHandle = vault.EnsureGenerationHandle<byte>(
@@ -2907,10 +3216,61 @@ namespace Hecton8.Data
             return false;
         }
 
-        private static void AdoptVaultForLoad(IDataVault vault)
+        private static bool TryAdoptVaultForLoad(IDataVault vault)
         {
+            if (vault != null &&
+                ((_vault == null && HasResidentHandles()) ||
+                 (_vault != null && !ReferenceEquals(vault, _vault))))
+            {
+                if (_vault != null && !ShutdownArenaOnly())
+                    return false;
+
+                ClearResidentHandlesAfterVaultSwitch();
+            }
+
             if (vault != null || !IsLoaded)
                 _vault = vault;
+
+            return true;
+        }
+
+        private static bool TryShutdownArenaBeforeReplacement(
+            IDataVault activeVault,
+            uint pathFlags,
+            out H8DataBlobLoadStatus status)
+        {
+            if (ShutdownArenaOnly())
+            {
+                _vault = activeVault;
+                status = H8DataBlobLoadStatus.None;
+                return true;
+            }
+
+            _vault = activeVault;
+            status = H8DataBlobLoadStatus.ReadFailed;
+            SetFailureTelemetry(8u, _arenaHandle.BufferID, _telemetryHandle.BufferID, _telemetryCursorHandle.BufferID);
+            RecordFailureTelemetry(status, pathFlags);
+            return false;
+        }
+
+        private static bool HasResidentHandles()
+        {
+            return _arenaHandle.BufferID != 0u ||
+                   _telemetryHandle.BufferID != 0u ||
+                   _telemetryCursorHandle.BufferID != 0u;
+        }
+
+        private static void ClearResidentHandlesAfterVaultSwitch()
+        {
+            Volatile.Write(ref _loaded, 0);
+            Volatile.Write(ref _writeLocked, 0);
+            _arenaHandle = default;
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _header = default;
+            _directory = default;
+            _residentBlobBytes = 0;
+            _vault = null;
         }
 
         private static bool TryAcquireArenaWriteView(out NativeArray<byte> arena)
@@ -3119,7 +3479,19 @@ namespace Hecton8.Data
             entry.LoadStatus = (uint)status;
             entry.PathFlags = pathFlags;
             entry.StateHash = stateHash;
+            entry.Reserved0 = _lastFailureStage;
+            entry.Reserved1 = _lastFailureDetail0;
+            entry.Reserved2 = _lastFailureDetail1;
+            entry.Reserved3 = _lastFailureDetail2;
             TryWriteTelemetryEntry(index, in entry);
+        }
+
+        private static void SetFailureTelemetry(uint stage, uint detail0, uint detail1, uint detail2)
+        {
+            _lastFailureStage = stage;
+            _lastFailureDetail0 = detail0;
+            _lastFailureDetail1 = detail1;
+            _lastFailureDetail2 = detail2;
         }
 
         private static void DumpTelemetry(H8DataBlobLoadStatus status)
@@ -3139,7 +3511,7 @@ namespace Hecton8.Data
             {
                 string folder = System.IO.Path.GetFullPath("Docs/AgentLogs");
                 System.IO.Directory.CreateDirectory(folder);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1404.bin"), status, ring, telemetryCursor);
+                WriteTelemetryDump(System.IO.Path.Combine(folder, DataMonolithTelemetryDumpFileName), status, ring, telemetryCursor);
             }
             catch (IOException)
             {
@@ -3326,7 +3698,7 @@ namespace Hecton8.Data
             if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs"))
                 CreateDirectoryWNative(path, IntPtr.Zero);
 
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1404.bin"))
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, DataMonolithTelemetryDumpRelativePath))
                 WriteTelemetryDumpWin32(path, status, ring, cursor);
         }
 
@@ -3513,27 +3885,41 @@ namespace Hecton8.Data
             return (value + mask) & ~mask;
         }
 
-        private static void ShutdownArenaOnly()
+        private static bool ShutdownArenaOnly()
         {
             Volatile.Write(ref _loaded, 0);
+            Volatile.Write(ref _writeLocked, 0);
             _header = default;
             _directory = default;
             _residentBlobBytes = 0;
 
             IDataVault vault = _vault;
+            bool releasedAll = true;
             if (vault != null)
             {
-                _ = ReleaseVaultHandle(vault, ref _arenaHandle);
-                _ = ReleaseVaultHandle(vault, ref _telemetryHandle);
-                _ = ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+                releasedAll &= ReleaseVaultHandle(vault, ref _arenaHandle);
+                releasedAll &= ReleaseVaultHandle(vault, ref _telemetryHandle);
+                releasedAll &= ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            }
+            else
+            {
+                _arenaHandle = default;
+                _telemetryHandle = default;
+                _telemetryCursorHandle = default;
             }
 
-            if (_arenaHandle.BufferID == 0u &&
+            if (releasedAll &&
+                _arenaHandle.BufferID == 0u &&
                 _telemetryHandle.BufferID == 0u &&
                 _telemetryCursorHandle.BufferID == 0u)
             {
                 _vault = null;
             }
+
+            return releasedAll &&
+                   _arenaHandle.BufferID == 0u &&
+                   _telemetryHandle.BufferID == 0u &&
+                   _telemetryCursorHandle.BufferID == 0u;
         }
 
         private static bool ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct

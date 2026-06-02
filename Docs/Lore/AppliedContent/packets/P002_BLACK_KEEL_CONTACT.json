@@ -1,0 +1,163 @@
+{
+  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+  "packet_id": "P002_BLACK_KEEL_CONTACT",
+  "article_id": "black_keel.contact",
+  "title_key": "LORE_P002_BLACK_KEEL_TITLE",
+  "status": "release_set_001",
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "unlock": {
+    "primary": "unlock.black_keel_handshake",
+    "poi_tags": [
+      "poi.signal_mast",
+      "poi.service_buoy"
+    ],
+    "biome_tags": [
+      "biome.storm_shelf",
+      "biome.shallow_reef"
+    ]
+  },
+  "localized": {
+    "en_US": {
+      "title": "Black Keel Contact",
+      "scanner": "Old relay mast. Salted, bent, still pointed at the right sky.",
+      "field_note": "When a carrier asks what you found before it asks if you are breathing, you are not the client. You are the tool.",
+      "terminal": "OPERATOR STATE: alive. DROPCRAFT STATE: unrecoverable. CLAIM STATE: open. SAMPLE STATE: unknown. RECOVERY STATE: pending window.",
+      "audio": "Window is closing. Send one packet. Choose before the storm band rolls over the mast.",
+      "in_game_wiki": "The Black Keel is a system carrier, not a home ship. It moves capsules, cargo tugs, claim packages, sealed samples, and unlucky operators through Aegir traffic. It can help, but help is filtered through geometry, weather, automation, debt, and whatever priority hooks were hidden in the contract before the player ever touched water.",
+      "external_site": "The Black Keel is the player's only line back to orbit. It is not dead, but it is not loyal. Its broken messages turn the sky into a survival system: every window can carry a rescue request, a lie, a sample report, or evidence."
+    },
+    "ru_RU": {
+      "title": "Контакт Black Keel",
+      "scanner": "Старая релейная мачта. Соль, изгиб, коррозия. Все еще смотрит в правильное небо.",
+      "field_note": "Если carrier спрашивает, что ты нашел, раньше чем спрашивает, дышишь ли ты, клиент не ты. Ты инструмент.",
+      "terminal": "СОСТОЯНИЕ ОПЕРАТОРА: жив. СОСТОЯНИЕ КАПСУЛЫ: невосстановима. СТАТУС CLAIM: открыт. СТАТУС ОБРАЗЦА: неизвестен. СПАСЕНИЕ: ожидает окна.",
+      "audio": "Окно закрывается. Отправь один пакет. Выбирай до того, как штормовая полоса накроет мачту.",
+      "in_game_wiki": "Black Keel - системный carrier, а не домашний корабль. Он двигает капсулы, грузовые буксиры, claim-пакеты, sealed samples и невезучих операторов через трафик Aegir. Он может помочь, но помощь проходит через геометрию, погоду, автоматизацию, долг и скрытые priority hooks, заложенные в контракт еще до того, как игрок коснулся воды.",
+      "external_site": "Black Keel - единственная линия игрока обратно на орбиту. Он не мертв, но и не лоялен. Его рваные сообщения превращают небо в систему выживания: каждое окно может нести запрос спасения, ложь, отчет об образце или доказательство."
+    },
+    "ja_JP": {
+      "title": "Black Keel接触",
+      "scanner": "古い中継マスト。塩に侵され、曲がっているが、まだ正しい空を向いている。",
+      "field_note": "キャリアが呼吸より先に発見物を尋ねるなら、依頼人はお前ではない。お前は道具だ。",
+      "terminal": "オペレーター状態: 生存。降下艇状態: 回収不能。クレーム状態: 開放。サンプル状態: 不明。回収状態: 窓待ち。",
+      "audio": "通信窓が閉じる。パケットを一つ送れ。嵐帯がマストを覆う前に選べ。",
+      "in_game_wiki": "Black Keelは母船ではなく、星系内キャリアだ。カプセル、貨物タグ、クレーム荷、密封サンプル、不運な作業員をAegir圏内で動かす。助けにはなるが、その助けは軌道、天候、自動化、負債、契約に隠された優先権を通る。",
+      "external_site": "Black Keelは軌道へ戻る唯一の線だ。死んではいないが、忠実でもない。断片的な通信は空を生存システムに変える。各通信窓は救助要請、嘘、サンプル報告、証拠のどれかを運ぶ。"
+    },
+    "zh_CN": {
+      "title": "Black Keel联系",
+      "scanner": "旧中继桅杆。被盐蚀、弯曲，却仍指向正确的天空。",
+      "field_note": "如果一艘carrier先问你找到了什么，而不是问你还喘不喘气，你就不是客户。你是工具。",
+      "terminal": "操作员状态：存活。下潜舱状态：不可回收。索赔状态：开启。样本状态：未知。回收状态：等待窗口。",
+      "audio": "窗口正在关闭。发送一个数据包。在风暴带压过桅杆前做选择。",
+      "in_game_wiki": "Black Keel是一艘星系内carrier，不是家船。它在Aegir交通区移动舱体、货拖、索赔包、密封样本和倒霉的操作员。它能帮忙，但帮助要经过几何、天气、自动化、债务，以及合同里早就埋下的优先钩子。",
+      "external_site": "Black Keel是玩家返回轨道的唯一线路。它没有死，但也不忠诚。破碎的信息把天空变成生存系统：每个窗口都可能携带救援请求、谎言、样本报告或证据。"
+    },
+    "fr_FR": {
+      "title": "Contact Black Keel",
+      "scanner": "Ancien mât relais. Salé, tordu, encore pointé vers le bon ciel.",
+      "field_note": "Quand un carrier demande ce que tu as trouvé avant de demander si tu respires, tu n'es pas le client. Tu es l'outil.",
+      "terminal": "ETAT OPERATEUR: vivant. ETAT DROPCRAFT: irrécupérable. CLAIM: ouvert. ECHANTILLON: inconnu. RECUPERATION: fenêtre en attente.",
+      "audio": "La fenêtre se ferme. Envoie un seul paquet. Choisis avant que la bande de tempête passe sur le mât.",
+      "in_game_wiki": "Le Black Keel est un carrier de système, pas un vaisseau refuge. Il déplace capsules, remorqueurs, paquets de claim, échantillons scellés et opérateurs malchanceux dans le trafic d'Aegir. Il peut aider, mais cette aide passe par géométrie, météo, automatisme, dette et priorités cachées du contrat.",
+      "external_site": "Le Black Keel est la seule ligne du joueur vers l'orbite. Il n'est pas mort, mais il n'est pas loyal. Ses messages brisés transforment le ciel en système de survie: chaque fenêtre peut porter secours, mensonge, rapport d'échantillon ou preuve."
+    },
+    "es_ES": {
+      "title": "Contacto Black Keel",
+      "scanner": "Viejo mástil de enlace. Salado, torcido, aún apuntando al cielo correcto.",
+      "field_note": "Si un carrier pregunta qué encontraste antes de preguntar si respiras, no eres el cliente. Eres la herramienta.",
+      "terminal": "ESTADO OPERADOR: vivo. ESTADO CÁPSULA: irrecuperable. CLAIM: abierto. MUESTRA: desconocida. RECUPERACIÓN: esperando ventana.",
+      "audio": "La ventana se cierra. Envía un paquete. Elige antes de que la banda de tormenta cubra el mástil.",
+      "in_game_wiki": "El Black Keel es un carrier de sistema, no una nave hogar. Mueve cápsulas, remolques, paquetes de claim, muestras selladas y operadores desafortunados por el tráfico de Aegir. Puede ayudar, pero la ayuda pasa por geometría, clima, automatización, deuda y prioridades ocultas en el contrato.",
+      "external_site": "El Black Keel es la única línea del jugador hacia la órbita. No está muerto, pero no es leal. Sus mensajes rotos convierten el cielo en un sistema de supervivencia: cada ventana puede llevar rescate, mentira, informe de muestra o prueba."
+    },
+    "de_DE": {
+      "title": "Black-Keel-Kontakt",
+      "scanner": "Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Himmel gerichtet.",
+      "field_note": "Wenn ein Carrier fragt, was du gefunden hast, bevor er fragt, ob du atmest, bist du nicht der Kunde. Du bist das Werkzeug.",
+      "terminal": "OPERATORSTATUS: lebend. DROPCRAFT: nicht bergbar. CLAIM: offen. PROBE: unbekannt. BERGUNG: Fenster ausstehend.",
+      "audio": "Das Fenster schließt. Sende ein Paket. Wähle, bevor das Sturmfeld über den Mast rollt.",
+      "in_game_wiki": "Die Black Keel ist ein System-Carrier, kein Heimatschiff. Sie bewegt Kapseln, Frachtschlepper, Claim-Pakete, versiegelte Proben und unglückliche Operatoren durch den Aegir-Verkehr. Sie kann helfen, aber Hilfe läuft durch Geometrie, Wetter, Automatik, Schulden und versteckte Prioritäten im Vertrag.",
+      "external_site": "Die Black Keel ist die einzige Linie zurück in den Orbit. Sie ist nicht tot, aber auch nicht loyal. Ihre gebrochenen Nachrichten machen den Himmel zum Überlebenssystem: jedes Fenster kann Rettung, Lüge, Probenbericht oder Beweis tragen."
+    },
+    "pl_PL": {
+      "title": "Kontakt Black Keel",
+      "scanner": "Stary maszt przekaźnikowy. Zasolony, wygięty, wciąż skierowany we właściwe niebo.",
+      "field_note": "Gdy carrier pyta, co znalazłeś, zanim zapyta, czy oddychasz, nie jesteś klientem. Jesteś narzędziem.",
+      "terminal": "OPERATOR: żywy. KAPSUŁA: nie do odzysku. CLAIM: otwarty. PRÓBKA: nieznana. ODZYSK: czeka na okno.",
+      "audio": "Okno się zamyka. Wyślij jeden pakiet. Wybierz, zanim pas burzy przykryje maszt.",
+      "in_game_wiki": "Black Keel to carrier systemowy, nie domowy statek. Przenosi kapsuły, holowniki, pakiety claim, zapieczętowane próbki i pechowych operatorów w ruchu Aegir. Może pomóc, ale pomoc przechodzi przez geometrię, pogodę, automatykę, dług i ukryte priorytety kontraktu.",
+      "external_site": "Black Keel jest jedyną linią gracza na orbitę. Nie jest martwy, ale nie jest lojalny. Poszarpane komunikaty zmieniają niebo w system przetrwania: każde okno może nieść ratunek, kłamstwo, raport próbki albo dowód."
+    },
+    "uk_UA": {
+      "title": "Контакт Black Keel",
+      "scanner": "Стара релейна щогла. Засолена, зігнута, але досі спрямована в правильне небо.",
+      "field_note": "Якщо carrier питає, що ти знайшов, раніше ніж питає, чи ти дихаєш, клієнт не ти. Ти інструмент.",
+      "terminal": "СТАН ОПЕРАТОРА: живий. СТАН КАПСУЛИ: невідновна. CLAIM: відкритий. ЗРАЗОК: невідомий. ПОРЯТУНОК: очікує вікна.",
+      "audio": "Вікно закривається. Надішли один пакет. Обери до того, як штормова смуга накриє щоглу.",
+      "in_game_wiki": "Black Keel - системний carrier, не домашній корабель. Він рухає капсули, вантажні буксири, claim-пакети, запечатані зразки й невезучих операторів через трафік Aegir. Він може допомогти, але допомога проходить крізь геометрію, погоду, автоматизацію, борг і приховані пріоритети контракту.",
+      "external_site": "Black Keel - єдина лінія гравця назад на орбіту. Він не мертвий, але й не лояльний. Його уривчасті повідомлення перетворюють небо на систему виживання: кожне вікно може нести порятунок, брехню, звіт про зразок або доказ."
+    },
+    "ar_SA": {
+      "title": "اتصال Black Keel",
+      "scanner": "سارية ترحيل قديمة. مملحة ومنحنية، لكنها ما زالت تشير إلى السماء الصحيحة.",
+      "field_note": "إذا سألتك الحاملة عما وجدت قبل أن تسأل هل تتنفس، فأنت لست العميل. أنت الأداة.",
+      "terminal": "حالة العامل: حي. حالة الكبسولة: غير قابلة للاسترداد. حالة المطالبة: مفتوحة. حالة العينة: مجهولة. الاسترداد: بانتظار النافذة.",
+      "audio": "النافذة تغلق. أرسل حزمة واحدة. اختر قبل أن تمر حزمة العاصفة فوق السارية.",
+      "in_game_wiki": "Black Keel حاملة داخل النظام، وليست سفينة منزل. تنقل الكبسولات والقاطرات وحزم المطالبة والعينات المختومة والعاملين سيئي الحظ عبر حركة Aegir. يمكنها المساعدة، لكن المساعدة تمر عبر الهندسة والطقس والأتمتة والدين وأولويات مخفية في العقد.",
+      "external_site": "Black Keel هي خط اللاعب الوحيد إلى المدار. ليست ميتة، لكنها ليست وفية. رسائلها المكسورة تحول السماء إلى نظام بقاء: كل نافذة قد تحمل طلب إنقاذ أو كذبة أو تقرير عينة أو دليلا."
+    },
+    "id_ID": {
+      "title": "Kontak Black Keel",
+      "scanner": "Tiang relay tua. Asin, bengkok, masih mengarah ke langit yang benar.",
+      "field_note": "Kalau carrier bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.",
+      "terminal": "STATUS OPERATOR: hidup. STATUS DROPCRAFT: tak bisa dipulihkan. CLAIM: terbuka. SAMPEL: tidak diketahui. PEMULIHAN: menunggu jendela.",
+      "audio": "Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutupi tiang.",
+      "in_game_wiki": "Black Keel adalah carrier sistem, bukan kapal rumah. Ia memindahkan kapsul, tug kargo, paket claim, sampel tersegel, dan operator sial di lalu lintas Aegir. Ia bisa membantu, tetapi bantuan melewati geometri, cuaca, otomasi, utang, dan prioritas tersembunyi dalam kontrak.",
+      "external_site": "Black Keel adalah satu-satunya jalur pemain kembali ke orbit. Ia tidak mati, tetapi juga tidak loyal. Pesan pecahnya mengubah langit menjadi sistem bertahan hidup: setiap jendela bisa membawa penyelamatan, kebohongan, laporan sampel, atau bukti."
+    },
+    "ko_KR": {
+      "title": "Black Keel 접촉",
+      "scanner": "낡은 중계 마스트. 소금에 절고 휘었지만 아직 올바른 하늘을 향한다.",
+      "field_note": "캐리어가 네가 숨 쉬는지보다 무엇을 찾았는지 먼저 묻는다면, 너는 고객이 아니다. 너는 도구다.",
+      "terminal": "운영자 상태: 생존. 드롭크래프트 상태: 회수 불가. 클레임 상태: 개방. 샘플 상태: 미확인. 회수 상태: 창 대기.",
+      "audio": "창이 닫힌다. 패킷 하나를 보내라. 폭풍대가 마스트를 덮기 전에 선택하라.",
+      "in_game_wiki": "Black Keel은 집 같은 배가 아니라 시스템 캐리어다. Aegir 교통권에서 캡슐, 화물 터그, 클레임 패키지, 봉인 샘플, 불운한 운영자를 이동시킨다. 도움은 줄 수 있지만, 그 도움은 궤도 기하, 날씨, 자동화, 빚, 계약에 숨은 우선권을 거친다.",
+      "external_site": "Black Keel은 궤도로 돌아가는 유일한 선이다. 죽어 있지는 않지만 충성스럽지도 않다. 끊긴 메시지는 하늘을 생존 시스템으로 만든다. 각 창은 구조 요청, 거짓말, 샘플 보고, 증거 중 하나를 운반한다."
+    },
+    "he_IL": {
+      "title": "קשר Black Keel",
+      "scanner": "תורן ממסר ישן. מלוח, עקום, ועדיין מכוון לשמיים הנכונים.",
+      "field_note": "אם carrier שואלת מה מצאת לפני שהיא שואלת אם אתה נושם, אתה לא הלקוח. אתה הכלי.",
+      "terminal": "מצב מפעיל: חי. מצב קפסולה: בלתי ניתנת לשחזור. מצב claim: פתוח. מצב דגימה: לא ידוע. חילוץ: ממתין לחלון.",
+      "audio": "החלון נסגר. שלח חבילה אחת. בחר לפני שרצועת הסערה תכסה את התורן.",
+      "in_game_wiki": "Black Keel היא carrier מערכתית, לא ספינת בית. היא מזיזה קפסולות, גוררי מטען, חבילות claim, דגימות אטומות ומפעילים חסרי מזל בתעבורת Aegir. היא יכולה לעזור, אך העזרה עוברת דרך גיאומטריה, מזג אוויר, אוטומציה, חוב ועדיפויות נסתרות בחוזה.",
+      "external_site": "Black Keel היא הקו היחיד של השחקן חזרה למסלול. היא לא מתה, אבל גם לא נאמנה. הודעותיה השבורות הופכות את השמיים למערכת הישרדות: כל חלון יכול לשאת חילוץ, שקר, דיווח דגימה או הוכחה."
+    },
+    "pt_BR": {
+      "title": "Contato Black Keel",
+      "scanner": "Mastro de retransmissão antigo. Salgado, torto, ainda apontado para o céu certo.",
+      "field_note": "Quando um carrier pergunta o que você achou antes de perguntar se você respira, você não é o cliente. Você é a ferramenta.",
+      "terminal": "ESTADO DO OPERADOR: vivo. DROPCRAFT: irrecuperável. CLAIM: aberto. AMOSTRA: desconhecida. RECUPERAÇÃO: aguardando janela.",
+      "audio": "A janela está fechando. Envie um pacote. Escolha antes que a faixa de tempestade cubra o mastro.",
+      "in_game_wiki": "A Black Keel é uma carrier de sistema, não uma nave-lar. Ela move cápsulas, rebocadores, pacotes de claim, amostras seladas e operadores azarados pelo tráfego de Aegir. Ela pode ajudar, mas a ajuda passa por geometria, clima, automação, dívida e prioridades escondidas no contrato.",
+      "external_site": "A Black Keel é a única linha do jogador de volta à órbita. Ela não está morta, mas não é leal. Suas mensagens quebradas transformam o céu em um sistema de sobrevivência: cada janela pode levar resgate, mentira, relatório de amostra ou prova."
+    },
+    "nl_NL": {
+      "title": "Black Keel-contact",
+      "scanner": "Oude relaismast. Zout, krom, nog steeds op de juiste hemel gericht.",
+      "field_note": "Als een carrier vraagt wat je vond voordat hij vraagt of je ademt, ben jij niet de klant. Jij bent het gereedschap.",
+      "terminal": "OPERATORSTATUS: levend. DROPCRAFT: niet herstelbaar. CLAIM: open. MONSTER: onbekend. BERGING: wacht op venster.",
+      "audio": "Het venster sluit. Stuur één pakket. Kies voordat de stormband over de mast rolt.",
+      "in_game_wiki": "De Black Keel is een systeemcarrier, geen thuisschip. Hij verplaatst capsules, vrachttugs, claimpakketten, verzegelde monsters en ongelukkige operators door Aegir-verkeer. Hij kan helpen, maar hulp loopt via geometrie, weer, automatisering, schuld en verborgen contractprioriteiten.",
+      "external_site": "De Black Keel is de enige lijn terug naar de baan. Hij is niet dood, maar ook niet loyaal. Zijn gebroken berichten maken de hemel tot een overlevingssysteem: elk venster kan redding, leugen, monsterrapport of bewijs dragen."
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+  "packet_id": "P004_BLUE_DEBT",
+  "article_id": "resource.blue_debt",
+  "title_key": "LORE_P004_BLUE_DEBT_TITLE",
+  "status": "release_set_001",
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "unlock": {
+    "primary": "unlock.first_blue_debt_sample",
+    "poi_tags": [
+      "poi.pressure_casket",
+      "poi.cable_forest"
+    ],
+    "biome_tags": [
+      "biome.industrial_descent",
+      "biome.thermal_field"
+    ]
+  },
+  "localized": {
+    "en_US": {
+      "title": "Blue Debt",
+      "scanner": "Pressure-kept Xenon-Omega residue. Stable only inside hostile conditions. Do not vent near warm cabin air.",
+      "field_note": "Blue debt pays because it bites twice. Once when you carry it. Again when somebody learns you have it.",
+      "terminal": "XO CONTINUITY SUBSTRATE. Do not decompress. Do not expose to unfiltered habitat atmosphere.",
+      "audio": "Container is singing on sonar. Low, regular. That is not a creature. That is worse.",
+      "in_game_wiki": "Blue debt is Marauder slang for pressure-kept Xenon-Omega material and related process residue. It is not a single mineral. It is a family of pressure-grown lattices, clathrate structures, contaminated substrates, and industrial leftovers that Deep Reach used for high-energy containment, extreme computation, and Atlas-compatible infrastructure.",
+      "external_site": "Blue debt is the resource layer that makes HECTON-8 more than a lost colony. It is valuable, unstable, and tied directly to why Deep Reach wanted the moon buried and recovered at the same time."
+    },
+    "ru_RU": {
+      "title": "Blue Debt",
+      "scanner": "Сохраненный давлением остаток Xenon-Omega. Стабилен только во враждебных условиях. Не стравливать рядом с теплым воздухом жилого отсека.",
+      "field_note": "Blue debt платит потому, что кусает дважды. Сначала когда ты его несешь. Потом когда кто-то узнает, что он у тебя.",
+      "terminal": "XO CONTINUITY SUBSTRATE. Не декомпрессировать. Не подвергать нефильтрованной атмосфере жилого отсека.",
+      "audio": "Контейнер поет на сонаре. Низко, ровно. Это не существо. Это хуже.",
+      "in_game_wiki": "Blue debt - мародерский сленг для материалов Xenon-Omega и связанных остатков процесса, сохраненных давлением. Это не один минерал. Это семейство выращенных давлением решеток, клатратных структур, загрязненных субстратов и промышленных остатков, которые Deep Reach использовала для высокоэнергетического удержания, экстремальных вычислений и инфраструктуры, совместимой с Atlas.",
+      "external_site": "Blue debt - ресурсный слой, который делает HECTON-8 больше, чем потерянной колонией. Он ценен, нестабилен и напрямую связан с тем, почему Deep Reach одновременно хотела похоронить луну и вернуть ее."
+    },
+    "ja_JP": {
+      "title": "Blue Debt",
+      "scanner": "圧力保持されたXenon-Omega残渣。敵対的条件内でのみ安定。暖かい居住区空気へ放出するな。",
+      "field_note": "Blue debtは二度噛むから金になる。運ぶ時に一度。持っていると知られた時にもう一度。",
+      "terminal": "XO連続性基質。減圧禁止。未濾過の居住区大気に曝露禁止。",
+      "audio": "容器がソナーで歌っている。低く、規則的だ。生物ではない。もっと悪い。",
+      "in_game_wiki": "Blue debtは、圧力保持されたXenon-Omega材料と関連プロセス残渣を指すマローダーの俗称だ。単一の鉱物ではない。圧力成長格子、クラスレート構造、汚染基質、Deep Reachが高エネルギー封じ込め、極限計算、Atlas互換インフラに使った産業残渣の集合である。",
+      "external_site": "Blue debtは、HECTON-8を失われた植民地以上のものにする資源層だ。価値があり、不安定で、Deep Reachが月を埋めたいと同時に回収したかった理由に直結している。"
+    },
+    "zh_CN": {
+      "title": "Blue Debt",
+      "scanner": "压力保存的Xenon-Omega残留物。只在恶劣条件中稳定。不要在温暖舱内空气附近泄压。",
+      "field_note": "Blue debt值钱，因为它咬两次。你携带它时一次。别人知道你有它时再一次。",
+      "terminal": "XO连续性基质。不得减压。不得暴露于未过滤居住舱空气。",
+      "audio": "容器在声呐里唱歌。低沉，规律。那不是生物。那更糟。",
+      "in_game_wiki": "Blue debt是Marauder对压力保存的Xenon-Omega材料及相关工艺残留的俗称。它不是单一矿物，而是一类压力生长晶格、包合结构、污染基质和工业残余。Deep Reach曾将其用于高能约束、极端计算和Atlas兼容基础设施。",
+      "external_site": "Blue debt让HECTON-8不只是失落殖民地。它昂贵、不稳定，并直接解释了为什么Deep Reach既想埋葬这颗月球，又想把它取回。"
+    },
+    "fr_FR": {
+      "title": "Blue Debt",
+      "scanner": "Résidu Xenon-Omega maintenu sous pression. Stable seulement en conditions hostiles. Ne pas purger près d'un air d'habitat chaud.",
+      "field_note": "Blue debt paie parce qu'elle mord deux fois. Quand tu la portes. Puis quand quelqu'un apprend que tu l'as.",
+      "terminal": "SUBSTRAT DE CONTINUITÉ XO. Ne pas décompresser. Ne pas exposer à l'atmosphère d'habitat non filtrée.",
+      "audio": "Le conteneur chante au sonar. Bas, régulier. Ce n'est pas une créature. C'est pire.",
+      "in_game_wiki": "Blue debt est l'argot marauder pour les matériaux Xenon-Omega maintenus sous pression et leurs résidus de procédé. Ce n'est pas un minerai unique, mais une famille de réseaux cultivés sous pression, de clathrates, de substrats contaminés et de restes industriels utilisés par Deep Reach.",
+      "external_site": "Blue debt est la couche de ressource qui fait de HECTON-8 plus qu'une colonie perdue. Elle est précieuse, instable, et liée à la raison pour laquelle Deep Reach voulait à la fois enterrer et récupérer la lune."
+    },
+    "es_ES": {
+      "title": "Blue Debt",
+      "scanner": "Residuo Xenon-Omega mantenido por presión. Estable solo en condiciones hostiles. No ventilar cerca de aire cálido de cabina.",
+      "field_note": "Blue debt paga porque muerde dos veces. Una cuando la llevas. Otra cuando alguien sabe que la tienes.",
+      "terminal": "SUSTRATO DE CONTINUIDAD XO. No descomprimir. No exponer a atmósfera de hábitat sin filtrar.",
+      "audio": "El contenedor canta en el sonar. Bajo, regular. No es una criatura. Es peor.",
+      "in_game_wiki": "Blue debt es la jerga marauder para material Xenon-Omega mantenido por presión y residuos de proceso relacionados. No es un mineral único, sino una familia de redes crecidas bajo presión, clatratos, sustratos contaminados y restos industriales que Deep Reach usó para contención de alta energía, computación extrema e infraestructura compatible con Atlas.",
+      "external_site": "Blue debt es la capa de recursos que convierte HECTON-8 en algo más que una colonia perdida. Es valiosa, inestable y está ligada a por qué Deep Reach quería enterrar la luna y recuperarla a la vez."
+    },
+    "de_DE": {
+      "title": "Blue Debt",
+      "scanner": "Druckerhaltene Xenon-Omega-Rückstände. Nur unter feindlichen Bedingungen stabil. Nicht nahe warmer Habitatluft entlüften.",
+      "field_note": "Blue debt zahlt, weil sie zweimal beißt. Einmal beim Tragen. Noch einmal, wenn jemand davon erfährt.",
+      "terminal": "XO-KONTINUITÄTSSUBSTRAT. Nicht dekomprimieren. Nicht ungefilterter Habitatatmosphäre aussetzen.",
+      "audio": "Der Behälter singt im Sonar. Tief, regelmäßig. Das ist kein Wesen. Das ist schlimmer.",
+      "in_game_wiki": "Blue debt ist Marauder-Slang für druckerhaltenes Xenon-Omega-Material und verwandte Prozessrückstände. Es ist kein einzelnes Mineral, sondern eine Familie aus druckgewachsenen Gittern, Clathratstrukturen, kontaminierten Substraten und industriellen Resten, die Deep Reach für Hochenergie-Einschluss, Extremrechnen und Atlas-kompatible Infrastruktur nutzte.",
+      "external_site": "Blue debt ist die Ressourcenschicht, die HECTON-8 zu mehr als einer verlorenen Kolonie macht. Sie ist wertvoll, instabil und direkt mit Deep Reachs Wunsch verbunden, den Mond zu begraben und zugleich zurückzuholen."
+    },
+    "pl_PL": {
+      "title": "Blue Debt",
+      "scanner": "Pozostałość Xenon-Omega utrzymana ciśnieniem. Stabilna tylko w wrogich warunkach. Nie odpowietrzać przy ciepłym powietrzu kabiny.",
+      "field_note": "Blue debt płaci, bo gryzie dwa razy. Raz, gdy ją niesiesz. Drugi raz, gdy ktoś wie, że ją masz.",
+      "terminal": "SUBSTRAT CIĄGŁOŚCI XO. Nie dekompresować. Nie wystawiać na niefiltrowaną atmosferę habitatu.",
+      "audio": "Pojemnik śpiewa w sonarze. Nisko, równo. To nie stworzenie. To coś gorszego.",
+      "in_game_wiki": "Blue debt to slang Marauderów na utrzymany ciśnieniem materiał Xenon-Omega i powiązane pozostałości procesu. To nie pojedynczy minerał, lecz rodzina sieci wyhodowanych ciśnieniem, klatratów, skażonych substratów i przemysłowych resztek używanych przez Deep Reach.",
+      "external_site": "Blue debt sprawia, że HECTON-8 jest czymś więcej niż utraconą kolonią. Jest cenny, niestabilny i bezpośrednio związany z tym, dlaczego Deep Reach chciało jednocześnie pogrzebać i odzyskać księżyc."
+    },
+    "uk_UA": {
+      "title": "Blue Debt",
+      "scanner": "Залишок Xenon-Omega, утриманий тиском. Стабільний лише у ворожих умовах. Не стравлювати біля теплого повітря житлового відсіку.",
+      "field_note": "Blue debt платить, бо кусає двічі. Спершу коли несеш. Потім коли хтось дізнається, що він у тебе.",
+      "terminal": "XO CONTINUITY SUBSTRATE. Не декомпресувати. Не піддавати нефільтрованій атмосфері житла.",
+      "audio": "Контейнер співає на сонарі. Низько, рівно. Це не істота. Це гірше.",
+      "in_game_wiki": "Blue debt - сленг мародерів для матеріалу Xenon-Omega та пов'язаних залишків процесу, збережених тиском. Це не один мінерал, а родина решіток, клатратів, забруднених субстратів і промислових залишків, які Deep Reach використовувала для високої енергії, обчислень і Atlas-сумісної інфраструктури.",
+      "external_site": "Blue debt робить HECTON-8 чимось більшим за втрачену колонію. Він цінний, нестабільний і прямо пояснює, чому Deep Reach хотіла одночасно поховати місяць і повернути його."
+    },
+    "ar_SA": {
+      "title": "Blue Debt",
+      "scanner": "بقايا Xenon-Omega محفوظة بالضغط. مستقرة فقط داخل شروط عدائية. لا تفرغها قرب هواء مقصورة دافئ.",
+      "field_note": "Blue debt يدفع لأنه يعض مرتين. مرة حين تحمله. ومرة حين يعرف أحد أنك تملكه.",
+      "terminal": "ركيزة استمرارية XO. لا تخفض الضغط. لا تعرضها لهواء موطن غير مرشح.",
+      "audio": "الحاوية تغني على السونار. منخفضة ومنتظمة. هذا ليس مخلوقا. هذا أسوأ.",
+      "in_game_wiki": "Blue debt هو مصطلح للمادة Xenon-Omega المحفوظة بالضغط وبقايا العمليات المرتبطة بها. ليس معدنا واحدا، بل عائلة من شبكات نمت تحت الضغط وبنى كلاثرات وركائز ملوثة وبقايا صناعية استخدمتها Deep Reach للاحتواء عالي الطاقة والحوسبة القصوى وبنية Atlas المتوافقة.",
+      "external_site": "Blue debt هو طبقة المورد التي تجعل HECTON-8 أكثر من مستعمرة مفقودة. إنه ثمين وغير مستقر ومرتبط مباشرة بسبب رغبة Deep Reach في دفن القمر واستعادته في الوقت نفسه."
+    },
+    "id_ID": {
+      "title": "Blue Debt",
+      "scanner": "Residu Xenon-Omega yang dijaga tekanan. Stabil hanya dalam kondisi keras. Jangan ventilasi dekat udara kabin hangat.",
+      "field_note": "Blue debt dibayar mahal karena menggigit dua kali. Saat kau membawanya. Lalu saat orang tahu kau memilikinya.",
+      "terminal": "SUBSTRAT KONTINUITAS XO. Jangan dekompresi. Jangan paparkan ke atmosfer habitat tanpa filter.",
+      "audio": "Kontainer itu bernyanyi di sonar. Rendah, teratur. Itu bukan makhluk. Itu lebih buruk.",
+      "in_game_wiki": "Blue debt adalah slang Marauder untuk material Xenon-Omega yang dijaga tekanan dan residu proses terkait. Itu bukan satu mineral, melainkan keluarga kisi tumbuh tekanan, struktur klatrat, substrat tercemar, dan sisa industri yang dipakai Deep Reach untuk penahanan energi tinggi, komputasi ekstrem, dan infrastruktur kompatibel Atlas.",
+      "external_site": "Blue debt adalah lapisan sumber daya yang membuat HECTON-8 lebih dari koloni hilang. Ia berharga, tidak stabil, dan terkait langsung dengan alasan Deep Reach ingin mengubur sekaligus mengambil kembali bulan ini."
+    },
+    "ko_KR": {
+      "title": "Blue Debt",
+      "scanner": "압력으로 보존된 Xenon-Omega 잔류물. 적대적 조건 안에서만 안정. 따뜻한 거주 공기 근처에서 배출 금지.",
+      "field_note": "Blue debt는 두 번 물기 때문에 돈이 된다. 운반할 때 한 번. 누군가 네가 가진 걸 알 때 또 한 번.",
+      "terminal": "XO 연속성 기질. 감압 금지. 여과되지 않은 거주구 대기에 노출 금지.",
+      "audio": "컨테이너가 소나에서 노래한다. 낮고 규칙적이다. 생물이 아니다. 더 나쁘다.",
+      "in_game_wiki": "Blue debt는 압력으로 보존된 Xenon-Omega 물질과 관련 공정 잔류물을 가리키는 Marauder 은어다. 단일 광물이 아니라 압력 성장 격자, 클라스레이트 구조, 오염된 기질, Deep Reach가 고에너지 봉쇄, 극한 계산, Atlas 호환 인프라에 사용한 산업 잔해의 계열이다.",
+      "external_site": "Blue debt는 HECTON-8을 잃어버린 식민지 이상으로 만드는 자원층이다. 값비싸고 불안정하며 Deep Reach가 이 달을 묻으면서 동시에 회수하려 한 이유와 직결된다."
+    },
+    "he_IL": {
+      "title": "Blue Debt",
+      "scanner": "שארית Xenon-Omega שמורה בלחץ. יציבה רק בתנאים עוינים. לא לאוורר ליד אוויר מגורים חם.",
+      "field_note": "Blue debt משתלם כי הוא נושך פעמיים. פעם כשאתה נושא אותו. שוב כשמישהו יודע שהוא אצלך.",
+      "terminal": "מצע המשכיות XO. לא לדחוס החוצה. לא לחשוף לאטמוספירת מגורים לא מסוננת.",
+      "audio": "המכל שר בסונאר. נמוך, קבוע. זה לא יצור. זה גרוע יותר.",
+      "in_game_wiki": "Blue debt הוא סלנג Marauder לחומר Xenon-Omega שנשמר בלחץ ולשאריות תהליך קשורות. זה לא מינרל יחיד, אלא משפחה של סריגים שגודלו בלחץ, מבני כלתראט, מצעים מזוהמים ושאריות תעשייתיות ש-Deep Reach השתמשה בהן לכליאה אנרגטית, חישוב קיצוני ותשתית תואמת Atlas.",
+      "external_site": "Blue debt הוא שכבת המשאב שהופכת את HECTON-8 ליותר ממושבה אבודה. הוא יקר, לא יציב, וקשור ישירות לכך ש-Deep Reach רצתה לקבור את הירח וגם להשיב אותו."
+    },
+    "pt_BR": {
+      "title": "Blue Debt",
+      "scanner": "Resíduo Xenon-Omega mantido por pressão. Estável só em condições hostis. Não ventilar perto de ar quente da cabine.",
+      "field_note": "Blue debt paga porque morde duas vezes. Uma quando você carrega. Outra quando alguém descobre que você tem.",
+      "terminal": "SUBSTRATO DE CONTINUIDADE XO. Não descomprimir. Não expor a atmosfera de habitat sem filtro.",
+      "audio": "O contêiner está cantando no sonar. Baixo, regular. Não é uma criatura. É pior.",
+      "in_game_wiki": "Blue debt é a gíria Marauder para material Xenon-Omega mantido por pressão e resíduos de processo relacionados. Não é um mineral único, mas uma família de redes crescidas sob pressão, clatratos, substratos contaminados e sobras industriais usadas pela Deep Reach para contenção de alta energia, computação extrema e infraestrutura compatível com Atlas.",
+      "external_site": "Blue debt é a camada de recurso que faz de HECTON-8 mais que uma colônia perdida. É valioso, instável e ligado diretamente ao motivo de a Deep Reach querer enterrar a lua e recuperá-la ao mesmo tempo."
+    },
+    "nl_NL": {
+      "title": "Blue Debt",
+      "scanner": "Door druk bewaarde Xenon-Omega-rest. Alleen stabiel in vijandige omstandigheden. Niet ontluchten bij warme cabine lucht.",
+      "field_note": "Blue debt betaalt omdat het twee keer bijt. Eerst wanneer je het draagt. Daarna wanneer iemand weet dat je het hebt.",
+      "terminal": "XO-CONTINUÏTEITSSUBSTRAAT. Niet decompressen. Niet blootstellen aan ongefilterde habitatlucht.",
+      "audio": "De container zingt op sonar. Laag, regelmatig. Dat is geen wezen. Dat is erger.",
+      "in_game_wiki": "Blue debt is Marauder-slang voor door druk bewaard Xenon-Omega-materiaal en verwante procesresten. Het is geen enkel mineraal, maar een familie van drukgegroeide roosters, clathraten, besmette substraten en industriële resten die Deep Reach gebruikte voor hoogenergetische insluiting, extreme berekening en Atlas-compatibele infrastructuur.",
+      "external_site": "Blue debt is de grondstoflaag die HECTON-8 meer maakt dan een verloren kolonie. Het is waardevol, instabiel en direct verbonden met waarom Deep Reach de maan tegelijk wilde begraven en terughalen."
+    }
+  }
+}

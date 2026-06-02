@@ -125,7 +125,7 @@ namespace Hecton8.Gameplay
         private bool _runtimePositionDirty;
         private float _effectiveCollectionRadius;
         private bool _pendingCollectEffects;
-        private bool _pendingCollectDespawn;
+        private bool _pendingDespawn;
         private Vector3 _pendingCollectPosition;
 
         // Pre-cached player tag for CompareTag
@@ -291,9 +291,9 @@ namespace Hecton8.Gameplay
                 PlayCollectEffects(_pendingCollectPosition);
             }
 
-            if (_pendingCollectDespawn)
+            if (_pendingDespawn)
             {
-                _pendingCollectDespawn = false;
+                _pendingDespawn = false;
                 DespawnSelf();
             }
         }
@@ -313,7 +313,7 @@ namespace Hecton8.Gameplay
             // Fire event with oxygen amount
             OnCollected?.Invoke(oxygenAmount);
 
-            _pendingCollectDespawn = true;
+            _pendingDespawn = true;
         }
 
         private void Expire()
@@ -323,8 +323,7 @@ namespace Hecton8.Gameplay
             // Fire expiry event
             OnExpired?.Invoke();
 
-            // Despawn or destroy
-            DespawnSelf();
+            _pendingDespawn = true;
         }
 
         // ══════════════════════════════════════════════════════════

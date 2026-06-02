@@ -64,21 +64,21 @@ namespace Hecton8.UI
         private float _autoResolveRetryTimer;
         private int _lastStaticStateHash;
         private int _lastLiveStateHash;
-        // COLD ALLOC: char[192] — builder overlay module label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[192] - builder overlay module label buffer - owner: BuilderStatusOverlay
         private readonly char[] _moduleBuffer = new char[192];
-        // COLD ALLOC: char[64] — builder overlay module index numeric buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[64] - builder overlay module index numeric buffer - owner: BuilderStatusOverlay
         private readonly char[] _indexBuffer = new char[64];
-        // COLD ALLOC: char[192] — builder overlay queue label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[192] - builder overlay queue label buffer - owner: BuilderStatusOverlay
         private readonly char[] _queueBuffer = new char[192];
-        // COLD ALLOC: char[128] — builder overlay placement label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[128] - builder overlay placement label buffer - owner: BuilderStatusOverlay
         private readonly char[] _placementBuffer = new char[128];
-        // COLD ALLOC: char[128] — builder overlay resource label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[128] - builder overlay resource label buffer - owner: BuilderStatusOverlay
         private readonly char[] _resourceBuffer = new char[128];
-        // COLD ALLOC: char[192] — builder overlay power label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[192] - builder overlay power label buffer - owner: BuilderStatusOverlay
         private readonly char[] _powerBuffer = new char[192];
-        // COLD ALLOC: char[256] — builder overlay cost label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[256] - builder overlay cost label buffer - owner: BuilderStatusOverlay
         private readonly char[] _costBuffer = new char[256];
-        // COLD ALLOC: char[192] — builder overlay hint label buffer — owner: BuilderStatusOverlay
+        // COLD ALLOC: char[192] - builder overlay hint label buffer - owner: BuilderStatusOverlay
         private readonly char[] _hintBuffer = new char[192];
         private readonly char[] _adviceScratchBuffer = new char[192];
         private bool _tickRegistered;
@@ -606,7 +606,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -614,7 +614,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -757,7 +757,7 @@ namespace Hecton8.UI
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = cost.item.PersistentHashId;
                 if (itemHashId == 0)
                     continue;
 

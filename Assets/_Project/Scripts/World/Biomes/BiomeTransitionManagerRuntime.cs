@@ -33,9 +33,10 @@ namespace Hecton8.World.Biomes
         private const SystemID OwnerSystem = SystemID.WorldStreaming;
         private const uint MockTraversalPeriodFrames = 600u;
 
-        private static readonly int BiomeTransitionPayloadCBufferId = Shader.PropertyToID("H8BiomeTransitionPayload");
+        private static readonly int BiomeLightingParametersCBufferId = Shader.PropertyToID("H8BiomeLightingParameters");
         private static readonly int H8FogColorId = Shader.PropertyToID("_H8FogColor");
         private static readonly int H8FogDensityId = Shader.PropertyToID("_H8FogDensity");
+        private static readonly int H8GlobalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int H8ExtinctionCoefficientsId = Shader.PropertyToID("_H8ExtinctionCoefficients");
         private static readonly int BiomeTransitionFogColorId = Shader.PropertyToID("_H8BiomeTransitionFogColor");
         private static readonly int BiomeTransitionAbsorptionId = Shader.PropertyToID("_H8BiomeTransitionAbsorption");
@@ -71,15 +72,19 @@ namespace Hecton8.World.Biomes
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<AbsoluteUniversePositionBlit128> _mockCameraAupHandle;
 
-        private GraphicsBuffer _shaderPayloadBufferA;
-        private GraphicsBuffer _shaderPayloadBufferB;
-        private GraphicsBuffer _activeShaderPayloadBuffer;
+        private GraphicsBuffer _biomeLightingBufferA;
+        private GraphicsBuffer _biomeLightingBufferB;
+        private GraphicsBuffer _activeBiomeLightingBuffer;
         private JobHandle _pipelineHandle;
         private JobHandle _seedHandle;
         private long _pipelineScheduleTicks;
-        private int _shaderPayloadWriteIndex;
+        private int _biomeLightingWriteIndex;
+        private uint _lastBiomeLightingParametersHash;
+        private uint _lastShaderGlobalPayloadHash;
         private bool _pipelineScheduled;
         private bool _pendingShaderPayloadUpload;
+        private bool _hasUploadedBiomeLightingParameters;
+        private bool _hasUploadedShaderGlobalPayload;
         private bool _seedScheduled;
         private bool _seedCsvAttempted;
         private bool _seedFallbackScheduled;
@@ -578,10 +583,17 @@ namespace Hecton8.World.Biomes
             if (_tuningInitialized || !_vaultReady || _vault == null)
                 return;
 
-            if (!TryResolveBiomeVaultBuffer(_vault, ref _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuning))
+            BiomeTransitionTuningDTO tuning = CreateDefaultTuning();
+            if (!TryWriteSingleBiomeVaultValue(
+                    _vault,
+                    in _tuningHandle,
+                    BufferID.BiomeTransitionTuning,
+                    OwnerSystem,
+                    in tuning))
+            {
                 return;
+            }
 
-            tuning[0] = CreateDefaultTuning();
             _tuningInitialized = true;
         }
 
@@ -1052,7 +1064,7 @@ namespace Hecton8.World.Biomes
                 return;
             }
 
-            TryUploadShaderPayloadCBuffer(payload);
+            TryUploadBiomeLightingParametersFromPayload(payload);
 
             float4 fog = SanitizePayload(payload[0], new float4(0.006f, 0.014f, 0.022f, 1f));
             float4 absorption = SanitizePayload(payload[1], new float4(0.18f, 0.21f, 0.28f, 0.85f));
@@ -1061,6 +1073,21 @@ namespace Hecton8.World.Biomes
             float4 hashes = payload[4];
             float4 dither = SanitizePayload(payload[5], new float4(1f, 1f, 1f, 1f));
             float fogDensity = math.max(0f, absorption.w * 0.04f);
+            float qualityWeight = math.saturate(dither.w);
+            uint globalPayloadHash = HashShaderGlobalPayload(
+                fog,
+                absorption,
+                audio,
+                weights,
+                hashes,
+                dither,
+                fogDensity,
+                qualityWeight);
+            if (_hasUploadedShaderGlobalPayload &&
+                globalPayloadHash == _lastShaderGlobalPayloadHash)
+            {
+                return;
+            }
 
             Shader.SetGlobalVector(BiomeTransitionFogColorId, ToVector4(fog));
             Shader.SetGlobalVector(BiomeTransitionAbsorptionId, ToVector4(absorption));
@@ -1070,10 +1097,13 @@ namespace Hecton8.World.Biomes
             Shader.SetGlobalVector(BiomeTransitionDitherId, ToVector4(dither));
             Shader.SetGlobalVector(H8FogColorId, ToVector4(new float4(fog.xyz, fogDensity)));
             Shader.SetGlobalFloat(H8FogDensityId, fogDensity);
+            Shader.SetGlobalFloat(H8GlobalQualityWeightId, qualityWeight);
             Shader.SetGlobalVector(H8ExtinctionCoefficientsId, ToVector4(absorption));
+            _lastShaderGlobalPayloadHash = globalPayloadHash;
+            _hasUploadedShaderGlobalPayload = true;
         }
 
-        private unsafe void TryUploadShaderPayloadCBuffer(NativeArray<float4> payload)
+        private void TryUploadBiomeLightingParametersFromPayload(NativeArray<float4> payload)
         {
             if (!_coldSupportsSetConstantBuffer)
             {
@@ -1084,26 +1114,46 @@ namespace Hecton8.World.Biomes
             if (!AreShaderPayloadBuffersReady())
                 return;
 
-            GraphicsBuffer writeBuffer = ResolveNextShaderPayloadBuffer();
-            NativeArray<BiomeTransitionShaderPayloadCBufferDTO> mapped =
-                writeBuffer.LockBufferForWrite<BiomeTransitionShaderPayloadCBufferDTO>(0, 1);
+            TryUploadBiomeLightingParametersCBuffer(payload);
+        }
+
+        private unsafe void TryUploadBiomeLightingParametersCBuffer(NativeArray<float4> payload)
+        {
+            BiomeLightingParametersDTO compactPayload = ResolveBiomeLightingParameters(payload);
+            uint payloadHash = HashBiomeLightingParameters(in compactPayload);
+            if (_hasUploadedBiomeLightingParameters &&
+                payloadHash == _lastBiomeLightingParametersHash &&
+                _activeBiomeLightingBuffer != null &&
+                _activeBiomeLightingBuffer.IsValid())
+            {
+                return;
+            }
+
+            GraphicsBuffer writeBuffer = ResolveNextBiomeLightingParametersBuffer();
+            NativeArray<BiomeLightingParametersDTO> mapped =
+                writeBuffer.LockBufferForWrite<BiomeLightingParametersDTO>(0, 1);
             try
             {
-                void* dst = mapped.GetUnsafePtr();
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
-                UnsafeUtility.MemCpy(dst, src, BiomeTransitionConstants.ShaderPayloadStrideBytes);
+                void* destination = mapped.GetUnsafePtr();
+                void* source = &compactPayload;
+                UnsafeUtility.MemCpy(
+                    destination,
+                    source,
+                    BiomeTransitionConstants.BiomeLightingParametersStrideBytes);
             }
             finally
             {
-                writeBuffer.UnlockBufferAfterWrite<BiomeTransitionShaderPayloadCBufferDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<BiomeLightingParametersDTO>(1);
             }
 
-            _activeShaderPayloadBuffer = writeBuffer;
+            _activeBiomeLightingBuffer = writeBuffer;
             Shader.SetGlobalConstantBuffer(
-                BiomeTransitionPayloadCBufferId,
-                _activeShaderPayloadBuffer,
+                BiomeLightingParametersCBufferId,
+                _activeBiomeLightingBuffer,
                 0,
-                BiomeTransitionConstants.ShaderPayloadStrideBytes);
+                BiomeTransitionConstants.BiomeLightingParametersStrideBytes);
+            _lastBiomeLightingParametersHash = payloadHash;
+            _hasUploadedBiomeLightingParameters = true;
         }
 
         private void EnsureShaderPayloadBuffersCold()
@@ -1122,20 +1172,22 @@ namespace Hecton8.World.Biomes
             }
 
             ReleaseShaderPayloadBuffers();
-            _shaderPayloadWriteIndex = 0;
-            // COLD ALLOC: GraphicsBuffer[2 x 128B] - biome transition shader payload CBuffer ping-pong - owner: SHINOBU_122.
-            _shaderPayloadBufferA = new GraphicsBuffer(
+            _biomeLightingWriteIndex = 0;
+            // COLD ALLOC: GraphicsBuffer[2 x 64B] - compact biome lighting CBuffer ping-pong - owner: SHINOBU_122.
+            _biomeLightingBufferA = new GraphicsBuffer(
                 GraphicsBuffer.Target.Constant,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
-                BiomeTransitionConstants.ShaderPayloadStrideBytes);
-            _shaderPayloadBufferB = new GraphicsBuffer(
+                BiomeTransitionConstants.BiomeLightingParametersStrideBytes);
+            _biomeLightingBufferB = new GraphicsBuffer(
                 GraphicsBuffer.Target.Constant,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
-                BiomeTransitionConstants.ShaderPayloadStrideBytes);
+                BiomeTransitionConstants.BiomeLightingParametersStrideBytes);
 
-            bool valid = _shaderPayloadBufferA.IsValid() && _shaderPayloadBufferB.IsValid();
+            bool valid =
+                _biomeLightingBufferA.IsValid() &&
+                _biomeLightingBufferB.IsValid();
             if (!valid)
                 ReleaseShaderPayloadBuffers();
             return valid;
@@ -1143,25 +1195,29 @@ namespace Hecton8.World.Biomes
 
         private bool AreShaderPayloadBuffersReady()
         {
-            return _shaderPayloadBufferA != null &&
-                   _shaderPayloadBufferA.IsValid() &&
-                   _shaderPayloadBufferB != null &&
-                   _shaderPayloadBufferB.IsValid();
+            return _biomeLightingBufferA != null &&
+                   _biomeLightingBufferA.IsValid() &&
+                   _biomeLightingBufferB != null &&
+                   _biomeLightingBufferB.IsValid();
         }
 
-        private GraphicsBuffer ResolveNextShaderPayloadBuffer()
+        private GraphicsBuffer ResolveNextBiomeLightingParametersBuffer()
         {
-            _shaderPayloadWriteIndex ^= 1;
-            return _shaderPayloadWriteIndex == 0 ? _shaderPayloadBufferA : _shaderPayloadBufferB;
+            _biomeLightingWriteIndex ^= 1;
+            return _biomeLightingWriteIndex == 0 ? _biomeLightingBufferA : _biomeLightingBufferB;
         }
 
         private void ReleaseShaderPayloadBuffers()
         {
-            _shaderPayloadBufferA?.Release();
-            _shaderPayloadBufferB?.Release();
-            _shaderPayloadBufferA = null;
-            _shaderPayloadBufferB = null;
-            _activeShaderPayloadBuffer = null;
+            _biomeLightingBufferA?.Release();
+            _biomeLightingBufferB?.Release();
+            _biomeLightingBufferA = null;
+            _biomeLightingBufferB = null;
+            _activeBiomeLightingBuffer = null;
+            _lastBiomeLightingParametersHash = 0u;
+            _lastShaderGlobalPayloadHash = 0u;
+            _hasUploadedBiomeLightingParameters = false;
+            _hasUploadedShaderGlobalPayload = false;
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -1177,6 +1233,83 @@ namespace Hecton8.World.Biomes
         private static Vector4 ToVector4(float4 value)
         {
             return new Vector4(value.x, value.y, value.z, value.w);
+        }
+
+        private static BiomeLightingParametersDTO ResolveBiomeLightingParameters(NativeArray<float4> payload)
+        {
+            float4 fog = SanitizePayload(payload[0], new float4(0.006f, 0.014f, 0.022f, 1f));
+            float4 absorption = SanitizePayload(payload[1], new float4(0.18f, 0.21f, 0.28f, 0.85f));
+            float4 audio = SanitizePayload(payload[2], new float4(0.65f, 1f, 1f, 4f));
+            float4 weights = SanitizePayload(payload[3], new float4(1f, 0f, 0f, 0f));
+            float4 dither = SanitizePayload(payload[5], new float4(1f, 1f, 1f, 1f));
+            float fogDensity = math.max(0f, absorption.w * 0.04f);
+            float blendFactor = math.saturate(1f - weights.x);
+            float qualityWeight = math.saturate(dither.w);
+            float lightShaftIntensity = math.saturate(audio.x * (0.5f + qualityWeight * 0.5f));
+            float4 resolvedFog = new float4(fog.x, fog.y, fog.z, 1f);
+
+            return new BiomeLightingParametersDTO
+            {
+                PrimaryFogColor = resolvedFog,
+                SecondaryFogColor = resolvedFog,
+                FogDensity = fogDensity,
+                BlendFactor = blendFactor,
+                LightShaftIntensity = lightShaftIntensity,
+                _pad0 = qualityWeight,
+                _pad1 = 1f,
+                _pad2 = 0f,
+                _pad3 = 0f,
+                _pad4 = 0f
+            };
+        }
+
+        private static uint HashBiomeLightingParameters(in BiomeLightingParametersDTO value)
+        {
+            uint hash = 2166136261u;
+            hash = HashFloat4(hash, value.PrimaryFogColor);
+            hash = HashFloat4(hash, value.SecondaryFogColor);
+            hash = HashFloat(hash, value.FogDensity);
+            hash = HashFloat(hash, value.BlendFactor);
+            hash = HashFloat(hash, value.LightShaftIntensity);
+            hash = HashFloat(hash, value._pad0);
+            hash = HashFloat(hash, value._pad1);
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint HashShaderGlobalPayload(
+            float4 fog,
+            float4 absorption,
+            float4 audio,
+            float4 weights,
+            float4 hashes,
+            float4 dither,
+            float fogDensity,
+            float qualityWeight)
+        {
+            uint hash = 2166136261u;
+            hash = HashFloat4(hash, fog);
+            hash = HashFloat4(hash, absorption);
+            hash = HashFloat4(hash, audio);
+            hash = HashFloat4(hash, weights);
+            hash = HashFloat4(hash, hashes);
+            hash = HashFloat4(hash, dither);
+            hash = HashFloat(hash, fogDensity);
+            hash = HashFloat(hash, qualityWeight);
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint HashFloat4(uint hash, float4 value)
+        {
+            hash = HashFloat(hash, value.x);
+            hash = HashFloat(hash, value.y);
+            hash = HashFloat(hash, value.z);
+            return HashFloat(hash, value.w);
+        }
+
+        private static uint HashFloat(uint hash, float value)
+        {
+            hash ^= math.asuint(value);
+            return hash * 16777619u;
         }
 
         private void CompletePipelineForShutdown()
@@ -1607,13 +1740,21 @@ namespace Hecton8.World.Biomes
 
         public static bool TryWriteTuning(in BiomeTransitionTuningDTO tuning)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryOpenExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
+            BiomeTransitionManagerRuntime active = ActiveRuntimeInstance;
+            if (active == null || active._vault == null || !active._vaultReady)
                 return false;
 
-            tuningArray[0] = tuning;
-            if (ActiveRuntimeInstance != null)
-                ActiveRuntimeInstance._tuningInitialized = true;
+            if (!TryWriteSingleBiomeVaultValue(
+                    active._vault,
+                    in active._tuningHandle,
+                    BufferID.BiomeTransitionTuning,
+                    OwnerSystem,
+                    in tuning))
+            {
+                return false;
+            }
+
+            active._tuningInitialized = true;
             return true;
         }
 
@@ -1717,28 +1858,32 @@ namespace Hecton8.World.Biomes
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryOpenExistingBiomeVaultBuffer<T>(
+        private static bool TryWriteSingleBiomeVaultValue<T>(
             IDataVault vault,
+            in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             SystemID owner,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            in T value) where T : struct
         {
-            buffer = default;
-            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
-                return false;
-
-            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsBiomeVaultHandle(in handle, bufferId, owner) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
+                !vault.TryAcquireWriteLock(in handle, owner, out NativeArray<T> buffer) ||
                 !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+                buffer.Length == 0)
             {
-                buffer = default;
                 return false;
             }
 
-            return true;
+            try
+            {
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, owner);
+            }
         }
 
         private static bool TryReadExistingBiomeVaultBuffer<T>(

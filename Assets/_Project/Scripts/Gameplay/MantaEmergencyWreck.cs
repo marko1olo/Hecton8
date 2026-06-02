@@ -381,7 +381,7 @@ namespace Hecton8.Gameplay
             if (_remainingLifetime <= 0f)
             {
                 _remainingLifetime = 0f;
-                DespawnSelf(preserveResidencySlot: false);
+                QueueSelfDespawn(preserveResidencySlot: false);
                 return;
             }
 
@@ -486,7 +486,7 @@ namespace Hecton8.Gameplay
             _rigidbody.isKinematic = true;
         }
 
-        private void DespawnSelf(bool preserveResidencySlot)
+        private void QueueSelfDespawn(bool preserveResidencySlot)
         {
             _preserveResidencyOnDespawn = preserveResidencySlot;
             _selfDeactivateQueued = true;
@@ -674,7 +674,7 @@ namespace Hecton8.Gameplay
             UpdateResidencyState(markDehydrated: true);
             AddActiveDehydratedResidencySlot(_residencySlotIndex);
             _residencySlotIndex = InvalidResidencySlotIndex;
-            DespawnSelf(preserveResidencySlot: true);
+            QueueSelfDespawn(preserveResidencySlot: true);
             return true;
         }
 

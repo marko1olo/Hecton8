@@ -122,21 +122,29 @@ namespace Hecton8.Core
             UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeStaticState;
             UnityEditor.EditorApplication.quitting -= DisposeStaticState;
             UnityEditor.EditorApplication.quitting += DisposeStaticState;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
+        {
+            if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                change == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                DisposeStaticState();
+            }
         }
 #endif
 
-        private static void DisposeStaticState()
+        internal static void DisposeStaticState()
         {
             DisposeBlackboxState();
             lock (_initGate)
             {
-                bool snapshotCopyInProgress = _snapshotInProgress;
-                bool writerOwnsExportState =
-                    Volatile.Read(ref _mmfWriteInProgress) != 0 ||
-                    (Volatile.Read(ref _exportInFlight) != 0 && !snapshotCopyInProgress);
                 JobHandle noDependency = default;
                 DisposeRingBuffer(ref _ringBuffer);
                 DisposeNativeArray(ref _snapshotBuffer, noDependency);
+                DisposeNativeArray(ref _exportScratch, noDependency);
 
                 _writeCursor = 0;
                 _mainThreadId = Thread.CurrentThread.ManagedThreadId;
@@ -145,15 +153,10 @@ namespace Hecton8.Core
                 _snapshotStartIndex = 0;
                 _snapshotTotalCount = 0;
                 _snapshotCopiedCount = 0;
-
-                if (!writerOwnsExportState)
-                {
-                    DisposeNativeArray(ref _exportScratch, noDependency);
-                    _exportInFlight = 0;
-                    _mmfWriteInProgress = 0;
-                    _pendingExportRequest = ExportRequestNone;
-                    ClearPendingExportState();
-                }
+                _exportInFlight = 0;
+                _mmfWriteInProgress = 0;
+                _pendingExportRequest = ExportRequestNone;
+                ClearPendingExportState();
             }
 
             Interlocked.Exchange(ref _nativeCopyByteCount, 0L);

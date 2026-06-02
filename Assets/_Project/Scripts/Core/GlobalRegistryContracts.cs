@@ -2399,7 +2399,7 @@ namespace Hecton8.Core
         [FieldOffset(81)] private byte _reserved0;
         [FieldOffset(82)] private byte _reserved1;
         [FieldOffset(83)] private byte _reserved2;
-        [FieldOffset(84)] private uint _pad0;
+        [FieldOffset(84)] public uint AppliedLoreHash;
     }
 
     /// <summary>

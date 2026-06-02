@@ -3,7 +3,6 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -24,8 +23,6 @@ namespace Hecton8.Rendering
         private static AbyssalDeferredCausticsRuntime s_publishedRuntime;
         private static GraphicsBuffer s_publishedConstantBuffer;
         private static uint s_publishedConstantBufferFrameIndex;
-        private static FunctionPointer<GenerateMockCausticLightingKernelDelegate> s_generateMockKernel;
-        private static FunctionPointer<CalculateCausticParametersKernelDelegate> s_calculateKernel;
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -69,12 +66,29 @@ namespace Hecton8.Rendering
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ShutdownRuntimeInstanceForEditorReload();
             s_runtimeInstance = null;
             s_publishedRuntime = null;
             s_publishedConstantBuffer = null;
             s_publishedConstantBufferFrameIndex = 0u;
-            s_generateMockKernel = default;
-            s_calculateKernel = default;
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownRuntimeInstanceForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownRuntimeInstanceForEditorReload;
+            UnityEditor.EditorApplication.quitting -= ShutdownRuntimeInstanceForEditorReload;
+            UnityEditor.EditorApplication.quitting += ShutdownRuntimeInstanceForEditorReload;
+        }
+#endif
+
+        private static void ShutdownRuntimeInstanceForEditorReload()
+        {
+            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
+            if (runtime != null)
+                runtime.ShutdownServiceState();
         }
 
         public static AbyssalDeferredCausticsRuntime EnsureRuntimeInstance()
@@ -117,7 +131,6 @@ namespace Hecton8.Rendering
                 return;
             }
 
-            EnsureBurstKernelsCold();
             TryRegisterLateFrame();
             TryRegisterOriginShift();
             RunMockLightingKernel();
@@ -462,19 +475,7 @@ namespace Hecton8.Rendering
 
         private void OnDisable()
         {
-            TryUnregisterLateFrame();
-            TryUnregisterOriginShift();
-            TryUnregisterHotSwap();
-            if (ReferenceEquals(GlobalRegistry.Caustics, this))
-                GlobalRegistry.UnregisterCausticsService(this);
-            _ownsRegistrySlot = false;
-            if (ReferenceEquals(s_runtimeInstance, this))
-                s_runtimeInstance = null;
-            if (ReferenceEquals(s_publishedRuntime, this))
-                s_publishedRuntime = null;
-            ClearPublishedConstantBufferIfOwnedByThis();
-            _activeConstantBuffer = null;
-            _activeConstantBufferFrameIndex = 0u;
+            ShutdownServiceState();
         }
 
         private void OnDestroy()
@@ -969,32 +970,11 @@ namespace Hecton8.Rendering
             return true;
         }
 
-        private static void EnsureBurstKernelsCold()
-        {
-            if (!s_generateMockKernel.IsCreated)
-            {
-                s_generateMockKernel = BurstCompiler.CompileFunctionPointer<GenerateMockCausticLightingKernelDelegate>(
-                    AbyssalCausticsBurstKernelEntrypoints.GenerateMockCausticLighting);
-            }
-
-            if (!s_calculateKernel.IsCreated)
-            {
-                s_calculateKernel = BurstCompiler.CompileFunctionPointer<CalculateCausticParametersKernelDelegate>(
-                    AbyssalCausticsBurstKernelEntrypoints.CalculateCausticParameters);
-            }
-        }
-
         private bool RunPendingCausticsKernel(
             GenerateMockCausticLightingJob job,
             NativeArray<CausticsParametersDTO> parameters)
         {
-            if (!s_generateMockKernel.IsCreated)
-            {
-                MarkBurstKernelUnavailable();
-                return false;
-            }
-
-            s_generateMockKernel.Invoke(&job);
+            job.Execute();
             return PublishPendingCausticsParameters(parameters);
         }
 
@@ -1002,13 +982,7 @@ namespace Hecton8.Rendering
             CalculateCausticParametersJob job,
             NativeArray<CausticsParametersDTO> parameters)
         {
-            if (!s_calculateKernel.IsCreated)
-            {
-                MarkBurstKernelUnavailable();
-                return false;
-            }
-
-            s_calculateKernel.Invoke(&job);
+            job.Execute();
             return PublishPendingCausticsParameters(parameters);
         }
 

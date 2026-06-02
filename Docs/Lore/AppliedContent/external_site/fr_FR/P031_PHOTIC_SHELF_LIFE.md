@@ -1,0 +1,30 @@
+---
+packet_id: P031_PHOTIC_SHELF_LIFE
+article_id: hecton8.photic_shelf_life
+locale: fr_FR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Vie du plateau photique
+
+Cette entrée définit le biome lumineux d'ouverture: pas un aquarium sûr, mais la base vivante qui rend la corruption Atlas lisible.
+
+## Scanner
+
+La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'est pas morte en surface.
+
+## Terminal
+
+Relevé du plateau: tapis vivants, brouteurs transparents, pressureweed et algues de route hors domination de réparation Atlas.
+
+## Audio
+
+La première eau vivante n'est pas une grâce. C'est la ligne de base.
+
+## Field Note
+
+La beauté sert d'échantillon témoin.
+
+<!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/fr_FR. -->

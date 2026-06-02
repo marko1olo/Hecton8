@@ -139,6 +139,19 @@ namespace Hecton8.UI
             }
         }
 
+        public static void BindDataVaultCold(IDataVault vault)
+        {
+            s_babelArenaProbeCompleted = true;
+
+            if (ReferenceEquals(s_babelArenaVault, vault))
+                return;
+
+            ReleaseBabelArenaHandle();
+
+            if (vault != null)
+                TryAcquireVaultBabelArena(vault);
+        }
+
         public static bool TryAcquire(out Lease lease)
         {
             if (TryAcquireSlot(out int slotIndex))
@@ -400,9 +413,6 @@ namespace Hecton8.UI
                 return false;
 
             s_babelArenaProbeCompleted = true;
-            if (TryResolveBabelVault(out IDataVault resolvedVault))
-                return TryAcquireVaultBabelArena(resolvedVault);
-
             return false;
         }
 
@@ -431,12 +441,6 @@ namespace Hecton8.UI
             return s_babelArenaVault.TryResolveHandle(in s_babelArenaHandle, out arena) &&
                    arena.IsCreated &&
                    arena.Length >= BabelArenaLength;
-        }
-
-        private static bool TryResolveBabelVault(out IDataVault vault)
-        {
-            vault = GlobalRegistry.DataVault;
-            return vault != null;
         }
 
         private static bool TryAcquireVaultBabelArena(IDataVault vault)

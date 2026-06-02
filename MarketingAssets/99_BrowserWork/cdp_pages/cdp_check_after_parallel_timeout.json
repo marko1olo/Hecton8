@@ -1,0 +1,247 @@
+﻿{
+  "port": "9222",
+  "browser": "Edg/148.0.3967.96",
+  "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/browser/8a6b2d10-271b-4721-8378-1bc5aa0ad4eb",
+  "pages": [
+    {
+      "id": "E431558FD895D014848527AD6DC60960",
+      "type": "page",
+      "title": "Instagram",
+      "url": "https://www.instagram.com/teni_games/"
+    },
+    {
+      "id": "6DF5122977EF412D0961720C19A97C16",
+      "type": "iframe",
+      "title": "https://www.facebook.com/instagram/login_sync/",
+      "url": "https://www.facebook.com/instagram/login_sync/"
+    },
+    {
+      "id": "9D7FA7A9B1F4807C22EA0A53D412DF91",
+      "type": "page",
+      "title": "reddit.com/user/Expert-Try8516/",
+      "url": "https://www.reddit.com/user/Expert-Try8516/"
+    },
+    {
+      "id": "6990140B4CDB4AD58AB8349288E1669A",
+      "type": "page",
+      "title": "@teni-games.bsky.social on Bluesky",
+      "url": "https://bsky.app/profile/teni-games.bsky.social"
+    },
+    {
+      "id": "C561A3F90923A30A7A3A64CE98EED305",
+      "type": "page",
+      "title": "Teni Games - YouTube",
+      "url": "https://www.youtube.com/@TeniGames"
+    },
+    {
+      "id": "7D3E20A674BCF8A80D5E2822B0A97CE2",
+      "type": "page",
+      "title": "Home / X",
+      "url": "https://x.com/home"
+    },
+    {
+      "id": "6F98A18762B6763C8413A748A31ABCFC",
+      "type": "page",
+      "title": "Instagram",
+      "url": "https://www.instagram.com/teni_games/"
+    },
+    {
+      "id": "1DB00BFEA532C78B1F8FDDBB524A18BC",
+      "type": "iframe",
+      "title": "https://www.facebook.com/instagram/login_sync/",
+      "url": "https://www.facebook.com/instagram/login_sync/"
+    },
+    {
+      "id": "503A354787F209E503280C56BDB258ED",
+      "type": "page",
+      "title": "Teni Games - YouTube",
+      "url": "https://www.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng"
+    },
+    {
+      "id": "A5DBF600DA0B62F65581AD1301E2FC4D",
+      "type": "page",
+      "title": "Teni Games (u/Expert-Try8516) - Reddit",
+      "url": "https://www.reddit.com/user/Expert-Try8516/"
+    },
+    {
+      "id": "C81DF08FF85FC4045236B42762924EF0",
+      "type": "iframe",
+      "title": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&amp;k=6LfirrMoAAAAAHZOipvza4kpp_VtTwLNuXVwURNQ&amp;co=aHR0cHM6Ly93d3cucmVkZGl0LmNvbTo0NDM.&amp;hl=en&amp;v=hsFBb1u5wWWWkWP4in1ua2cQ&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=e717rg62qnf3",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LfirrMoAAAAAHZOipvza4kpp_VtTwLNuXVwURNQ&co=aHR0cHM6Ly93d3cucmVkZGl0LmNvbTo0NDM.&hl=en&v=hsFBb1u5wWWWkWP4in1ua2cQ&size=invisible&anchor-ms=20000&execute-ms=30000&cb=e717rg62qnf3"
+    },
+    {
+      "id": "383C4A92879A335D5239BD7F78B8C9C4",
+      "type": "page",
+      "title": "Teni Games (@teni-games.bsky.social) — Bluesky",
+      "url": "https://bsky.app/profile/teni-games.bsky.social"
+    },
+    {
+      "id": "B5D51774E4FDC1EDFA0A1F1D3430C265",
+      "type": "page",
+      "title": "Teni Games - YouTube",
+      "url": "https://www.youtube.com/@TeniGames"
+    },
+    {
+      "id": "056A8F3E5333370B42EE3FE3AB76C244",
+      "type": "page",
+      "title": "Teni Games (@teni-games.bsky.social) — Bluesky",
+      "url": "https://bsky.app/profile/teni-games.bsky.social"
+    },
+    {
+      "id": "AD9F4975A1BC4230659C8DCC4E384AFD",
+      "type": "page",
+      "title": "Teni Games - YouTube",
+      "url": "https://www.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng"
+    },
+    {
+      "id": "E1D04C27449AD787CDB5802A52CD4A3B",
+      "type": "page",
+      "title": "404 Not Found",
+      "url": "https://www.youtube.com/@tenigames"
+    },
+    {
+      "id": "51D086271AD0F1E893E8FE1D1B6918A9",
+      "type": "page",
+      "title": "Teni Games - YouTube",
+      "url": "https://www.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng"
+    },
+    {
+      "id": "2FEB3DB4D3ED8B904E1754E300C189D0",
+      "type": "page",
+      "title": "404 Not Found",
+      "url": "https://www.youtube.com/@TeniGames"
+    },
+    {
+      "id": "274D15AAF6F18EC4CC41CA1E583BA4D2",
+      "type": "page",
+      "title": "Teni Games (u/Expert-Try8516) - Reddit",
+      "url": "https://www.reddit.com/user/Expert-Try8516/"
+    },
+    {
+      "id": "F999B804131574A140C7A98FA33E26F6",
+      "type": "iframe",
+      "title": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&amp;k=6LfirrMoAAAAAHZOipvza4kpp_VtTwLNuXVwURNQ&amp;co=aHR0cHM6Ly93d3cucmVkZGl0LmNvbTo0NDM.&amp;hl=en&amp;v=hsFBb1u5wWWWkWP4in1ua2cQ&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=dfpes4toi0s6",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LfirrMoAAAAAHZOipvza4kpp_VtTwLNuXVwURNQ&co=aHR0cHM6Ly93d3cucmVkZGl0LmNvbTo0NDM.&hl=en&v=hsFBb1u5wWWWkWP4in1ua2cQ&size=invisible&anchor-ms=20000&execute-ms=30000&cb=dfpes4toi0s6"
+    },
+    {
+      "id": "DB4B2E46F8561443039DC2B81BC838E1",
+      "type": "background_page",
+      "title": "Adblock Plus - free ad blocker",
+      "url": "chrome-extension://gmgoamodcdcjnbaobigkjelfplakmdhh/_generated_background_page.html"
+    },
+    {
+      "id": "B66CF32A6598371238EE5ACFB96F2275",
+      "type": "page",
+      "title": "@teni-games.bsky.social — Bluesky",
+      "url": "https://bsky.app/profile/teni-games.bsky.social"
+    },
+    {
+      "id": "A95A3FAE9D32742A57FECD1068B62729",
+      "type": "page",
+      "title": "(1)Couldn’t find this account. Visit TikTok to discover more trending creators, hashtags, and sounds.",
+      "url": "https://www.tiktok.com/@tenigames"
+    },
+    {
+      "id": "D204B5631CBD0B511EF441EC6E374BF7",
+      "type": "iframe",
+      "title": "https://www.facebook.com/instagram/login_sync/",
+      "url": "https://www.facebook.com/instagram/login_sync/"
+    },
+    {
+      "id": "1769C3D81BE731326DD21FD0DD470DBA",
+      "type": "page",
+      "title": "Instagram",
+      "url": "https://www.instagram.com/accounts/edit/"
+    },
+    {
+      "id": "A55B5A5D670416C357D3B8C8CAC0EAC2",
+      "type": "page",
+      "title": "youtube.com/account",
+      "url": "https://www.youtube.com/account"
+    },
+    {
+      "id": "E4BFE513621CFF7E28DED2EE2E9680F8",
+      "type": "page",
+      "title": "TeNi Tiny Games - itch.io",
+      "url": "https://teni-tiny-games.itch.io/"
+    },
+    {
+      "id": "55682349C1FF0AF12C01C5F43A09676A",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://iogidnfllpdhagebkblkgbfijkbkjdmm/bg.js",
+      "url": "chrome-extension://iogidnfllpdhagebkblkgbfijkbkjdmm/bg.js"
+    },
+    {
+      "id": "6B81BCC9EE3EDE8E8C01C4281B60E3AA",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://kohpoklaaeicnkdapjkmljdachedmbbi/background.js",
+      "url": "chrome-extension://kohpoklaaeicnkdapjkmljdachedmbbi/background.js"
+    },
+    {
+      "id": "3DDA98B474C1F873AEB436F5CD1CE30E",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://denbgaamihkadbghdceggmchnflmhpmk/background.js",
+      "url": "chrome-extension://denbgaamihkadbghdceggmchnflmhpmk/background.js"
+    },
+    {
+      "id": "EBF99A38045EA46C519D590EC3391B86",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://bfnaelmomeimhlpmgjnjophhpkkoljpa/background/serviceWorker.js",
+      "url": "chrome-extension://bfnaelmomeimhlpmgjnjophhpkkoljpa/background/serviceWorker.js"
+    },
+    {
+      "id": "72F17A1C121A1D32F6262F9F9E91E9C8",
+      "type": "worker",
+      "title": "",
+      "url": ""
+    },
+    {
+      "id": "13A5A842F7BCB902FE312A1E1B39B82D",
+      "type": "worker",
+      "title": "",
+      "url": ""
+    },
+    {
+      "id": "935B7A1CC9939234678CB1041145F086",
+      "type": "worker",
+      "title": "",
+      "url": ""
+    },
+    {
+      "id": "066A290F0B62F12E52EDA3E776489CCB",
+      "type": "service_worker",
+      "title": "Service Worker https://www.instagram.com/www-service-worker.js?s=push&amp;__d=www&amp;enableAddToHomeScreen=false&amp;zenon_device_id=424b6326-e0dd-4962-8ea4-4ebd041cc927",
+      "url": "https://www.instagram.com/www-service-worker.js?s=push&__d=www&enableAddToHomeScreen=false&zenon_device_id=424b6326-e0dd-4962-8ea4-4ebd041cc927"
+    },
+    {
+      "id": "6F5F0CAF092139DF3AF2171E9FAC19A0",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://mpiodijhokgodhhofbcjdecpffjipkle/lib/single-file-extension-background.js",
+      "url": "chrome-extension://mpiodijhokgodhhofbcjdecpffjipkle/lib/single-file-extension-background.js"
+    },
+    {
+      "id": "7FD1E37107705E4E69A81DD49CB840A1",
+      "type": "worker",
+      "title": "",
+      "url": ""
+    },
+    {
+      "id": "10F1ED1A8CC5D969C5C5FE96DDEF7E48",
+      "type": "service_worker",
+      "title": "Service Worker https://x.com/sw.js",
+      "url": "https://x.com/sw.js"
+    },
+    {
+      "id": "9FABBBA2930A9EC43090997E58DA81A1",
+      "type": "service_worker",
+      "title": "Service Worker https://www.reddit.com/sw.js",
+      "url": "https://www.reddit.com/sw.js"
+    },
+    {
+      "id": "E07765A4AEBEBDABEB3B0B81FC3E7519",
+      "type": "shared_worker",
+      "title": "",
+      "url": "blob:https://x.com/4bab8ba2-0a8c-4fbd-8b49-6ee5faa1948b"
+    }
+  ]
+}

@@ -156,9 +156,11 @@ namespace Hecton8.Core.Contracts
         uint CurrentFrame { get; }
         bool ShouldSkipPrologue { get; }
 
+        void RefreshFrameState();
         bool TryGetOrbitalSnapshot(out PrologueOrbitalSnapshot snapshot);
         bool TryConsumeAtmosphericReentry(out PrologueAtmosphericReentrySnapshot snapshot);
         bool TryConsumePrologueComplete(out PrologueCompleteSnapshot snapshot);
+        void RefreshHydrationState(bool allowProxy);
         bool IsOceanSurfaceReady(bool allowProxy);
 
         void PrepareSequenceRun();

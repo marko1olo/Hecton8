@@ -1,6 +1,6 @@
 ﻿# Project Baseline
 
-Date: 2026-05-28
+Date: 2026-06-02
 Status: STATIC BASELINE
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
@@ -17,11 +17,15 @@ Purpose: stable engineering entry point. This file is not a work log, task board
 
 ## Root and Docs Boundary
 
-- Repository root text anchors are limited to `AGENTS.md`, `TASTE.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Repository root text anchors are limited to `AGENTS.md`, `TASTE.md`, `textes.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 - `Docs/` root is for stable maps, governance, quality gates, project contracts, and architecture entry points.
 - Generated/tool-required root paths must stay short and contract-shaped; full generated bodies belong in reports, regenerated artifacts, or deprecated snapshots.
 - Large generated documentation artifacts belong in `Docs/Generated`.
 - CSV authoring/tuning profiles belong in `Docs/Data/Profiles`.
+- `Docs/Lore` is the narrative/content corpus, not implementation proof.
+- `Docs/Marketing` is the public/commercial planning corpus; public copy still obeys root `textes.md` and proof gates.
+- `Docs/Modding` is the mod/API planning and audit corpus; source and runtime artifacts decide actual API behavior.
+- `Docs/Design`, `Docs/Audio`, `Docs/Atmosphere`, and `Docs/AI_Texturing_Templates` are support corpora. Promote durable engineering facts into `Docs/ARCHITECTURE` before using them as contracts.
 - Dated notes, prompt extracts, report chains, task status files, local telemetry, and temporary scan counters do not belong in `Docs/` root.
 - Current proof snapshots belong in `Docs/Reports` and the concise evidence sections of `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 
@@ -54,11 +58,12 @@ Source-backed snapshot for agent onboarding:
 - Enabled build-spine scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `01_ORBIT`, `02_HECTON_WORLD`.
 - New-game route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
 - Authority drift: `AGENTS.md` still contains older no-orbit scene-flow wording. Do not change the scene route from this baseline alone; follow `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and require owner/integrator decision.
-- First-party asmdef count under `Assets/_Project`: `168` in the 2026-05-29 static filesystem check.
+- First-party asmdef count under `Assets/_Project`: `171` in the 2026-06-01 static filesystem check.
+- First-party script directory count under `Assets/_Project/Scripts`: `56` in the 2026-06-01 static filesystem check.
 - URP package: `com.unity.render-pipelines.universal` `17.4.0`.
-- Data Monolith payload is present at the target path and is `1,064,384` bytes in the 2026-05-28 static filesystem check.
+- Data Monolith payload is present at the target path and is `1,804,864` bytes in the 2026-06-01 static filesystem check.
 
-Detailed source owner map lives in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`. Domain-to-architecture coverage lives in `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`. These facts are static topology only; they do not prove import, compile, route playthrough, profiler, GC, player build, platform, or visual readiness.
+Detailed source-backed runtime topology lives in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`. Real-script system ownership lives in `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`. Domain-to-architecture coverage lives in `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`. These facts are static topology only; they do not prove import, compile, route playthrough, profiler, GC, player build, platform, or visual readiness.
 
 ## Verification Language
 

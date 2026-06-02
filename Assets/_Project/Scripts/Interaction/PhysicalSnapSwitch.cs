@@ -82,6 +82,7 @@ namespace Hecton8.Interaction
         private bool _registeredHotSwapListener;
         private bool _tickDormant;
         private bool _receiverRegistered;
+        private bool _dispatcherAvailable;
         private int _lastSampleFrame = -1;
         private Collider _registeredActivationVolume;
         private IAudioService _audioService;
@@ -282,7 +283,7 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             TryRegisterUpdateTick();
@@ -291,7 +292,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterUpdateTick()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
@@ -301,7 +302,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterLateFrameTick()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -349,6 +350,7 @@ namespace Hecton8.Interaction
 
         private void RefreshColdRegistryReferences()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             _audioService = GlobalRegistry.Audio;
         }
 
@@ -363,6 +365,7 @@ namespace Hecton8.Interaction
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcherAvailable = currentService != null;
                     _registered = false;
                     _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)

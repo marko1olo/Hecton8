@@ -5,7 +5,7 @@
 - Owner: `SHINOBU_323`
 - Domain: Echelon 5 Combat & Survival Physiology / Crush Depth Integrity
 - Files: `ShinobuSuitIntegrityRuntime.cs`, `ShinobuSuitIntegrityJobs.cs`, `ShinobuSuitIntegrityData.cs`
-- Status: `YELLOW / STATIC SOURCE VERIFIED / EXTERNAL COMPILE DEPENDENCY BLOCKS UNITY RUNTIME PROOF`
+- Status: `YELLOW / STATIC_SOURCE_PRESENT / EXTERNAL COMPILE DEPENDENCY BLOCKS UNITY RUNTIME PROOF`
 
 Problem: player suit and exoskeleton crush depth must not be represented by scene trigger volumes, `Physics.OverlapBox`, or player-script hardcoded depth damage.
 

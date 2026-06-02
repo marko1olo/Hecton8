@@ -13,7 +13,7 @@ namespace Hecton8.Input
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30990)] // Keep scene-owned instance ahead of regular runtime consumers.
-    public sealed class RebindingManager : MonoBehaviour, IInputRebindService
+    public sealed class RebindingManager : MonoBehaviour, IInputRebindService, IGlobalRegistryHotSwapListener
     {
         private const string DefaultOverridesFileName = "controls.json";
         private const string DefaultOverridesTempFileName = "controls.json.tmp";
@@ -55,6 +55,7 @@ namespace Hecton8.Input
         private VaultGenerationHandle<InputBindingTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private bool _registeredService;
+        private bool _registeredHotSwapListener;
         private bool _initialOverridesLoadAttempted;
         private bool _telemetryBootstrapped;
 
@@ -95,6 +96,7 @@ namespace Hecton8.Input
                 return;
 
             TryColdBootstrapTelemetry();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             if (_registeredService)
                 ActiveRuntimeInstance = this;
@@ -113,6 +115,7 @@ namespace Hecton8.Input
                 return;
 
             TryColdBootstrapTelemetry();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             if (_registeredService)
                 ActiveRuntimeInstance = this;
@@ -126,6 +129,8 @@ namespace Hecton8.Input
                 ActiveRuntimeInstance = null;
 
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
+            ReleaseControlRemapTelemetryHandles(_dataVault);
         }
 
         private void OnDestroy()
@@ -136,6 +141,28 @@ namespace Hecton8.Input
                 ActiveRuntimeInstance = null;
 
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
+            ReleaseControlRemapTelemetryHandles(_dataVault);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            IDataVault previousVault = previousService as IDataVault;
+            if (previousVault == null)
+                previousVault = _dataVault;
+
+            IDataVault currentVault = currentService as IDataVault;
+            if (ReferenceEquals(previousVault, currentVault))
+                return;
+
+            ReleaseControlRemapTelemetryHandles(previousVault);
+            TryBootstrapTelemetry(currentVault);
         }
 
         private bool TryDestroyDuplicateService()
@@ -702,11 +729,40 @@ namespace Hecton8.Input
             if (_telemetryBootstrapped)
                 return;
 
-            _dataVault = GlobalRegistry.DataVault;
+            TryBootstrapTelemetry(GlobalRegistry.DataVault);
+        }
+
+        private void TryBootstrapTelemetry(IDataVault vault)
+        {
+            _dataVault = vault;
             _telemetryBootstrapped = ControlRemapper.TryBootstrapTelemetry(
-                _dataVault,
+                vault,
                 out _telemetryRingHandle,
                 out _telemetryCursorHandle);
+        }
+
+        private void ReleaseControlRemapTelemetryHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                ReleaseControlRemapTelemetryHandle(vault, ref _telemetryRingHandle);
+                ReleaseControlRemapTelemetryHandle(vault, ref _telemetryCursorHandle);
+            }
+
+            _telemetryRingHandle = default;
+            _telemetryCursorHandle = default;
+            _telemetryBootstrapped = false;
+            _dataVault = null;
+        }
+
+        private static void ReleaseControlRemapTelemetryHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void RecordControlRemapTelemetry(in InputBindingTelemetryEntry entry)
@@ -781,6 +837,23 @@ namespace Hecton8.Input
                 GlobalRegistry.UnregisterInputBindingService(this);
 
             _registeredService = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private INativeInputManagerRuntime ResolveNativeInputManager()

@@ -1358,6 +1358,7 @@ namespace Hecton8.Gameplay
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1403_CONTEXTUAL_PHYSICAL_IK.bin";
+        private static ContextualPhysicalIkRuntime s_activeRuntime;
 
         // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
         private readonly ContextualPhysicalIkRig[] _registeredRigs = new ContextualPhysicalIkRig[MaxEntities];
@@ -1427,6 +1428,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            s_activeRuntime = this;
             GlobalRegistry.RegisterContextualPhysicalIkRuntime(this);
             CachePlayerContextCold();
             CacheSpatialReadModelsCold();
@@ -1436,6 +1438,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            s_activeRuntime = this;
             CachePlayerContextCold();
             CacheSpatialReadModelsCold();
             EnsurePersistentBuffers();
@@ -1450,6 +1453,7 @@ namespace Hecton8.Gameplay
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregister();
+            DisposeBuffers(default);
         }
 
         private void OnDestroy()
@@ -1471,12 +1475,38 @@ namespace Hecton8.Gameplay
             {
                 _cachedPlayerContext = null;
                 _cameraTransform = null;
+                if (ReferenceEquals(s_activeRuntime, this))
+                    s_activeRuntime = null;
                 GlobalRegistry.ClearContextualPhysicalIkRuntime(this);
             }
 
             if (disposeException != null)
                 throw disposeException;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= DisposeActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += DisposeActiveRuntimeForEditorReload;
+        }
+
+        private static void DisposeActiveRuntimeForEditorReload()
+        {
+            ContextualPhysicalIkRuntime runtime = s_activeRuntime;
+            if (runtime == null)
+                return;
+
+            runtime.CompletePendingGroundResponseForRuntimeDisable();
+            runtime.TryUnregisterOriginShiftListener();
+            runtime.TryUnregisterHotSwapListener();
+            runtime.TryUnregister();
+            runtime.DisposeBuffers(default);
+        }
+#endif
 
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,

@@ -112,10 +112,10 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryRegisterHotSwapListener()
@@ -171,7 +171,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 

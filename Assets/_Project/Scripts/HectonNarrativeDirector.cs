@@ -52,6 +52,8 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: string[64] - authored POI ids for hash-to-id narrative event resolution - owner: HectonNarrativeDirector
         private readonly string[] _poiDiscoveryIds = new string[NativePoiCapacity];
+        // COLD ALLOC: uint[64] - cached POI discovery hashes parallel to _poiDiscoveryIds - owner: HectonNarrativeDirector
+        private readonly uint[] _poiDiscoveryHashes = new uint[NativePoiCapacity];
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
         private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
@@ -70,6 +72,7 @@ namespace Hecton8.Gameplay
         private IQuestSystem _questSystem;
         private IFirstHourReadModel _firstHourReadModel;
         private IAtlasSignalReadModel _atlasSignalReadModel;
+        private ISpatialAudioNarrativeRadioSink _narrativeAudioSink;
         private float _aupScanAccumulator = SurvivalAupScanIntervalSeconds;
         private bool _aupScannerDisabledForCurrentPoiSet;
         private int _poiCount;
@@ -191,6 +194,7 @@ namespace Hecton8.Gameplay
             NarrativeEvents.UnregisterPointOfInterestListener(this);
             DirectorAIEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            ClearAppliedLoreWorldImpactState();
         }
 
         private void OnDestroy()
@@ -200,6 +204,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             DirectorAIEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            ClearAppliedLoreWorldImpactState();
 
             DisposeAupNarrativePoiVaultStorage();
         }
@@ -302,6 +307,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
                     _atlasSignalReadModel = currentService as IAtlasSignalReadModel;
                     break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _narrativeAudioSink = currentService as ISpatialAudioNarrativeRadioSink;
+                    break;
             }
         }
 
@@ -312,6 +320,7 @@ namespace Hecton8.Gameplay
             _questSystem = GlobalRegistry.QuestSystem;
             _firstHourReadModel = GlobalRegistry.FirstHourReadModel;
             _atlasSignalReadModel = GlobalRegistry.AtlasSignalReadModel;
+            _narrativeAudioSink = GlobalRegistry.Audio as ISpatialAudioNarrativeRadioSink;
         }
 
         private void TryRegisterHotSwapListener()
@@ -372,7 +381,7 @@ namespace Hecton8.Gameplay
                 if (poi == null) continue;
 
                 // Check if already discovered
-                uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(poi.DiscoveryId);
+                uint discoveryHash = poi.DiscoveryHash;
                 if (discoveryHash != 0u && _discoveredHashLookup.Contains(discoveryHash))
                     continue;
 
@@ -437,6 +446,7 @@ namespace Hecton8.Gameplay
             CompleteAupNarrativePoiJob(forceComplete: true);
             _poiCount = 0;
             Array.Clear(_poiDiscoveryIds, 0, _poiDiscoveryIds.Length);
+            Array.Clear(_poiDiscoveryHashes, 0, _poiDiscoveryHashes.Length);
             int validSpatialPoiCount = 0;
             int discoveryIdCount = 0;
 
@@ -451,6 +461,7 @@ namespace Hecton8.Gameplay
                     continue;
 
                 _poiDiscoveryIds[discoveryIdCount] = poi.DiscoveryId;
+                _poiDiscoveryHashes[discoveryIdCount] = trigger.PoiHash;
                 discoveryIdCount++;
             }
 

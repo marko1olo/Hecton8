@@ -212,7 +212,7 @@ namespace Hecton8.Atmosphere
                 {
                     _loggedMissingBoltRenderer = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.", this);
+                    Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Lightning presentation disabled until authoredBoltRenderer is assigned.", this);
 #endif
                 }
 
@@ -249,7 +249,7 @@ namespace Hecton8.Atmosphere
             {
                 _loggedMissingBoltMaterial = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[SurfaceWeatherVfxRig] Missing lightningBoltMaterial asset. Runtime material creation is forbidden for lightning bolt rendering.", this);
+                Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing lightningBoltMaterial asset. Lightning presentation disabled until material is assigned.", this);
 #endif
             }
 

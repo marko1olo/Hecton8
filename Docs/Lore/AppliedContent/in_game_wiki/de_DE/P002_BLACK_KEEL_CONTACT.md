@@ -1,0 +1,30 @@
+---
+packet_id: P002_BLACK_KEEL_CONTACT
+article_id: black_keel.contact
+locale: de_DE
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Black-Keel-Kontakt
+
+Die Black Keel ist ein System-Carrier, kein Heimatschiff. Sie bewegt Kapseln, Frachtschlepper, Claim-Pakete, versiegelte Proben und unglückliche Operatoren durch den Aegir-Verkehr. Sie kann helfen, aber Hilfe läuft durch Geometrie, Wetter, Automatik, Schulden und versteckte Prioritäten im Vertrag.
+
+## Scanner
+
+Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Himmel gerichtet.
+
+## Terminal
+
+OPERATORSTATUS: lebend. DROPCRAFT: nicht bergbar. CLAIM: offen. PROBE: unbekannt. BERGUNG: Fenster ausstehend.
+
+## Audio
+
+Das Fenster schließt. Sende ein Paket. Wähle, bevor das Sturmfeld über den Mast rollt.
+
+## Field Note
+
+Wenn ein Carrier fragt, was du gefunden hast, bevor er fragt, ob du atmest, bist du nicht der Kunde. Du bist das Werkzeug.
+
+<!-- In-Game Wiki; generated from P002_BLACK_KEEL_CONTACT/de_DE. -->

@@ -2280,9 +2280,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(slowPolicyCall, Is.LessThan(slowChunkGate));
             Assert.That(lateFrameBody, Does.Not.Contain("FlushAsyncUploadBudgetPolicySlow();"));
             Assert.That(lateFrameBody, Does.Not.Contain("QualitySettings."));
+            Assert.That(policyBody, Does.Contain("ResolveAsyncUploadEffectiveQuality01();"));
             Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadBufferSize = uploadBufferSize;"));
             Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadTimeSlice = uploadTimeSlice;"));
             Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadPersistentBuffer = true;"));
+            Assert.That(source, Does.Contain("_vramPressure = GlobalRegistry.VRAMPressureReadModel;"));
+            Assert.That(source, Does.Contain("private float ResolveAsyncUploadPressure01()"));
+            Assert.That(source, Does.Contain("math.smoothstep(0.55f, 0.98f, pressure)"));
         }
 
         [Test]

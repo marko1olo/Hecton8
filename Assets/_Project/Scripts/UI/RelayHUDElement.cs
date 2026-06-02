@@ -29,7 +29,7 @@ namespace Hecton8.UI
             Visible_ClampedToEdge = 6
         }
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- References ------------------")]
         [Tooltip("Icon used for the relay route marker.")]
         [SerializeField] private Image markerIcon;
 
@@ -39,7 +39,7 @@ namespace Hecton8.UI
         [Tooltip("Label for the current relay target.")]
         [SerializeField] private TMP_Text labelText;
 
-        [Header("â”€â”€ Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Routing ----------------------")]
         [Tooltip("Hide the marker when the route target is farther away than this distance.")]
         [SerializeField, Min(10f)] private float maxDisplayDistance = 450f;
 
@@ -49,7 +49,7 @@ namespace Hecton8.UI
         [Tooltip("Margin in pixels used when clamping the marker to the screen edge.")]
         [SerializeField, Min(0f)] private float screenMargin = 64f;
 
-        [Header("â”€â”€ Visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Visual -----------------------")]
         [Tooltip("Marker color while the relay target is on-screen and inside comfortable range.")]
         [SerializeField] private Color onScreenColor = new Color(0.26f, 0.86f, 1f, 0.95f);
 
@@ -529,27 +529,27 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registered)
-                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registered = false;
             }
         }

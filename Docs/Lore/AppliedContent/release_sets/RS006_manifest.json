@@ -1,0 +1,70 @@
+{
+  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS006_HUMANITY_TRANSIT_SEED_LOGISTICS",
+  "status": "production_facing_draft",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS006_HUMANITY_TRANSIT_SEED_LOGISTICS.packets.json"
+  ],
+  "packets": [
+    "P026_SIX_DOMAIN_LEDGER",
+    "P027_BARNARD_YARDS_ORIGIN",
+    "P028_NO_FTL_TRANSIT_MATH",
+    "P029_SEED_SHIP_DOCTRINE",
+    "P030_RELAY_CUSTODY_DEBT_CHAIN"
+  ],
+  "locales_present_in_packet_bundle": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "markdown_publication_locales_present": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "runtime_contract": {
+    "runtime_must_not_parse_markdown": true,
+    "runtime_must_not_generate_translation": true,
+    "expected_bake_output": [
+      "packet_id_hash",
+      "loc_id_hashes",
+      "surface_enum",
+      "unlock_id",
+      "domain_tag",
+      "route_window_id",
+      "localized_string_pool_offsets"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Mod Signal Audit Matrix
 
-Date: 2026-05-19
+Date: 2026-06-02
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
 
 ## Authority Boundary
@@ -20,10 +20,10 @@ The projection rows below are historical/source-audit context. Current public UG
 Command used:
 
 ```powershell
-rg -o "public\s+(?:readonly\s+|partial\s+)*struct\s+[A-Za-z0-9_]+\s*:\s*ISignal(?![A-Za-z0-9_])" Assets/_Project/Scripts/Core/Signals --glob "GlobalSignalPayloads*.cs"
+rg --pcre2 -o "public\s+(?:readonly\s+|partial\s+)*struct\s+[A-Za-z0-9_]+\s*:\s*ISignal(?![A-Za-z0-9_])" Assets/_Project/Scripts/Core/Signals --glob "GlobalSignalPayloads*.cs"
 ```
 
-Result: 173 unique `ISignal` structs in `Core/Signals/GlobalSignalPayloads*.cs`.
+Result on 2026-06-02: 175 matching `ISignal` structs in `Core/Signals/GlobalSignalPayloads*.cs`. The `--pcre2` flag is required because the pattern uses negative lookahead.
 
 Projection bridge source check: `Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs` consumes only `SignalBus<CombatDamageSignal>` and `SignalBus<WeatherChangedSignal>` for `ModEventDto` projection.
 
@@ -38,13 +38,14 @@ Only signals listed in `Signal_Schema.json.allowedSignalBuses` are public to mod
 
 ## Denied-By-Default Inventory
 
-The following 171 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
+The following 173 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
 
 ```text
 AcousticPingSignal
 AcousticZoneChangedEvent
 AnomalyProximitySignal
 AnomalySignal
+AppliedLoreTerminalPreviewSignal
 AtmosphericReentrySignal
 AudioEvent
 AupPreShiftSignal
@@ -154,6 +155,7 @@ RadiationDoseSignal
 RadiationSourceSignal
 RebaseSignal
 ReconDataSignal
+ReentryAcousticStressSignal
 ReentryVfxStateSignal
 ResolutionChangedSignal
 ResourceDepletionDeltaSignal
@@ -226,7 +228,7 @@ WfcOutpostStateChangedSignal
 
 ## Consistency Gate
 
-If the source inventory count changes from 173, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
+If the source inventory count changes from 175, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
 
 Run the static drift gate after any signal or mod bridge edit:
 

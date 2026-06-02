@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-05-31T20:02:44.772Z",
+  "platform": "x",
+  "mode": "dryrun",
+  "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+  "mediaPath": "C:\\hades\\Hecton8\\MarketingAssets\\00_Brand\\Animated\\Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif",
+  "inputCount": 2,
+  "readyState": {
+    "url": "https://x.com/compose/post",
+    "title": "Home / X",
+    "textareas": [
+      {
+        "i": 0,
+        "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+        "testid": "tweetTextarea_0",
+        "aria": "Post text",
+        "rect": {
+          "x": 475.5889587402344,
+          "y": 156.61058044433594,
+          "w": 491.8028869628906,
+          "h": 159.97596740722656,
+          "cx": 721.4904022216797,
+          "cy": 236.59856414794922
+        }
+      },
+      {
+        "i": 1,
+        "text": "\n",
+        "testid": "tweetTextarea_0",
+        "aria": "Post text",
+        "rect": {
+          "x": 411.3581848144531,
+          "y": 81.27404022216797,
+          "w": 505.6490478515625,
+          "h": 29.98798179626465,
+          "cx": 664.1827087402344,
+          "cy": 96.2680311203003
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "i": 18,
+        "text": "Post",
+        "testid": "tweetButton",
+        "disabled": false,
+        "rect": {
+          "x": 896.9951782226562,
+          "y": 655.204345703125,
+          "w": 71.93509674072266,
+          "h": 40,
+          "cx": 932.9627265930176,
+          "cy": 675.204345703125
+        }
+      },
+      {
+        "i": 37,
+        "text": "Post",
+        "testid": "tweetButtonInline",
+        "disabled": true,
+        "rect": {
+          "x": 846.610595703125,
+          "y": 136.7788543701172,
+          "w": 71.93509674072266,
+          "h": 40,
+          "cx": 882.5781440734863,
+          "cy": 156.7788543701172
+        }
+      }
+    ],
+    "files": [
+      {
+        "i": 0,
+        "accept": "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime",
+        "testid": "fileInput"
+      },
+      {
+        "i": 1,
+        "accept": "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime",
+        "testid": "fileInput"
+      }
+    ],
+    "body": "To view keyboard shortcuts, press question mark\nView keyboard shortcuts\nDrafts\nEveryone\nTeni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.\nGIF\nAdd description\nEveryone can reply\nPost\nHome\nExplore\nNotifications\nFollow\nChat\nGrok\nPremium\nProfile\nMore\nPost\nTeni Games\n@submerge_game\nFor you\nFollowing\nUnity/UE5 Game Dev {Beginner}\nIndie Game Devs\nSee new posts\nWhat’s happening?\n\n\nPost\nYour Home Timeline\nKappaemme\n@Kappaemme1926\n·\n8h\nCodex 2x usage limits end today.\n\nIf you think the limits are bad now, June is about to be painful.\n\nI’m on the $100 plan and even with 2x limits, I ran out in 2 days after the reset.\n\nDo you think OpenAI will extend the promo, or are we just cooked?\n86\n5\n333\n39K\nAnıl Evci\n@anilevci_\n·\n6h\nTranslated from Turkish\nShow original\nThere's a Codex update that very few people have noticed:\n\nThread Coordination\n\nI think this is one of those features that seems minor in \"AI coding agent\" usage but could seriously change the way it works.\n\nLet's start with the first item;\n5\n3\n68\n15K\nadah\n@adahstwt\n·\n5h\nbe honest, which AI model are you building with most?\n\n- GPT\n- Claude \n- Gemini \n- DeepSeek\n64\n1\n54\n4.1K\nsui \n@birdabo\n·\n33m\nCursor is honestly one of the best subscriptions you can get today.\n7\n13\n450\nDaniel Smidstrup\n@DanielSmidstrup\n·\n3h\nHow can you prove that you are not an AI agent?\n58\n1\n24\n1.7K\nTibo\n@thsottiaux\n·\nMay 30\nI looked at a number today on a codex dashboard and it made me happy. More news about the number soon. \n\nThanks to everyone who keeps adopting codex. We are still early. So early.\n292\n113\n3.4K\n204K\nTyler\n@rezoundous\n·\n8h\nAnthropic needs to release Mythos NOW\n75\n7\n352\n40K\nSimon Smith\n@_simonsmith\n·\n6h\nWith Codex at 5 million users, they’ve hit about 0.6% of ChatGPT’s roughly 900 million users. We are so, so early. The vast majority of people have no idea what’s already possible to do with AI, while a tiny minority is automating their personal lives and work.\n27\n48\n760\n25K\nMr Ash\n@ash_twtz\n·\n6h\nHey \n@grok\n remove the worst vibe coding tool\n58\n1\n113\n19K\nSubscribe to Premium\n50% off\nGet rid of ads, see your analytics, boost your replies and unlock 20+ features.\nSubscribe\nToday’s News\nOpenAI's Codex Hits 5 Million Users with Usage Limits Reset\n13 hours ago · News · 4,628 posts\nOpenAI Resets Codex Usage Limits for Paid ChatGPT Subscriptions\n3 hours ago · News · 1,644 posts\nOpenClaw and Hermes Agents Tackle Real"
+  },
+  "beforeScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\x_first_post_dryrun_20260601_dryrun.png",
+  "afterScreenshot": null,
+  "clickResult": null
+}

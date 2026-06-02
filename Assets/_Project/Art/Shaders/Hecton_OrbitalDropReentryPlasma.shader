@@ -64,6 +64,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
 
             float4 _HectonReentryPlasmaState0; // x heat, y opacity, z velocity, w altitude01
             float4 _HectonReentryPlasmaState1; // x quality pressure, y phase
+            float4 _FullScreenFlash; // rgb flash color, a impact alpha
 
             struct Attributes
             {
@@ -130,6 +131,8 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 half altitude01 = lerp(saturate(_PlasmaAltitude01), saturate((half)_HectonReentryPlasmaState0.w), runtimeActive);
                 half whiteout = smoothstep(0.82h, 1.0h, opacity);
                 half3 whiteHot = half3(1.0h, 0.72h, 0.36h) * 4.5h;
+                half flash01 = saturate((half)_FullScreenFlash.a);
+                half3 flashColor = max(half3(_FullScreenFlash.rgb), half3(1.0h, 1.0h, 1.0h)) * 5.0h;
                 half qualityPressure = lerp(saturate(_PlasmaQualityPressure), saturate((half)_HectonReentryPlasmaState1.x), runtimeActive);
                 half3 minimumQualityColor = lerp(_PlasmaCoreColor.rgb * (0.35h + heat), whiteHot, whiteout);
 
@@ -157,9 +160,11 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 plasmaColor += _PlasmaEdgeColor.rgb * edge * shock * heat;
                 plasmaColor = lerp(plasmaColor, whiteHot, whiteout);
                 plasmaColor = lerp(plasmaColor, minimumQualityColor, qualityPressure);
+                plasmaColor = lerp(plasmaColor, flashColor, flash01);
 
                 half alpha = saturate(opacity * (0.72h + plasma * 0.28h + edge * 0.18h));
                 alpha = lerp(alpha, 1.0h, whiteout);
+                alpha = max(alpha, flash01);
                 return half4(plasmaColor, alpha);
             }
             ENDHLSL

@@ -275,6 +275,25 @@ namespace Hecton8.Gameplay
             _listeners.Clear();
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                ResetStaticState();
+        }
+#endif
+
         /// <summary>
         /// Registers one listener for deferred player signal delivery.
         /// </summary>
@@ -445,6 +464,9 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!_pendingTraumaHudSignals.IsCreated)
             {
                 _pendingTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - deferred trauma HUD lane - owner: PlayerSignalEvents

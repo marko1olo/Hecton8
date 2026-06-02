@@ -553,9 +553,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(1f)] private float bloodWaypointWarningRadius = 100f;
         [SerializeField] private Shader scannerMarkerShader;
 
-        // COLD ALLOC: SpatialQueryHit[64] � scanner spatial contact cap � owner: ScannerTool
+        // COLD ALLOC: SpatialQueryHit[64] - scanner spatial contact cap - owner: ScannerTool
         private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[64];
-        // COLD ALLOC: ScanAggregate[64] � scanner transform aggregate cap � owner: ScannerTool
+        // COLD ALLOC: ScanAggregate[64] - scanner transform aggregate cap - owner: ScannerTool
         private static readonly ScanAggregate[] s_ScanAggregateBuffer = new ScanAggregate[64];
         private static readonly SpatialTargetKind s_ScannerSpatialKinds =
             SpatialTargetKind.Resource |
@@ -574,9 +574,9 @@ namespace Hecton8.Gameplay
         private ScanResultSummary _lastResult;
         private float _lastResultTime = -999f;
         private bool _hasLastResult;
-        private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] � scanner result HUD staging buffer � owner: ScannerTool
-        private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] � scanner operation log title staging buffer � owner: ScannerTool
-        private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] � scanner operation log summary staging buffer � owner: ScannerTool
+        private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - scanner result HUD staging buffer - owner: ScannerTool
+        private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - scanner operation log title staging buffer - owner: ScannerTool
+        private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - scanner operation log summary staging buffer - owner: ScannerTool
         private const float DegreesToRadians = 0.01745329252f;
         private string _cachedOperationalSummaryString = string.Empty;
         private string _cachedOperationalDirectiveString = string.Empty;
@@ -654,7 +654,7 @@ namespace Hecton8.Gameplay
         private float _batteryCharge;
 
         // MaterialPropertyBlock for power indicator
-        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] � power indicator emission � owner: ScannerTool
+        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] - power indicator emission - owner: ScannerTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private bool _powerIndicatorDirty;
 
@@ -751,7 +751,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] � power indicator emission � owner: ScannerTool
+            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - power indicator emission - owner: ScannerTool
             EnsureScientificNativeState();
             InitializeScannerQualityWeightCold();
             BindCachedRuntimeServicesCold();
@@ -764,7 +764,7 @@ namespace Hecton8.Gameplay
             #endif
 
             if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
-                markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] � scanner marker owner � owner: ScannerTool
+                markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] - scanner marker owner - owner: ScannerTool
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);

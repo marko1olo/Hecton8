@@ -1,6 +1,6 @@
 # HECTON-8 Taste Principles
 
-Date: 2026-05-25
+Date: 2026-06-02
 Status: TASTE AUTHORITY / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 
 ## Purpose
@@ -10,6 +10,19 @@ This is not a design doc. It does not define features, quests, budgets, owners, 
 This file defines what the project considers good.
 
 Use it during reviews when a screenshot, mechanic, shader, UI panel, sound, creature, room, or marketing asset technically works but may still be tasteless, derivative, noisy, fake, soft, or visually wrong for HECTON-8.
+
+## Binding Production Standards
+
+Taste decides if the work belongs in HECTON-8. Production standards decide how to build it:
+
+- Generated meshes, textures, materials, LODs, and collision proxies: `3dmodel.md`.
+- Hero/close-camera generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`.
+- Texture family generation and PBR source rules: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`.
+- UI, HUD, menus, terminals, cockpit panels, and interface screens: `ui.md`.
+- Menu/frontend screens: `UI_MENU_SCREEN_STANDARDS.md`.
+- Diegetic HUD and physical panels: `UI_DIEGETIC_HUD_STANDARDS.md`.
+
+These files do not replace taste. They turn taste into rejection gates.
 
 ## Prime Taste
 
@@ -305,6 +318,8 @@ Reject:
 - cozy base interiors;
 - UI-only screens with no consequence;
 - clean sci-fi walls.
+- menu screenshots made of decorative gridlines and floating buttons;
+- hero-asset screenshots with no wireframe/material/collider/render proof when requested.
 
 ## Audio Taste
 
@@ -339,13 +354,41 @@ Good:
 - black-box facts;
 - corporate liability language contradicted by visible damage;
 - Marauder corrections that translate lies into survival facts.
+- interfaces that behave like instruments, not decoration;
+- menu screens that feel like boot consoles, dock systems, damaged monitors, suit firmware, or black-box playback;
+- HUD readouts that expose oxygen, pressure, route, signal, trust, hull, tool, or warning state;
+- controls that imply physical operation: latch, hold, dial, segment, rail, route, switch, confirm.
 
 Bad:
 
 - lore walls before player need;
 - quippy system messages;
 - polished marketing copy inside broken machines;
-- text that explains what the environment should have shown.
+- text that explains what the environment should have shown;
+- decorative grids, random diagonal lines, and fake telemetry;
+- flat floating rectangles posing as premium interface;
+- UI motion that means nothing;
+- tiny flavor labels nobody can read under pressure.
+
+## Generated Asset Taste
+
+Generated assets are accepted only when they look authored.
+
+Good:
+
+- bevels, weighted normals, UV density, PBR masks, LOD chain, collision proxy, and proof artifact;
+- hero models with reference contract, high-poly source, retopology, bakes, trims, decals, and render proof;
+- textures with material truth: albedo, normal, MRAO, emission or height where justified, no baked-light AI garbage;
+- organic forms with anatomy, growth history, vertex color semantics, and nonuniform silhouette;
+- geology with strata, fracture, sediment, wet cavities, and scale witnesses.
+
+Bad:
+
+- low-poly primitives with noise textures;
+- boxes, tubes, blobs, ribbons, and spheres sold as final assets;
+- high triangle counts without silhouette intelligence;
+- clean synthetic materials with no age, pressure, wear, or function;
+- runtime generation used to hide offline authoring failure.
 
 ## Creature Taste
 
@@ -415,6 +458,9 @@ Reject on sight unless a current proof artifact and strong reason exist:
 - One balanced quality profile.
 - Ultra-only readability.
 - UI that decorates instead of informs.
+- UI/menu screens that look like generic sci-fi templates.
+- Generated models that read as primitive shapes after textures are disabled.
+- AI/procedural textures with baked lighting, random noise, or false PBR channels.
 - Lore that arrives before evidence.
 - Optimization that buys nothing visible.
 

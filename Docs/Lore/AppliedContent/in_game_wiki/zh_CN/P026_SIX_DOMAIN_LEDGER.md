@@ -1,0 +1,30 @@
+---
+packet_id: P026_SIX_DOMAIN_LEDGER
+article_id: humanity.six_domain_ledger
+locale: zh_CN
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 六域账本
+
+到2190年，人类空间稀疏但成熟。六个命名节点不是整张地图，而是marauder能在工具、法律、数据路线和claim封印上读到的标签。HECTON-8不在文明之外，它在帮助来得太迟的文明内部。
+
+## Scanner
+
+账本列出六个主要人类节点：Sol、Centauri、Barnard、Tau Ceti、Luyten、Aegir。
+
+## Terminal
+
+Domain register：Sol Core法律、Centauri合法性、Barnard船厂、Tau Ceti公共仲裁、Luyten中继托管、Aegir企业claim。
+
+## Audio
+
+账本上有六个名字。没有一个能及时到达这间房。
+
+## Field Note
+
+文明在场。距离仍然获胜。
+
+<!-- In-Game Wiki; generated from P026_SIX_DOMAIN_LEDGER/zh_CN. -->

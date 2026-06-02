@@ -238,30 +238,33 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("*attached = true;", native);
             StringAssert.Contains("if (attached && vm != nullptr)", native);
             StringAssert.Contains("vm->DetachCurrentThread();", native);
-            Assert.AreEqual(2, CountToken(native, "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)"));
-            Assert.GreaterOrEqual(CountToken(native, "H8_ReleaseJniEnvironment(javaVm, attached);"), 8);
+            StringAssert.Contains("struct H8JniEnvironmentScope", native);
+            StringAssert.Contains("struct H8FloatingPointControlScope", native);
+            StringAssert.Contains("H8FloatingPointControlScope FloatingPointScope;", native);
+            StringAssert.Contains("~H8JniEnvironmentScope()", native);
+            StringAssert.Contains("H8_ReleaseJniEnvironment(JavaVm, Attached);", native);
+            StringAssert.Contains("msr fpcr", native);
+            StringAssert.Contains("msr fpsr", native);
+            StringAssert.Contains("_mm_getcsr()", native);
+            StringAssert.Contains("_mm_setcsr(Mxcsr);", native);
+            Assert.AreEqual(2, CountToken(native, "H8JniEnvironmentScope jniScope(javaVm);"));
             Assert.IsTrue(ContainsTokensInOrder(
                 native,
                 "extern \"C\" JNIEXPORT int32_t JNICALL H8_GetAssetSize",
-                "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)",
-                "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);",
+                "H8JniEnvironmentScope jniScope(javaVm);",
+                "if (!jniScope.IsValid())",
+                "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);",
                 "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);",
-                "AAsset_close(asset);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);"));
+                "AAsset_close(asset);"));
             Assert.IsTrue(ContainsTokensInOrder(
                 native,
                 "extern \"C\" JNIEXPORT bool JNICALL H8_LoadAssetToPointer",
-                "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)",
-                "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);",
+                "H8JniEnvironmentScope jniScope(javaVm);",
+                "if (!jniScope.IsValid())",
+                "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);",
                 "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);",
                 "AAsset_close(asset);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);",
-                "AAsset_close(asset);",
-                "H8_ReleaseJniEnvironment(javaVm, attached);"));
+                "return totalRead == assetLength;"));
         }
 
         [Test]

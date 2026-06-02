@@ -45,6 +45,11 @@ namespace Hecton8.Optimization
         /// </summary>
         internal static bool IsSharedMemoryBudgetActive => _sharedMemoryBudgetActive;
 
+        /// <summary>
+        /// Hardware floor owned by the bootstrap enforcer. Pressure systems may raise mip limits above it, but must not restore below it.
+        /// </summary>
+        internal static int RuntimeTextureMipLimitFloor => _initialized ? ResolveMinimumTextureMipLimit() : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

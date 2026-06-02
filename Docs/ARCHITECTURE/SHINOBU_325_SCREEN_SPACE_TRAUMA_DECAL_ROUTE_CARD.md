@@ -10,7 +10,7 @@ Owner domain: Echelon 8 Presentation & UX / Screen-Space Trauma Decals
 
 Owning files: `DynamicDecalVaultRuntime.cs`, `DeferredDecalPass.cs`, `Hecton_VisorTrauma.shader`
 
-Status: `YELLOW / STATIC SOURCE VERIFIED / UNITY RUNTIME PROOF PENDING`
+Status: `YELLOW / STATIC_SOURCE_PRESENT / UNITY RUNTIME PROOF PENDING`
 
 Problem: blood, acid, burns, scorch marks, hull dents, and visor glass cracks must not spawn `DecalProjector`, Canvas, quad, particle, or per-trauma GameObject routes.
 

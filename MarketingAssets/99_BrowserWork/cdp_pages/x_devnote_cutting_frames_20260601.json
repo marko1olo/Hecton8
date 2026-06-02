@@ -1,0 +1,92 @@
+{
+  "generated_at": "2026-05-31T20:40:54.249Z",
+  "platform": "x",
+  "mode": "publish",
+  "text": "Opened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.",
+  "mediaPath": null,
+  "inputCount": 0,
+  "readyState": {
+    "url": "https://x.com/compose/post",
+    "title": "Home / X",
+    "textareas": [
+      {
+        "i": 0,
+        "text": "Opened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.",
+        "testid": "tweetTextarea_0",
+        "aria": "Post text",
+        "rect": {
+          "x": 475.5889587402344,
+          "y": 156.61058044433594,
+          "w": 507.1875,
+          "h": 107.98077392578125,
+          "cx": 729.1827087402344,
+          "cy": 210.60096740722656
+        }
+      },
+      {
+        "i": 1,
+        "text": "\n",
+        "testid": "tweetTextarea_0",
+        "aria": "Post text",
+        "rect": {
+          "x": 411.3581848144531,
+          "y": 81.27404022216797,
+          "w": 505.6490478515625,
+          "h": 29.98798179626465,
+          "cx": 664.1827087402344,
+          "cy": 96.2680311203003
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "i": 17,
+        "text": "Post",
+        "testid": "tweetButton",
+        "disabled": false,
+        "rect": {
+          "x": 912.3798217773438,
+          "y": 342.860595703125,
+          "w": 71.93509674072266,
+          "h": 40,
+          "cx": 948.3473701477051,
+          "cy": 362.860595703125
+        }
+      },
+      {
+        "i": 36,
+        "text": "Post",
+        "testid": "tweetButtonInline",
+        "disabled": true,
+        "rect": {
+          "x": 846.610595703125,
+          "y": 136.7788543701172,
+          "w": 71.93509674072266,
+          "h": 40,
+          "cx": 882.5781440734863,
+          "cy": 156.7788543701172
+        }
+      }
+    ],
+    "files": [
+      {
+        "i": 0,
+        "accept": "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime",
+        "testid": "fileInput"
+      },
+      {
+        "i": 1,
+        "accept": "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime",
+        "testid": "fileInput"
+      }
+    ],
+    "body": "To view keyboard shortcuts, press question mark\nView keyboard shortcuts\nDrafts\nEveryone\nOpened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.\nEveryone can reply\nPost\nHome\nExplore\nNotifications\nFollow\nChat\nGrok\nPremium\nProfile\nMore\nPost\nTeni Games\n@submerge_game\nFor you\nFollowing\nUnity/UE5 Game Dev {Beginner}\nIndie Game Devs\nSee new posts\nWhat’s happening?\n\n\nPost\nYour Home Timeline\nUpdate on X's blue checkmark\nFollowing the European Commission's Decision of 5 December 2025, we must explain the meaning of our blue checkmark and verification policies:\n\nPremium accounts featuring the blue checkmark are not verified under identity or authenticity criteria (accounts verified based on an ID are labelled as \"ID verified\").\n\nAs you know, on 1 April 2023 we began winding down Twitter's legacy verification program:\n\nPreviously, to receive the blue checkmark, accounts had to be authentic, active, and deemed notable by Twitter staff (for more information on the legacy policy, please click here).\n\nNow, following the changes implemented to democratize the platform, the blue checkmark has a different meaning and identifies accounts that have an active subscription to X Premium/X Premium+ (including services such as reply prioritization) and are complete, active, secure and non-deceptive, regardless of perceived notability.\n\nX supports freedom of speech and does not endorse or validate the views expressed on accounts featuring checkmarks.\nSimon Smith\n@_simonsmith\n·\n6h\nWith Codex at 5 million users, they’ve hit about 0.6% of ChatGPT’s roughly 900 million users. We are so, so early. The vast majority of people have no idea what’s already possible to do with AI, while a tiny minority is automating their personal lives and work.\n31\n63\n882\n33K\nThomas Trimoreau\n@TTrimoreau\n·\n3h\nX is full of founders\n\nGitHub is full of developers\n\nLinkedIn is full of …\n29\n18\n993\nAkash\n@kaaaash____\n·\n13h\nWhat do you prefer?\n\nCoding with music   or    Coding in silence\n56\n11\n157\n7.6K\nYaswanth\n@byash_87\n·\n4h\nWhich AI tool are you using the most right now?\n\n1. Claude Code \n2. Codex \n3. Perplexity\n4. Cursor \n\nOr something else?\n9\n1\n9\n669\nJorge Marfil\n@JorgeMvrfil\n·\n7h\nbe honest:\n\nare you actually more productive with AI coding tools…\n\nor just building more random things?\n59\n1\n32\n3.2K\nBeswin Joe\n@beswinjoee\n·\n12h\nWhich local host is best for devs?\n50\n3\n55\n2.2K\nSubscribe to Premium\n50% off\nGet rid of ads, see your analytics, boost your r"
+  },
+  "beforeScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\x_devnote_cutting_frames_20260601_before_publish.png",
+  "afterScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\x_devnote_cutting_frames_20260601_after_publish.png",
+  "clickResult": {
+    "url": "https://x.com/submerge_game/status/2061186060181233888",
+    "title": "Teni Games on X: \"Opened the accounts before the good shots are ready. For now I am mostly deleting frames that look cool and say nothing.\" / X",
+    "body": "To view keyboard shortcuts, press question mark\nView keyboard shortcuts\nHome\nExplore\nNotifications\nFollow\nChat\nGrok\nPremium\nProfile\nMore\nPost\nTeni Games\n@submerge_game\nPost\nSee new posts\nConversation\nTeni Games\n@submerge_game\nOpened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.\n12:40 AM · Jun 1, 2026\nPost your reply\n\n\nReply\nRelevant people\nTeni Games\n@submerge_game\nMaking Submerge. Pressure, salvage, ugly machinery, black water.\nTrending now\nWhat’s happening\nTrending in Netherlands\nParijs\nTrending in Netherlands\nHiemstra\nTrending in Netherlands\n#overmijnlijk\nTrending in Netherlands\n#bicyclerace\nShow more\nTerms of Service\n |\nPrivacy Policy\n |\nCookie Policy\n |\nAccessibility\n |\nAds info\n |\nMore\n© 2026 X Corp."
+  }
+}

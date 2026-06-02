@@ -1242,6 +1242,9 @@ namespace Hecton8.Core.Memory
         ShinobuPredictedInputRing = 75000,
         ShinobuPredictedInputAupTargets = 75001,
         ShinobuInputPredictionTelemetry = 75002,
+        ShinobuInputReplayFrames = 75008,
+        ShinobuInputReplayTelemetry = 75009,
+        ShinobuInputReplayValidationResults = 75010,
         BabelUtf8Blob = 70541,
         BabelTelemetryRing = 70542,
         BabelStagedLocale = 70543,
@@ -1311,6 +1314,7 @@ namespace Hecton8.Core.Memory
         NarrativePoiPresentation = 74008,
         PrologueSequenceTelemetryRing = 74009,
         OrbitalDropReentryVfxTelemetryRing = 74010,
+        PrologueReentryState = 74011,
         QAEnduranceBlackBoxRing = 74200,
         SargassumCutStampCommands = 74300,
         SargassumCutDamageVolumeStampCommands = 74301,
@@ -1743,6 +1747,14 @@ namespace Hecton8.Core.Memory
         ShinobuHydroKccWakePackets = 70749,
         ShinobuHydroKccDebugOutputs = 70751,
         ShinobuHydroKccResolvedHits = 70752,
+        ZeroGMovementState = 160050,
+        ZeroGMovementInput = 160051,
+        ZeroGMovementTuning = 160052,
+        ZeroGMovementSurfaceHit = 160053,
+        ZeroGMovementSolverOutput = 160054,
+        ZeroGMovementTelemetryRing = 160055,
+        ZeroGMovementTelemetryCursor = 160056,
+        ZeroGMovementTestResults = 160057,
         ShinobuOceanWaveParameters = 70760,
         ShinobuOceanAtmosphere = 70761,
         ShinobuOceanWeatherState = 70762,
@@ -2368,6 +2380,11 @@ namespace Hecton8.Core.Memory
             throw new FatalMemoryException("GlobalDataVault buffer type mismatch.");
         }
 
+        public static void ThrowVaultInitializationFailed()
+        {
+            throw new FatalMemoryException("GlobalDataVault initialization failed.");
+        }
+
         public static void ThrowAllocationSizeMismatch()
         {
             throw new FatalMemoryException("H8Memory reallocation size mismatch.");
@@ -2446,6 +2463,8 @@ namespace Hecton8.Core.Memory
         private static long _lastTransitionReleasedBytes;
         private static long _transitionBaselineBytes;
         private static long _transitionExpectedBytes;
+        private static Action _beforeShutdownOwnerReleaseHook;
+        private static bool _invokingBeforeShutdownOwnerReleaseHook;
         private static bool _lastTransitionBaselineVerified = true;
         private static bool _deferSceneUnloadedVerificationToRuntime;
         private static bool _sceneHooksRegistered;
@@ -2461,6 +2480,29 @@ namespace Hecton8.Core.Memory
 
         /// <summary>True while H8Memory tracking tables are live.</summary>
         public static bool IsInitialized => _initialized;
+
+        /// <summary>
+        /// Registers owner teardown that must run before H8Memory force-releases tracked native pointers.
+        /// </summary>
+        public static void RegisterBeforeShutdownOwnerRelease(Action releaseHook)
+        {
+            if (releaseHook == null)
+                return;
+
+            _beforeShutdownOwnerReleaseHook -= releaseHook;
+            _beforeShutdownOwnerReleaseHook += releaseHook;
+        }
+
+        /// <summary>
+        /// Unregisters owner teardown from the pre-shutdown release lane.
+        /// </summary>
+        public static void UnregisterBeforeShutdownOwnerRelease(Action releaseHook)
+        {
+            if (releaseHook == null)
+                return;
+
+            _beforeShutdownOwnerReleaseHook -= releaseHook;
+        }
 
         /// <summary>Total tracked bytes.</summary>
         public static long TotalBytes => _totalBytes;
@@ -2528,8 +2570,11 @@ namespace Hecton8.Core.Memory
 
         private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
         {
-            if (state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
                 Shutdown();
+            }
         }
 #endif
 
@@ -2537,6 +2582,7 @@ namespace Hecton8.Core.Memory
         private static void ResetForSubsystemRegistration()
         {
             Shutdown();
+            ResetStaticValueState();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -3354,11 +3400,21 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void Shutdown()
         {
+            InvokeBeforeShutdownOwnerReleaseHooks();
             UnregisterSceneHooks();
-            if (!_initialized)
-                return;
+            if (_initialized)
+                CompleteAllOwnerJobs();
 
-            CompleteAllOwnerJobs();
+            GlobalDataVault.DisposeLatestCreatedForNativeMemoryShutdown();
+            if (!_initialized)
+            {
+                DisposeOwnerPointerLists();
+                ClearTrackingMemoryBeforeDispose();
+                DisposeTrackingContainers();
+                ReleaseAliasSafetyHandleIfCreated();
+                ResetStaticValueState();
+                return;
+            }
 
             for (int i = _recordCount - 1; i >= 0; i--)
             {
@@ -3371,6 +3427,61 @@ namespace Hecton8.Core.Memory
             _totalBytes = 0L;
             RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Shutdown);
             DisposeOwnerPointerLists();
+            ClearTrackingMemoryBeforeDispose();
+            DisposeTrackingContainers();
+            ReleaseAliasSafetyHandleIfCreated();
+            ResetStaticValueState();
+        }
+
+        private static void InvokeBeforeShutdownOwnerReleaseHooks()
+        {
+            if (_invokingBeforeShutdownOwnerReleaseHook)
+                return;
+
+            Action releaseHooks = _beforeShutdownOwnerReleaseHook;
+            if (releaseHooks == null)
+                return;
+
+            _invokingBeforeShutdownOwnerReleaseHook = true;
+            try
+            {
+                releaseHooks.Invoke();
+            }
+            finally
+            {
+                _invokingBeforeShutdownOwnerReleaseHook = false;
+            }
+        }
+
+        private static void ClearTrackingMemoryBeforeDispose()
+        {
+            if (_records.IsCreated && _records.Length > 0)
+                UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(_records), UnsafeUtility.SizeOf<H8AllocationRecord>() * (long)_records.Length);
+            if (_ownerBytes.IsCreated && _ownerBytes.Length > 0)
+                UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(_ownerBytes), UnsafeUtility.SizeOf<long>() * (long)_ownerBytes.Length);
+            if (_blackBox.IsCreated && _blackBox.Length > 0)
+                UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(_blackBox), UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() * (long)_blackBox.Length);
+            if (_eventBlackBox.IsCreated && _eventBlackBox.Length > 0)
+                UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(_eventBlackBox), UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() * (long)_eventBlackBox.Length);
+            if (_blockDescriptors.IsCreated)
+            {
+                for (int i = 0; i < _blockDescriptors.Length; i++)
+                    _blockDescriptors[i] = default;
+            }
+            if (_ownerPointerKeys.IsCreated)
+            {
+                for (int i = 0; i < _ownerPointerKeys.Length; i++)
+                    _ownerPointerKeys[i] = 0;
+            }
+            if (_ownerJobKeys.IsCreated)
+            {
+                for (int i = 0; i < _ownerJobKeys.Length; i++)
+                    _ownerJobKeys[i] = 0;
+            }
+        }
+
+        private static void DisposeTrackingContainers()
+        {
             if (_allocationOwners.IsCreated)
                 _allocationOwners.Dispose();
             if (_allocationRecordIndices.IsCreated)
@@ -3393,13 +3504,33 @@ namespace Hecton8.Core.Memory
                 _blackBox.Dispose();
             if (_eventBlackBox.IsCreated)
                 _eventBlackBox.Dispose();
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (_aliasSafetyHandleCreated)
-            {
-                AtomicSafetyHandle.Release(_aliasSafetyHandle);
-                _aliasSafetyHandleCreated = false;
-            }
-#endif
+        }
+
+        private static void ResetStaticValueState()
+        {
+            _allocationOwners = default;
+            _allocationRecordIndices = default;
+            _ownerPointers = default;
+            _ownerJobHandles = default;
+            _ownerPointerKeys = default;
+            _ownerJobKeys = default;
+            _records = default;
+            _ownerBytes = default;
+            _blockDescriptors = default;
+            _blackBox = default;
+            _eventBlackBox = default;
+            _recordCount = 0;
+            _totalBytes = 0L;
+            _poolCapBytes = LowTierPoolCapBytes;
+            _fatalLeakPreventedCount = 0;
+            _blackBoxCursor = 0;
+            _eventBlackBoxCursor = 0;
+            _blackBoxRecordedCount = 0;
+            _eventBlackBoxRecordedCount = 0;
+            _blackBoxSequence = 0u;
+            _eventBlackBoxSequence = 0u;
+            _telemetryFrameId = 0u;
+            _blockDescriptorMutationGate = 0;
             _allocationGeneration = 1;
             _transitionCutoffGeneration = NoTransitionCutoffGeneration;
             _transitionSequence = 0;
@@ -3409,15 +3540,24 @@ namespace Hecton8.Core.Memory
             _transitionExpectedBytes = 0L;
             _lastTransitionBaselineVerified = true;
             _deferSceneUnloadedVerificationToRuntime = false;
-            _blackBoxCursor = 0;
-            _eventBlackBoxCursor = 0;
-            _blackBoxRecordedCount = 0;
-            _eventBlackBoxRecordedCount = 0;
-            _blackBoxSequence = 0u;
-            _eventBlackBoxSequence = 0u;
-            _telemetryFrameId = 0u;
-            _blockDescriptorMutationGate = 0;
+            _sceneHooksRegistered = false;
             _initialized = false;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            _aliasSafetyHandle = default;
+            _aliasSafetyHandleCreated = false;
+#endif
+        }
+
+        private static void ReleaseAliasSafetyHandleIfCreated()
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (_aliasSafetyHandleCreated)
+            {
+                AtomicSafetyHandle.Release(_aliasSafetyHandle);
+                _aliasSafetyHandle = default;
+                _aliasSafetyHandleCreated = false;
+            }
+#endif
         }
 
         private static void RegisterSceneHooks()

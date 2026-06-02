@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+#if UNITY_EDITOR && HECTON8_LEGACY_MCP_AUTOSTART_1428
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -35,7 +35,7 @@ namespace Hecton8.EditorTools
             EditorPrefs.SetString(HttpTransportScopeKey, LocalScope);
             EditorPrefs.SetString(HttpBaseUrlKey, LocalMcpUrl);
             EditorPrefs.SetBool(AutoStartOnLoadKey, true);
-            EditorPrefs.SetBool(DebugLogsKey, true);
+            EditorPrefs.SetBool(DebugLogsKey, false);
             RefreshMcpConfigurationCache();
         }
 

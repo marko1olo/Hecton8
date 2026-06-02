@@ -1054,7 +1054,10 @@ namespace Hecton8.Core.Hardware
                 return;
             }
 
-            GlobalRegistry.RegisterHardwareThermalService(this);
+            if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready)
+                GlobalRegistry.ReplaceHardwareThermalService(this);
+            else
+                GlobalRegistry.RegisterHardwareThermalService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.HardwareThermal, this);
         }
 

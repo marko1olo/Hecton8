@@ -440,7 +440,7 @@ namespace Hecton8.VFX.Parasites
             _frameParamsBufferA ??= CreateStructuredLockBuffer<ParasiteFrameParamsDTO>(1);
             _frameParamsBufferB ??= CreateStructuredLockBuffer<ParasiteFrameParamsDTO>(1);
             _indirectArgsBuffer ??= new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 1,
                 UnsafeUtility.SizeOf<ParasiteIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - compute-written parasite indirect args - owner: SHINOBU_313
 

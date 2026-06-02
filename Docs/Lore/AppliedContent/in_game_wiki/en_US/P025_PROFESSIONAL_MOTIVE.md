@@ -1,0 +1,30 @@
+---
+packet_id: P025_PROFESSIONAL_MOTIVE
+article_id: player.professional_motive
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Professional Motive
+
+The player is not a blank tourist. They begin with professional interest, salvage skill and a reason to accept a dead claim. The personal motive grows through evidence, familiar marks and the realization that HECTON-8 belongs to the same hard world that made them.
+
+## Scanner
+
+Contractor profile: salvage competence first. Personal escalation detected after Barnard-linked evidence.
+
+## Terminal
+
+Marauder dossier: origin band Barnard Yards or frontier salvage belt. No Earth tourist profile. Prior motive: contract and skill. Current motive: unresolved human trace.
+
+## Audio
+
+You came for work. The work recognized you.
+
+## Field Note
+
+The job becomes personal after it proves it knows your language.
+
+<!-- In-Game Wiki; generated from P025_PROFESSIONAL_MOTIVE/en_US. -->

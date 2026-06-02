@@ -1,0 +1,55 @@
+﻿{
+  "port": "9222",
+  "browser": "Edg/148.0.3967.96",
+  "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/browser/8a6b2d10-271b-4721-8378-1bc5aa0ad4eb",
+  "pages": [
+    {
+      "id": "91DAC855F348E51DA21B6CC6BE088A3B",
+      "type": "page",
+      "title": "Анализ Работы Агентов Батча 13 | Google AI Studio",
+      "url": "https://aistudio.google.com/u/0/prompts/1RtadwZMxW1f5aXniBrN2YRo6XOBdoUTF"
+    },
+    {
+      "id": "F9EBF9FAE12A0B336E53F30250E46DE7",
+      "type": "page",
+      "title": "Home / X",
+      "url": "https://x.com/compose/post"
+    },
+    {
+      "id": "6A9A646F6C21AE14ECF9330B418C26D5",
+      "type": "page",
+      "title": "Discover — Bluesky",
+      "url": "https://bsky.app/"
+    },
+    {
+      "id": "DB4B2E46F8561443039DC2B81BC838E1",
+      "type": "background_page",
+      "title": "Adblock Plus - free ad blocker",
+      "url": "chrome-extension://gmgoamodcdcjnbaobigkjelfplakmdhh/_generated_background_page.html"
+    },
+    {
+      "id": "C60C5C42953C40CC6A3D144C0ED127D1",
+      "type": "shared_worker",
+      "title": "",
+      "url": "blob:https://x.com/605fb1e2-47a0-446c-9b84-b33f375ecbc6"
+    },
+    {
+      "id": "FC1A68F8EFB70EF35AD4EDB7A8C69CE5",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://iogidnfllpdhagebkblkgbfijkbkjdmm/bg.js",
+      "url": "chrome-extension://iogidnfllpdhagebkblkgbfijkbkjdmm/bg.js"
+    },
+    {
+      "id": "4D541D60DB5AAD60308879907DD5FEB8",
+      "type": "service_worker",
+      "title": "Service Worker https://x.com/sw.js",
+      "url": "https://x.com/sw.js"
+    },
+    {
+      "id": "D521EECD346AB630AEC50D970EE84E02",
+      "type": "service_worker",
+      "title": "Service Worker chrome-extension://mpiodijhokgodhhofbcjdecpffjipkle/lib/single-file-extension-background.js",
+      "url": "chrome-extension://mpiodijhokgodhhofbcjdecpffjipkle/lib/single-file-extension-background.js"
+    }
+  ]
+}

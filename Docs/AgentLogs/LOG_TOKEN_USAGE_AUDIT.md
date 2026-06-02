@@ -661,6 +661,83 @@ Compilation/resource throttling:
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
 
+## 2026-06-02 13:22 Europe/Samara - Full workspace checkpoint gate
+
+What was wrong:
+- Full workspace staging initially failed the git whitespace gate.
+- The failures were mechanical trailing whitespace in Unity/package/text files, not token report math.
+- Root `CON` remains a Windows-reserved untracked path and `1334` paths remain operator-protected.
+
+What was done:
+- Parsed `git diff --cached --check` results.
+- Stripped trailing spaces/tabs and EOF blank whitespace from 364 reported staged text files.
+- Restaged the full workspace with explicit exclusions: `:!CON` and `:(exclude)*1334*`.
+- Reran the staged protected-path scan and whitespace gate.
+
+Evidence:
+- Protected staged path scan: `NO_STAGED_1334_OR_CON`.
+- Clean gate: `git diff --cached --check` returned no errors after cleanup.
+- Staged shortstat before commit: `4169 files changed, 282810 insertions(+), 12964 deletions(-)`.
+
+Compilation/resource throttling:
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked by TOKEN_USAGE_AUDIT.
+
+Cinematic Cheats used -> None; offline telemetry/reporting/checkpoint only.
+Exact Microseconds saved -> 0 us game runtime.
+
+## 2026-06-02 13:06 Europe/Samara - Token, dashboard, and full checkpoint refresh
+
+What was wrong:
+- `Docs/Tasks/Status_TOKEN_USAGE_AUDIT.md`, `Docs/AgentLogs/Rationale_TOKEN_USAGE_AUDIT.md`, and `Docs/AgentLogs/LOG_TOKEN_USAGE_AUDIT.md` were deleted in the live workspace even though they remain mandatory TOKEN_USAGE_AUDIT disk memory.
+- Initial `Tools\CodexTokenUsageFastRefresh_20260528.py` runs returned `exit code -1` with empty stdout/stderr and no `TOKEN_USAGE_AUDIT_2026-06-02.json`.
+- Step tracing showed the post-cutoff changed-file pass was healthy, but the old 120-hour replay tried to reread 244 hourly JSONL files under heavy CPU/dotnet load.
+- The 2026-05-31 token/dashboard/apex artifacts were stale after new local Codex telemetry.
+
+What was done:
+- Restored only TOKEN_USAGE_AUDIT status/rationale/log files.
+- Reread AGENTS, the domain roster, TOKEN_USAGE_AUDIT memory, and relevant HECTON mandates.
+- Rechecked official OpenAI pricing/model/cache/reasoning boundaries for GPT-5.5 API-equivalent estimates.
+- Patched `Tools/CodexTokenUsageFastRefresh_20260528.py` so hourly buckets inherit the previous snapshot and append exact post-cutoff deltas from changed files instead of rereading hundreds of old hourly JSONL files.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Ran `python Tools\ProjectMetricsDashboard_20260528.py`.
+- Ran `python Tools\TokenUsageApexVerification_20260528.py`.
+- Updated TOKEN_USAGE_AUDIT status/rationale/log entries.
+
+Evidence:
+- Token report: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-02.json`.
+- Token report generated at: `2026-06-02T12:56:36.002115+04:00`.
+- Previous snapshot mode: `prior_dated_report`.
+- Total tokens: `129,368,782,512`.
+- Delta tokens since previous report: `4,842,709,564`.
+- Tokens/hour: `108,306,438.04170771`.
+- Tokens/second: `30,085.12167825214`.
+- GPT-5.5 base API-equivalent: `$100,008.579271`.
+- GPT-5.5 delta cost: `$3,661.658265999984`.
+- GPT-5.5 USD/hour: `$81.89241144349457`.
+- Cache share: `96.17642272367536%`.
+- Current human-scale burn: `162,459.65706256157` 500-word pages/hour.
+- Changed JSONL files scanned: `61`.
+- Hourly JSONL files scanned after patch: `61`.
+- Hour buckets: `105`.
+- Parse errors: `0`.
+- Dashboard: `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-02.json`.
+- Chart count: `112`.
+- Chart manifest validation: declared `112`, disk PNG `112`, missing `0`, extra `0`, bad PNG signatures `0`.
+- Apex JSON SHA-256: `086b098b84028901c657eba5ff0711e3807f2d58b7daf6ddc0184912f20980c2`.
+- Apex dashboard manifest exact match: `true`.
+- Apex C# hot forbidden hits in owned tooling: `0`.
+
+Compilation/resource throttling:
+- CPU sample before apex compile proof: `52%`.
+- Active compiler/build process sample: `3` dotnet processes.
+- Apex final compile check: `SKIPPED_BLOCKED_BY_COMPILER_CONTENTION`.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked by TOKEN_USAGE_AUDIT.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.
+
 ## 2026-05-29 19:41 Europe/Samara - Text-only token stats refresh
 
 What was wrong:

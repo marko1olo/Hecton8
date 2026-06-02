@@ -132,6 +132,9 @@ namespace Crest
 #if UNITY_EDITOR
         void OnGUI()
         {
+            if (Application.isPlaying)
+                return;
+
             if (_debug._drawSlicesInEditor)
             {
                 FFTCompute.OnGUI(_resolution, LoopPeriod, _windTurbulence, WindDirRadForFFT, WindSpeed, _activeSpectrum);

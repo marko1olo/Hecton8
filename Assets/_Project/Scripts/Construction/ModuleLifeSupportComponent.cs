@@ -54,6 +54,8 @@ namespace Hecton8.Construction
         private bool _airReserveDepletedLatched;
         private bool _co2CriticalLatched;
         private bool _co2HypoxiaLatched;
+        private HectonSurvivalSystem _cachedCombatSurvival;
+        private int _cachedCombatTargetId;
 
         public float AirReserveNormalized => _breathableReserveCapacity > MinimumRatioDenominator
             ? math.saturate(FiniteNonNegativeOrZero(_breathableReserve) / _breathableReserveCapacity)
@@ -166,6 +168,19 @@ namespace Hecton8.Construction
             _airReserveDepletedLatched = false;
             _co2CriticalLatched = false;
             _co2HypoxiaLatched = false;
+            ClearTrackedSurvivalCold();
+        }
+
+        public void BindTrackedSurvivalCold(HectonSurvivalSystem trackedPlayerSurvival)
+        {
+            _cachedCombatSurvival = trackedPlayerSurvival;
+            _cachedCombatTargetId = CaptureSurvivalCombatTargetIdCold(trackedPlayerSurvival);
+        }
+
+        public void ClearTrackedSurvivalCold()
+        {
+            _cachedCombatSurvival = null;
+            _cachedCombatTargetId = 0;
         }
 
         public void ApplyCascadeFailureEffects(
@@ -198,7 +213,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void QueueFireSuitBurnStatus(HectonSurvivalSystem trackedPlayerSurvival, float damageAmount)
+        private void QueueFireSuitBurnStatus(HectonSurvivalSystem trackedPlayerSurvival, float damageAmount)
         {
             if (trackedPlayerSurvival == null)
                 return;
@@ -207,7 +222,7 @@ namespace Hecton8.Construction
             if (safeDamage <= 0f)
                 return;
 
-            int targetId = CaptureSurvivalCombatTargetId(trackedPlayerSurvival);
+            int targetId = ResolveCachedSurvivalCombatTargetId(trackedPlayerSurvival);
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return;
 
@@ -219,8 +234,19 @@ namespace Hecton8.Construction
                 math.saturate(safeDamage * FireSuitBurnMagnitudeScale));
         }
 
-        private static int CaptureSurvivalCombatTargetId(HectonSurvivalSystem trackedPlayerSurvival)
+        private int ResolveCachedSurvivalCombatTargetId(HectonSurvivalSystem trackedPlayerSurvival)
         {
+            if (!ReferenceEquals(_cachedCombatSurvival, trackedPlayerSurvival))
+                return 0;
+
+            return _cachedCombatTargetId;
+        }
+
+        private static int CaptureSurvivalCombatTargetIdCold(HectonSurvivalSystem trackedPlayerSurvival)
+        {
+            if (trackedPlayerSurvival == null)
+                return 0;
+
             if (trackedPlayerSurvival.TryGetComponent(out HectonPlayerHealth playerHealth))
                 return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
 

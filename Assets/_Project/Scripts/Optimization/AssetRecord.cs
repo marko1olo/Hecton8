@@ -80,6 +80,7 @@ namespace Hecton8.Optimization
     {
         public int RequestId;
         public uint AssetKey;
+        public long EstimatedBytes;
         public AssetPriorityTier Priority;
         public byte IsDistantHlod;
     }
@@ -88,6 +89,7 @@ namespace Hecton8.Optimization
     {
         public int RequestId;
         public uint AssetKey;
+        public long EstimatedBytes;
         public AssetPriorityTier Priority;
         public byte IsDistantHlod;
         public int AgeFrames;

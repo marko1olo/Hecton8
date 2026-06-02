@@ -15,7 +15,7 @@ namespace Hecton8.UI
         private const int BufferCapacity = 128;
         private const int RefreshIntervalFrames = 30;
 
-        [Header("── Dashboard Bindings ──────────────────")]
+        [Header("-- Dashboard Bindings ------------------")]
         [Tooltip("TMP text target updated through SetCharArray.")]
         [SerializeField] private TMP_Text metricText;
         [Tooltip("CanvasGroup used for visibility without SetActive.")]
@@ -64,7 +64,7 @@ namespace Hecton8.UI
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registered = false;
             }
         }
@@ -148,10 +148,10 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryRegisterHotSwapListener()

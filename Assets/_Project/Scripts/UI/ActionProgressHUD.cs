@@ -1,17 +1,17 @@
 // ============================================================================
-// HECTON-8 — ActionProgressHUD.cs
+// HECTON-8 - ActionProgressHUD.cs
 // Visual progress indicator for delayed player actions (eating, healing).
 //
 // ARCHITECTURE:
-//   • Consumes PlayerAction SignalBus snapshots.
-//   • ILateFrameTickable for smooth VISUAL_SYNC fade animations.
-//   • CanvasGroup for alpha control (zero GC).
-//   • Image.fillAmount for circular progress (zero GC).
+//   - Consumes PlayerAction SignalBus snapshots.
+//   - ILateFrameTickable for smooth VISUAL_SYNC fade animations.
+//   - CanvasGroup for alpha control (zero GC).
+//   - Image.fillAmount for circular progress (zero GC).
 //
 // ZERO GC:
-//   • No string operations in Tick.
-//   • Pre-cached references.
-//   • CanvasGroup.alpha instead of SetActive.
+//   - No string operations in Tick.
+//   - Pre-cached references.
+//   - CanvasGroup.alpha instead of SetActive.
 // ============================================================================
 
 using System;
@@ -31,25 +31,25 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     public sealed class ActionProgressHUD : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── References ───────────────────────────────")]
+        [Header("-- References -------------------------------")]
         [Tooltip("Circular progress image (Filled Radial 360).")]
         [SerializeField] private Image progressImage;
 
         [Tooltip("Optional text showing action name.")]
         [SerializeField] private TMPro.TMP_Text actionText;
 
-        [Header("── Animation ─────────────────────────────────")]
+        [Header("-- Animation ---------------------------------")]
         [Tooltip("Fade in duration when action starts.")]
         [SerializeField, Range(0f, 0.5f)] private float fadeInDuration = 0.15f;
 
         [Tooltip("Fade out duration when action ends.")]
         [SerializeField, Range(0f, 0.5f)] private float fadeOutDuration = 0.1f;
 
-        [Header("── Colors ────────────────────────────────────")]
+        [Header("-- Colors ------------------------------------")]
         [Tooltip("Progress bar color for food items.")]
         [SerializeField] private Color foodColor = new Color(0.4f, 0.8f, 0.3f);
 
@@ -62,9 +62,9 @@ namespace Hecton8.UI
         [Tooltip("Progress bar color for generic items.")]
         [SerializeField] private Color defaultColor = new Color(0.7f, 0.7f, 0.7f);
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private enum FadeState
         {
@@ -87,9 +87,9 @@ namespace Hecton8.UI
         private static readonly char[] s_OxygenTextChars = { 'I', 'n', 'h', 'a', 'l', 'i', 'n', 'g', '.', '.', '.' };
         private static readonly char[] s_DefaultTextChars = { 'U', 's', 'i', 'n', 'g', '.', '.', '.' };
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -135,9 +135,9 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SIGNAL SNAPSHOTS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void ProcessPlayerActionSignals()
         {
@@ -154,9 +154,9 @@ namespace Hecton8.UI
                 HandleActionCancelled(in cancelledSignals[i]);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ILateFrameTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -194,9 +194,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SIGNAL HANDLERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void HandleActionProgress(in PlayerActionProgressSignal signal)
         {
@@ -235,9 +235,9 @@ namespace Hecton8.UI
             StartFadeOut();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE METHODS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void StartFadeOut()
         {
@@ -316,17 +316,15 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  REGISTRATION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying) return;
 
-            if (GlobalRegistry.Dispatcher == null) return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -362,7 +360,7 @@ namespace Hecton8.UI
         {
             if (!_registered) return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
     }

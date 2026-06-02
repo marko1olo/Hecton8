@@ -2649,9 +2649,9 @@ namespace Hecton8.Visor
         private void OnEnable()
         {
             CacheGraphicsCapabilitiesCold();
+            TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
-            TryRegisterHotSwapListener();
             _pass?.PrepareExternalBridgeHandlesCold();
         }
 
@@ -2668,11 +2668,18 @@ namespace Hecton8.Visor
             _nextColdStateRepairFrame = 0;
             CacheGraphicsCapabilitiesCold();
             _pass.PrepareComputeKernels(settings, settings != null ? settings.computeShader : null);
-            _pass.TryPrepareNativeState(GlobalRegistry.DataVault, allowAllocation: true);
-            _pass.TryPrepareGpuState(allowAllocation: true);
+            if (Application.isPlaying)
+            {
+                _pass.TryPrepareNativeState(GlobalRegistry.DataVault, allowAllocation: true);
+                _pass.TryPrepareGpuState(allowAllocation: true);
+            }
+            else
+            {
+                _pass.Dispose();
+            }
+            TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
-            TryRegisterHotSwapListener();
             _pass.PrepareExternalBridgeHandlesCold();
         }
 
@@ -2695,6 +2702,15 @@ namespace Hecton8.Visor
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
             bool allowVolumetricCompute = settings.computeShader != null &&
                                           _supportsComputeShaders;
+            if (Application.isPlaying)
+            {
+                if (!_pass.HasNativeState)
+                    _pass.TryPrepareNativeState(GlobalRegistry.DataVault, allowAllocation: true);
+
+                if (!_pass.HasGpuState)
+                    _pass.TryPrepareGpuState(allowAllocation: true);
+            }
+
             if (!_pass.HasNativeState || !_pass.HasGpuState)
             {
                 return;
@@ -2797,7 +2813,7 @@ namespace Hecton8.Visor
 
         private void TryRegisterSlowTickable()
         {
-            if (_slowTickRegistered)
+            if (_slowTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
@@ -2814,7 +2830,7 @@ namespace Hecton8.Visor
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_lateFrameRegistered)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

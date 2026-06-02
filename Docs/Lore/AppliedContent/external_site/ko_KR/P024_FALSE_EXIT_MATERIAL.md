@@ -1,0 +1,30 @@
+---
+packet_id: P024_FALSE_EXIT_MATERIAL
+article_id: endings.false_exit_material
+locale: ko_KR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 물질 탈출
+
+전리품, 계약, 생존을 택하는 플레이어에게 수익성 있지만 타협된 엔딩을 제공한다.
+
+## Scanner
+
+Carrier 제안 유효: payload 질량이 부채를 갚는다. 증거 손실 미해결. Atlas 좌표 요청 대기.
+
+## Terminal
+
+탈출 계약: 봉인 샘플 제출, 심층 증거 포기, claim 감사와 부채 심사 수락.
+
+## Audio
+
+가치를 들고 나갈 수 있다. 깨끗하게는 못 나간다.
+
+## Field Note
+
+진짜 결말도 나쁜 답일 수 있다.
+
+<!-- External Site; generated from P024_FALSE_EXIT_MATERIAL/ko_KR. -->

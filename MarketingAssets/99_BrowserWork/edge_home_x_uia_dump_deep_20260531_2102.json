@@ -1,0 +1,652 @@
+﻿[
+  {
+    "depth": 0,
+    "name": "Home / X - MAT - Microsoft​ Edge",
+    "control_type": "Window",
+    "class_name": "Chrome_WidgetWin_1",
+    "automation_id": "",
+    "rect": [
+      -8,
+      -8,
+      1928,
+      1088
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "Intermediate D3D Window",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1920,
+      1078
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "Home / X - Microsoft Edge",
+    "control_type": "Pane",
+    "class_name": "BrowserRootView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "NonClientView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "EdgeBrowserFrameViewWin",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 4,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "BrowserCaptionButtonContainer",
+    "automation_id": "",
+    "rect": [
+      1740,
+      0,
+      1920,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Minimize",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_2",
+    "rect": [
+      1741,
+      0,
+      1801,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Restore",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_4",
+    "rect": [
+      1800,
+      0,
+      1860,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Close",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_7",
+    "rect": [
+      1860,
+      0,
+      1920,
+      52
+    ]
+  },
+  {
+    "depth": 4,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "BrowserView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "TopContainerView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      104
+    ]
+  },
+  {
+    "depth": 6,
+    "name": "App bar",
+    "control_type": "ToolBar",
+    "class_name": "EdgeToolbarView",
+    "automation_id": "view_1000",
+    "rect": [
+      0,
+      52,
+      1921,
+      104
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Back",
+    "control_type": "Button",
+    "class_name": "BackForwardButton",
+    "automation_id": "view_1001",
+    "rect": [
+      0,
+      57,
+      47,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Forward",
+    "control_type": "Button",
+    "class_name": "BackForwardButton",
+    "automation_id": "view_1002",
+    "rect": [
+      52,
+      57,
+      94,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Refresh",
+    "control_type": "Button",
+    "class_name": "ReloadButton",
+    "automation_id": "view_1003",
+    "rect": [
+      99,
+      57,
+      141,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "LocationBarView",
+    "automation_id": "",
+    "rect": [
+      146,
+      57,
+      1531,
+      99
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "View site information",
+    "control_type": "Button",
+    "class_name": "LocationIconView",
+    "automation_id": "view_1019",
+    "rect": [
+      151,
+      62,
+      183,
+      94
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "https://x.com/home",
+    "control_type": "Edit",
+    "class_name": "OmniboxViewViews",
+    "automation_id": "view_1021",
+    "rect": [
+      182,
+      62,
+      1416,
+      94
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "PageActionIconContainerView",
+    "automation_id": "",
+    "rect": [
+      1421,
+      62,
+      1525,
+      94
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "App available. Install X",
+    "control_type": "Button",
+    "class_name": "EdgePwaInstallView",
+    "automation_id": "",
+    "rect": [
+      1421,
+      62,
+      1453,
+      94
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "Enter Reading Mode (F9)",
+    "control_type": "Button",
+    "class_name": "PageActionIconView",
+    "automation_id": "",
+    "rect": [
+      1457,
+      62,
+      1489,
+      94
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "Add this page to favorites (Ctrl+D)",
+    "control_type": "Button",
+    "class_name": "StarView",
+    "automation_id": "view_1006",
+    "rect": [
+      1494,
+      62,
+      1526,
+      94
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "EdgeExtensionsToolbarContainer",
+    "automation_id": "",
+    "rect": [
+      1535,
+      52,
+      1584,
+      104
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "Extensions",
+    "control_type": "Button",
+    "class_name": "EdgeExtensionsHubButton",
+    "automation_id": "view_1014",
+    "rect": [
+      1535,
+      57,
+      1577,
+      99
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "Separator",
+    "automation_id": "",
+    "rect": [
+      1582,
+      68,
+      1584,
+      89
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "ToolbarHubIconContainerView",
+    "automation_id": "",
+    "rect": [
+      1589,
+      52,
+      1678,
+      104
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "Favorites",
+    "control_type": "Button",
+    "class_name": "HubToggleToolbarButton",
+    "automation_id": "view_1011",
+    "rect": [
+      1589,
+      57,
+      1631,
+      99
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "Downloads",
+    "control_type": "Button",
+    "class_name": "ToolbarDownloadsButton",
+    "automation_id": "",
+    "rect": [
+      1635,
+      57,
+      1677,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Screenshot",
+    "control_type": "Button",
+    "class_name": "ContextMenuButton",
+    "automation_id": "view_1032",
+    "rect": [
+      1682,
+      57,
+      1724,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "MAT Profile",
+    "control_type": "Button",
+    "class_name": "EdgeAvatarToolbarButton",
+    "automation_id": "view_1013",
+    "rect": [
+      1729,
+      57,
+      1771,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Settings and more (Alt+F)",
+    "control_type": "Button",
+    "class_name": "BrowserAppMenuButton",
+    "automation_id": "view_1015",
+    "rect": [
+      1776,
+      57,
+      1818,
+      99
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "Chat",
+    "control_type": "Button",
+    "class_name": "EdgeCopilotToolbarLabelButton",
+    "automation_id": "view_1082",
+    "rect": [
+      1823,
+      57,
+      1916,
+      99
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "SidebarContentsSplitView",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 6,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "SidebarContentsSplitView",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "SidebarContentsSplitView",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "View",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "MultiContentsView",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "",
+    "control_type": "Edit",
+    "class_name": "Textfield",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Tab bar",
+    "control_type": "Tab",
+    "class_name": "EdgeTabStripRegionView",
+    "automation_id": "",
+    "rect": [
+      3,
+      0,
+      1742,
+      54
+    ]
+  },
+  {
+    "depth": 6,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "EdgeTabStrip",
+    "automation_id": "view_25",
+    "rect": [
+      3,
+      0,
+      336,
+      54
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "EdgeTabContainerImpl",
+    "automation_id": "",
+    "rect": [
+      3,
+      0,
+      336,
+      54
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "Home / X - Memory usage - 243 MB",
+    "control_type": "TabItem",
+    "class_name": "EdgeTab",
+    "automation_id": "view_24",
+    "rect": [
+      3,
+      0,
+      336,
+      54
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "Close tab",
+    "control_type": "Button",
+    "class_name": "EdgeTabCloseButton",
+    "automation_id": "view_27",
+    "rect": [
+      294,
+      16,
+      315,
+      37
+    ]
+  },
+  {
+    "depth": 8,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "ScrollView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "ScrollView::Viewport",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 9,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "ScrollView::Viewport",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 7,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "TabStrip::EdgeTabDragContextImpl",
+    "automation_id": "",
+    "rect": [
+      3,
+      0,
+      336,
+      54
+    ]
+  },
+  {
+    "depth": 6,
+    "name": "New Tab",
+    "control_type": "Button",
+    "class_name": "EdgeNewTabButton",
+    "automation_id": "view_28",
+    "rect": [
+      330,
+      0,
+      372,
+      54
+    ]
+  },
+  {
+    "depth": 6,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "FrameGrabHandle",
+    "automation_id": "",
+    "rect": [
+      372,
+      0,
+      1741,
+      54
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "TopContainerOverlayView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  }
+]

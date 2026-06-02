@@ -1957,7 +1957,7 @@ namespace Hecton8.Core.Data
             if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
                 return Fail("CSV file missing.");
 
-            H8CsvTable table = H8CsvReader.Read(csvPath);
+            H8CsvTable table = H8CsvReader.ParseFile(csvPath);
             using (System.IO.FileStream stream = new System.IO.FileStream(
                 outputPath,
                 System.IO.FileMode.Create,

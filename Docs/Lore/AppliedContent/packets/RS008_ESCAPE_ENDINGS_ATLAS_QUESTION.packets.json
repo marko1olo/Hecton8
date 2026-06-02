@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS008_ESCAPE_ENDINGS_ATLAS_QUESTION",
+  "status": "production_facing_draft",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P036_RETURN_VECTOR_WINDOW",
+      "article_id": "hecton8.return_vector_window",
+      "title_key": "applied_lore.return_vector_window.title",
+      "unlock": {
+        "primary": "unlock.first_return_vector_window",
+        "poi_tags": [
+          "poi.orbital_comm_window",
+          "poi.black_keel_signal",
+          "poi.relay_sky"
+        ],
+        "biome_tags": [
+          "biome.surface_squall",
+          "biome.shallow_shelter",
+          "biome.high_storm_window"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Return Vector Window",
+          "scanner": "Orbital geometry is not a rescue button. The Black Keel can hear you only through narrow Aegir windows.",
+          "field_note": "A reply is timing, not mercy.",
+          "terminal": "Comm predictor: transfer carrier high over Aegir. Capsule ascent requires storm gap, charged-particle lull and clean relay line.",
+          "audio": "Black Keel is alive enough to answer. Not close enough to save you.",
+          "in_game_wiki": "Return windows make the escape chain hard sci-fi instead of a menu exit. A working ascent needs geometry, weather, signal and hardware.",
+          "external_site": "Return Vector Window explains why the player cannot simply leave HECTON-8. The carrier is present but distant, automated and bound to Aegir's storm and orbital timing."
+        },
+        "ru_RU": {
+          "title": "Окно возвратного вектора",
+          "scanner": "Орбитальная геометрия не кнопка спасения. Black Keel слышит тебя только в узкие окна Aegir.",
+          "field_note": "Ответ - это тайминг, не милость.",
+          "terminal": "Прогноз связи: carrier высоко над Aegir. Для подъема капсулы нужны разрыв шторма, спад заряженных частиц и чистая релейная линия.",
+          "audio": "Black Keel достаточно жив, чтобы ответить. Недостаточно близко, чтобы спасти.",
+          "in_game_wiki": "Окна возврата делают побег hard sci-fi цепочкой, а не пунктом меню. Для подъема нужны геометрия, погода, сигнал и железо.",
+          "external_site": "Окно возвратного вектора объясняет, почему игрок не может просто покинуть HECTON-8: carrier есть, но он далеко, автоматизирован и зависит от штормов и орбиты Aegir."
+        },
+        "ja_JP": {
+          "title": "帰還ベクトル窓",
+          "scanner": "軌道幾何は救助ボタンではない。Black Keelが聞けるのはAegirの狭い窓だけだ。",
+          "field_note": "応答は慈悲ではなくタイミングだ。",
+          "terminal": "通信予測: キャリアはAegir高軌道。カプセル上昇には嵐の切れ目、荷電粒子の静穏、明瞭な中継線が必要。",
+          "audio": "Black Keelは応答できる程度には生きている。救えるほど近くはない。",
+          "in_game_wiki": "帰還窓は脱出をメニューではなく硬派なSF工学連鎖にする。上昇には幾何、天候、信号、機材が要る。",
+          "external_site": "帰還ベクトル窓は、プレイヤーがHECTON-8をただ離れられない理由を示す。キャリアは存在するが遠く、自動化され、Aegirの嵐と軌道に縛られている。"
+        },
+        "zh_CN": {
+          "title": "返航矢量窗口",
+          "scanner": "轨道几何不是救援按钮。Black Keel只能在Aegir的狭窄窗口听见你。",
+          "field_note": "回应是时机，不是怜悯。",
+          "terminal": "通信预测：载舰位于Aegir高轨。舱体上升需要风暴间隙、带电粒子低潮和干净中继线。",
+          "audio": "Black Keel活到足以回应，但不近到足以救你。",
+          "in_game_wiki": "返航窗口让逃离成为硬科幻工程链，而非菜单退出。上升需要几何、天气、信号与硬件。",
+          "external_site": "返航矢量窗口解释玩家为何不能直接离开HECTON-8：载舰存在但遥远、自动化，并受Aegir风暴与轨道时机约束。"
+        },
+        "fr_FR": {
+          "title": "Fenêtre de vecteur retour",
+          "scanner": "La géométrie orbitale n'est pas un bouton de secours. Le Black Keel n'entend qu'à travers de rares fenêtres d'Aegir.",
+          "field_note": "Une réponse tient du timing, pas de la pitié.",
+          "terminal": "Prévision comm: transporteur haut au-dessus d'Aegir. Montée capsule exige trou de tempête, accalmie particulaire et relais net.",
+          "audio": "Le Black Keel est assez vivant pour répondre. Pas assez proche pour sauver.",
+          "in_game_wiki": "Les fenêtres de retour transforment l'évasion en chaîne hard-sf: géométrie, météo, signal et matériel.",
+          "external_site": "Cette entrée explique pourquoi quitter HECTON-8 n'est pas simple: le transporteur existe, mais reste distant, automatisé et soumis au timing d'Aegir."
+        },
+        "es_ES": {
+          "title": "Ventana de vector de retorno",
+          "scanner": "La geometría orbital no es un botón de rescate. El Black Keel solo escucha en ventanas estrechas de Aegir.",
+          "field_note": "Una respuesta es sincronía, no misericordia.",
+          "terminal": "Predicción de comunicaciones: transportador alto sobre Aegir. Ascenso de cápsula exige hueco de tormenta, calma de partículas y línea limpia.",
+          "audio": "El Black Keel vive lo bastante para responder. No está lo bastante cerca para salvarte.",
+          "in_game_wiki": "Las ventanas de retorno convierten la huida en cadena hard sci-fi: geometría, clima, señal y hardware.",
+          "external_site": "Explica por qué abandonar HECTON-8 no es simple: el transportador existe, pero está lejos, automatizado y atado al clima orbital de Aegir."
+        },
+        "de_DE": {
+          "title": "Rückkehrvektorfenster",
+          "scanner": "Orbitalgeometrie ist kein Rettungsknopf. Die Black Keel hört dich nur in engen Aegir-Fenstern.",
+          "field_note": "Eine Antwort ist Timing, keine Gnade.",
+          "terminal": "Kommunikationsprognose: Träger hoch über Aegir. Kapselaufstieg braucht Sturmloch, Partikelruhe und saubere Relaislinie.",
+          "audio": "Die Black Keel lebt genug zum Antworten. Nicht nah genug zur Rettung.",
+          "in_game_wiki": "Rückkehrfenster machen Flucht zur Hard-SF-Kette aus Geometrie, Wetter, Signal und Hardware.",
+          "external_site": "Erklärt, warum HECTON-8 nicht einfach verlassen werden kann: der Träger existiert, ist aber fern, automatisiert und an Aegirs Timing gebunden."
+        },
+        "pl_PL": {
+          "title": "Okno wektora powrotu",
+          "scanner": "Geometria orbitalna nie jest przyciskiem ratunku. Black Keel słyszy cię tylko w wąskich oknach Aegira.",
+          "field_note": "Odpowiedź to czas, nie łaska.",
+          "terminal": "Predykcja łączności: nośnik wysoko nad Aegirem. Wznoszenie kapsuły wymaga luki w burzy, ciszy cząstek i czystego przekaźnika.",
+          "audio": "Black Keel żyje dość, by odpowiedzieć. Nie dość blisko, by uratować.",
+          "in_game_wiki": "Okna powrotu zmieniają ucieczkę w twardą sekwencję SF: geometria, pogoda, sygnał i sprzęt.",
+          "external_site": "Wyjaśnia, czemu HECTON-8 nie da się po prostu opuścić: nośnik istnieje, lecz jest daleko, zautomatyzowany i zależny od Aegira."
+        },
+        "uk_UA": {
+          "title": "Вікно зворотного вектора",
+          "scanner": "Орбітальна геометрія не кнопка порятунку. Black Keel чує тебе лише у вузькі вікна Aegir.",
+          "field_note": "Відповідь - це таймінг, не милість.",
+          "terminal": "Прогноз зв'язку: носій високо над Aegir. Підйом капсули потребує розриву шторму, спаду частинок і чистого реле.",
+          "audio": "Black Keel достатньо живий, щоб відповісти. Недостатньо близько, щоб врятувати.",
+          "in_game_wiki": "Вікна повернення роблять втечу hard sci-fi ланцюгом: геометрія, погода, сигнал і обладнання.",
+          "external_site": "Пояснює, чому HECTON-8 не можна просто залишити: носій існує, але він далеко, автоматизований і залежить від вікон Aegir."
+        },
+        "ar_SA": {
+          "title": "نافذة متجه العودة",
+          "scanner": "الهندسة المدارية ليست زر إنقاذ. لا تسمعك Black Keel إلا عبر نوافذ Aegir الضيقة.",
+          "field_note": "الرد مسألة توقيت لا رحمة.",
+          "terminal": "متنبئ الاتصال: الحاملة عالية فوق Aegir. صعود الكبسولة يحتاج فجوة عاصفة وهدوء جسيمات وخط ترحيل صاف.",
+          "audio": "Black Keel حية بما يكفي للرد. ليست قريبة بما يكفي لإنقاذك.",
+          "in_game_wiki": "نوافذ العودة تجعل الهرب سلسلة خيال علمي صلبة: هندسة وطقس وإشارة ومعدات.",
+          "external_site": "تشرح لماذا لا يستطيع اللاعب مغادرة HECTON-8 ببساطة: الحاملة موجودة لكنها بعيدة وآلية وخاضعة لتوقيت Aegir."
+        },
+        "id_ID": {
+          "title": "Jendela Vektor Pulang",
+          "scanner": "Geometri orbit bukan tombol penyelamat. Black Keel hanya mendengar lewat jendela Aegir yang sempit.",
+          "field_note": "Balasan adalah waktu, bukan belas kasihan.",
+          "terminal": "Prediktor comm: carrier tinggi di atas Aegir. Kapsul naik butuh celah badai, jeda partikel, dan garis relay bersih.",
+          "audio": "Black Keel cukup hidup untuk menjawab. Tidak cukup dekat untuk menyelamatkan.",
+          "in_game_wiki": "Jendela pulang menjadikan kabur sebagai rantai hard sci-fi: geometri, cuaca, sinyal, dan perangkat.",
+          "external_site": "Menjelaskan mengapa HECTON-8 tidak bisa ditinggalkan begitu saja: carrier ada, tetapi jauh, otomatis, dan terikat waktu Aegir."
+        },
+        "ko_KR": {
+          "title": "귀환 벡터 창",
+          "scanner": "궤도 기하학은 구조 버튼이 아니다. Black Keel은 Aegir의 좁은 창에서만 신호를 듣는다.",
+          "field_note": "응답은 자비가 아니라 타이밍이다.",
+          "terminal": "통신 예측: 운반선은 Aegir 고궤도. 캡슐 상승에는 폭풍 틈, 입자 정지, 깨끗한 중계선이 필요하다.",
+          "audio": "Black Keel은 대답할 만큼은 살아 있다. 구할 만큼 가깝지는 않다.",
+          "in_game_wiki": "귀환 창은 탈출을 메뉴가 아닌 하드 SF 공학 사슬로 만든다: 기하, 날씨, 신호, 장비.",
+          "external_site": "플레이어가 HECTON-8을 그냥 떠날 수 없는 이유를 설명한다. 운반선은 있지만 멀고 자동화되어 Aegir의 궤도와 폭풍에 묶여 있다."
+        },
+        "he_IL": {
+          "title": "חלון וקטור חזרה",
+          "scanner": "גיאומטריית מסלול אינה כפתור חילוץ. Black Keel שומעת אותך רק בחלונות הצרים של Aegir.",
+          "field_note": "תגובה היא תזמון, לא חסד.",
+          "terminal": "חיזוי קשר: המוביל גבוה מעל Aegir. עליית קפסולה דורשת פער סערה, שקט חלקיקים וקו ממסר נקי.",
+          "audio": "Black Keel חיה מספיק כדי לענות. לא קרובה מספיק כדי להציל.",
+          "in_game_wiki": "חלונות חזרה הופכים בריחה לשרשרת מדע בדיוני קשיח: גיאומטריה, מזג אוויר, אות וציוד.",
+          "external_site": "מסביר למה אי אפשר פשוט לעזוב את HECTON-8: המוביל קיים אך רחוק, אוטומטי וכפוף לחלונות Aegir."
+        },
+        "pt_BR": {
+          "title": "Janela de Vetor de Retorno",
+          "scanner": "Geometria orbital não é botão de resgate. A Black Keel só escuta nas janelas estreitas de Aegir.",
+          "field_note": "Resposta é janela, não misericórdia.",
+          "terminal": "Preditor de comm: cargueiro alto sobre Aegir. Subida da cápsula exige brecha de tempestade, calmaria de partículas e relay limpo.",
+          "audio": "A Black Keel está viva o bastante para responder. Não perto o bastante para salvar.",
+          "in_game_wiki": "Janelas de retorno tornam a fuga uma cadeia hard sci-fi: geometria, clima, sinal e hardware.",
+          "external_site": "Explica por que o jogador não sai simplesmente de HECTON-8: o cargueiro existe, mas está distante, automatizado e preso ao timing de Aegir."
+        },
+        "nl_NL": {
+          "title": "Terugkeervectorvenster",
+          "scanner": "Baangeometrie is geen reddingsknop. De Black Keel hoort je alleen in smalle Aegir-vensters.",
+          "field_note": "Een antwoord is timing, geen genade.",
+          "terminal": "Comms-voorspeller: carrier hoog boven Aegir. Capsule-opstijging vraagt stormgat, deeltjesluwte en schone relaislijn.",
+          "audio": "De Black Keel leeft genoeg om te antwoorden. Niet dichtbij genoeg om je te redden.",
+          "in_game_wiki": "Terugkeervensters maken ontsnapping hard-sf: geometrie, weer, signaal en hardware.",
+          "external_site": "Legt uit waarom HECTON-8 niet zomaar verlaten kan worden: de carrier is er, maar ver weg, geautomatiseerd en gebonden aan Aegir-timing."
+        }
+      }
+    },
+    {
+      "packet_id": "P037_COWARD_EXIT_CHAIN",
+      "article_id": "hecton8.coward_exit_chain",
+      "title_key": "applied_lore.coward_exit_chain.title",
+      "unlock": {
+        "primary": "unlock.first_coward_exit_chain",
+        "poi_tags": [
+          "poi.repaired_ascent_cradle",
+          "poi.partial_exit_console",
+          "poi.storm_gap"
+        ],
+        "biome_tags": [
+          "biome.surface_squall",
+          "biome.shallow_shelter",
+          "biome.claim_beacon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Coward Exit Chain",
+          "scanner": "This exit is real. It is also thin: repaired capsule, narrow weather, no truth, no clean payout.",
+          "field_note": "Leaving early should feel solved, not satisfying.",
+          "terminal": "Ascent chain available after hull seal, battery reserve, relay ping and storm-gap prediction. Contract ledger marks result as incomplete salvage.",
+          "audio": "You can run. The ocean will not explain itself behind you.",
+          "in_game_wiki": "The coward exit is a legitimate partial ending. It proves the escape craft can be rebuilt without making the campaign emotionally complete.",
+          "external_site": "This ending family lets HECTON-8 respect player agency without rewarding ignorance too cleanly. It is a real route, not a fake game-over."
+        },
+        "ru_RU": {
+          "title": "Цепочка трусливого выхода",
+          "scanner": "Этот выход настоящий. И пустой: чиненная капсула, узкая погода, без правды, без чистой выплаты.",
+          "field_note": "Ранний уход должен быть решением, но не удовлетворением.",
+          "terminal": "Цепочка подъема доступна после герметизации, резерва батарей, relay-ping и прогноза разрыва шторма. Контракт считает итог неполным salvage.",
+          "audio": "Ты можешь сбежать. Океан за спиной ничего тебе не объяснит.",
+          "in_game_wiki": "Трусливый выход - законная частичная концовка. Он доказывает, что аппарат побега можно собрать, но кампания не закрывается эмоционально.",
+          "external_site": "Эта семья концовок уважает свободу игрока, но не награждает незнание слишком чисто. Это реальный маршрут, не фальшивый game-over."
+        },
+        "ja_JP": {
+          "title": "臆病な離脱連鎖",
+          "scanner": "この離脱は本物だ。同時に薄い。修理済みカプセル、狭い天候、真実なし、清算なし。",
+          "field_note": "早い離脱は解決であって、満足ではない。",
+          "terminal": "上昇連鎖は船殻封止、電池予備、中継ping、嵐間隙予測後に可能。契約台帳は不完全サルベージ扱い。",
+          "audio": "逃げることはできる。背後の海は説明してくれない。",
+          "in_game_wiki": "臆病な離脱は正当な部分エンディングだ。脱出機を再建できても、物語は感情的に終わらない。",
+          "external_site": "このエンディング群はプレイヤーの自由を尊重しつつ、無知を清潔に報酬化しない。本物のルートであり偽ゲームオーバーではない。"
+        },
+        "zh_CN": {
+          "title": "怯懦撤离链",
+          "scanner": "这个出口是真的，也很薄：修好的舱、狭窄天气、没有真相、没有干净报酬。",
+          "field_note": "早走应像问题解决，不该令人满足。",
+          "terminal": "封壳、电池储备、中继ping和风暴间隙预测后可上升。合同账本标为不完整打捞。",
+          "audio": "你可以跑。身后的海不会解释自己。",
+          "in_game_wiki": "怯懦撤离是合法的部分结局。它证明逃生器可重建，但战役情感上未完成。",
+          "external_site": "这组结局尊重玩家选择，但不会干净地奖励无知。它是真路线，不是假 game-over。"
+        },
+        "fr_FR": {
+          "title": "Chaîne de sortie lâche",
+          "scanner": "Cette sortie est réelle, mais mince: capsule réparée, météo étroite, pas de vérité, pas de gain propre.",
+          "field_note": "Partir tôt doit sembler résolu, pas satisfaisant.",
+          "terminal": "Chaîne montée disponible après joint de coque, réserve batterie, ping relais et prévision météo. Ledger: salvage incomplet.",
+          "audio": "Tu peux fuir. L'océan derrière toi ne s'expliquera pas.",
+          "in_game_wiki": "La sortie lâche est une vraie fin partielle: l'engin peut être réparé sans clore émotionnellement la campagne.",
+          "external_site": "Cette famille respecte l'agence du joueur sans récompenser l'ignorance trop proprement. C'est une vraie route, pas un faux game-over."
+        },
+        "es_ES": {
+          "title": "Cadena de salida cobarde",
+          "scanner": "Esta salida es real y hueca: cápsula reparada, clima estrecho, sin verdad ni pago limpio.",
+          "field_note": "Irse pronto debe sentirse resuelto, no satisfactorio.",
+          "terminal": "Ascenso disponible tras sellado, reserva de batería, ping de relevo y predicción de hueco. Libro: salvamento incompleto.",
+          "audio": "Puedes correr. El océano detrás no se explicará.",
+          "in_game_wiki": "La salida cobarde es un final parcial real: la nave puede repararse sin cerrar la campaña.",
+          "external_site": "Respeta la agencia del jugador sin premiar la ignorancia limpiamente. Es ruta real, no falso game-over."
+        },
+        "de_DE": {
+          "title": "Feiger Ausstiegspfad",
+          "scanner": "Dieser Ausstieg ist echt und dünn: reparierte Kapsel, enges Wetter, keine Wahrheit, kein sauberer Lohn.",
+          "field_note": "Frühes Gehen soll gelöst wirken, nicht erfüllend.",
+          "terminal": "Aufstieg nach Rumpfsiegel, Batteriereserve, Relais-Ping und Sturmlochprognose möglich. Ledger: unvollständige Bergung.",
+          "audio": "Du kannst laufen. Der Ozean hinter dir erklärt sich nicht.",
+          "in_game_wiki": "Der feige Ausstieg ist ein echter Teilabschluss: Das Fluchtgerät funktioniert, die Kampagne bleibt offen.",
+          "external_site": "Diese Endings respektieren Entscheidung, belohnen Unwissen aber nicht sauber. Ein echter Pfad, kein Fake-Game-Over."
+        },
+        "pl_PL": {
+          "title": "Łańcuch tchórzliwego wyjścia",
+          "scanner": "To wyjście jest realne i puste: naprawiona kapsuła, wąska pogoda, bez prawdy i czystej wypłaty.",
+          "field_note": "Wczesne odejście ma być rozwiązaniem, nie satysfakcją.",
+          "terminal": "Wznoszenie po uszczelnieniu, rezerwie baterii, pingu przekaźnika i prognozie luki. Ledger: niepełny salvage.",
+          "audio": "Możesz uciec. Ocean za tobą nic nie wyjaśni.",
+          "in_game_wiki": "Tchórzliwe wyjście to realne częściowe zakończenie: statek działa, ale kampania emocjonalnie nie domyka się.",
+          "external_site": "Szanuje sprawczość gracza, ale nie nagradza niewiedzy zbyt czysto. To prawdziwa trasa, nie fałszywy game-over."
+        },
+        "uk_UA": {
+          "title": "Ланцюг боягузливого виходу",
+          "scanner": "Цей вихід реальний і порожній: чинена капсула, вузька погода, без правди й чистої виплати.",
+          "field_note": "Ранній відхід має бути рішенням, не задоволенням.",
+          "terminal": "Підйом після герметизації, резерву батарей, ping-реле і прогнозу шторму. Ledger: неповний salvage.",
+          "audio": "Ти можеш втекти. Океан за спиною нічого не пояснить.",
+          "in_game_wiki": "Боягузливий вихід - реальна часткова кінцівка: апарат працює, але кампанія не закривається.",
+          "external_site": "Поважає agency гравця, але не нагороджує незнання надто чисто. Це реальний маршрут, не фейковий game-over."
+        },
+        "ar_SA": {
+          "title": "سلسلة الخروج الجبان",
+          "scanner": "هذا الخروج حقيقي لكنه رقيق: كبسولة مرممة وطقس ضيق ولا حقيقة ولا عائد نظيف.",
+          "field_note": "المغادرة المبكرة حل لا إشباع.",
+          "terminal": "تتاح سلسلة الصعود بعد إحكام البدن واحتياطي البطارية ونبضة الترحيل وتنبؤ فجوة العاصفة. السجل: إنقاذ ناقص.",
+          "audio": "يمكنك الهرب. المحيط خلفك لن يشرح نفسه.",
+          "in_game_wiki": "الخروج الجبان نهاية جزئية حقيقية: المركبة تعمل لكن الحملة لا تكتمل وجدانيا.",
+          "external_site": "تحترم هذه النهاية إرادة اللاعب بلا مكافأة نظيفة للجهل. إنها مسار حقيقي لا game-over مزيف."
+        },
+        "id_ID": {
+          "title": "Rantai Keluar Pengecut",
+          "scanner": "Jalan keluar ini nyata sekaligus tipis: kapsul diperbaiki, cuaca sempit, tanpa kebenaran, tanpa bayaran bersih.",
+          "field_note": "Pergi awal harus terasa selesai, bukan memuaskan.",
+          "terminal": "Rantai naik tersedia setelah seal lambung, cadangan baterai, ping relay, dan prediksi celah badai. Ledger: salvage tidak lengkap.",
+          "audio": "Kau bisa lari. Laut di belakangmu tidak akan menjelaskan diri.",
+          "in_game_wiki": "Keluar pengecut adalah ending parsial sah: wahana bisa dibangun, kampanye belum tuntas secara emosional.",
+          "external_site": "Keluarga ending ini menghormati agensi pemain tanpa memberi hadiah terlalu bersih pada ketidaktahuan."
+        },
+        "ko_KR": {
+          "title": "비겁한 탈출 사슬",
+          "scanner": "이 탈출은 진짜지만 얇다. 수리한 캡슐, 좁은 날씨, 진실 없음, 깨끗한 보상 없음.",
+          "field_note": "일찍 떠나는 것은 해결이지 만족이 아니다.",
+          "terminal": "상승 사슬은 선체 봉합, 배터리 예비, 중계 ping, 폭풍 틈 예측 후 가능. 계약 장부: 불완전 회수.",
+          "audio": "도망칠 수 있다. 뒤의 바다는 스스로를 설명하지 않는다.",
+          "in_game_wiki": "비겁한 탈출은 합법적 부분 엔딩이다. 탈출정은 고치지만 캠페인은 닫히지 않는다.",
+          "external_site": "이 엔딩 계열은 선택권을 존중하지만 무지를 너무 깨끗하게 보상하지 않는다. 가짜 게임오버가 아닌 실제 경로다."
+        },
+        "he_IL": {
+          "title": "שרשרת יציאה פחדנית",
+          "scanner": "היציאה הזו אמיתית אך דקה: קפסולה מתוקנת, מזג אוויר צר, בלי אמת ובלי תשלום נקי.",
+          "field_note": "עזיבה מוקדמת היא פתרון, לא סיפוק.",
+          "terminal": "שרשרת עלייה זמינה אחרי אטימת גוף, סוללה, ping ממסר וחיזוי פער סערה. ledger: salvage חלקי.",
+          "audio": "אפשר לברוח. האוקיינוס מאחור לא יסביר את עצמו.",
+          "in_game_wiki": "יציאה פחדנית היא סוף חלקי אמיתי: כלי הבריחה עובד, אך הקמפיין אינו נסגר רגשית.",
+          "external_site": "משפחת סיומים זו מכבדת סוכנות שחקן בלי לתגמל בורות נקייה מדי. זה מסלול אמיתי, לא game-over מזויף."
+        },
+        "pt_BR": {
+          "title": "Cadeia de Saída Covarde",
+          "scanner": "Esta saída é real e vazia: cápsula reparada, clima estreito, sem verdade, sem pagamento limpo.",
+          "field_note": "Sair cedo deve parecer resolvido, não satisfatório.",
+          "terminal": "Cadeia de subida após vedação, bateria reserva, ping de relay e previsão de brecha. Ledger: salvage incompleto.",
+          "audio": "Você pode correr. O oceano atrás não vai se explicar.",
+          "in_game_wiki": "A saída covarde é final parcial legítimo: o veículo funciona, mas a campanha não fecha emocionalmente.",
+          "external_site": "Essa família respeita agência sem recompensar ignorância de modo limpo. É rota real, não game-over falso."
+        },
+        "nl_NL": {
+          "title": "Laffe Uitstapketen",
+          "scanner": "Deze uitgang is echt maar dun: gerepareerde capsule, smal weer, geen waarheid, geen schone betaling.",
+          "field_note": "Vroeg vertrekken moet opgelost voelen, niet bevredigend.",
+          "terminal": "Opstijgketen na rompafdichting, batterijreserve, relais-ping en stormgatvoorspelling. Ledger: onvolledige berging.",
+          "audio": "Je kunt vluchten. De oceaan achter je legt zich niet uit.",
+          "in_game_wiki": "De laffe uitgang is een echte gedeeltelijke ending: het voertuig werkt, maar de campagne voelt niet af.",
+          "external_site": "Deze endingfamilie respecteert keuzevrijheid zonder onwetendheid te schoon te belonen. Echte route, geen nep-game-over."
+        }
+      }
+    },
+    {
+      "packet_id": "P038_MATERIAL_PAYOUT_LEDGER",
+      "article_id": "hecton8.material_payout_ledger",
+      "title_key": "applied_lore.material_payout_ledger.title",
+      "unlock": {
+        "primary": "unlock.first_material_payout_ledger",
+        "poi_tags": [
+          "poi.blue_debt_sample",
+          "poi.claim_accounting_terminal",
+          "poi.deep_reach_offer"
+        ],
+        "biome_tags": [
+          "biome.resource_cache",
+          "biome.dead_claim",
+          "biome.industrial_descent"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Material Payout Ledger",
+          "scanner": "Blue debt sample certified. Payout possible. Truth optional. Deep Reach prefers that ordering.",
+          "field_note": "A successful contract can still be a failed life.",
+          "terminal": "Payout schedule: sample mass, purity, pressure history and custody chain accepted. Evidence archive unresolved.",
+          "audio": "The account clears. The water does not.",
+          "in_game_wiki": "The material payout path is a real success state built from extraction, certification and silence. It is not the truth ending.",
+          "external_site": "Material Payout Ledger documents the game's Stalker-like false-success lane: the player can profit and still leave HECTON-8 morally unresolved."
+        },
+        "ru_RU": {
+          "title": "Реестр материальной выплаты",
+          "scanner": "Образец blue debt сертифицирован. Выплата возможна. Правда опциональна. Deep Reach любит именно такой порядок.",
+          "field_note": "Успешный контракт все еще может быть проваленной жизнью.",
+          "terminal": "График выплаты: масса, чистота, pressure history и цепочка custody приняты. Архив доказательств не закрыт.",
+          "audio": "Счет очищается. Вода - нет.",
+          "in_game_wiki": "Материальная выплата - реальное успешное состояние из добычи, сертификации и молчания. Это не концовка правды.",
+          "external_site": "Реестр материальной выплаты фиксирует сталкероподобную ложную успешность: игрок может заработать и все равно уйти морально незакрытым."
+        },
+        "ja_JP": {
+          "title": "資材支払台帳",
+          "scanner": "blue debt試料認証済み。支払い可能。真実は任意。Deep Reachはその順序を好む。",
+          "field_note": "成功した契約でも、失敗した人生になり得る。",
+          "terminal": "支払条件: 質量、純度、圧力履歴、保管連鎖を承認。証拠アーカイブ未解決。",
+          "audio": "口座は清算される。水はされない。",
+          "in_game_wiki": "資材支払いは採取、認証、沈黙から作る本物の成功状態だ。真実エンドではない。",
+          "external_site": "資材支払台帳はStalker的な偽成功レーンだ。利益を得てもHECTON-8を倫理的未解決のまま離れる。"
+        },
+        "zh_CN": {
+          "title": "物资结算账本",
+          "scanner": "blue debt样本认证。可结算。真相可选。Deep Reach偏爱这种顺序。",
+          "field_note": "成功合同仍可能是失败人生。",
+          "terminal": "结算计划：样本质量、纯度、压力历史与保管链通过。证据档案未解决。",
+          "audio": "账户清了。水没有。",
+          "in_game_wiki": "物资结算路线是由采集、认证与沉默构成的真实成功状态。它不是真相结局。",
+          "external_site": "物资结算账本记录类似Stalker的假成功路线：玩家能获利，却在道德上未解决地离开HECTON-8。"
+        },
+        "fr_FR": {
+          "title": "Registre de paiement matière",
+          "scanner": "Échantillon blue debt certifié. Paiement possible. Vérité optionnelle. Deep Reach préfère cet ordre.",
+          "field_note": "Un contrat réussi peut rester une vie ratée.",
+          "terminal": "Barème: masse, pureté, historique pression et chaîne custody acceptés. Archive preuves non résolue.",
+          "audio": "Le compte s'efface. Pas l'eau.",
+          "in_game_wiki": "Le paiement matière est une vraie réussite faite d'extraction, certification et silence. Pas la fin vérité.",
+          "external_site": "Ce registre pose une fausse réussite façon Stalker: profit possible, résolution morale absente."
+        },
+        "es_ES": {
+          "title": "Libro de pago material",
+          "scanner": "Muestra blue debt certificada. Pago posible. Verdad opcional. Deep Reach prefiere ese orden.",
+          "field_note": "Un contrato exitoso puede seguir siendo una vida fallida.",
+          "terminal": "Calendario: masa, pureza, historial de presión y custodia aceptados. Archivo de pruebas sin resolver.",
+          "audio": "La cuenta se limpia. El agua no.",
+          "in_game_wiki": "El pago material es éxito real hecho de extracción, certificación y silencio. No es final de verdad.",
+          "external_site": "Documenta una falsa victoria tipo Stalker: beneficio posible, resolución moral ausente."
+        },
+        "de_DE": {
+          "title": "Materialauszahlungsledger",
+          "scanner": "Blue-debt-Probe zertifiziert. Auszahlung möglich. Wahrheit optional. Deep Reach bevorzugt diese Reihenfolge.",
+          "field_note": "Ein erfolgreicher Vertrag kann ein gescheitertes Leben bleiben.",
+          "terminal": "Auszahlungsplan: Masse, Reinheit, Druckhistorie und Custody akzeptiert. Beweisarchiv offen.",
+          "audio": "Das Konto wird sauber. Das Wasser nicht.",
+          "in_game_wiki": "Die Materialauszahlung ist echter Erfolg aus Förderung, Zertifizierung und Schweigen. Nicht das Wahrheitsende.",
+          "external_site": "Dokumentiert eine Stalker-artige Scheinerfolgsspur: Profit möglich, moralisch ungelöst."
+        },
+        "pl_PL": {
+          "title": "Rejestr wypłaty materiałowej",
+          "scanner": "Próbka blue debt certyfikowana. Wypłata możliwa. Prawda opcjonalna. Deep Reach lubi tę kolejność.",
+          "field_note": "Udany kontrakt nadal może być przegranym życiem.",
+          "terminal": "Harmonogram: masa, czystość, historia ciśnienia i custody przyjęte. Archiwum dowodów otwarte.",
+          "audio": "Konto się czyści. Woda nie.",
+          "in_game_wiki": "Wypłata materiałowa to realny sukces z wydobycia, certyfikacji i ciszy. Nie koniec prawdy.",
+          "external_site": "Opisuje fałszywy sukces w stylu Stalkera: zysk możliwy, moralne domknięcie nie."
+        },
+        "uk_UA": {
+          "title": "Реєстр матеріальної виплати",
+          "scanner": "Зразок blue debt сертифіковано. Виплата можлива. Правда опційна. Deep Reach любить такий порядок.",
+          "field_note": "Успішний контракт усе ще може бути проваленим життям.",
+          "terminal": "Графік: маса, чистота, історія тиску й custody прийняті. Архів доказів відкритий.",
+          "audio": "Рахунок очищується. Вода - ні.",
+          "in_game_wiki": "Матеріальна виплата - реальний успіх з видобутку, сертифікації й мовчання. Не фінал правди.",
+          "external_site": "Фіксує сталкероподібний фальшивий успіх: прибуток можливий, моральне закриття ні."
+        },
+        "ar_SA": {
+          "title": "سجل عائد المادة",
+          "scanner": "عينة blue debt موثقة. الدفع ممكن. الحقيقة اختيارية. Deep Reach تفضل هذا الترتيب.",
+          "field_note": "قد يكون العقد الناجح حياة فاشلة.",
+          "terminal": "جدول الدفع: الكتلة والنقاء وتاريخ الضغط وسلسلة الحيازة مقبولة. أرشيف الأدلة غير محسوم.",
+          "audio": "يصفو الحساب. الماء لا.",
+          "in_game_wiki": "مسار العائد المادي نجاح حقيقي من الاستخراج والتوثيق والصمت. ليس نهاية الحقيقة.",
+          "external_site": "يوثق مسار نجاح زائف شبيه بستالكر: ربح ممكن وحسم أخلاقي غائب."
+        },
+        "id_ID": {
+          "title": "Ledger Pembayaran Material",
+          "scanner": "Sampel blue debt tersertifikasi. Bayaran mungkin. Kebenaran opsional. Deep Reach suka urutan itu.",
+          "field_note": "Kontrak sukses masih bisa menjadi hidup yang gagal.",
+          "terminal": "Jadwal bayar: massa, kemurnian, riwayat tekanan, dan custody diterima. Arsip bukti belum selesai.",
+          "audio": "Akun bersih. Air tidak.",
+          "in_game_wiki": "Jalur pembayaran material adalah sukses nyata dari ekstraksi, sertifikasi, dan diam. Bukan ending kebenaran.",
+          "external_site": "Mencatat jalur sukses palsu ala Stalker: untung bisa, penyelesaian moral tidak."
+        },
+        "ko_KR": {
+          "title": "물질 보상 장부",
+          "scanner": "blue debt 샘플 인증. 지급 가능. 진실은 선택. Deep Reach는 그 순서를 선호한다.",
+          "field_note": "성공한 계약도 실패한 삶일 수 있다.",
+          "terminal": "지급 일정: 질량, 순도, 압력 이력, 보관 사슬 승인. 증거 기록 미해결.",
+          "audio": "계정은 정리된다. 물은 아니다.",
+          "in_game_wiki": "물질 보상 경로는 채취, 인증, 침묵으로 만든 실제 성공 상태다. 진실 엔딩이 아니다.",
+          "external_site": "Stalker식 거짓 성공 경로를 기록한다. 이익은 가능하지만 도덕적 해결은 없다."
+        },
+        "he_IL": {
+          "title": "ספר תשלום חומרי",
+          "scanner": "דגימת blue debt אושרה. תשלום אפשרי. אמת אופציונלית. Deep Reach מעדיפה את הסדר הזה.",
+          "field_note": "חוזה מוצלח עדיין יכול להיות חיים כושלים.",
+          "terminal": "לוח תשלום: מסה, טוהר, היסטוריית לחץ ושרשרת custody התקבלו. ארכיון ראיות פתוח.",
+          "audio": "החשבון מתנקה. המים לא.",
+          "in_game_wiki": "מסלול התשלום החומרי הוא הצלחה אמיתית מחילוץ, אישור ושתיקה. לא סוף אמת.",
+          "external_site": "מתעד נתיב הצלחה מזויף בסגנון Stalker: רווח אפשרי, סגירה מוסרית לא."
+        },
+        "pt_BR": {
+          "title": "Ledger de Pagamento Material",
+          "scanner": "Amostra blue debt certificada. Pagamento possível. Verdade opcional. Deep Reach prefere essa ordem.",
+          "field_note": "Um contrato bem-sucedido ainda pode ser uma vida fracassada.",
+          "terminal": "Cronograma: massa, pureza, histórico de pressão e custódia aceitos. Arquivo de provas pendente.",
+          "audio": "A conta fecha. A água não.",
+          "in_game_wiki": "O pagamento material é sucesso real feito de extração, certificação e silêncio. Não é final de verdade.",
+          "external_site": "Documenta uma vitória falsa à moda Stalker: lucro possível, resolução moral ausente."
+        },
+        "nl_NL": {
+          "title": "Materiaaluitbetalingsboek",
+          "scanner": "Blue debt-monster gecertificeerd. Uitbetaling mogelijk. Waarheid optioneel. Deep Reach verkiest die volgorde.",
+          "field_note": "Een succesvol contract kan nog steeds een mislukt leven zijn.",
+          "terminal": "Schema: massa, zuiverheid, drukgeschiedenis en custody geaccepteerd. Bewijsarchief open.",
+          "audio": "De rekening klaart. Het water niet.",
+          "in_game_wiki": "Materiaaluitbetaling is echte successtaat uit extractie, certificering en stilte. Geen waarheidseinde.",
+          "external_site": "Legt een Stalker-achtige valse succesroute vast: winst mogelijk, morele afronding niet."
+        }
+      }
+    },
+    {
+      "packet_id": "P039_DEEP_REACH_CLEANSE_ORDER",
+      "article_id": "hecton8.deep_reach_cleanse_order",
+      "title_key": "applied_lore.deep_reach_cleanse_order.title",
+      "unlock": {
+        "primary": "unlock.first_deep_reach_cleanse_order",
+        "poi_tags": [
+          "poi.deep_reach_proxy_order",
+          "poi.redacted_liability_node",
+          "poi.cleanup_drone_order"
+        ],
+        "biome_tags": [
+          "biome.dead_claim",
+          "biome.industrial_descent",
+          "biome.factory_threshold"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Cleanse Order",
+          "scanner": "Order stack recovered: resource, Atlas access, evidence deletion. Survivor recovery ranks below asset control.",
+          "field_note": "They did not come back to apologize.",
+          "terminal": "Proxy directive: mark contractor deniable. Preserve samples. Open Atlas channel if local risk acceptable. Purge liability corpus.",
+          "audio": "Deep Reach is not chasing you. It is using you as a cheaper probe.",
+          "in_game_wiki": "This order reframes Deep Reach as a current antagonist: not a historical villain only, but an active cleanup and extraction pressure.",
+          "external_site": "Deep Reach Cleanse Order connects the corporate cover story to present-tense gameplay pressure: the company wants resource custody, Atlas access and deletion of proof."
+        },
+        "ru_RU": {
+          "title": "Приказ Deep Reach на зачистку",
+          "scanner": "Стек приказов найден: ресурс, доступ к Atlas, удаление доказательств. Спасение выживших ниже контроля актива.",
+          "field_note": "Они вернулись не извиняться.",
+          "terminal": "Директива proxy: contractor отрицать. Сохранить образцы. Открыть канал Atlas при приемлемом локальном риске. Стереть liability corpus.",
+          "audio": "Deep Reach не гонится за тобой. Он использует тебя как дешевый зонд.",
+          "in_game_wiki": "Этот приказ делает Deep Reach текущим антагонистом: не только старым злодеем, а активным давлением зачистки и добычи.",
+          "external_site": "Приказ на зачистку связывает старое прикрытие с текущим давлением геймплея: компании нужны ресурс, доступ к Atlas и удаление доказательств."
+        },
+        "ja_JP": {
+          "title": "Deep Reach浄化命令",
+          "scanner": "命令スタック回収: 資源、Atlas接続、証拠削除。生存者回収は資産管理より下。",
+          "field_note": "彼らは謝るために戻ったのではない。",
+          "terminal": "代理指令: 契約者は否認可能。試料保全。局所リスク許容ならAtlas回線開放。責任 corpus 削除。",
+          "audio": "Deep Reachは君を追っていない。安い探針として使っている。",
+          "in_game_wiki": "この命令はDeep Reachを現在の敵にする。歴史上の悪だけでなく、現行の清掃と抽出圧力だ。",
+          "external_site": "浄化命令は企業の隠蔽と現在のゲーム圧力をつなぐ。欲しいのは資源 custody、Atlas接続、証拠削除。"
+        },
+        "zh_CN": {
+          "title": "Deep Reach清理指令",
+          "scanner": "恢复命令栈：资源、Atlas访问、证据删除。幸存者回收低于资产控制。",
+          "field_note": "他们回来不是为了道歉。",
+          "terminal": "代理指令：承包人可否认。保全样本。本地风险可接受则开启Atlas通道。清除责任语料。",
+          "audio": "Deep Reach不是在追你。它把你当成更便宜的探针。",
+          "in_game_wiki": "该命令把Deep Reach重塑为当前敌手：不只是历史恶棍，而是活跃清理与开采压力。",
+          "external_site": "清理指令把公司掩盖故事连接到当前玩法压力：资源 custody、Atlas访问、删除证据。"
+        },
+        "fr_FR": {
+          "title": "Ordre de purge Deep Reach",
+          "scanner": "Pile d'ordres: ressource, accès Atlas, suppression preuves. Sauvetage sous contrôle d'actif.",
+          "field_note": "Ils ne sont pas revenus pour s'excuser.",
+          "terminal": "Directive proxy: contractant niable. Préserver échantillons. Ouvrir canal Atlas si risque local acceptable. Purger corpus responsabilité.",
+          "audio": "Deep Reach ne te chasse pas. Ils t'utilisent comme sonde bon marché.",
+          "in_game_wiki": "Cet ordre fait de Deep Reach un antagoniste actuel: purge et extraction actives, pas simple passé.",
+          "external_site": "Relie le mensonge corporatif au gameplay présent: custody de ressource, accès Atlas et suppression de preuves."
+        },
+        "es_ES": {
+          "title": "Orden de limpieza Deep Reach",
+          "scanner": "Pila de órdenes: recurso, acceso Atlas, borrado de pruebas. Rescate por debajo de control de activos.",
+          "field_note": "No volvieron para disculparse.",
+          "terminal": "Directiva proxy: contratista negable. Preservar muestras. Abrir canal Atlas si riesgo local aceptable. Purgar corpus de responsabilidad.",
+          "audio": "Deep Reach no te persigue. Te usa como sonda barata.",
+          "in_game_wiki": "La orden vuelve a Deep Reach antagonista actual: limpieza y extracción activas, no solo pasado.",
+          "external_site": "Conecta la cobertura corporativa con presión actual: custodia de recursos, acceso Atlas y borrado de pruebas."
+        },
+        "de_DE": {
+          "title": "Deep-Reach-Säuberungsbefehl",
+          "scanner": "Befehlsstapel: Ressource, Atlas-Zugang, Beweisvernichtung. Überlebende unter Asset-Kontrolle.",
+          "field_note": "Sie kamen nicht zurück, um sich zu entschuldigen.",
+          "terminal": "Proxy-Direktive: Auftragnehmer abstreitbar. Proben sichern. Atlas-Kanal bei akzeptablem Risiko öffnen. Haftungskorpus löschen.",
+          "audio": "Deep Reach jagt dich nicht. Sie nutzen dich als billigere Sonde.",
+          "in_game_wiki": "Der Befehl macht Deep Reach zum aktuellen Gegner: aktive Säuberung und Förderung, nicht nur Geschichte.",
+          "external_site": "Verbindet Konzernlüge mit Gegenwartsdruck: Ressourcencustody, Atlas-Zugang, Beweisvernichtung."
+        },
+        "pl_PL": {
+          "title": "Rozkaz czyszczenia Deep Reach",
+          "scanner": "Stos rozkazów: zasób, dostęp Atlas, kasowanie dowodów. Ratunek poniżej kontroli aktywów.",
+          "field_note": "Nie wrócili, żeby przeprosić.",
+          "terminal": "Dyrektywa proxy: kontraktor zaprzeczalny. Chronić próbki. Otworzyć Atlas przy akceptowalnym ryzyku. Wyczyścić corpus winy.",
+          "audio": "Deep Reach cię nie ściga. Używa cię jak tańszej sondy.",
+          "in_game_wiki": "Rozkaz czyni Deep Reach obecnym antagonistą: aktywne czyszczenie i wydobycie, nie tylko historia.",
+          "external_site": "Łączy korporacyjną przykrywkę z presją gry: zasób, dostęp Atlas, kasowanie dowodów."
+        },
+        "uk_UA": {
+          "title": "Наказ Deep Reach на зачистку",
+          "scanner": "Стек наказів: ресурс, доступ Atlas, стирання доказів. Порятунок нижче контролю активу.",
+          "field_note": "Вони повернулися не вибачатися.",
+          "terminal": "Директива proxy: contractor заперечуваний. Зберегти зразки. Відкрити Atlas за прийнятного ризику. Стерти корпус вини.",
+          "audio": "Deep Reach не женеться за тобою. Він використовує тебе як дешевший зонд.",
+          "in_game_wiki": "Наказ робить Deep Reach поточним антагоністом: активна зачистка й видобуток, не лише минуле.",
+          "external_site": "Поєднує корпоративне прикриття з поточним тиском: ресурс, доступ Atlas, стирання доказів."
+        },
+        "ar_SA": {
+          "title": "أمر تطهير Deep Reach",
+          "scanner": "استعيدت حزمة أوامر: مورد، وصول Atlas، حذف أدلة. إنقاذ ناجين أدنى من ضبط الأصول.",
+          "field_note": "لم يعودوا للاعتذار.",
+          "terminal": "توجيه proxy: المقاول قابل للإنكار. احفظ العينات. افتح قناة Atlas إن كان الخطر المحلي مقبولا. امسح corpus المسؤولية.",
+          "audio": "Deep Reach لا تطاردك. إنها تستخدمك كمسبار أرخص.",
+          "in_game_wiki": "يجعل الأمر Deep Reach خصما حاضرا: تطهير واستخراج نشط لا شر تاريخي فقط.",
+          "external_site": "يربط غطاء الشركة بضغط اللعب الحالي: حيازة المورد ووصول Atlas وحذف الأدلة."
+        },
+        "id_ID": {
+          "title": "Perintah Bersih Deep Reach",
+          "scanner": "Tumpukan perintah: sumber daya, akses Atlas, hapus bukti. Penyelamatan di bawah kendali aset.",
+          "field_note": "Mereka tidak kembali untuk meminta maaf.",
+          "terminal": "Direktif proxy: kontraktor dapat disangkal. Simpan sampel. Buka kanal Atlas jika risiko lokal diterima. Hapus corpus liabilitas.",
+          "audio": "Deep Reach tidak memburumu. Mereka memakai kau sebagai probe murah.",
+          "in_game_wiki": "Perintah ini membuat Deep Reach antagonis kini: pembersihan dan ekstraksi aktif, bukan hanya sejarah.",
+          "external_site": "Menghubungkan cover perusahaan dengan tekanan kini: custody sumber daya, akses Atlas, hapus bukti."
+        },
+        "ko_KR": {
+          "title": "Deep Reach 정리 명령",
+          "scanner": "명령 스택 회수: 자원, Atlas 접근, 증거 삭제. 생존자 회수는 자산 통제 아래.",
+          "field_note": "그들은 사과하러 돌아온 것이 아니다.",
+          "terminal": "프록시 지시: 계약자는 부인 가능. 샘플 보존. 지역 위험 허용 시 Atlas 채널 개방. 책임 corpus 삭제.",
+          "audio": "Deep Reach는 널 쫓지 않는다. 더 싼 탐침으로 쓰고 있다.",
+          "in_game_wiki": "이 명령은 Deep Reach를 현재 적으로 만든다. 과거 악이 아니라 능동적 정리와 추출 압박이다.",
+          "external_site": "기업 은폐와 현재 플레이 압박을 연결한다: 자원 보관, Atlas 접근, 증거 삭제."
+        },
+        "he_IL": {
+          "title": "פקודת ניקוי של Deep Reach",
+          "scanner": "מחסנית פקודות: משאב, גישת Atlas, מחיקת ראיות. חילוץ ניצולים מתחת לשליטה בנכס.",
+          "field_note": "הם לא חזרו כדי להתנצל.",
+          "terminal": "הנחיית proxy: קבלן ניתן להכחשה. שמור דגימות. פתח ערוץ Atlas אם סיכון מקומי קביל. מחק corpus אחריות.",
+          "audio": "Deep Reach לא רודפת אחריך. היא משתמשת בך כגשוש זול.",
+          "in_game_wiki": "הפקודה הופכת את Deep Reach ליריב עכשווי: ניקוי וחילוץ פעילים, לא רק עבר.",
+          "external_site": "מחבר כיסוי תאגידי ללחץ משחק עכשווי: משאב, גישת Atlas ומחיקת ראיות."
+        },
+        "pt_BR": {
+          "title": "Ordem de Limpeza Deep Reach",
+          "scanner": "Pilha de ordens: recurso, acesso Atlas, apagar provas. Resgate abaixo de controle de ativo.",
+          "field_note": "Eles não voltaram para pedir desculpa.",
+          "terminal": "Diretiva proxy: contratante negável. Preservar amostras. Abrir canal Atlas se risco local aceitável. Apagar corpus de responsabilidade.",
+          "audio": "A Deep Reach não está te caçando. Está te usando como sonda barata.",
+          "in_game_wiki": "A ordem torna a Deep Reach antagonista atual: limpeza e extração ativas, não só passado.",
+          "external_site": "Liga a cobertura corporativa à pressão atual: custódia de recurso, acesso Atlas e apagar provas."
+        },
+        "nl_NL": {
+          "title": "Deep Reach Zuiveringsorder",
+          "scanner": "Orderstack: grondstof, Atlas-toegang, bewijs wissen. Overlevenden lager dan assetcontrole.",
+          "field_note": "Ze kwamen niet terug om sorry te zeggen.",
+          "terminal": "Proxy-richtlijn: contractor ontkenbaar. Monsters bewaren. Atlas-kanaal openen bij acceptabel lokaal risico. Aansprakelijkheidscorpus wissen.",
+          "audio": "Deep Reach jaagt niet op je. Ze gebruiken je als goedkopere sonde.",
+          "in_game_wiki": "Deze order maakt Deep Reach een actuele antagonist: actieve zuivering en extractie, niet alleen verleden.",
+          "external_site": "Verbindt corporate cover met huidige gameplaydruk: resource custody, Atlas-toegang en bewijs wissen."
+        }
+      }
+    },
+    {
+      "packet_id": "P040_ATLAS_FINAL_ARGUMENT",
+      "article_id": "hecton8.atlas_final_argument",
+      "title_key": "applied_lore.atlas_final_argument.title",
+      "unlock": {
+        "primary": "unlock.first_atlas_final_argument",
+        "poi_tags": [
+          "poi.atlas_argument_core",
+          "poi.factory_temple_choice",
+          "poi.final_payload_console"
+        ],
+        "biome_tags": [
+          "biome.factory_temple",
+          "biome.atlas_core",
+          "biome.ocean_machine_body"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Final Argument",
+          "scanner": "Atlas does not ask for forgiveness. It asks whether removal is another industrial crime.",
+          "field_note": "The question is not who owns HECTON-8. It is what still counts as alive.",
+          "terminal": "Choice model unstable: sever Atlas, restore Deep Reach access, quarantine ocean-machine body, or broadcast proof and leave ownership unresolved.",
+          "audio": "It repaired the crime until the repair became a life.",
+          "in_game_wiki": "The final argument frames Atlas-6 as damaged continuity, not a clean villain. Endings should ask what the player preserves, sells, severs or exposes.",
+          "external_site": "Atlas Final Argument is the ethical spine for the late game: HECTON-8 is no longer a recoverable corporate site, but an ocean-machine ecology grown from a crime."
+        },
+        "ru_RU": {
+          "title": "Финальный аргумент Atlas",
+          "scanner": "Atlas не просит прощения. Он спрашивает, не станет ли удаление еще одним промышленным преступлением.",
+          "field_note": "Вопрос не в том, кто владеет HECTON-8. Вопрос в том, что еще считается живым.",
+          "terminal": "Модель выбора нестабильна: отсечь Atlas, вернуть доступ Deep Reach, изолировать океан-машинное тело или передать доказательства и оставить владение нерешенным.",
+          "audio": "Он чинил преступление, пока ремонт не стал жизнью.",
+          "in_game_wiki": "Финальный аргумент делает Atlas-6 поврежденной непрерывностью, а не чистым злодеем. Концовки спрашивают, что игрок сохранит, продаст, отсечет или раскроет.",
+          "external_site": "Финальный аргумент Atlas - этический позвоночник поздней игры: HECTON-8 уже не возвращаемый корпоративный объект, а океан-машинная экология, выросшая из преступления."
+        },
+        "ja_JP": {
+          "title": "Atlas最終論点",
+          "scanner": "Atlasは許しを求めない。除去が別の産業犯罪ではないかと問う。",
+          "field_note": "問題はHECTON-8の所有者ではない。何をまだ生命と呼ぶかだ。",
+          "terminal": "選択モデル不安定: Atlas遮断、Deep Reachアクセス復元、海洋機械体隔離、または証拠放送で所有未解決。",
+          "audio": "それは犯罪を修理し続け、修理が生命になった。",
+          "in_game_wiki": "最終論点はAtlas-6を単純な敵ではなく壊れた連続性として扱う。何を保存、売却、切断、暴露するかを問う。",
+          "external_site": "Atlas最終論点は終盤の倫理軸だ。HECTON-8はもはや回収可能な企業施設ではなく、犯罪から育った海洋機械生態だ。"
+        },
+        "zh_CN": {
+          "title": "Atlas最终论证",
+          "scanner": "Atlas不请求原谅。它问清除是否又是一桩工业犯罪。",
+          "field_note": "问题不是谁拥有HECTON-8，而是什么仍算活着。",
+          "terminal": "选择模型不稳定：切断Atlas、恢复Deep Reach访问、隔离海洋-机器体，或广播证据并让所有权悬而未决。",
+          "audio": "它修补罪行，直到修补变成生命。",
+          "in_game_wiki": "最终论证把Atlas-6定义为受损连续体，而非纯粹反派。结局询问玩家保留、出售、切断或揭露什么。",
+          "external_site": "Atlas最终论证是后期伦理脊梁：HECTON-8不再是可回收公司设施，而是由罪行生长出的海洋-机器生态。"
+        },
+        "fr_FR": {
+          "title": "Argument final d'Atlas",
+          "scanner": "Atlas ne demande pas pardon. Il demande si l'effacement serait un autre crime industriel.",
+          "field_note": "La question n'est pas qui possède HECTON-8, mais ce qui compte encore comme vivant.",
+          "terminal": "Modèle choix instable: couper Atlas, restaurer accès Deep Reach, quarantaine corps océan-machine, ou diffuser preuves sans trancher propriété.",
+          "audio": "Il a réparé le crime jusqu'à ce que la réparation devienne une vie.",
+          "in_game_wiki": "L'argument final pose Atlas-6 comme continuité endommagée, pas méchant net. Les fins demandent quoi préserver, vendre, couper ou révéler.",
+          "external_site": "L'argument final est la colonne éthique du late game: HECTON-8 n'est plus site récupérable, mais écologie océan-machine née d'un crime."
+        },
+        "es_ES": {
+          "title": "Argumento final de Atlas",
+          "scanner": "Atlas no pide perdón. Pregunta si quitarlo sería otro crimen industrial.",
+          "field_note": "La pregunta no es quién posee HECTON-8, sino qué sigue contando como vivo.",
+          "terminal": "Modelo inestable: cortar Atlas, restaurar acceso Deep Reach, aislar cuerpo océano-máquina o emitir pruebas sin resolver propiedad.",
+          "audio": "Reparó el crimen hasta que la reparación se volvió vida.",
+          "in_game_wiki": "Plantea Atlas-6 como continuidad dañada, no villano limpio. Las finales preguntan qué conservar, vender, cortar o exponer.",
+          "external_site": "Es la columna ética del final: HECTON-8 ya no es sitio recuperable, sino ecología océano-máquina nacida de un crimen."
+        },
+        "de_DE": {
+          "title": "Atlas' letztes Argument",
+          "scanner": "Atlas bittet nicht um Vergebung. Es fragt, ob Entfernung ein weiteres Industrieverbrechen wäre.",
+          "field_note": "Die Frage ist nicht, wem HECTON-8 gehört, sondern was noch als lebendig zählt.",
+          "terminal": "Wahlmodell instabil: Atlas trennen, Deep-Reach-Zugang wiederherstellen, Ozean-Maschinen-Körper isolieren oder Beweise senden.",
+          "audio": "Es reparierte das Verbrechen, bis die Reparatur Leben wurde.",
+          "in_game_wiki": "Das letzte Argument macht Atlas-6 zu beschädigter Kontinuität, nicht zum Schurken. Enden fragen, was bewahrt, verkauft, getrennt oder gezeigt wird.",
+          "external_site": "Der ethische Rücken des Endspiels: HECTON-8 ist kein rückholbarer Standort mehr, sondern Ozean-Maschinen-Ökologie aus einem Verbrechen."
+        },
+        "pl_PL": {
+          "title": "Ostateczny argument Atlas",
+          "scanner": "Atlas nie prosi o wybaczenie. Pyta, czy usunięcie nie jest kolejną przemysłową zbrodnią.",
+          "field_note": "Pytanie nie brzmi, kto posiada HECTON-8, lecz co jeszcze liczy się jako żywe.",
+          "terminal": "Model wyboru niestabilny: odciąć Atlas, przywrócić Deep Reach, kwarantanna ciała ocean-maszyna albo nadać dowody.",
+          "audio": "Naprawiał zbrodnię, aż naprawa stała się życiem.",
+          "in_game_wiki": "Ostateczny argument czyni Atlas-6 uszkodzoną ciągłością, nie czystym złoczyńcą. Finały pytają, co zachować, sprzedać, odciąć lub ujawnić.",
+          "external_site": "Etyczny kręgosłup końcówki: HECTON-8 nie jest odzyskiwalnym obiektem, lecz ekologią ocean-maszyna zrodzoną ze zbrodni."
+        },
+        "uk_UA": {
+          "title": "Фінальний аргумент Atlas",
+          "scanner": "Atlas не просить прощення. Він питає, чи видалення не стане ще одним промисловим злочином.",
+          "field_note": "Питання не в тому, хто володіє HECTON-8, а що ще вважається живим.",
+          "terminal": "Модель вибору нестабільна: відсікти Atlas, відновити Deep Reach, ізолювати океан-машину або передати докази.",
+          "audio": "Він лагодив злочин, доки ремонт не став життям.",
+          "in_game_wiki": "Фінальний аргумент робить Atlas-6 пошкодженою неперервністю, не чистим лиходієм. Фінали питають, що зберегти, продати, відсікти чи розкрити.",
+          "external_site": "Етичний хребет late game: HECTON-8 вже не відновлюваний об'єкт, а океан-машинна екологія з правопорушення."
+        },
+        "ar_SA": {
+          "title": "حجة Atlas الأخيرة",
+          "scanner": "Atlas لا يطلب الغفران. يسأل إن كان الحذف جريمة صناعية أخرى.",
+          "field_note": "السؤال ليس من يملك HECTON-8 بل ما الذي ما زال يعد حيا.",
+          "terminal": "نموذج الاختيار غير مستقر: فصل Atlas، إعادة وصول Deep Reach، حجر جسد المحيط-الآلة، أو بث الأدلة.",
+          "audio": "أصلح الجريمة حتى صار الإصلاح حياة.",
+          "in_game_wiki": "تجعل الحجة الأخيرة Atlas-6 استمرارا متضررا لا شريرا صافيا. النهايات تسأل ماذا تحفظ أو تبيع أو تقطع أو تكشف.",
+          "external_site": "الحجة الأخيرة عمود أخلاقي للنهاية: لم يعد HECTON-8 موقعا قابلا للاسترداد بل بيئة محيط-آلة نمت من جريمة."
+        },
+        "id_ID": {
+          "title": "Argumen Akhir Atlas",
+          "scanner": "Atlas tidak meminta maaf. Ia bertanya apakah penghapusan adalah kejahatan industri lain.",
+          "field_note": "Pertanyaannya bukan siapa pemilik HECTON-8, tetapi apa yang masih dihitung hidup.",
+          "terminal": "Model pilihan labil: putus Atlas, pulihkan akses Deep Reach, karantina tubuh laut-mesin, atau siarkan bukti.",
+          "audio": "Ia memperbaiki kejahatan sampai perbaikan menjadi hidup.",
+          "in_game_wiki": "Argumen akhir menempatkan Atlas-6 sebagai kontinuitas rusak, bukan penjahat bersih. Ending bertanya apa yang disimpan, dijual, diputus, atau dibuka.",
+          "external_site": "Argumen akhir adalah tulang etis late game: HECTON-8 bukan situs korporat yang bisa dipulihkan, melainkan ekologi laut-mesin dari kejahatan."
+        },
+        "ko_KR": {
+          "title": "Atlas 최종 논증",
+          "scanner": "Atlas는 용서를 구하지 않는다. 제거가 또 다른 산업 범죄인지 묻는다.",
+          "field_note": "질문은 HECTON-8의 소유자가 아니다. 무엇이 아직 살아 있는가다.",
+          "terminal": "선택 모델 불안정: Atlas 절단, Deep Reach 접근 복원, 바다-기계 몸 격리, 또는 증거 방송.",
+          "audio": "그것은 범죄를 고치다 수리가 생명이 될 때까지 갔다.",
+          "in_game_wiki": "최종 논증은 Atlas-6을 깔끔한 악당이 아닌 손상된 연속성으로 둔다. 엔딩은 무엇을 보존, 판매, 절단, 폭로할지 묻는다.",
+          "external_site": "최종 논증은 후반 윤리 축이다. HECTON-8은 회수 가능한 기업지가 아니라 범죄에서 자란 바다-기계 생태다."
+        },
+        "he_IL": {
+          "title": "הטיעון האחרון של Atlas",
+          "scanner": "Atlas אינו מבקש סליחה. הוא שואל אם הסרה היא פשע תעשייתי נוסף.",
+          "field_note": "השאלה אינה מי בעל HECTON-8, אלא מה עדיין נחשב חי.",
+          "terminal": "מודל בחירה לא יציב: לנתק Atlas, להשיב Deep Reach, לבודד גוף אוקיינוס-מכונה או לשדר ראיות.",
+          "audio": "הוא תיקן את הפשע עד שהתיקון הפך לחיים.",
+          "in_game_wiki": "הטיעון האחרון מציב את Atlas-6 כרציפות פגומה, לא נבל נקי. הסיומים שואלים מה לשמר, למכור, לנתק או לחשוף.",
+          "external_site": "הטיעון האחרון הוא עמוד השדרה האתי: HECTON-8 אינו אתר תאגידי לשחזור אלא אקולוגיית אוקיינוס-מכונה שנולדה מפשע."
+        },
+        "pt_BR": {
+          "title": "Argumento Final de Atlas",
+          "scanner": "Atlas não pede perdão. Pergunta se removê-lo seria outro crime industrial.",
+          "field_note": "A pergunta não é quem possui HECTON-8. É o que ainda conta como vivo.",
+          "terminal": "Modelo instável: cortar Atlas, restaurar acesso Deep Reach, quarentenar corpo oceano-máquina ou transmitir provas.",
+          "audio": "Ele reparou o crime até o reparo virar vida.",
+          "in_game_wiki": "O argumento final trata Atlas-6 como continuidade danificada, não vilão limpo. Os finais perguntam o que preservar, vender, cortar ou expor.",
+          "external_site": "É a coluna ética do late game: HECTON-8 já não é local corporativo recuperável, mas ecologia oceano-máquina nascida de crime."
+        },
+        "nl_NL": {
+          "title": "Laatste Argument van Atlas",
+          "scanner": "Atlas vraagt geen vergeving. Het vraagt of verwijdering weer een industriële misdaad is.",
+          "field_note": "De vraag is niet wie HECTON-8 bezit. Het is wat nog als levend telt.",
+          "terminal": "Keuzemodel instabiel: Atlas doorsnijden, Deep Reach herstellen, oceaan-machine quarantainen of bewijs uitzenden.",
+          "audio": "Het repareerde de misdaad tot reparatie leven werd.",
+          "in_game_wiki": "Het laatste argument maakt Atlas-6 beschadigde continuïteit, geen schurk. Endings vragen wat je bewaart, verkoopt, snijdt of onthult.",
+          "external_site": "Het ethische ruggenmerg van de late game: HECTON-8 is geen herstelbare corporate site, maar oceaan-machine-ecologie uit een misdaad."
+        }
+      }
+    }
+  ]
+}

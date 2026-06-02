@@ -51,6 +51,7 @@ namespace Hecton8.Dev
         private const string RuntimeFrozenRecoveredTraceMessage = "reason=fallback-recovered";
         private const string RuntimeVramBudgetTraceMessage = "VRAM OVER BUDGET";
         private const string SceneSnapshotTraceMessage = "scene snapshot";
+        private const float SceneTransitionBudgetWarningGraceSeconds = 8f;
         private static readonly double StopwatchTicksToSeconds = 1d / System.Diagnostics.Stopwatch.Frequency;
 #if UNITY_EDITOR
         private const int MaxDirtyPlayRetryAttempts = 3;
@@ -263,6 +264,7 @@ namespace Hecton8.Dev
         private double _lastEditorUpdateTime;
         private float _editorFallbackPumpThresholdSeconds;
         private float _nextEditorFallbackTraceTime;
+        private float _budgetWarningSuppressedUntilRealtime;
         private bool _loggedFirstDrive;
         private int _invalidFrozenWindowCount;
         private int _suppressedFrozenFallbackSkipCount;
@@ -488,8 +490,12 @@ namespace Hecton8.Dev
 
             RegisterWithTickManager();
 
-            if ((!_registeredTick || !_registeredSlowTick || !_registeredLateFrame) && _debugProfilingActive)
+            if (GlobalRegistry.Dispatcher != null &&
+                (!_registeredTick || !_registeredSlowTick || !_registeredLateFrame) &&
+                _debugProfilingActive)
+            {
                 Hecton8.Core.H8Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
+            }
         }
 
         private void OnDisable()
@@ -605,6 +611,8 @@ namespace Hecton8.Dev
             _suppressedFrozenFallbackSkipCount = 0;
             _loggedPausedFrozenFallback = false;
             _nextDriveHeartbeatTime = 0f;
+            _budgetWarningSuppressedUntilRealtime =
+                ResolveProfilerUnscaledTimeSeconds() + SceneTransitionBudgetWarningGraceSeconds;
             _pendingAutoStartNewGame = false;
             _pendingAutoStartDelay = 0f;
             _autoStartNewGameTriggered = false;
@@ -802,6 +810,15 @@ namespace Hecton8.Dev
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                    RegisterWithTickManager();
+                else
+                    UnregisterFromTickManager();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.VRAMMonitorRuntime)
                 return;
 
@@ -1070,12 +1087,30 @@ namespace Hecton8.Dev
             RuntimeDiagnosticsTrace.WriteEvent("runtime", _debugLastReport);
 
             bool shouldLogWindow = logEveryWindow;
-            if (!shouldLogWindow && _debugLastWindowExceededBudget && logBudgetViolations)
+            bool suppressBudgetWarningForSceneTransition =
+                _debugLastWindowExceededBudget &&
+                ResolveProfilerUnscaledTimeSeconds() < _budgetWarningSuppressedUntilRealtime;
+#if UNITY_EDITOR
+            bool suppressBudgetWarningForEditorFallback =
+                _debugLastWindowExceededBudget &&
+                _sampleWindowUsedFallbackDrive &&
+                !_sampleWindowUsedTickDrive;
+#else
+            const bool suppressBudgetWarningForEditorFallback = false;
+#endif
+
+            if (!shouldLogWindow &&
+                _debugLastWindowExceededBudget &&
+                logBudgetViolations &&
+                !suppressBudgetWarningForSceneTransition &&
+                !suppressBudgetWarningForEditorFallback)
+            {
                 shouldLogWindow = TryConsumeBudgetWarningCooldown(ref _nextBudgetViolationLogTime);
+            }
 
             if (shouldLogWindow)
             {
-                if (_debugLastWindowExceededBudget)
+                if (_debugLastWindowExceededBudget && !suppressBudgetWarningForEditorFallback)
                     Hecton8.Core.H8Debug.LogWarning(_debugLastReport, this);
                 else
                     Hecton8.Core.H8Debug.Log(_debugLastReport, this);
@@ -1380,6 +1415,8 @@ namespace Hecton8.Dev
             _invalidFrozenWindowCount = 0;
             _loggedPausedFrozenFallback = false;
             _nextFrozenFallbackTraceTime = 0f;
+            _budgetWarningSuppressedUntilRealtime =
+                ResolveProfilerUnscaledTimeSeconds() + SceneTransitionBudgetWarningGraceSeconds;
             ResetSampleWindow();
             ResetSceneTransitionDiagnostics();
             if (RuntimeDiagnosticsTrace.IsActive)

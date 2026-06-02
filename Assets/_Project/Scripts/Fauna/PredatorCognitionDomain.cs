@@ -902,6 +902,12 @@ namespace Hecton8.AI
         private static bool _retinalFaultDumped;
         private static bool _alphaLeviathanFaultDumped;
         private static bool _mesofaunaFaultDumped;
+        private static bool _retinalFaultDumpPending;
+        private static bool _alphaLeviathanFaultDumpPending;
+        private static bool _mesofaunaFaultDumpPending;
+        private static int _retinalFaultDumpFrame;
+        private static int _alphaLeviathanFaultDumpFrame;
+        private static int _mesofaunaFaultDumpFrame;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -1939,6 +1945,12 @@ namespace Hecton8.AI
             _retinalFaultDumped = false;
             _alphaLeviathanFaultDumped = false;
             _mesofaunaFaultDumped = false;
+            _retinalFaultDumpPending = false;
+            _alphaLeviathanFaultDumpPending = false;
+            _mesofaunaFaultDumpPending = false;
+            _retinalFaultDumpFrame = -1;
+            _alphaLeviathanFaultDumpFrame = -1;
+            _mesofaunaFaultDumpFrame = -1;
             _acousticSdfDefaultsInitialized = false;
             _acousticProfilesLoadAttempted = false;
             _acousticSdfDumpPathInitialized = false;
@@ -4248,7 +4260,7 @@ namespace Hecton8.AI
             _totalBlindPredators = totalBlind;
 
             if (foundFault)
-                DumpRetinalBlackBoxCold(frameId);
+                RequestRetinalBlackBoxDump(frameId);
 
             if (_lastTelemetryBlindPredatorCount != totalBlind || (frameId & 31) == 0)
             {
@@ -4326,6 +4338,15 @@ namespace Hecton8.AI
                     RetinalTelemetryContextHash,
                     frameId);
             }
+        }
+
+        private static void RequestRetinalBlackBoxDump(int frameId)
+        {
+            if (_retinalFaultDumped || _retinalFaultDumpPending)
+                return;
+
+            _retinalFaultDumpFrame = frameId;
+            _retinalFaultDumpPending = true;
         }
 
         private static bool TryWriteRetinalBlackBoxFile(string dumpPath, int frameId)
@@ -4496,7 +4517,7 @@ namespace Hecton8.AI
 
             _activeAlphaLeviathanTelemetryCount = activeAlphaCount;
             if (foundFault)
-                DumpAlphaLeviathanBlackBoxCold(frameId);
+                RequestAlphaLeviathanBlackBoxDump(frameId);
 
             if (activeAlphaCount > 0 && (frameId & 31) == 0)
                 GlobalTelemetryBus.PublishModTelemetry(AlphaLeviathanPhaseTelemetryHash, lastStateHash, lastPhase);
@@ -4589,6 +4610,15 @@ namespace Hecton8.AI
                     AlphaLeviathanTelemetryContextHash,
                     frameId);
             }
+        }
+
+        private static void RequestAlphaLeviathanBlackBoxDump(int frameId)
+        {
+            if (_alphaLeviathanFaultDumped || _alphaLeviathanFaultDumpPending)
+                return;
+
+            _alphaLeviathanFaultDumpFrame = frameId;
+            _alphaLeviathanFaultDumpPending = true;
         }
 
         private static bool TryWriteAlphaLeviathanBlackBoxFile(string dumpPath, int frameId)
@@ -4750,7 +4780,7 @@ namespace Hecton8.AI
             _mesofaunaLastNonFiniteFallbackCount = nonFiniteFallbacks;
 
             if (foundFault || overBudget)
-                DumpMesofaunaBlackBoxCold(frameId);
+                RequestMesofaunaBlackBoxDump(frameId);
 
             if (activePredators > 0 && (frameId & 31) == 0)
                 GlobalTelemetryBus.PublishModTelemetry(MesofaunaBehaviorConstants.TelemetryContextHash, entry.StateHash, entry.SliceModulo);
@@ -4791,6 +4821,36 @@ namespace Hecton8.AI
                     MesofaunaBehaviorConstants.DumpFailureTelemetryHash,
                     MesofaunaBehaviorConstants.TelemetryContextHash,
                     frameId);
+            }
+        }
+
+        private static void RequestMesofaunaBlackBoxDump(int frameId)
+        {
+            if (_mesofaunaFaultDumped || _mesofaunaFaultDumpPending)
+                return;
+
+            _mesofaunaFaultDumpFrame = frameId;
+            _mesofaunaFaultDumpPending = true;
+        }
+
+        internal static void DrainPendingBlackBoxDumpsCold()
+        {
+            if (_retinalFaultDumpPending)
+            {
+                _retinalFaultDumpPending = false;
+                DumpRetinalBlackBoxCold(_retinalFaultDumpFrame);
+            }
+
+            if (_alphaLeviathanFaultDumpPending)
+            {
+                _alphaLeviathanFaultDumpPending = false;
+                DumpAlphaLeviathanBlackBoxCold(_alphaLeviathanFaultDumpFrame);
+            }
+
+            if (_mesofaunaFaultDumpPending)
+            {
+                _mesofaunaFaultDumpPending = false;
+                DumpMesofaunaBlackBoxCold(_mesofaunaFaultDumpFrame);
             }
         }
 

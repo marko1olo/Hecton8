@@ -135,9 +135,7 @@ GameObject:
   - component: {fileID: 2887721374667799330}
   - component: {fileID: 5380700518078914826}
   - component: {fileID: 6846099205482869597}
-  - component: {fileID: 3265406370731010970}
   - component: {fileID: 7348103083027130801}
-  - component: {fileID: 7348103083027130802}
   - component: {fileID: 3941918104802718226}
   m_Layer: 0
   m_Name: Main Camera
@@ -168,7 +166,41 @@ Transform:
   - {fileID: 5991790254714940880}
   - {fileID: 8037551639533757188}
   - {fileID: 8549916880801952558}
+  - {fileID: 1428000000000000002}
   m_Father: {fileID: 2516292804375615598}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1428000000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1428000000000000002}
+  - component: {fileID: 3265406370731010970}
+  - component: {fileID: 7348103083027130802}
+  m_Layer: 0
+  m_Name: Audio_DSPGraphHost
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1428000000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428000000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 198848781283951679}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &2887721374667799330
 Camera:
@@ -280,7 +312,7 @@ AudioSource:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
+  m_GameObject: {fileID: 1428000000000000001}
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
@@ -393,7 +425,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
+  m_GameObject: {fileID: 1428000000000000001}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 265100ac4b374295a6b78bb7a4753f2e, type: 3}

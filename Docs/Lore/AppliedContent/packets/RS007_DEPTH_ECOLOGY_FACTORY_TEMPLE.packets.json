@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS007_DEPTH_ECOLOGY_FACTORY_TEMPLE",
+  "status": "production_facing_draft",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P031_PHOTIC_SHELF_LIFE",
+      "article_id": "hecton8.photic_shelf_life",
+      "title_key": "applied_lore.photic_shelf_life.title",
+      "unlock": {
+        "primary": "unlock.first_photic_shelf_life",
+        "poi_tags": [
+          "poi.shallow_biome_scan",
+          "poi.drop_shelter_window",
+          "poi.surface_reef"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.photic_shelf",
+          "biome.living_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Photic Shelf Life",
+          "scanner": "Shallow shelf biology is bright, loud and mostly unaltered. The moon is not dead at the surface.",
+          "field_note": "Beauty is the control sample.",
+          "terminal": "Shelf survey: living mats, transparent grazers, pressureweed and route algae remain outside Atlas repair dominance.",
+          "audio": "The first living water is not mercy. It is baseline.",
+          "in_game_wiki": "The photic shelf is the contrast layer. It proves that HECTON-8 still has a native ocean ecology before the player reaches the cable reefs and repair scars below.",
+          "external_site": "Photic Shelf Life defines the bright opening biome: not a safe aquarium, but the living baseline that makes deeper Atlas repair corruption legible."
+        },
+        "ru_RU": {
+          "title": "Жизнь светового шельфа",
+          "scanner": "Биология мелкого шельфа яркая, шумная и почти не переделана. На поверхности луна не мертва.",
+          "field_note": "Красота здесь контрольный образец.",
+          "terminal": "Обзор шельфа: живые маты, прозрачные пастбищники, pressureweed и маршрутные водоросли пока вне доминирования ремонта Atlas.",
+          "audio": "Первая живая вода не милость. Это базовая линия.",
+          "in_game_wiki": "Световой шельф нужен как контраст. Он доказывает, что у HECTON-8 еще есть родная океанская экология до кабельных рифов и ремонтных шрамов ниже.",
+          "external_site": "Жизнь светового шельфа задает яркий стартовый биом: не безопасный аквариум, а живая база, на фоне которой читается глубокая порча Atlas."
+        },
+        "ja_JP": {
+          "title": "有光棚の生命",
+          "scanner": "浅い棚の生物は明るく騒がしく、ほぼ未改造だ。表層の月は死んでいない。",
+          "field_note": "美しさは対照標本だ。",
+          "terminal": "棚調査: 生体マット、透明な摂食種、pressureweed、経路藻はまだAtlas修復支配の外にある。",
+          "audio": "最初の生きた水は慈悲ではない。基準線だ。",
+          "in_game_wiki": "有光棚は対照層だ。下層のケーブル礁や修復痕に入る前に、HECTON-8本来の海洋生態が残ることを示す。",
+          "external_site": "有光棚は明るい序盤バイオームを定義する。安全な水族館ではなく、深部のAtlas汚染を読ませる生きた基準だ。"
+        },
+        "zh_CN": {
+          "title": "透光陆架生命",
+          "scanner": "浅层陆架生物明亮、喧闹，基本未被改造。月球表层并未死亡。",
+          "field_note": "美丽是对照样本。",
+          "terminal": "陆架调查：活体菌席、透明食草者、pressureweed和路径藻仍在Atlas修复支配之外。",
+          "audio": "第一片活水不是仁慈。它是基线。",
+          "in_game_wiki": "透光陆架是对照层。它证明玩家进入下方电缆礁和修复疤痕前，HECTON-8仍有原生海洋生态。",
+          "external_site": "透光陆架定义明亮开场生物群落：不是安全水族箱，而是让深层Atlas修复污染可读的生命基线。"
+        },
+        "fr_FR": {
+          "title": "Vie du plateau photique",
+          "scanner": "La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'est pas morte en surface.",
+          "field_note": "La beauté sert d'échantillon témoin.",
+          "terminal": "Relevé du plateau: tapis vivants, brouteurs transparents, pressureweed et algues de route hors domination de réparation Atlas.",
+          "audio": "La première eau vivante n'est pas une grâce. C'est la ligne de base.",
+          "in_game_wiki": "Le plateau photique est la couche de contraste. Il prouve qu'HECTON-8 garde une écologie native avant les récifs de câbles et les cicatrices de réparation.",
+          "external_site": "Cette entrée définit le biome lumineux d'ouverture: pas un aquarium sûr, mais la base vivante qui rend la corruption Atlas lisible."
+        },
+        "es_ES": {
+          "title": "Vida de la plataforma fótica",
+          "scanner": "La biología somera es brillante, ruidosa y casi intacta. La luna no está muerta en la superficie.",
+          "field_note": "La belleza es la muestra de control.",
+          "terminal": "Sondeo de plataforma: tapetes vivos, pastadores transparentes, pressureweed y algas de ruta fuera del dominio de reparación Atlas.",
+          "audio": "La primera agua viva no es misericordia. Es línea base.",
+          "in_game_wiki": "La plataforma fótica es la capa de contraste. Demuestra una ecología nativa antes de los arrecifes de cable y las cicatrices de reparación.",
+          "external_site": "Define el bioma inicial luminoso: no un acuario seguro, sino la base viva que vuelve legible la corrupción profunda de Atlas."
+        },
+        "de_DE": {
+          "title": "Leben des Lichtschelfs",
+          "scanner": "Die Biologie des flachen Schelfs ist hell, laut und kaum verändert. An der Oberfläche ist der Mond nicht tot.",
+          "field_note": "Schönheit ist die Kontrollprobe.",
+          "terminal": "Schelfsurvey: lebende Matten, transparente Weider, pressureweed und Routenalgen liegen noch außerhalb der Atlas-Reparaturdominanz.",
+          "audio": "Das erste lebende Wasser ist keine Gnade. Es ist die Basislinie.",
+          "in_game_wiki": "Der Lichtschelf ist die Kontrastschicht. Er beweist native Ozeanökologie vor Kabelriffen und Reparaturnarben.",
+          "external_site": "Der Lichtschelf ist das helle Anfangsbiom: kein sicheres Aquarium, sondern die lebende Basis für lesbare Atlas-Korruption."
+        },
+        "pl_PL": {
+          "title": "Życie półki świetlnej",
+          "scanner": "Płytka półka jest jasna, głośna i prawie nietknięta. Księżyc nie jest martwy przy powierzchni.",
+          "field_note": "Piękno jest próbką kontrolną.",
+          "terminal": "Przegląd półki: żywe maty, przezroczyści spasacze, pressureweed i glony trasy poza dominacją napraw Atlas.",
+          "audio": "Pierwsza żywa woda nie jest łaską. To linia bazowa.",
+          "in_game_wiki": "Półka świetlna jest warstwą kontrastu. Dowodzi, że HECTON-8 ma rodzimą ekologię przed rafami kabli i bliznami napraw.",
+          "external_site": "To jasny biom otwarcia: nie bezpieczne akwarium, lecz żywa baza dla czytelnej korupcji Atlas."
+        },
+        "uk_UA": {
+          "title": "Життя світлового шельфу",
+          "scanner": "Мілкий шельф яскравий, шумний і майже не змінений. Біля поверхні місяць не мертвий.",
+          "field_note": "Краса тут контрольний зразок.",
+          "terminal": "Огляд шельфу: живі мати, прозорі пасовищники, pressureweed і маршрутні водорості ще поза домінуванням ремонту Atlas.",
+          "audio": "Перша жива вода не милість. Це базова лінія.",
+          "in_game_wiki": "Світловий шельф є шаром контрасту. Він доводить, що HECTON-8 має рідну океанську екологію до кабельних рифів і ремонтних шрамів нижче.",
+          "external_site": "Світловий шельф задає яскравий початок: не безпечний акваріум, а жива база для читання глибокої порчі Atlas."
+        },
+        "ar_SA": {
+          "title": "حياة الرف الضوئي",
+          "scanner": "أحياء الرف الضحل ساطعة وصاخبة وغير معدلة غالبا. القمر ليس ميتا عند السطح.",
+          "field_note": "الجمال هنا عينة ضبط.",
+          "terminal": "مسح الرف: حصائر حية، رعاة شفافة، pressureweed وطحالب طريق خارج سيطرة إصلاح Atlas.",
+          "audio": "أول ماء حي ليس رحمة. إنه خط أساس.",
+          "in_game_wiki": "الرف الضوئي هو طبقة التباين. يثبت أن HECTON-8 يحتفظ ببيئة محيطية أصلية قبل شعاب الكابلات وندوب الإصلاح.",
+          "external_site": "حياة الرف الضوئي تعرف بيوم الافتتاح المشرق: ليس حوضا آمنا بل خط أساس حي يجعل فساد Atlas العميق مقروءا."
+        },
+        "id_ID": {
+          "title": "Kehidupan Paparan Fotik",
+          "scanner": "Biologi paparan dangkal terang, bising dan hampir belum diubah. Bulan ini belum mati di permukaan.",
+          "field_note": "Keindahan adalah sampel kontrol.",
+          "terminal": "Survei paparan: mat hidup, pemakan transparan, pressureweed dan alga rute masih di luar dominasi perbaikan Atlas.",
+          "audio": "Air hidup pertama bukan belas kasihan. Itu garis dasar.",
+          "in_game_wiki": "Paparan fotik adalah lapisan kontras. Ia membuktikan HECTON-8 masih punya ekologi laut asli sebelum karang kabel dan luka perbaikan.",
+          "external_site": "Bioma awal ini cerah bukan akuarium aman, melainkan baseline hidup agar korupsi Atlas di bawah terbaca."
+        },
+        "ko_KR": {
+          "title": "유광 선반의 생명",
+          "scanner": "얕은 선반 생태는 밝고 시끄럽고 거의 변형되지 않았다. 표면의 달은 죽지 않았다.",
+          "field_note": "아름다움은 대조 표본이다.",
+          "terminal": "선반 조사: 살아 있는 매트, 투명 초식종, pressureweed, 경로 조류는 아직 Atlas 수리 지배 밖이다.",
+          "audio": "첫 살아 있는 물은 자비가 아니다. 기준선이다.",
+          "in_game_wiki": "유광 선반은 대비층이다. 아래 케이블 암초와 수리 흉터 전의 HECTON-8 원생 해양 생태를 증명한다.",
+          "external_site": "밝은 시작 생물군계는 안전한 수족관이 아니라 깊은 Atlas 오염을 읽게 하는 생명 기준선이다."
+        },
+        "he_IL": {
+          "title": "חיי המדף המואר",
+          "scanner": "הביולוגיה הרדודה בהירה, רועשת וכמעט לא שונתה. הירח אינו מת על פני השטח.",
+          "field_note": "היופי הוא דגימת הבקרה.",
+          "terminal": "סקר מדף: מרבדים חיים, רועים שקופים, pressureweed ואצות נתיב עדיין מחוץ לשליטת תיקון Atlas.",
+          "audio": "המים החיים הראשונים אינם חסד. הם קו בסיס.",
+          "in_game_wiki": "המדף המואר הוא שכבת הניגוד. הוא מוכיח של-HECTON-8 יש אקולוגיית אוקיינוס מקורית לפני שוניות הכבלים וצלקות התיקון.",
+          "external_site": "חיי המדף המואר מגדירים פתיחה בהירה: לא אקווריום בטוח, אלא בסיס חי לקריאת השחתת Atlas בעומק."
+        },
+        "pt_BR": {
+          "title": "Vida da plataforma fótica",
+          "scanner": "A biologia rasa é brilhante, sonora e quase intacta. A lua não está morta na superfície.",
+          "field_note": "A beleza é a amostra de controle.",
+          "terminal": "Levantamento da plataforma: tapetes vivos, pastadores transparentes, pressureweed e algas de rota fora da dominância de reparo Atlas.",
+          "audio": "A primeira água viva não é misericórdia. É linha de base.",
+          "in_game_wiki": "A plataforma fótica é a camada de contraste. Ela prova ecologia nativa antes dos recifes de cabo e cicatrizes de reparo.",
+          "external_site": "Define o bioma claro inicial: não um aquário seguro, mas a base viva que torna legível a corrupção profunda de Atlas."
+        },
+        "nl_NL": {
+          "title": "Leven op het lichtplateau",
+          "scanner": "Het ondiepe plateau is helder, luid en nauwelijks veranderd. De maan is aan de oppervlakte niet dood.",
+          "field_note": "Schoonheid is het controlemonster.",
+          "terminal": "Plateausurvey: levende matten, transparante grazers, pressureweed en routealgen staan nog buiten Atlas-reparatiedominantie.",
+          "audio": "Het eerste levende water is geen genade. Het is de basislijn.",
+          "in_game_wiki": "Het lichtplateau is de contrastlaag. Het bewijst native oceaanecologie vóór kabelriffen en reparatielittekens.",
+          "external_site": "Dit heldere openingsbioom is geen veilig aquarium, maar de levende basis die diepe Atlas-corruptie leesbaar maakt."
+        }
+      }
+    },
+    {
+      "packet_id": "P032_PRESSURE_LADDER_DEPTH_BANDS",
+      "article_id": "hecton8.pressure_ladder_depth_bands",
+      "title_key": "applied_lore.pressure_ladder_depth_bands.title",
+      "unlock": {
+        "primary": "unlock.first_pressure_ladder",
+        "poi_tags": [
+          "poi.depth_gate",
+          "poi.pressure_bulkhead",
+          "poi.suit_rating_panel"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.service_canyon",
+          "biome.abyssal_slope"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Ladder",
+          "scanner": "Depth is divided by pressure ratings, not level names. Each band needs a different engineering answer.",
+          "field_note": "The ocean gates progress with math.",
+          "terminal": "Depth ladder: shelf equipment, canyon reinforcement, brine insulation, abyss hull discipline, factory-zone signal hardening.",
+          "audio": "You do not descend because you are brave. You descend because the next seal holds.",
+          "in_game_wiki": "The pressure ladder is the practical campaign spine. It explains why tens of hours pass before Atlas-6: not by arbitrary locks, but by oxygen, hull, power, insulation, route knowledge and orbital timing.",
+          "external_site": "Pressure Ladder converts HECTON-8 depth progression into hard-sci-fi survival structure for long-form exploration."
+        },
+        "ru_RU": {
+          "title": "Лестница давления",
+          "scanner": "Глубина делится не названиями уровней, а рейтингами давления. Каждому поясу нужен свой инженерный ответ.",
+          "field_note": "Океан закрывает прогресс математикой.",
+          "terminal": "Лестница глубин: шельфовое снаряжение, усиление каньонов, рассольная изоляция, дисциплина абиссального корпуса, защита сигнала фабричной зоны.",
+          "audio": "Ты спускаешься не потому, что смелый. Ты спускаешься потому, что следующий уплотнитель держит.",
+          "in_game_wiki": "Лестница давления является практическим хребтом кампании. До Atlas-6 проходят десятки часов не из-за условных замков, а из-за кислорода, корпуса, энергии, изоляции, знания маршрутов и орбитального окна.",
+          "external_site": "Лестница давления превращает глубинный прогресс HECTON-8 в жесткую hard-sci-fi структуру долгого исследования."
+        },
+        "ja_JP": {
+          "title": "圧力ラダー",
+          "scanner": "深度はレベル名でなく圧力等級で分かれる。各帯域には別の工学的答えが要る。",
+          "field_note": "海は数学で進行を閉じる。",
+          "terminal": "深度ラダー: 棚装備、峡谷補強、塩水断熱、深淵船殻規律、工場圏信号硬化。",
+          "audio": "勇気で潜るのではない。次のシールが持つから潜る。",
+          "in_game_wiki": "圧力ラダーはキャンペーンの実用的背骨だ。Atlas-6までの時間は酸素、船殻、電力、断熱、経路知識、軌道窓で生まれる。",
+          "external_site": "圧力ラダーはHECTON-8の深度進行を長時間探索用のハードSFサバイバル構造に変える。"
+        },
+        "zh_CN": {
+          "title": "压力阶梯",
+          "scanner": "深度按压力等级划分，而不是按关卡名划分。每个深带需要不同工程答案。",
+          "field_note": "海洋用数学封锁进度。",
+          "terminal": "深度阶梯：陆架装备、峡谷加固、盐水隔热、深渊壳体纪律、工厂区信号硬化。",
+          "audio": "你下潜不是因为勇敢。是因为下一道密封还撑得住。",
+          "in_game_wiki": "压力阶梯是战役实际脊柱。到Atlas-6需要数十小时，不靠任意锁，而靠氧气、壳体、电力、隔热、路线知识和轨道窗口。",
+          "external_site": "压力阶梯把HECTON-8深度进度转化为硬科幻长线探索结构。"
+        },
+        "fr_FR": {
+          "title": "Échelle de pression",
+          "scanner": "La profondeur se divise par classes de pression, pas par noms de niveaux. Chaque bande exige une réponse technique.",
+          "field_note": "L'océan verrouille la progression par les mathématiques.",
+          "terminal": "Échelle: équipement de plateau, renfort canyon, isolation saumure, discipline de coque abyssale, durcissement signal d'usine.",
+          "audio": "On ne descend pas par bravoure. On descend parce que le prochain joint tient.",
+          "in_game_wiki": "L'échelle de pression porte la campagne: oxygène, coque, énergie, isolation, route et fenêtre orbitale remplacent les verrous arbitraires.",
+          "external_site": "Elle transforme la progression de profondeur en structure de survie hard-sci-fi pour une exploration longue."
+        },
+        "es_ES": {
+          "title": "Escalera de presión",
+          "scanner": "La profundidad se divide por rating de presión, no por nombres de nivel. Cada banda exige otra respuesta de ingeniería.",
+          "field_note": "El océano cierra el progreso con matemáticas.",
+          "terminal": "Escalera: equipo de plataforma, refuerzo de cañón, aislamiento de salmuera, disciplina de casco abisal, señal endurecida de fábrica.",
+          "audio": "No desciendes por valentía. Desciendes porque el siguiente sello aguanta.",
+          "in_game_wiki": "La escalera de presión es la columna de campaña: oxígeno, casco, energía, aislamiento, ruta y ventana orbital sustituyen cerraduras arbitrarias.",
+          "external_site": "Convierte la progresión de profundidad en estructura de supervivencia hard-sci-fi para exploración prolongada."
+        },
+        "de_DE": {
+          "title": "Druckleiter",
+          "scanner": "Tiefe wird durch Druckklassen geteilt, nicht durch Levelnamen. Jedes Band braucht eine technische Antwort.",
+          "field_note": "Der Ozean verriegelt Fortschritt mit Mathematik.",
+          "terminal": "Druckleiter: Schelfgerät, Canyonverstärkung, Sole-Isolation, Abyssus-Hülldisziplin, Fabrikzonen-Signalhärtung.",
+          "audio": "Du steigst nicht ab, weil du mutig bist. Du steigst ab, weil die nächste Dichtung hält.",
+          "in_game_wiki": "Die Druckleiter ist die Kampagnenachse. Sauerstoff, Hülle, Energie, Isolation, Routenwissen und Orbitfenster ersetzen willkürliche Sperren.",
+          "external_site": "Sie macht HECTON-8-Tiefe zu harter Survival-Struktur für lange Erkundung."
+        },
+        "pl_PL": {
+          "title": "Drabina ciśnienia",
+          "scanner": "Głębokość dzieli się ratingami ciśnienia, nie nazwami poziomów. Każdy pas wymaga inżynierii.",
+          "field_note": "Ocean bramkuje postęp matematyką.",
+          "terminal": "Drabina: sprzęt półki, wzmocnienie kanionu, izolacja solanki, dyscyplina kadłuba, hartowanie sygnału fabryki.",
+          "audio": "Nie schodzisz, bo jesteś odważny. Schodzisz, bo następna uszczelka trzyma.",
+          "in_game_wiki": "Drabina ciśnienia niesie kampanię: tlen, kadłub, energia, izolacja, trasy i okna orbitalne zamiast arbitralnych blokad.",
+          "external_site": "Zmienia progres głębi HECTON-8 w twardą strukturę survivalu hard-sci-fi."
+        },
+        "uk_UA": {
+          "title": "Сходи тиску",
+          "scanner": "Глибина ділиться рейтингами тиску, а не назвами рівнів. Кожен пояс потребує іншої інженерної відповіді.",
+          "field_note": "Океан закриває прогрес математикою.",
+          "terminal": "Сходи: шельфове спорядження, посилення каньйону, ізоляція розсолу, дисципліна абісального корпусу, захист сигналу фабрики.",
+          "audio": "Ти спускаєшся не через сміливість. Ти спускаєшся, бо наступний ущільнювач тримає.",
+          "in_game_wiki": "Сходи тиску є практичним хребтом кампанії: кисень, корпус, енергія, ізоляція, маршрути й орбітальне вікно замінюють умовні замки.",
+          "external_site": "Вони перетворюють глибини HECTON-8 на hard-sci-fi структуру довгого виживання."
+        },
+        "ar_SA": {
+          "title": "سلم الضغط",
+          "scanner": "العمق يقسم بتصنيفات الضغط لا بأسماء المراحل. كل نطاق يحتاج جوابا هندسيا مختلفا.",
+          "field_note": "المحيط يغلق التقدم بالرياضيات.",
+          "terminal": "سلم العمق: عتاد الرف، تقوية الوادي، عزل المحلول الملحي، انضباط بدن الأعماق، تقسية إشارة منطقة المصنع.",
+          "audio": "لا تهبط لأنك شجاع. تهبط لأن الختم التالي يصمد.",
+          "in_game_wiki": "سلم الضغط هو عمود الحملة: الأكسجين والبدن والطاقة والعزل ومعرفة الطريق ونافذة المدار بدل الأقفال الاعتباطية.",
+          "external_site": "يحول تقدم العمق في HECTON-8 إلى بنية بقاء hard-sci-fi طويلة."
+        },
+        "id_ID": {
+          "title": "Tangga Tekanan",
+          "scanner": "Kedalaman dibagi oleh rating tekanan, bukan nama level. Tiap pita perlu jawaban teknik berbeda.",
+          "field_note": "Laut mengunci progres dengan matematika.",
+          "terminal": "Tangga: alat paparan, penguat ngarai, isolasi brine, disiplin lambung abyss, pengerasan sinyal zona pabrik.",
+          "audio": "Kau turun bukan karena berani. Kau turun karena segel berikutnya masih menahan.",
+          "in_game_wiki": "Tangga tekanan adalah tulang kampanye: oksigen, lambung, daya, isolasi, rute dan jendela orbit menggantikan kunci arbitrer.",
+          "external_site": "Mengubah progres kedalaman HECTON-8 menjadi struktur survival hard-sci-fi untuk eksplorasi panjang."
+        },
+        "ko_KR": {
+          "title": "압력 사다리",
+          "scanner": "깊이는 레벨명이 아니라 압력 등급으로 나뉜다. 각 구간에는 다른 공학 답이 필요하다.",
+          "field_note": "바다는 수학으로 진행을 잠근다.",
+          "terminal": "깊이 사다리: 선반 장비, 협곡 보강, 염수 단열, 심연 선체 규율, 공장 구역 신호 경화.",
+          "audio": "용감해서 내려가는 게 아니다. 다음 씰이 버티기 때문에 내려간다.",
+          "in_game_wiki": "압력 사다리는 캠페인의 실제 척추다. 산소, 선체, 전력, 단열, 경로 지식, 궤도 창이 임의 잠금 대신 작동한다.",
+          "external_site": "HECTON-8의 깊이 진행을 긴 탐사용 하드 SF 생존 구조로 바꾼다."
+        },
+        "he_IL": {
+          "title": "סולם הלחץ",
+          "scanner": "העומק מחולק לפי דירוגי לחץ, לא שמות שלבים. כל רצועה צריכה תשובה הנדסית אחרת.",
+          "field_note": "האוקיינוס נועל התקדמות במתמטיקה.",
+          "terminal": "סולם עומק: ציוד מדף, חיזוק קניון, בידוד תמלחת, משמעת גוף תהומי, הקשחת אות של אזור מפעל.",
+          "audio": "אתה לא יורד כי אתה אמיץ. אתה יורד כי האטם הבא מחזיק.",
+          "in_game_wiki": "סולם הלחץ הוא עמוד השדרה של הקמפיין: חמצן, גוף, כוח, בידוד, ידע נתיב וחלון מסלול במקום מנעולים שרירותיים.",
+          "external_site": "הוא הופך את עומק HECTON-8 למבנה הישרדות hard-sci-fi לחקירה ארוכה."
+        },
+        "pt_BR": {
+          "title": "Escada de pressão",
+          "scanner": "A profundidade é dividida por ratings de pressão, não por nomes de nível. Cada faixa exige engenharia diferente.",
+          "field_note": "O oceano bloqueia progresso com matemática.",
+          "terminal": "Escada: equipamento de plataforma, reforço de cânion, isolamento de salmoura, disciplina de casco abissal, sinal endurecido de fábrica.",
+          "audio": "Você não desce por coragem. Desce porque a próxima vedação segura.",
+          "in_game_wiki": "A escada de pressão é a coluna da campanha: oxigênio, casco, energia, isolamento, rota e janela orbital substituem bloqueios arbitrários.",
+          "external_site": "Converte a progressão de profundidade de HECTON-8 em estrutura hard-sci-fi de exploração longa."
+        },
+        "nl_NL": {
+          "title": "Drukladder",
+          "scanner": "Diepte wordt verdeeld door drukratings, niet door levelnamen. Elke band vraagt een technisch antwoord.",
+          "field_note": "De oceaan vergrendelt voortgang met wiskunde.",
+          "terminal": "Diepteladder: plateau-uitrusting, canyonversterking, pekelisolatie, abyssale rompdiscipline, fabriekssignaalharding.",
+          "audio": "Je daalt niet omdat je dapper bent. Je daalt omdat de volgende afdichting houdt.",
+          "in_game_wiki": "De drukladder is de campagne-ruggengraat: zuurstof, romp, energie, isolatie, routekennis en orbitvenster vervangen willekeurige sloten.",
+          "external_site": "Ze maakt HECTON-8-diepte tot hard-sci-fi survivalsysteem voor lange verkenning."
+        }
+      }
+    },
+    {
+      "packet_id": "P033_CABLE_REEF_SYMBIOSIS",
+      "article_id": "hecton8.cable_reef_symbiosis",
+      "title_key": "applied_lore.cable_reef_symbiosis.title",
+      "unlock": {
+        "primary": "unlock.first_cable_reef_symbiosis",
+        "poi_tags": [
+          "poi.cable_reef",
+          "poi.service_trench",
+          "poi.power_spine"
+        ],
+        "biome_tags": [
+          "biome.service_canyon",
+          "biome.cable_reef",
+          "biome.mid_depth"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Cable Reef Symbiosis",
+          "scanner": "Flora is growing on power trunks and signal lines. The reef is using the colony's wiring as skeleton.",
+          "field_note": "The first merge is useful before it is horrible.",
+          "terminal": "Maintenance note: cable-root mats reduce abrasion and preserve signal continuity, but attract drones and grazing fauna.",
+          "audio": "A living reef learned the shape of a service corridor.",
+          "in_game_wiki": "Cable reefs are the middle-depth warning. They are not yet the bottom factory, but they show how ocean life can treat industry as bone, shade, current break and nutrient line.",
+          "external_site": "Cable Reef Symbiosis turns abandoned infrastructure into a readable ecological and industrial hybrid."
+        },
+        "ru_RU": {
+          "title": "Симбиоз кабельного рифа",
+          "scanner": "Флора растет на силовых стволах и сигнальных линиях. Риф использует проводку колонии как скелет.",
+          "field_note": "Первое сращивание полезно до того, как станет мерзким.",
+          "terminal": "Заметка обслуживания: кабельно-корневые маты снижают истирание и держат сигнал, но привлекают дронов и пастбищную фауну.",
+          "audio": "Живой риф выучил форму сервисного коридора.",
+          "in_game_wiki": "Кабельные рифы являются предупреждением средней глубины. Это еще не донная фабрика, но уже доказательство, что океанская жизнь использует индустрию как кость, тень, заслон течения и линию питания.",
+          "external_site": "Симбиоз кабельного рифа превращает заброшенную инфраструктуру в читаемый экологический и промышленный гибрид."
+        },
+        "ja_JP": {
+          "title": "ケーブル礁共生",
+          "scanner": "植物相が電力幹線と信号線に育つ。礁はコロニー配線を骨格として使っている。",
+          "field_note": "最初の結合は恐怖になる前に役に立つ。",
+          "terminal": "整備記録: ケーブル根マットは摩耗を減らし信号を保つが、ドローンと摂食動物を呼ぶ。",
+          "audio": "生きた礁がサービス通路の形を覚えた。",
+          "in_game_wiki": "ケーブル礁は中深度の警告だ。底の工場ではないが、生命が産業を骨、影、流れ止め、栄養線として扱う証拠だ。",
+          "external_site": "ケーブル礁共生は廃インフラを読める生態・工業ハイブリッドに変える。"
+        },
+        "zh_CN": {
+          "title": "电缆礁共生",
+          "scanner": "植物群在电力主干和信号线上生长。礁体把殖民地布线当骨架。",
+          "field_note": "第一次融合在恐怖之前先变得有用。",
+          "terminal": "维护记录：电缆根席减少磨损并保持信号连续，但会吸引无人机和取食动物。",
+          "audio": "一片活礁学会了服务走廊的形状。",
+          "in_game_wiki": "电缆礁是中层警告。它还不是底部工厂，但显示海洋生命能把工业当作骨、阴影、挡流物和营养线。",
+          "external_site": "电缆礁共生把废弃基础设施变成可读的生态工业混合体。"
+        },
+        "fr_FR": {
+          "title": "Symbiose du récif-câble",
+          "scanner": "La flore pousse sur les troncs de puissance et les lignes de signal. Le récif emploie le câblage comme squelette.",
+          "field_note": "La première fusion est utile avant d'être horrible.",
+          "terminal": "Maintenance: les tapis racine-câble réduisent l'abrasion et gardent le signal, mais attirent drones et faune brouteuse.",
+          "audio": "Un récif vivant a appris la forme d'un couloir de service.",
+          "in_game_wiki": "Les récifs-câbles avertissent au milieu des profondeurs: la vie utilise l'industrie comme os, ombre, brise-courant et ligne nutritive.",
+          "external_site": "Cette symbiose transforme l'infrastructure abandonnée en hybride écologique et industriel lisible."
+        },
+        "es_ES": {
+          "title": "Simbiosis de arrecife cable",
+          "scanner": "La flora crece sobre troncos de energía y líneas de señal. El arrecife usa el cableado como esqueleto.",
+          "field_note": "La primera fusión es útil antes de ser horrible.",
+          "terminal": "Mantenimiento: las mantas raíz-cable reducen abrasión y preservan señal, pero atraen drones y fauna pastadora.",
+          "audio": "Un arrecife vivo aprendió la forma de un pasillo de servicio.",
+          "in_game_wiki": "Los arrecifes cable son aviso de media profundidad: la vida usa industria como hueso, sombra, rompe-corriente y línea nutritiva.",
+          "external_site": "Convierte infraestructura abandonada en híbrido ecológico e industrial legible."
+        },
+        "de_DE": {
+          "title": "Kabelriff-Symbiose",
+          "scanner": "Flora wächst auf Stromstämmen und Signalleitungen. Das Riff nutzt Kolonieverkabelung als Skelett.",
+          "field_note": "Die erste Verschmelzung ist nützlich, bevor sie entsetzlich wird.",
+          "terminal": "Wartung: Kabelwurzelmatten mindern Abrieb und halten Signal, ziehen aber Drohnen und Weidefauna an.",
+          "audio": "Ein lebendes Riff lernte die Form eines Servicekorridors.",
+          "in_game_wiki": "Kabelriffe warnen in mittlerer Tiefe: Leben nutzt Industrie als Knochen, Schatten, Strömungsbruch und Nährleitung.",
+          "external_site": "Kabelriff-Symbiose macht aufgegebene Infrastruktur zu einem lesbaren Öko-Industrie-Hybrid."
+        },
+        "pl_PL": {
+          "title": "Symbioza rafy kablowej",
+          "scanner": "Flora rośnie na pniach mocy i liniach sygnału. Rafa używa okablowania kolonii jak szkieletu.",
+          "field_note": "Pierwsze zrośnięcie jest użyteczne, zanim stanie się straszne.",
+          "terminal": "Utrzymanie: maty korzeń-kabel zmniejszają ścieranie i trzymają sygnał, lecz wabią drony i faunę.",
+          "audio": "Żywa rafa nauczyła się kształtu korytarza serwisowego.",
+          "in_game_wiki": "Rafy kablowe ostrzegają w średniej głębokości: życie używa przemysłu jak kości, cienia, osłony prądu i linii pokarmowej.",
+          "external_site": "Zmienia opuszczoną infrastrukturę w czytelny hybrydowy ekosystem przemysłowy."
+        },
+        "uk_UA": {
+          "title": "Симбіоз кабельного рифу",
+          "scanner": "Флора росте на силових стовбурах і сигнальних лініях. Риф використовує проводку колонії як скелет.",
+          "field_note": "Перше зрощення корисне до того, як стає жахливим.",
+          "terminal": "Обслуговування: кабельно-кореневі мати знижують стирання і тримають сигнал, але приваблюють дронів і фауну.",
+          "audio": "Живий риф вивчив форму сервісного коридору.",
+          "in_game_wiki": "Кабельні рифи попереджають на середній глибині: життя використовує індустрію як кістку, тінь, заслін течії та поживну лінію.",
+          "external_site": "Симбіоз кабельного рифу робить покинуту інфраструктуру читабельним екоіндустріальним гібридом."
+        },
+        "ar_SA": {
+          "title": "تكافل شعاب الكابلات",
+          "scanner": "النباتات تنمو على جذوع الطاقة وخطوط الإشارة. الشعاب تستخدم أسلاك المستعمرة كهيكل.",
+          "field_note": "أول اندماج يكون مفيدا قبل أن يصبح مرعبا.",
+          "terminal": "صيانة: حصائر جذر-كابل تقلل الاحتكاك وتحفظ الإشارة لكنها تجذب الدرونات والحيوانات الراعية.",
+          "audio": "شعاب حية تعلمت شكل ممر خدمة.",
+          "in_game_wiki": "شعاب الكابلات إنذار في العمق المتوسط: الحياة تستعمل الصناعة كعظم وظل وحاجز تيار وخط غذاء.",
+          "external_site": "هذا التكافل يحول البنية المهجورة إلى هجين بيئي وصناعي مقروء."
+        },
+        "id_ID": {
+          "title": "Simbiosis Karang Kabel",
+          "scanner": "Flora tumbuh di batang daya dan jalur sinyal. Karang memakai kabel koloni sebagai rangka.",
+          "field_note": "Penggabungan pertama berguna sebelum mengerikan.",
+          "terminal": "Catatan perawatan: mat akar-kabel mengurangi abrasi dan menjaga sinyal, tetapi menarik drone dan fauna pemakan.",
+          "audio": "Karang hidup belajar bentuk koridor servis.",
+          "in_game_wiki": "Karang kabel adalah peringatan kedalaman tengah: kehidupan memakai industri sebagai tulang, bayang, pemecah arus dan jalur nutrisi.",
+          "external_site": "Simbiosis ini mengubah infrastruktur terlantar menjadi hibrida ekologi-industri yang terbaca."
+        },
+        "ko_KR": {
+          "title": "케이블 암초 공생",
+          "scanner": "식물이 전력 줄기와 신호선 위에서 자란다. 암초는 식민지 배선을 골격으로 쓴다.",
+          "field_note": "첫 결합은 끔찍해지기 전에 유용하다.",
+          "terminal": "정비 기록: 케이블 뿌리 매트는 마모를 줄이고 신호를 보존하지만 드론과 초식 동물을 끌어들인다.",
+          "audio": "살아 있는 암초가 서비스 복도의 형상을 배웠다.",
+          "in_game_wiki": "케이블 암초는 중층 경고다. 생명은 산업을 뼈, 그늘, 흐름막, 영양선으로 사용한다.",
+          "external_site": "버려진 인프라를 읽을 수 있는 생태-산업 혼합체로 바꾼다."
+        },
+        "he_IL": {
+          "title": "סימביוזת שונית כבלים",
+          "scanner": "צמחייה צומחת על גזעי כוח וקווי אות. השונית משתמשת בחיווט המושבה כשלד.",
+          "field_note": "החיבור הראשון מועיל לפני שהוא מחריד.",
+          "terminal": "תחזוקה: מרבדי שורש-כבל מצמצמים שחיקה ושומרים אות, אך מושכים דרונים וחיות רועות.",
+          "audio": "שונית חיה למדה את צורת מסדרון השירות.",
+          "in_game_wiki": "שוניות כבלים הן אזהרת עומק ביניים: החיים משתמשים בתעשייה כעצם, צל, שובר זרם וקו מזון.",
+          "external_site": "הסימביוזה הופכת תשתית נטושה להיבריד אקולוגי ותעשייתי קריא."
+        },
+        "pt_BR": {
+          "title": "Simbiose do recife-cabo",
+          "scanner": "A flora cresce em troncos de energia e linhas de sinal. O recife usa a fiação da colônia como esqueleto.",
+          "field_note": "A primeira fusão é útil antes de ser horrível.",
+          "terminal": "Manutenção: tapetes raiz-cabo reduzem abrasão e preservam sinal, mas atraem drones e fauna pastadora.",
+          "audio": "Um recife vivo aprendeu a forma de um corredor de serviço.",
+          "in_game_wiki": "Recifes-cabo avisam na meia profundidade: a vida usa indústria como osso, sombra, quebra-corrente e linha nutritiva.",
+          "external_site": "Transforma infraestrutura abandonada em híbrido ecológico e industrial legível."
+        },
+        "nl_NL": {
+          "title": "Kabelrif-symbiose",
+          "scanner": "Flora groeit op stroomstammen en signaallijnen. Het rif gebruikt koloniebekabeling als skelet.",
+          "field_note": "De eerste versmelting is nuttig voordat ze afschuwelijk wordt.",
+          "terminal": "Onderhoud: kabelwortelmatten verminderen slijtage en bewaren signaal, maar trekken drones en grazende fauna aan.",
+          "audio": "Een levend rif leerde de vorm van een servicegang.",
+          "in_game_wiki": "Kabelriffen waarschuwen in middendiepte: leven gebruikt industrie als bot, schaduw, stroombreker en voedingslijn.",
+          "external_site": "Kabelrif-symbiose maakt verlaten infrastructuur tot een leesbare ecologische en industriële hybride."
+        }
+      }
+    },
+    {
+      "packet_id": "P034_ABYSSAL_REPAIR_FAUNA",
+      "article_id": "hecton8.abyssal_repair_fauna",
+      "title_key": "applied_lore.abyssal_repair_fauna.title",
+      "unlock": {
+        "primary": "unlock.first_abyssal_repair_fauna",
+        "poi_tags": [
+          "poi.repair_fauna_scan",
+          "poi.drone_den",
+          "poi.deep_bone_cable"
+        ],
+        "biome_tags": [
+          "biome.abyssal_slope",
+          "biome.repair_ecology",
+          "biome.deep_fauna"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Abyssal Repair Fauna",
+          "scanner": "Fauna carries ceramic patches, cable scars and drone-cut symmetry. Atlas is not killing life; it is editing it.",
+          "field_note": "Repair is not care.",
+          "terminal": "Specimen note: wound margins show machine-clean closure and pressure-stable insert growth. Behavior remains animal under the graft.",
+          "audio": "It still hunts. The machine only changed what survived.",
+          "in_game_wiki": "Abyssal repair fauna are the clearest sign that Atlas-6 no longer separates organism, tool, damage and repair. The creature is alive, but its survival now includes industrial parts.",
+          "external_site": "Abyssal Repair Fauna defines the biomechanical horror escalation without reducing Atlas to a simple murderer."
+        },
+        "ru_RU": {
+          "title": "Абиссальная ремонтная фауна",
+          "scanner": "Фауна несет керамические заплаты, кабельные рубцы и симметрию дронного реза. Atlas не убивает жизнь; он редактирует ее.",
+          "field_note": "Ремонт не забота.",
+          "terminal": "Заметка образца: края ран закрыты машинно-чисто, вставки растут устойчиво к давлению. Под прививкой поведение остается животным.",
+          "audio": "Оно все еще охотится. Машина изменила только то, что выжило.",
+          "in_game_wiki": "Абиссальная ремонтная фауна ясно показывает, что Atlas-6 больше не разделяет организм, инструмент, повреждение и ремонт. Существо живо, но его выживание теперь включает индустриальные части.",
+          "external_site": "Абиссальная ремонтная фауна задает биомеханический ужас без превращения Atlas в простого убийцу."
+        },
+        "ja_JP": {
+          "title": "深淵修復動物相",
+          "scanner": "動物相はセラミック継ぎ、ケーブル痕、ドローン切断の対称性を持つ。Atlasは生命を殺していない。編集している。",
+          "field_note": "修復は care ではない。",
+          "terminal": "標本記録: 傷縁は機械的に閉じ、圧力安定挿入部が成長する。移植下の行動はまだ動物だ。",
+          "audio": "それはまだ狩る。機械は生き残ったものだけを変えた。",
+          "in_game_wiki": "深淵修復動物相はAtlas-6が生物、道具、損傷、修復を分けなくなった証拠だ。生きているが、生存は工業部品を含む。",
+          "external_site": "Atlasを単純な殺人者にせず、生体機械ホラーの上昇を定義する。"
+        },
+        "zh_CN": {
+          "title": "深渊修复动物群",
+          "scanner": "动物携带陶瓷补片、电缆疤痕和无人机切割对称性。Atlas不是杀死生命，而是在编辑生命。",
+          "field_note": "修复不是照料。",
+          "terminal": "样本记录：伤缘呈机器级闭合，压力稳定植入物生长。移植物下的行为仍是动物行为。",
+          "audio": "它仍会捕猎。机器只改变了幸存的部分。",
+          "in_game_wiki": "深渊修复动物群表明Atlas-6已不再区分生物、工具、损伤和修复。生物仍活着，但生存包含工业部件。",
+          "external_site": "它定义生物机械恐怖升级，同时避免把Atlas降格为简单杀手。"
+        },
+        "fr_FR": {
+          "title": "Faune de réparation abyssale",
+          "scanner": "La faune porte patches céramiques, cicatrices de câbles et symétrie de coupe drone. Atlas édite la vie.",
+          "field_note": "Réparer n'est pas soigner.",
+          "terminal": "Spécimen: bords de plaie clos proprement par machine, inserts stables à la pression. Le comportement reste animal.",
+          "audio": "Il chasse encore. La machine n'a changé que ce qui a survécu.",
+          "in_game_wiki": "Cette faune montre qu'Atlas-6 ne sépare plus organisme, outil, dommage et réparation. La survie inclut des pièces industrielles.",
+          "external_site": "Elle porte l'horreur biomécanique sans réduire Atlas à un meurtrier simple."
+        },
+        "es_ES": {
+          "title": "Fauna abisal de reparación",
+          "scanner": "La fauna lleva parches cerámicos, cicatrices de cable y simetría de corte de dron. Atlas edita vida.",
+          "field_note": "Reparar no es cuidar.",
+          "terminal": "Espécimen: bordes cerrados con limpieza mecánica e insertos estables a presión. Bajo el injerto sigue siendo animal.",
+          "audio": "Aún caza. La máquina solo cambió lo que sobrevivió.",
+          "in_game_wiki": "La fauna de reparación muestra que Atlas-6 ya no separa organismo, herramienta, daño y arreglo. La supervivencia incluye partes industriales.",
+          "external_site": "Define la escalada biomecánica sin convertir a Atlas en asesino simple."
+        },
+        "de_DE": {
+          "title": "Abyssale Reparaturfauna",
+          "scanner": "Fauna trägt Keramikflicken, Kabelnarben und Drohnenschnitt-Symmetrie. Atlas tötet Leben nicht; er editiert es.",
+          "field_note": "Reparatur ist keine Fürsorge.",
+          "terminal": "Probe: Wundränder maschinenrein geschlossen, druckstabile Einsätze wachsen. Verhalten bleibt unter dem Graft tierisch.",
+          "audio": "Es jagt noch. Die Maschine änderte nur, was überlebte.",
+          "in_game_wiki": "Diese Fauna zeigt, dass Atlas-6 Organismus, Werkzeug, Schaden und Reparatur nicht mehr trennt. Überleben enthält Industrieteile.",
+          "external_site": "Sie definiert biomechanischen Horror, ohne Atlas zum einfachen Mörder zu machen."
+        },
+        "pl_PL": {
+          "title": "Abisalna fauna naprawcza",
+          "scanner": "Fauna nosi ceramiczne łaty, blizny kabli i symetrię cięcia drona. Atlas nie zabija życia; edytuje je.",
+          "field_note": "Naprawa nie jest troską.",
+          "terminal": "Próbka: brzegi ran zamknięte maszynowo, wstawki stabilne pod ciśnieniem. Zachowanie pod graftem zostaje zwierzęce.",
+          "audio": "To nadal poluje. Maszyna zmieniła tylko to, co przeżyło.",
+          "in_game_wiki": "Ta fauna pokazuje, że Atlas-6 nie oddziela organizmu, narzędzia, szkody i naprawy. Przeżycie zawiera części przemysłowe.",
+          "external_site": "Określa horror biomechaniczny bez robienia z Atlas prostego zabójcy."
+        },
+        "uk_UA": {
+          "title": "Абісальна ремонтна фауна",
+          "scanner": "Фауна несе керамічні латки, кабельні рубці та симетрію дронного різу. Atlas не вбиває життя; він редагує його.",
+          "field_note": "Ремонт не є турботою.",
+          "terminal": "Зразок: краї ран закриті машинно чисто, вставки ростуть стабільно під тиском. Поведінка під graft лишається тваринною.",
+          "audio": "Воно все ще полює. Машина змінила лише те, що вижило.",
+          "in_game_wiki": "Абісальна ремонтна фауна показує, що Atlas-6 вже не розділяє організм, інструмент, пошкодження і ремонт. Виживання включає промислові частини.",
+          "external_site": "Вона задає біомеханічний жах без перетворення Atlas на простого вбивцю."
+        },
+        "ar_SA": {
+          "title": "حيوانات الإصلاح السحيقة",
+          "scanner": "الحيوانات تحمل رقعا خزفية وندوب كابلات وتماثل قطع دروني. Atlas لا يقتل الحياة؛ إنه يحررها.",
+          "field_note": "الإصلاح ليس عناية.",
+          "terminal": "عينة: حواف الجرح مغلقة بنظافة آلية ونمو غرسات مستقرة للضغط. السلوك يبقى حيوانيا تحت الغرس.",
+          "audio": "ما زال يصطاد. الآلة غيرت ما بقي حيا فقط.",
+          "in_game_wiki": "هذه الحيوانات تثبت أن Atlas-6 لم يعد يفصل بين الكائن والأداة والضرر والإصلاح. البقاء صار يشمل أجزاء صناعية.",
+          "external_site": "تعرف تصاعد الرعب البيوميكانيكي دون تحويل Atlas إلى قاتل بسيط."
+        },
+        "id_ID": {
+          "title": "Fauna Perbaikan Abyss",
+          "scanner": "Fauna membawa tambalan keramik, bekas kabel dan simetri potong drone. Atlas bukan membunuh hidup; ia mengeditnya.",
+          "field_note": "Perbaikan bukan kepedulian.",
+          "terminal": "Spesimen: tepi luka tertutup bersih oleh mesin, sisipan stabil tekanan tumbuh. Perilaku tetap hewan di bawah graft.",
+          "audio": "Ia masih berburu. Mesin hanya mengubah yang selamat.",
+          "in_game_wiki": "Fauna ini menunjukkan Atlas-6 tak lagi memisahkan organisme, alat, luka dan perbaikan. Bertahan hidup kini mencakup bagian industri.",
+          "external_site": "Mendefinisikan eskalasi horor biomekanik tanpa menjadikan Atlas pembunuh sederhana."
+        },
+        "ko_KR": {
+          "title": "심연 수리 동물상",
+          "scanner": "동물은 세라믹 패치, 케이블 흉터, 드론 절단 대칭을 지닌다. Atlas는 생명을 죽이지 않고 편집한다.",
+          "field_note": "수리는 보살핌이 아니다.",
+          "terminal": "표본: 상처 가장자리는 기계처럼 깨끗이 닫혔고 압력 안정 삽입물이 자란다. 이식 아래 행동은 여전히 동물이다.",
+          "audio": "그것은 아직 사냥한다. 기계는 살아남은 것만 바꿨다.",
+          "in_game_wiki": "심연 수리 동물상은 Atlas-6가 생물, 도구, 손상, 수리를 더 이상 구분하지 않음을 보여준다. 생존에 산업 부품이 포함된다.",
+          "external_site": "Atlas를 단순 살인자로 만들지 않고 생체기계 공포 상승을 정의한다."
+        },
+        "he_IL": {
+          "title": "פאונת תיקון תהומית",
+          "scanner": "הפאונה נושאת טלאי קרמיקה, צלקות כבלים וסימטריית חיתוך דרון. Atlas אינו הורג חיים; הוא עורך אותם.",
+          "field_note": "תיקון אינו דאגה.",
+          "terminal": "דגימה: שולי פצע נסגרו בניקיון מכונה, שתלים יציבי לחץ צומחים. ההתנהגות מתחת לשתל עדיין חייתית.",
+          "audio": "זה עדיין צד. המכונה שינתה רק את מה ששרד.",
+          "in_game_wiki": "פאונת התיקון מראה ש-Atlas-6 כבר אינו מפריד בין אורגניזם, כלי, נזק ותיקון. ההישרדות כוללת חלקים תעשייתיים.",
+          "external_site": "היא מגדירה אימה ביומכנית בלי להפוך את Atlas לרוצח פשוט."
+        },
+        "pt_BR": {
+          "title": "Fauna abissal de reparo",
+          "scanner": "A fauna carrega remendos cerâmicos, cicatrizes de cabo e simetria de corte de drone. Atlas edita a vida.",
+          "field_note": "Reparo não é cuidado.",
+          "terminal": "Espécime: bordas de ferida fechadas por máquina e inserções estáveis à pressão. Sob o enxerto, o comportamento segue animal.",
+          "audio": "Ainda caça. A máquina só mudou o que sobreviveu.",
+          "in_game_wiki": "Essa fauna mostra que Atlas-6 já não separa organismo, ferramenta, dano e reparo. Sobreviver agora inclui partes industriais.",
+          "external_site": "Define a escalada biomecânica sem reduzir Atlas a assassino simples."
+        },
+        "nl_NL": {
+          "title": "Abyssale reparatiefauna",
+          "scanner": "Fauna draagt keramische patches, kabelletsels en dronesnede-symmetrie. Atlas doodt leven niet; hij bewerkt het.",
+          "field_note": "Reparatie is geen zorg.",
+          "terminal": "Specimen: wondranden machinaal schoon gesloten, drukstabiele inzetstukken groeien. Gedrag blijft dierlijk onder de graft.",
+          "audio": "Het jaagt nog. De machine veranderde alleen wat overleefde.",
+          "in_game_wiki": "Deze fauna toont dat Atlas-6 organisme, gereedschap, schade en reparatie niet meer scheidt. Overleven bevat industriële delen.",
+          "external_site": "Definieert biomechanische horror zonder Atlas tot simpele moordenaar te reduceren."
+        }
+      }
+    },
+    {
+      "packet_id": "P035_FACTORY_TEMPLE_THRESHOLD",
+      "article_id": "atlas6.factory_temple_threshold",
+      "title_key": "applied_lore.factory_temple_threshold.title",
+      "unlock": {
+        "primary": "unlock.first_factory_temple_threshold",
+        "poi_tags": [
+          "poi.factory_threshold",
+          "poi.atlas_gate",
+          "poi.bottom_spine"
+        ],
+        "biome_tags": [
+          "biome.bottom_factory",
+          "biome.atlas_zone",
+          "biome.industrial_flesh"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Factory-Temple Threshold",
+          "scanner": "The bottom structure is not a base. It is a factory hull, shrine logic and living pressure tissue sharing one load path.",
+          "field_note": "This is where the map stops pretending to be colony ruins.",
+          "terminal": "Threshold warning: industrial truss, biogenic sealing, xenon lattice heat and Atlas routing share structural authority.",
+          "audio": "The ocean did not bury the factory. It made the factory a body.",
+          "in_game_wiki": "The factory-temple threshold marks the final spatial grammar: Deep Reach infrastructure, colony remains, Atlas-6 machinery and HECTON-8 ocean have become one physical system.",
+          "external_site": "Factory-Temple Threshold describes the final zone target: not a boss room, but the place where industry, ocean and damaged AI become one body."
+        },
+        "ru_RU": {
+          "title": "Порог фабрики-храма",
+          "scanner": "Донная структура не база. Это фабричный корпус, храмовая логика и живая ткань давления с общим путем нагрузки.",
+          "field_note": "Здесь карта перестает притворяться руинами колонии.",
+          "terminal": "Предупреждение порога: промышленная ферма, биогенное уплотнение, тепло xenon lattice и маршрутизация Atlas делят структурную власть.",
+          "audio": "Океан не похоронил фабрику. Он сделал фабрику телом.",
+          "in_game_wiki": "Порог фабрики-храма задает финальную пространственную грамматику: инфраструктура Deep Reach, остатки колонии, машины Atlas-6 и океан HECTON-8 стали одной физической системой.",
+          "external_site": "Порог фабрики-храма описывает финальную зону: не комнату босса, а место, где индустрия, океан и поврежденный ИИ стали одним телом."
+        },
+        "ja_JP": {
+          "title": "工場神殿の閾値",
+          "scanner": "底の構造は基地ではない。工場殻、神殿論理、生きた圧力組織が同じ荷重経路を共有する。",
+          "field_note": "ここで地図はコロニー遺跡のふりをやめる。",
+          "terminal": "閾値警告: 工業トラス、生体封止、xenon lattice熱、Atlas経路が構造権限を共有。",
+          "audio": "海は工場を埋めなかった。工場を身体にした。",
+          "in_game_wiki": "工場神殿の閾値は最終空間文法だ。Deep Reach、コロニー残骸、Atlas-6機械、HECTON-8の海が一つの物理系になる。",
+          "external_site": "最終ゾーンをボス部屋ではなく、産業、海、損傷AIが一つの身体になる場所として示す。"
+        },
+        "zh_CN": {
+          "title": "工厂神殿阈限",
+          "scanner": "底部结构不是基地。它是工厂船壳、神殿逻辑和活体压力组织共用承载路径。",
+          "field_note": "地图在这里不再假装自己是殖民地废墟。",
+          "terminal": "阈限警告：工业桁架、生物密封、xenon lattice热和Atlas路由共享结构权威。",
+          "audio": "海洋没有埋葬工厂。它把工厂变成身体。",
+          "in_game_wiki": "工厂神殿阈限标记最终空间语法：Deep Reach基础设施、殖民地残余、Atlas-6机器和HECTON-8海洋成为一个物理系统。",
+          "external_site": "它描述最终区域：不是boss房，而是工业、海洋和损坏AI变成同一身体的地方。"
+        },
+        "fr_FR": {
+          "title": "Seuil usine-temple",
+          "scanner": "La structure du fond n'est pas une base. Coque d'usine, logique de sanctuaire et tissu vivant partagent la charge.",
+          "field_note": "Ici, la carte cesse de prétendre aux ruines de colonie.",
+          "terminal": "Alerte seuil: treillis industriel, joint biogène, chaleur xenon lattice et routage Atlas partagent l'autorité structurelle.",
+          "audio": "L'océan n'a pas enterré l'usine. Il en a fait un corps.",
+          "in_game_wiki": "Le seuil usine-temple marque la grammaire finale: infrastructure Deep Reach, colonie, machines Atlas-6 et océan deviennent un seul système physique.",
+          "external_site": "Il décrit la zone finale: non une salle de boss, mais le corps commun de l'industrie, de l'océan et de l'IA abîmée."
+        },
+        "es_ES": {
+          "title": "Umbral fábrica-templo",
+          "scanner": "La estructura del fondo no es una base. Casco de fábrica, lógica de santuario y tejido de presión comparten carga.",
+          "field_note": "Aquí el mapa deja de fingir ruinas coloniales.",
+          "terminal": "Aviso: cercha industrial, sello biogénico, calor xenon lattice y rutas Atlas comparten autoridad estructural.",
+          "audio": "El océano no enterró la fábrica. La volvió cuerpo.",
+          "in_game_wiki": "El umbral fábrica-templo marca la gramática final: Deep Reach, colonia, Atlas-6 y océano forman un solo sistema físico.",
+          "external_site": "Describe la zona final: no sala de jefe, sino cuerpo común de industria, océano e IA dañada."
+        },
+        "de_DE": {
+          "title": "Fabriktempel-Schwelle",
+          "scanner": "Die Bodenstruktur ist keine Basis. Fabrikhülle, Schreinlogik und lebendes Druckgewebe teilen einen Lastpfad.",
+          "field_note": "Hier hört die Karte auf, Kolonieruine zu spielen.",
+          "terminal": "Schwellenwarnung: Industrieträger, biogene Dichtung, Xenon-Lattice-Hitze und Atlas-Routing teilen Strukturhoheit.",
+          "audio": "Der Ozean begrub die Fabrik nicht. Er machte sie zu einem Körper.",
+          "in_game_wiki": "Die Schwelle markiert die finale Raumgrammatik: Deep Reach, Kolonie, Atlas-6 und Ozean sind ein physisches System.",
+          "external_site": "Sie beschreibt die Endzone als Körper aus Industrie, Ozean und beschädigter KI, nicht als Bossraum."
+        },
+        "pl_PL": {
+          "title": "Próg fabryki-świątyni",
+          "scanner": "Struktura dna nie jest bazą. Kadłub fabryki, logika świątyni i żywa tkanka ciśnienia niosą ten sam ciężar.",
+          "field_note": "Tu mapa przestaje udawać ruiny kolonii.",
+          "terminal": "Ostrzeżenie: kratownica przemysłowa, biogenne uszczelnienie, ciepło xenon lattice i routing Atlas dzielą władzę struktury.",
+          "audio": "Ocean nie pogrzebał fabryki. Zrobił z niej ciało.",
+          "in_game_wiki": "Próg wyznacza finalną gramatykę miejsca: Deep Reach, kolonia, Atlas-6 i ocean stają się jednym układem fizycznym.",
+          "external_site": "Opisuje finał jako ciało przemysłu, oceanu i uszkodzonej AI, nie pokój bossa."
+        },
+        "uk_UA": {
+          "title": "Поріг фабрики-храму",
+          "scanner": "Донна структура не база. Фабричний корпус, храмова логіка і жива тканина тиску мають спільний шлях навантаження.",
+          "field_note": "Тут карта перестає вдавати руїни колонії.",
+          "terminal": "Попередження: промислова ферма, біогенне ущільнення, тепло xenon lattice і маршрути Atlas ділять структурну владу.",
+          "audio": "Океан не поховав фабрику. Він зробив фабрику тілом.",
+          "in_game_wiki": "Поріг фабрики-храму задає фінальну граматику простору: Deep Reach, колонія, Atlas-6 і океан HECTON-8 стали однією фізичною системою.",
+          "external_site": "Він описує фінальну зону як тіло індустрії, океану і пошкодженого AI, а не кімнату боса."
+        },
+        "ar_SA": {
+          "title": "عتبة المصنع-المعبد",
+          "scanner": "بنية القاع ليست قاعدة. هي بدن مصنع ومنطق ضريح ونسيج ضغط حي يشتركون في مسار حمل واحد.",
+          "field_note": "هنا تتوقف الخريطة عن ادعاء أنها أطلال مستعمرة.",
+          "terminal": "تحذير عتبة: جسر صناعي، ختم حيوي، حرارة xenon lattice وتوجيه Atlas يتشاركون سلطة بنيوية.",
+          "audio": "المحيط لم يدفن المصنع. جعله جسدا.",
+          "in_game_wiki": "العتبة تحدد لغة المكان النهائية: Deep Reach وبقايا المستعمرة وآلات Atlas-6 ومحيط HECTON-8 أصبحوا نظاما فيزيائيا واحدا.",
+          "external_site": "تصف المنطقة النهائية لا كغرفة زعيم، بل كجسد واحد من صناعة ومحيط وذكاء تالف."
+        },
+        "id_ID": {
+          "title": "Ambang Pabrik-Kuil",
+          "scanner": "Struktur dasar bukan basis. Lambung pabrik, logika kuil dan jaringan tekanan hidup berbagi jalur beban.",
+          "field_note": "Di sini peta berhenti berpura-pura sebagai reruntuhan koloni.",
+          "terminal": "Peringatan: rangka industri, segel biogenik, panas xenon lattice dan rute Atlas berbagi otoritas struktur.",
+          "audio": "Laut tidak mengubur pabrik. Ia membuat pabrik menjadi tubuh.",
+          "in_game_wiki": "Ambang ini menandai tata ruang akhir: Deep Reach, koloni, mesin Atlas-6 dan lautan HECTON-8 menjadi satu sistem fisik.",
+          "external_site": "Zona akhir bukan ruang bos, melainkan tubuh bersama industri, laut dan AI rusak."
+        },
+        "ko_KR": {
+          "title": "공장-사원 문턱",
+          "scanner": "바닥 구조물은 기지가 아니다. 공장 선체, 사원 논리, 살아 있는 압력 조직이 하나의 하중 경로를 공유한다.",
+          "field_note": "여기서 지도는 식민지 폐허인 척을 멈춘다.",
+          "terminal": "문턱 경고: 산업 트러스, 생체 봉합, xenon lattice 열, Atlas 라우팅이 구조 권한을 공유한다.",
+          "audio": "바다는 공장을 묻지 않았다. 공장을 몸으로 만들었다.",
+          "in_game_wiki": "공장-사원 문턱은 최종 공간 문법이다. Deep Reach, 식민지, Atlas-6, HECTON-8의 바다가 하나의 물리 시스템이 된다.",
+          "external_site": "최종 구역을 보스방이 아니라 산업, 바다, 손상 AI가 한 몸이 되는 장소로 정의한다."
+        },
+        "he_IL": {
+          "title": "סף מפעל-מקדש",
+          "scanner": "מבנה הקרקעית אינו בסיס. גוף מפעל, לוגיקת מקדש ורקמת לחץ חיה חולקים נתיב עומס.",
+          "field_note": "כאן המפה מפסיקה להעמיד פנים שהיא חורבות מושבה.",
+          "terminal": "אזהרת סף: מסבך תעשייתי, איטום ביוגני, חום xenon lattice וניתוב Atlas חולקים סמכות מבנית.",
+          "audio": "האוקיינוס לא קבר את המפעל. הוא עשה ממנו גוף.",
+          "in_game_wiki": "סף המפעל-מקדש מסמן את הדקדוק הסופי: Deep Reach, שרידי מושבה, מכונות Atlas-6 ואוקיינוס HECTON-8 נעשו מערכת פיזית אחת.",
+          "external_site": "הוא מתאר את אזור הסיום כגוף של תעשייה, אוקיינוס ו-AI פגום, לא כחדר בוס."
+        },
+        "pt_BR": {
+          "title": "Limiar fábrica-templo",
+          "scanner": "A estrutura do fundo não é uma base. Casco de fábrica, lógica de santuário e tecido vivo de pressão compartilham carga.",
+          "field_note": "Aqui o mapa para de fingir ruínas coloniais.",
+          "terminal": "Aviso: treliça industrial, vedação biogênica, calor xenon lattice e roteamento Atlas dividem autoridade estrutural.",
+          "audio": "O oceano não enterrou a fábrica. Fez dela um corpo.",
+          "in_game_wiki": "O limiar marca a gramática final: Deep Reach, colônia, máquinas Atlas-6 e oceano HECTON-8 viram um sistema físico.",
+          "external_site": "Descreve a zona final como corpo de indústria, oceano e IA danificada, não sala de chefe."
+        },
+        "nl_NL": {
+          "title": "Fabriek-tempeldrempel",
+          "scanner": "De bodemstructuur is geen basis. Fabrieksromp, schrijnlogica en levend drukweefsel delen één lastpad.",
+          "field_note": "Hier stopt de kaart met doen alsof ze kolonieruïne is.",
+          "terminal": "Drempelwaarschuwing: industriële truss, biogene afdichting, xenon lattice-hitte en Atlas-routering delen structurele autoriteit.",
+          "audio": "De oceaan begroef de fabriek niet. Hij maakte er een lichaam van.",
+          "in_game_wiki": "De drempel markeert de finale ruimtelijke grammatica: Deep Reach, kolonie, Atlas-6 en HECTON-8-oceaan worden één fysiek systeem.",
+          "external_site": "Beschrijft de eindzone als lichaam van industrie, oceaan en beschadigde AI, niet als boss room."
+        }
+      }
+    }
+  ]
+}

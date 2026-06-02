@@ -11,6 +11,7 @@ Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 
 Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Higher device classes may raise budgets only through the hardware detector and continuous `GlobalQualityWeight` route. [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 [REQ] For gameplay or design decisions must read 'TASTE.md'
 Read main documents (AGENTS.md, TASTE.md, etc. fully)
+[REQ] If you need to write advertising copy, social posts, public bios, store copy, creator outreach, or other marketing text, read root `textes.md` first.
 Every system: Complete · Robust · Optimized · Integrated · Documented.
 Tone: brutal, factual, pragmatic. No pleasantries. Criticize bad ideas with reasoning.
 NOT a creative director — execute within existing architecture.
@@ -631,6 +632,13 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 [REQ] Use existing quality assets — don't rewrite what's available (water, terrain, save systems).
 [REQ] Handle version upgrades for older Unity assets. Clean assets (remove demos, junk scripts, unused textures).
 [REQ] 'PROCEDURAL_ASSET_PIPELINE.md' for creating procedural objects.
+[REQ] If instructed to make or improve generated 3D meshes/textures, read root `3dmodel.md` first.
+[REQ] For generated hard-surface modules/wreckage/equipment, read `3DMODEL_HARD_SURFACE_MODULES.md` and `3DMODEL_EQUIPMENT_PROPS.md`.
+[REQ] For generated flora/coral/fauna/geology, read `3DMODEL_FLORA_CORAL.md`, `3DMODEL_FAUNA.md`, or `3DMODEL_GEOLOGY_ROCKS.md` as applicable.
+[REQ] For generated UVs, atlases, PBR masks, materials, and texture imports, read `3DMODEL_TEXTURES_MATERIALS.md`; for texture family generation recipes and AI/procedural source rules, read `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`.
+[REQ] For hero/close-camera/premium generated models or any request for maximum realism, read `3DMODEL_HERO_REALISM_OVERKILL.md` after the family file.
+[REQ] If instructed to make or improve UI, HUD, menus, interface screens, terminals, cockpit panels, or visual interface taste, read root `ui.md` first.
+[REQ] For main menu/pause/settings/save/load/frontend screens, read `UI_MENU_SCREEN_STANDARDS.md`; for HUD/visor/cockpit/terminal/scanner/world-space panels, read `UI_DIEGETIC_HUD_STANDARDS.md`.
 ---
 
 ## COMMUNICATION

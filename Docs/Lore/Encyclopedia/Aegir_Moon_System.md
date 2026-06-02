@@ -17,7 +17,7 @@ HECTON-8 is one of those moons. It is not the innermost and not the farthest. It
 
 ## Working Moon Roster
 
-This roster is a writer-facing scaffold, not final public naming.
+This summary is a writer-facing scaffold. Use `Aegir_Moon_Catalog.md` for the fuller orbital/geology table.
 
 - Aegir-I: inner scorched rock / radiation marker / no stable salvage.
 - Aegir-II: ring-shepherd rubble body / navigation hazard.

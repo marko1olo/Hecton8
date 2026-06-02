@@ -1,0 +1,30 @@
+---
+packet_id: P022_DROP_CAPSULE_DAMAGE
+article_id: arrival.drop_capsule_damage
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Повреждение спусковой капсулы
+
+Игрок попадает на HECTON-8 в спусковой капсуле. Авария оставляет убежище, питание и логи, но уничтожает путь подъема. Ранний побег становится инженерной цепочкой, а не кнопкой.
+
+## Scanner
+
+Кресло цело. Траектория подъема уничтожена. Капсула - убежище, не обратный корабль.
+
+## Terminal
+
+Черный ящик входа: прожог парашюта, пробой балласта, срез антенны, сорван ascent seal. Возврат на орбиту требует внешней инженерной цепочки.
+
+## Audio
+
+Капсула не взлетит. Хватит считать ее кораблем.
+
+## Field Note
+
+Первая тюрьма - механическая.
+
+<!-- In-Game Wiki; generated from P022_DROP_CAPSULE_DAMAGE/ru_RU. -->

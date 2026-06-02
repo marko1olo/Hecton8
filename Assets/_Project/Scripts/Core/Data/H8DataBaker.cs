@@ -181,7 +181,7 @@ namespace Hecton8.Core.Data
             H8CsvTable table;
             try
             {
-                table = H8CsvReader.Read(path);
+                table = H8CsvReader.ParseFile(path);
             }
             catch (Exception ex)
             {
@@ -1176,7 +1176,7 @@ namespace Hecton8.Core.Data
         private const int CsvReadBufferBytes = 64 * 1024;
         private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
 
-        public static H8CsvTable Read(string path)
+        public static H8CsvTable ParseFile(string path)
         {
             string text;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, CsvReadBufferBytes, FileOptions.SequentialScan))

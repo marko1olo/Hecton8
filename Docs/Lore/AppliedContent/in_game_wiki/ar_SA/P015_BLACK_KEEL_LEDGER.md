@@ -1,0 +1,30 @@
+---
+packet_id: P015_BLACK_KEEL_LEDGER
+article_id: ships.black_keel_ledger
+locale: ar_SA
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# سجل Black Keel
+
+يفسر سجل Black Keel كيف يستطيع carrier الاتصال والتوجيه وفرض الرسوم والتأخير والاسترداد أو التخلي عن اللاعب دون أن يكون شريرا. إنه بنية claim-pool عامة مع عهدة دين وأولويات Deep Reach مخفية.
+
+## Scanner
+
+سجل claim-pool tender. عهدة carrier عامة، دين تأمين، وخطافات أولوية Deep Reach مخفية.
+
+## Terminal
+
+Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+
+## Audio
+
+Black Keel ليست سفينتك. إنها الآلة التي تعرف ما تدين به.
+
+## Field Note
+
+يمكن للسفينة مساعدتك دون أن تكون في صفك.
+
+<!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/ar_SA. -->

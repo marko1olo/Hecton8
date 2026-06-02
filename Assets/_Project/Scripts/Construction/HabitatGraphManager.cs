@@ -303,7 +303,15 @@ namespace Hecton8.Construction
         private const ulong HabitatGraphMutationGuardMask = 0x0000000000000FF8UL;
         private const ulong HabitatFloodRoomMutationGuardMask = 0x0000000080000007UL;
         private const ulong HabitatModuleStressMutationGuardMask = 0x0000000078000000UL;
-        private const ulong HabitatFloodPropagationMutationGuardMask = 0x0000000082000FFFUL;
+        private const uint FloodPropagationLockSummary = 1u << 0;
+        private const uint FloodPropagationLockWaterLevels = 1u << 1;
+        private const uint FloodPropagationLockRoomVolumes = 1u << 2;
+        private const uint FloodPropagationLockDeltaLevels = 1u << 3;
+        private const uint FloodPropagationLockRoomFlags = 1u << 4;
+        private const uint FloodPropagationLockEdgeOffsets = 1u << 5;
+        private const uint FloodPropagationLockEdgeDestinations = 1u << 6;
+        private const uint FloodPropagationLockEdgeResistance = 1u << 7;
+        private const uint FloodPropagationLockEdgeFlags = 1u << 8;
         private const uint FloodBlackBoxMagic = 0x48464C44u; // "HFLD"
         private const uint FloodBlackBoxVersion = 3u;
         private const uint FloodBlackBoxNonFiniteFlag = 1u << 0;
@@ -380,6 +388,7 @@ namespace Hecton8.Construction
         private IDataVault _floodPropagationGraphWriteLockVault;
         private bool _floodPropagationGuardHeld;
         private IDataVault _floodPropagationGuardVault;
+        private uint _floodPropagationPinnedBufferMask;
         private bool _deconstructionGraphWriteLockHeld;
         private IDataVault _deconstructionGraphWriteLockVault;
         private int _pendingFloodPropagationModuleCount;
@@ -2301,68 +2310,84 @@ namespace Hecton8.Construction
             }
 
             IDataVault floodPropagationVault = _dataVault;
-            if (floodPropagationVault == null ||
-                !floodPropagationVault.TryAcquireMutationGuard(HabitatFloodPropagationMutationGuardMask))
-            {
+            if (floodPropagationVault == null)
                 return false;
-            }
 
             bool scheduled = false;
+            uint floodPropagationPinnedBufferMask = 0u;
             try
             {
-                if (!TryOpenHabitatVaultBuffer(
+                if (!TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _floodPropagationSummaryHandle,
                         HabitatFloodPropagationSummaryBufferId,
                         1,
+                        FloodPropagationLockSummary,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _roomWaterLevelsHandle,
                         HabitatRoomWaterLevelsBufferId,
                         moduleCount,
+                        FloodPropagationLockWaterLevels,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<float> roomWaterLevels) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _roomVolumesHandle,
                         HabitatRoomVolumesBufferId,
                         moduleCount,
+                        FloodPropagationLockRoomVolumes,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<float> roomVolumes) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _roomFloodDeltaLevelsHandle,
                         HabitatRoomFloodDeltaLevelsBufferId,
                         moduleCount,
+                        FloodPropagationLockDeltaLevels,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<float> roomFloodDeltaLevels) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _roomFlagsHandle,
                         HabitatRoomFlagsBufferId,
                         moduleCount,
+                        FloodPropagationLockRoomFlags,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<byte> roomFlags) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _edgeOffsetsHandle,
                         HabitatGraphEdgeOffsetsBufferId,
                         moduleCount + 1,
+                        FloodPropagationLockEdgeOffsets,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<int> edgeOffsets) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _edgeDestinationsHandle,
                         HabitatGraphEdgeDestinationsBufferId,
                         math.max(1, _edgeCount),
+                        FloodPropagationLockEdgeDestinations,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<int> edgeDestinations) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _edgeResistanceHandle,
                         HabitatGraphEdgeResistanceBufferId,
                         math.max(1, _edgeCount),
+                        FloodPropagationLockEdgeResistance,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<float> edgeResistance) ||
-                    !TryOpenHabitatVaultBuffer(
+                    !TryAcquireFloodPropagationJobBuffer(
                         floodPropagationVault,
                         in _edgeFlagsHandle,
                         HabitatGraphEdgeFlagsBufferId,
                         math.max(1, _edgeCount),
+                        FloodPropagationLockEdgeFlags,
+                        ref floodPropagationPinnedBufferMask,
                         out NativeArray<byte> edgeFlags))
                 {
                     return false;
@@ -2395,6 +2420,8 @@ namespace Hecton8.Construction
                 _floodPropagationPending = true;
                 _floodPropagationGuardHeld = true;
                 _floodPropagationGuardVault = floodPropagationVault;
+                _floodPropagationPinnedBufferMask = floodPropagationPinnedBufferMask;
+                floodPropagationPinnedBufferMask = 0u;
                 _floodPropagationRoomWriteLockHeld = false;
                 _floodPropagationRoomWriteLockVault = null;
                 _floodPropagationGraphWriteLockHeld = false;
@@ -2408,7 +2435,7 @@ namespace Hecton8.Construction
             {
                 if (!scheduled)
                 {
-                    floodPropagationVault.ReleaseMutationGuard(HabitatFloodPropagationMutationGuardMask);
+                    ReleaseFloodPropagationPinnedBuffers(floodPropagationVault, floodPropagationPinnedBufferMask);
                 }
             }
         }
@@ -6309,10 +6336,87 @@ namespace Hecton8.Construction
 
             IDataVault vault = _floodPropagationGuardVault;
             if (vault != null)
-                vault.ReleaseMutationGuard(HabitatFloodPropagationMutationGuardMask);
+                ReleaseFloodPropagationPinnedBuffers(vault, _floodPropagationPinnedBufferMask);
 
             _floodPropagationGuardHeld = false;
             _floodPropagationGuardVault = null;
+            _floodPropagationPinnedBufferMask = 0u;
+        }
+
+        private static bool TryAcquireFloodPropagationJobBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            uint bit,
+            ref uint lockMask,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                (lockMask & bit) != 0u ||
+                !IsHabitatVaultHandle(in handle, bufferId) ||
+                !TryResolveFloodPropagationLockBufferId(bit, out BufferID expectedBufferId) ||
+                expectedBufferId != bufferId ||
+                !vault.TryLockBuffer(bufferId, SystemID.Construction))
+            {
+                return false;
+            }
+
+            bool releaseOnFailure = true;
+            try
+            {
+                if (vault.TryReadHandle(in handle, out buffer) &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    lockMask |= bit;
+                    releaseOnFailure = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.TryUnlockBuffer(bufferId, SystemID.Construction);
+            }
+        }
+
+        private static void ReleaseFloodPropagationPinnedBuffers(IDataVault vault, uint lockMask)
+        {
+            if (vault == null || lockMask == 0u)
+                return;
+
+            uint remainingLocks = lockMask;
+            while (remainingLocks != 0u)
+            {
+                uint bit = remainingLocks & (~remainingLocks + 1u);
+                remainingLocks &= ~bit;
+                if (TryResolveFloodPropagationLockBufferId(bit, out BufferID bufferId))
+                    vault.TryUnlockBuffer(bufferId, SystemID.Construction);
+            }
+        }
+
+        private static bool TryResolveFloodPropagationLockBufferId(uint bit, out BufferID bufferId)
+        {
+            switch (bit)
+            {
+                case FloodPropagationLockSummary: bufferId = HabitatFloodPropagationSummaryBufferId; return true;
+                case FloodPropagationLockWaterLevels: bufferId = HabitatRoomWaterLevelsBufferId; return true;
+                case FloodPropagationLockRoomVolumes: bufferId = HabitatRoomVolumesBufferId; return true;
+                case FloodPropagationLockDeltaLevels: bufferId = HabitatRoomFloodDeltaLevelsBufferId; return true;
+                case FloodPropagationLockRoomFlags: bufferId = HabitatRoomFlagsBufferId; return true;
+                case FloodPropagationLockEdgeOffsets: bufferId = HabitatGraphEdgeOffsetsBufferId; return true;
+                case FloodPropagationLockEdgeDestinations: bufferId = HabitatGraphEdgeDestinationsBufferId; return true;
+                case FloodPropagationLockEdgeResistance: bufferId = HabitatGraphEdgeResistanceBufferId; return true;
+                case FloodPropagationLockEdgeFlags: bufferId = HabitatGraphEdgeFlagsBufferId; return true;
+                default: bufferId = default; return false;
+            }
         }
 
         internal void ReleaseDeconstructionCsrLanes()

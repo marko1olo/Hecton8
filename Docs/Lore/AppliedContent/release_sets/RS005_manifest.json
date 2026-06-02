@@ -1,0 +1,70 @@
+{
+  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE",
+  "status": "production_facing_draft",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE.packets.json"
+  ],
+  "packets": [
+    "P021_BLACK_KEEL_CUSTODY",
+    "P022_DROP_CAPSULE_DAMAGE",
+    "P023_DEEP_REACH_RETURN_CLAIM",
+    "P024_FALSE_EXIT_MATERIAL",
+    "P025_PROFESSIONAL_MOTIVE"
+  ],
+  "locales_present_in_packet_bundle": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "markdown_publication_locales_present": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "runtime_contract": {
+    "runtime_must_not_parse_markdown": true,
+    "runtime_must_not_generate_translation": true,
+    "expected_bake_output": [
+      "packet_id_hash",
+      "loc_id_hashes",
+      "surface_enum",
+      "unlock_id",
+      "domain_tag",
+      "route_window_id",
+      "localized_string_pool_offsets"
+    ]
+  }
+}

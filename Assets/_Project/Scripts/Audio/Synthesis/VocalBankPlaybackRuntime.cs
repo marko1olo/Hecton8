@@ -12,6 +12,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
 
 namespace Hecton8.Audio.Synthesis
 {
@@ -48,6 +49,7 @@ namespace Hecton8.Audio.Synthesis
         private const uint VocalCueLaneHash = 0xC001260u;
         private const uint VwsPreemptedFlag = 1u << 5;
         private const float DspDumpThresholdMicroseconds = 1000f;
+        private const int BankMutationSpinLimit = 4096;
         private const string BankRelativePath = "Hecton8/Audio/vocal_banks.h8bin";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1308_Synthesis.bin";
         private const int LockState = 1 << 0;
@@ -104,6 +106,7 @@ namespace Hecton8.Audio.Synthesis
         private int _dumpRequested;
         private int _audioCallbackInFlight;
         private int _bankReleaseInProgress;
+        private int _invalidAudioFilterHost;
         private IDataVault _vocalMutationGuardVault;
         private ulong _vocalMutationGuardMask;
         private int _vocalMutationGuardDepth;
@@ -252,6 +255,9 @@ namespace Hecton8.Audio.Synthesis
 
         private void Awake()
         {
+            if (RejectInvalidAudioFilterHostCold())
+                return;
+
             EnsureDecodeFunctionPointerCold();
             EnsureVocalCueLaneCold();
             CacheDataVaultCold();
@@ -265,6 +271,9 @@ namespace Hecton8.Audio.Synthesis
 
         private void OnEnable()
         {
+            if (RejectInvalidAudioFilterHostCold())
+                return;
+
             EnsureDecodeFunctionPointerCold();
             EnsureVocalCueLaneCold();
             CacheDataVaultCold();
@@ -290,6 +299,32 @@ namespace Hecton8.Audio.Synthesis
             UnregisterRuntime();
             ClearBankStateCold();
             DisposeVaultStorage();
+        }
+
+        private bool RejectInvalidAudioFilterHostCold()
+        {
+            bool hasListener = TryGetComponent<AudioListener>(out _);
+            bool hasSource = TryGetComponent(out AudioSource source);
+            if (!hasListener && !hasSource)
+            {
+                Volatile.Write(ref _invalidAudioFilterHost, 1);
+                if (ReferenceEquals(_activeInstance, this))
+                    _activeInstance = null;
+                enabled = false;
+                return true;
+            }
+
+            if (hasSource && source.clip == null)
+            {
+                source.playOnAwake = false;
+                source.loop = false;
+                source.spatialBlend = 0f;
+                if (source.isPlaying)
+                    source.Stop();
+            }
+
+            Volatile.Write(ref _invalidAudioFilterHost, 0);
+            return false;
         }
 
         public void Tick(float deltaTime)
@@ -343,6 +378,7 @@ namespace Hecton8.Audio.Synthesis
         private void OnAudioFilterRead(float[] data, int channels)
         {
             if (Volatile.Read(ref _bankReleaseInProgress) != 0 ||
+                Volatile.Read(ref _invalidAudioFilterHost) != 0 ||
                 data == null ||
                 data.Length <= 0 ||
                 Volatile.Read(ref _nativeAllocated) == 0 ||
@@ -428,7 +464,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
+                ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                 Interlocked.Decrement(ref _audioCallbackInFlight);
             }
         }
@@ -467,7 +503,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 if (!ownershipTransferred)
                 {
-                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                     views = default;
                     lockMask = 0;
                     lockedVault = null;
@@ -498,6 +534,14 @@ namespace Hecton8.Audio.Synthesis
                     return false;
                 }
 
+#if UNITY_EDITOR
+                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+                    views.CsvMetadata.Length <= 0)
+                {
+                    return false;
+                }
+#endif
+
                 ownershipTransferred = true;
                 return true;
             }
@@ -505,7 +549,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 if (!ownershipTransferred)
                 {
-                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                     views = default;
                     lockMask = 0;
                     lockedVault = null;
@@ -539,7 +583,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 if (!ownershipTransferred)
                 {
-                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                     views = default;
                     lockMask = 0;
                     lockedVault = null;
@@ -588,7 +632,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 if (!ownershipTransferred)
                 {
-                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                     views = default;
                     lockMask = 0;
                     lockedVault = null;
@@ -621,7 +665,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 if (!ownershipTransferred)
                 {
-                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    ReleaseVocalMutationGuardScope(lockedVault, lockMask);
                     views = default;
                     lockMask = 0;
                     lockedVault = null;
@@ -744,12 +788,12 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private void ReleaseVocalWriteLocks(int lockMask)
+        private void ReleaseVocalMutationGuardScope(int lockMask)
         {
-            ReleaseVocalWriteLocks(_dataVault, lockMask);
+            ReleaseVocalMutationGuardScope(_dataVault, lockMask);
         }
 
-        private void ReleaseVocalWriteLocks(IDataVault vault, int lockMask)
+        private void ReleaseVocalMutationGuardScope(IDataVault vault, int lockMask)
         {
             if (lockMask == 0)
                 return;
@@ -831,7 +875,11 @@ namespace Hecton8.Audio.Synthesis
                     }
 
                     VocalDialogueMetadataDTO metadata = default;
-                    bool hasMetadata = TryFindMetadata(signal.PhraseHashID, out metadata);
+#if UNITY_EDITOR
+                    bool hasMetadata = TryFindMetadata(signal.PhraseHashID, views.CsvMetadata, _csvMetadataCount, out metadata);
+#else
+                    bool hasMetadata = false;
+#endif
                     VocalStateDTO next = default;
                     next.PhraseHashID = signal.PhraseHashID;
                     next.CurrentSampleIndex = 0u;
@@ -839,6 +887,8 @@ namespace Hecton8.Audio.Synthesis
                     next.PlaybackSpeed = math.clamp(FiniteOrFallback(signal.PlaybackSpeed, 1f), 0.25f, 2f);
                     next.VolumeScalar = math.saturate(FiniteOrFallback(signal.VolumeScalar, 1f));
                     next.Flags = VocalBankConstants.StateFlagPlaying | (isPlaying ? VocalBankConstants.StateFlagInterrupted : 0u);
+                    next.DuckingEnvelope01 = math.saturate(FiniteOrFallback(current.DuckingEnvelope01, 0f));
+                    next.SpeakerFloodDistortion01 = math.saturate(FiniteOrFallback(signal.RadioDistortion01, 0f));
                     views.State[0] = next;
 
                     VocalCodecStateDTO codec = views.Codec[0];
@@ -858,7 +908,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
+                ReleaseVocalMutationGuardScope(lockedVault, lockMask);
             }
         }
 
@@ -875,13 +925,46 @@ namespace Hecton8.Audio.Synthesis
             if (blend <= 0.0001f)
                 return 1f;
 
-            float localX = signal.SourceAupLocalX;
-            float localY = signal.SourceAupLocalY;
-            float localZ = signal.SourceAupLocalZ;
-            float distanceSq = math.max(1f, (localX * localX) + (localY * localY) + (localZ * localZ));
+            if (!TryResolveSourceDistanceSq(in signal, out float distanceSq))
+                return 1f;
+
             float inverse = 1f / math.max(1f, distanceSq * 0.0008f);
             float attenuated = math.saturate(inverse);
             return math.lerp(1f, attenuated, blend);
+        }
+
+        private static bool TryResolveSourceDistanceSq(in VocalCueSignal signal, out float distanceSq)
+        {
+            distanceSq = 1f;
+            float3 local = new float3(signal.SourceAupLocalX, signal.SourceAupLocalY, signal.SourceAupLocalZ);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            bool hasGrid = signal.SourceAupGridX != 0L || signal.SourceAupGridY != 0L || signal.SourceAupGridZ != 0L;
+            bool hasLocal = math.lengthsq(local) > 0.000001f;
+            if (!hasGrid && !hasLocal)
+                return false;
+
+            AbsoluteUniversePosition sourceAup = new AbsoluteUniversePosition
+            {
+                GridX = signal.SourceAupGridX,
+                GridY = signal.SourceAupGridY,
+                GridZ = signal.SourceAupGridZ,
+                LocalX = signal.SourceAupLocalX,
+                LocalY = signal.SourceAupLocalY,
+                LocalZ = signal.SourceAupLocalZ
+            };
+
+            AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!sourceAup.IsFinite() || !listenerAup.IsFinite())
+                return false;
+
+            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in sourceAup, in listenerAup);
+            if (!math.all(math.isfinite(delta)))
+                return false;
+
+            distanceSq = math.max(1f, (float)math.min(1000000000.0, math.lengthsq(delta)));
+            return math.isfinite(distanceSq);
         }
 
         private void CacheDataVaultCold()
@@ -948,7 +1031,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
+                ReleaseVocalMutationGuardScope(lockedVault, lockMask);
             }
         }
 
@@ -982,7 +1065,9 @@ namespace Hecton8.Audio.Synthesis
 
         private void DisposeVaultStorage()
         {
-            BeginBankMutationCold();
+            if (!TryBeginBankMutationCold())
+                return;
+
             IDataVault vault = _dataVault;
             try
             {
@@ -1035,7 +1120,9 @@ namespace Hecton8.Audio.Synthesis
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            BeginBankMutationCold();
+            if (!TryBeginBankMutationCold())
+                return;
+
             try
             {
                 _bankByteLength = 0;
@@ -1122,7 +1209,7 @@ namespace Hecton8.Audio.Synthesis
                     }
                     finally
                     {
-                        ReleaseVocalWriteLocks(vault, lockMask);
+                        ReleaseVocalMutationGuardScope(vault, lockMask);
                     }
                 }
             }
@@ -1132,20 +1219,44 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private void BeginBankMutationCold()
+        private bool TryBeginBankMutationCold()
         {
-            Interlocked.Exchange(ref _bankReleaseInProgress, 1);
+            if (Interlocked.CompareExchange(ref _bankReleaseInProgress, 1, 0) != 0)
+            {
+                Interlocked.Exchange(ref _dumpRequested, 1);
+                return false;
+            }
+
             SpinWait spin = default;
-            while (Volatile.Read(ref _audioCallbackInFlight) != 0)
+            int spinCount = 0;
+            while (Volatile.Read(ref _audioCallbackInFlight) != 0 && spinCount < BankMutationSpinLimit)
+            {
                 spin.SpinOnce();
+                spinCount++;
+            }
+
+            if (Volatile.Read(ref _audioCallbackInFlight) == 0)
+                return true;
+
+            Interlocked.Exchange(ref _bankReleaseInProgress, 0);
+            Interlocked.Exchange(ref _dumpRequested, 1);
+            return false;
         }
 
         private void ClearBankStateCold()
         {
-            BeginBankMutationCold();
-            _bankByteLength = 0;
-            Volatile.Write(ref _usingMockBank, 0);
-            Interlocked.Exchange(ref _bankReleaseInProgress, 0);
+            if (!TryBeginBankMutationCold())
+                return;
+
+            try
+            {
+                _bankByteLength = 0;
+                Volatile.Write(ref _usingMockBank, 0);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _bankReleaseInProgress, 0);
+            }
         }
 
         private void GenerateMockBankCold()
@@ -1168,23 +1279,24 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
+                ReleaseVocalMutationGuardScope(lockedVault, lockMask);
             }
         }
 
-        private bool TryFindMetadata(uint hash, out VocalDialogueMetadataDTO metadata)
+        private static bool TryFindMetadata(
+            uint hash,
+            NativeArray<VocalDialogueMetadataDTO> metadataView,
+            int metadataCount,
+            out VocalDialogueMetadataDTO metadata)
         {
             metadata = default;
 #if !UNITY_EDITOR
             return false;
 #else
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryReadOnlyHandle(in _csvMetadataHandle, out NativeArray<VocalDialogueMetadataDTO>.ReadOnly metadataView) ||
-                !metadataView.IsCreated)
+            if (!metadataView.IsCreated)
                 return false;
 
-            int count = math.clamp(_csvMetadataCount, 0, metadataView.Length);
+            int count = math.clamp(metadataCount, 0, metadataView.Length);
             int lo = 0;
             int hi = count - 1;
             while (lo <= hi)
@@ -1231,7 +1343,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
+                ReleaseVocalMutationGuardScope(lockedVault, lockMask);
             }
         }
 

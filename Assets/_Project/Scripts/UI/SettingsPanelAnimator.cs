@@ -10,16 +10,16 @@ namespace Hecton8.UI
     }
 
     /// <summary>
-    /// Settings panel animator — staggered fade-in for UI elements.
+    /// Settings panel animator - staggered fade-in for UI elements.
     /// Zero-GC: late-frame state machine, cached CanvasGroup references, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Panel Animator")]
     public sealed class SettingsPanelAnimator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== ANIMATION GROUPS ===")]
         [SerializeField] private CanvasGroup headerGroup;
@@ -43,9 +43,9 @@ namespace Hecton8.UI
         [SerializeField] private bool supportFadeOut = true;
         [SerializeField] private float fadeOutDuration = 0.2f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private const byte AnimationIncomplete = 0;
         private const byte AnimationComplete = 1;
@@ -80,9 +80,9 @@ namespace Hecton8.UI
         private GroupState[] _settingsStates;
         private GroupState _actionsState;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -130,9 +130,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LATE FRAME
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -235,9 +235,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Start fade-in animation.
@@ -292,9 +292,9 @@ namespace Hecton8.UI
             return _state != State.Idle;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void InitializeStates()
         {
@@ -470,7 +470,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI))
+            if (SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI))
             {
                 _registered = true;
                 return;
@@ -482,7 +482,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
 
             _registered = false;
         }

@@ -23,6 +23,10 @@ namespace Hecton8.Editor.GeologyForge
             MeshUpdateFlags.DontNotifyMeshUsers;
         private const string AsyncBakeProgressTitle = "Geology Forge";
         private const string AsyncBakeProgressMessage = "Baking geology profiles";
+        private const MeshColliderCookingOptions CollisionCookingOptions =
+            MeshColliderCookingOptions.CookForFasterSimulation |
+            MeshColliderCookingOptions.EnableMeshCleaning |
+            MeshColliderCookingOptions.WeldColocatedVertices;
 
         private static readonly Stopwatch _Stopwatch = new Stopwatch();
         private static readonly List<GeologyBakeProfile> _menuProfiles = new List<GeologyBakeProfile>(16);
@@ -53,9 +57,90 @@ namespace Hecton8.Editor.GeologyForge
         [MenuItem("HECTON-8/Geology Forge/Bake CSV Profiles", false, 180)]
         public static void BakeCsvProfilesMenu()
         {
-            GeologyProfileCsv.LoadProfiles(_menuProfiles);
+            if (!TryLoadCsvProfiles(_menuProfiles, "bake request rejected"))
+                return;
+
             if (!BakeProfilesAsync(_menuProfiles, true))
                 Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
+        }
+
+        [MenuItem("HECTON-8/Geology Forge/Bake 1606 Abyssal Validation Set", false, 181)]
+        public static void BakeAgent1606ValidationSetMenu()
+        {
+            _menuProfiles.Clear();
+            AddAgent1606ValidationProfiles(_menuProfiles);
+            if (!BakeProfilesAsync(_menuProfiles, true))
+                Debug.LogWarning("Geology Forge 1606 bake request ignored: no profiles loaded or a bake is already running.");
+        }
+
+        internal static void AddAgent1606ValidationProfiles(List<GeologyBakeProfile> profiles)
+        {
+            if (profiles == null)
+                throw new ArgumentNullException(nameof(profiles));
+
+            profiles.Add(CreateAgent1606Profile("Sedimentary_Boulder", 0x53454431u, 36, 1, 2.35f, 0.82f, 1.25f, 0.18f, 0.28f, 0.62f, 5, 32, -0.02f, 0.42f, 11000, 4800, 900, new double3(1606d, -220d, 41000d)));
+            profiles.Add(CreateAgent1606Profile("Volcanic_Basalt", 0x42415331u, 44, 1, 2.15f, 2.05f, 1.38f, 0.24f, 0.9f, 0.42f, 6, 40, 0.01f, 0.68f, 17000, 7200, 1200, new double3(1606d, -540d, 42400d)));
+            profiles.Add(CreateAgent1606Profile("Thermal_Vent_Spire", 0x56454E54u, 44, 1, 1.65f, 2.7f, 1.55f, 0.22f, 0.78f, 0.58f, 6, 48, 0.03f, 0.75f, 18000, 8000, 1300, new double3(1606d, -810d, 43800d)));
+        }
+
+        internal static bool TryLoadCsvProfiles(List<GeologyBakeProfile> profiles, string failureContext)
+        {
+            if (profiles == null)
+                throw new ArgumentNullException(nameof(profiles));
+
+            try
+            {
+                GeologyProfileCsv.LoadProfiles(profiles);
+                return profiles.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                profiles.Clear();
+                Debug.LogWarning("Geology Forge CSV profile load failed; " + failureContext + ". " + ex.Message);
+                return false;
+            }
+        }
+
+        private static GeologyBakeProfile CreateAgent1606Profile(
+            string name,
+            uint seed,
+            int resolution,
+            int variations,
+            float radius,
+            float height,
+            float frequency,
+            float amplitude,
+            float ridged,
+            float voronoi,
+            int octaves,
+            int aoRays,
+            float isoLevel,
+            float quality,
+            int lod0,
+            int lod1,
+            int lod2,
+            double3 sectorAup)
+        {
+            GeologyBakeProfile profile = default;
+            profile.Name = new FixedString64Bytes(name);
+            profile.Seed = seed;
+            profile.Resolution = resolution;
+            profile.Variations = variations;
+            profile.RadiusMeters = radius;
+            profile.HeightScale = height;
+            profile.Frequency = frequency;
+            profile.NoiseAmplitude = amplitude;
+            profile.RidgedWeight = ridged;
+            profile.VoronoiWeight = voronoi;
+            profile.Octaves = octaves;
+            profile.AmbientOcclusionRays = aoRays;
+            profile.IsoLevel = isoLevel;
+            profile.GlobalQualityWeight = quality;
+            profile.Lod0Budget = lod0;
+            profile.Lod1Budget = lod1;
+            profile.Lod2Budget = lod2;
+            profile.SectorAup = sectorAup;
+            return profile;
         }
 
         public static bool BakeProfilesAsync(List<GeologyBakeProfile> profiles, bool saveAssets, Action<float> progressCallback = null)
@@ -65,9 +150,10 @@ namespace Hecton8.Editor.GeologyForge
 
             GeologyVertexLayoutValidator.ValidateStruct();
             EnsureAssetFolder(GeologyForgeConstants.MeshOutputFolder);
+            EnsureAssetFolder(GeologyForgeConstants.PrefabOutputFolder);
             List<GeologyBakeProfile> copiedProfiles = new List<GeologyBakeProfile>(profiles.Count);
             for (int i = 0; i < profiles.Count; i++)
-                copiedProfiles.Add(profiles[i]);
+                copiedProfiles.Add(SanitizeProfile(profiles[i]));
             int totalBakes = CountTotalBakes(copiedProfiles);
             int resultCapacity = ResolveAsyncResultCapacity(totalBakes);
             List<GeologyBakeMetrics> metrics = new List<GeologyBakeMetrics>(resultCapacity);
@@ -275,6 +361,7 @@ namespace Hecton8.Editor.GeologyForge
             NativeArray<int> offsets = default;
             NativeArray<GeologyRawVertex> rawVertices = default;
             NativeParallelMultiHashMap<ulong, int> normalBuckets = default;
+            JobHandle pendingDisposeFence = default;
             var metric = new GeologyBakeMetrics
             {
                 Name = profile.Name,
@@ -304,8 +391,10 @@ namespace Hecton8.Editor.GeologyForge
                     IsoLevel = profile.IsoLevel,
                     GlobalQualityWeight = profile.GlobalQualityWeight
                 }.Schedule(pointCount, 64);
+                pendingDisposeFence = sdfHandle;
                 // BLOCKING_SYNC_POINT: editor-only phase fence for SDF timing and deterministic downstream count input.
                 sdfHandle.Complete();
+                pendingDisposeFence = default;
                 _Stopwatch.Stop();
                 metric.SdfMilliseconds = _Stopwatch.Elapsed.TotalMilliseconds;
                 metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 1u, metric, 0, 0, 0, 0, metric.SdfMilliseconds);
@@ -320,8 +409,10 @@ namespace Hecton8.Editor.GeologyForge
                     Points = points,
                     Cells = cells
                 }.Schedule(cellCount, 64);
+                pendingDisposeFence = countHandle;
                 // BLOCKING_SYNC_POINT: CPU prefix-sum reads every count exactly once before allocating extraction offsets.
                 countHandle.Complete();
+                pendingDisposeFence = default;
 
                 // COLD ALLOC: NativeArray<int>[cellCount] — editor exact extraction offsets — owner: GeologyForgeGenerator
                 offsets = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -351,8 +442,10 @@ namespace Hecton8.Editor.GeologyForge
                     VoxelStep = voxelStep,
                     BoundsMin = boundsMin
                 }.Schedule(cellCount, 64);
+                pendingDisposeFence = extractHandle;
                 // BLOCKING_SYNC_POINT: editor report records extraction timing before normal weld and UV authoring phases.
                 extractHandle.Complete();
+                pendingDisposeFence = default;
                 _Stopwatch.Stop();
                 metric.ExtractMilliseconds = _Stopwatch.Elapsed.TotalMilliseconds;
                 metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 2u, metric, rawCount, 0, 0, 0, metric.ExtractMilliseconds);
@@ -368,6 +461,10 @@ namespace Hecton8.Editor.GeologyForge
                     Buckets = normalBuckets.AsParallelWriter(),
                     PositionBucketSize = normalBucketSize
                 }.Schedule(rawCount, 64);
+                pendingDisposeFence = bucketHandle;
+                // BLOCKING_SYNC_POINT: bucket storage must have no pending writers before the smoothing job reads it or any exception can dispose it.
+                bucketHandle.Complete();
+                pendingDisposeFence = default;
                 JobHandle normalHandle = new CalculateSmoothNormalsJob
                 {
                     Density = density,
@@ -379,14 +476,17 @@ namespace Hecton8.Editor.GeologyForge
                     PositionBucketSize = normalBucketSize,
                     PositionToleranceSq = normalWeldTolerance * normalWeldTolerance,
                     BoundsMin = boundsMin
-                }.Schedule(rawCount, 64, bucketHandle);
+                }.Schedule(rawCount, 64);
+                pendingDisposeFence = normalHandle;
                 JobHandle uvHandle = new GenerateTriplanarUvsJob
                 {
                     Vertices = rawVertices,
                     TextureScale = math.lerp(0.12f, 0.55f, qualityCurve)
                 }.Schedule(rawCount, 64, normalHandle);
+                pendingDisposeFence = uvHandle;
                 // BLOCKING_SYNC_POINT: editor attribute phase owns normal/tangent/UV completion before AO and LOD consumers.
                 uvHandle.Complete();
+                pendingDisposeFence = default;
                 _Stopwatch.Stop();
                 metric.AttributeMilliseconds = _Stopwatch.Elapsed.TotalMilliseconds;
                 metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 3u, metric, rawCount, 0, 0, 0, metric.AttributeMilliseconds);
@@ -404,8 +504,10 @@ namespace Hecton8.Editor.GeologyForge
                     MaxDistance = profile.RadiusMeters * math.lerp(0.24f, 0.9f, qualityCurve),
                     BoundsMin = boundsMin
                 }.Schedule(rawCount, 64);
+                pendingDisposeFence = aoHandle;
                 // BLOCKING_SYNC_POINT: baked AO must be present in vertex color before deterministic LOD packing reads vertices.
                 aoHandle.Complete();
+                pendingDisposeFence = default;
                 _Stopwatch.Stop();
                 metric.AoMilliseconds = _Stopwatch.Elapsed.TotalMilliseconds;
                 metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 4u, metric, rawCount, 0, 0, 0, metric.AoMilliseconds);
@@ -417,10 +519,11 @@ namespace Hecton8.Editor.GeologyForge
                     metric.Lod0Triangles = lod0;
                     metric.Lod1Triangles = lod1;
                     metric.Lod2Triangles = lod2;
+                    metric.CollisionTriangles = GeologyForgeConstants.CollisionProxyTriangleCount;
                     if (lod0 > profile.Lod0Budget)
                         metric.WarningFlags |= GeologyForgeConstants.WarningTriangleBudgetExceeded;
                     if (saveAssets)
-                        SaveMeshesAndManifest(profile, seed, variation, lods, lod0, lod1, lod2, manifestRecords);
+                        metric.CollisionTriangles = SaveMeshesAndManifest(profile, seed, variation, lods, lod0, lod1, lod2, manifestRecords);
                     _Stopwatch.Stop();
                     metric.SerializationMilliseconds = _Stopwatch.Elapsed.TotalMilliseconds;
                     metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 5u, metric, rawCount, lod0, lod1, lod2, metric.SerializationMilliseconds);
@@ -434,6 +537,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
+                pendingDisposeFence.Complete();
                 if (normalBuckets.IsCreated) normalBuckets.Dispose();
                 if (rawVertices.IsCreated) rawVertices.Dispose();
                 if (offsets.IsCreated) offsets.Dispose();
@@ -723,7 +827,7 @@ namespace Hecton8.Editor.GeologyForge
             }
         }
 
-        private static void SaveMeshesAndManifest(
+        private static int SaveMeshesAndManifest(
             GeologyBakeProfile profile,
             uint seed,
             int variation,
@@ -810,6 +914,7 @@ namespace Hecton8.Editor.GeologyForge
             {
                 if (manifestRecords == null)
                 {
+                    int collisionTriangles = SaveCollisionProxyAndPrefab(stem, lods, path0);
                     DeleteBackupAssets(
                         backupPath0,
                         lod0BackupCreated,
@@ -817,10 +922,11 @@ namespace Hecton8.Editor.GeologyForge
                         lod1BackupCreated,
                         backupPath2,
                         lod2BackupCreated);
-                    return;
+                    return collisionTriangles;
                 }
 
-                Bounds bounds = lods.Lod0.bounds;
+                Bounds bounds = CalculateCombinedVisualBounds(lods);
+                int savedCollisionTriangles = SaveCollisionProxyAndPrefab(stem, lods, path0);
                 ResolveGuid128(path0, out ulong lod0High, out ulong lod0Low);
                 ResolveGuid128(path1, out ulong lod1High, out ulong lod1Low);
                 ResolveGuid128(path2, out ulong lod2High, out ulong lod2Low);
@@ -852,6 +958,8 @@ namespace Hecton8.Editor.GeologyForge
                     lod1BackupCreated,
                     backupPath2,
                     lod2BackupCreated);
+
+                return savedCollisionTriangles;
             }
             catch
             {
@@ -895,6 +1003,229 @@ namespace Hecton8.Editor.GeologyForge
             AssetDatabase.CreateAsset(mesh, path);
             assetOwned = true;
             return mesh;
+        }
+
+        private static int SaveCollisionProxyAndPrefab(string stem, MeshLodSet lods, string lod0Path)
+        {
+            if (lods.Lod0 == null)
+                throw new InvalidOperationException("Cannot create geology prefab without LOD0 mesh for " + lod0Path + ".");
+            if (GeologyForgeConstants.CollisionProxyTriangleCount > GeologyForgeConstants.CollisionTriangleBudget)
+                throw new InvalidOperationException("Geology collision proxy triangle count exceeds PhysX budget.");
+
+            EnsureAssetFolder(GeologyForgeConstants.MeshOutputFolder);
+            EnsureAssetFolder(GeologyForgeConstants.PrefabOutputFolder);
+            string collisionPath = $"{GeologyForgeConstants.MeshOutputFolder}/COL_{stem}.asset";
+            string prefabPath = $"{GeologyForgeConstants.PrefabOutputFolder}/{stem}.prefab";
+            string collisionBackupPath = BackupPath(collisionPath);
+            string prefabBackupPath = BackupPath(prefabPath);
+            bool collisionBackupCreated = false;
+            bool prefabBackupCreated = false;
+            bool collisionCreatedAsset = string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(collisionPath));
+            bool prefabCreatedAsset = string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(prefabPath));
+            try
+            {
+                collisionBackupCreated = BackupExistingAsset(collisionPath, collisionBackupPath);
+                prefabBackupCreated = BackupExistingAsset(prefabPath, prefabBackupPath);
+                Mesh collisionMesh = SaveCollisionMeshAsset(CreateCollisionProxyMesh(stem, CalculateCombinedVisualBounds(lods)), collisionPath, stem);
+                BakeCollisionMesh(collisionMesh);
+                SavePrefabAsset(stem, lods.Lod0, lods.Lod1, lods.Lod2, collisionMesh, prefabPath);
+                DeleteBackupAsset(collisionBackupPath, collisionBackupCreated);
+                DeleteBackupAsset(prefabBackupPath, prefabBackupCreated);
+                return GeologyForgeConstants.CollisionProxyTriangleCount;
+            }
+            catch
+            {
+                TryCleanupFailedCollisionAndPrefabSave(
+                    collisionPath,
+                    collisionCreatedAsset,
+                    collisionBackupPath,
+                    collisionBackupCreated,
+                    prefabPath,
+                    prefabCreatedAsset,
+                    prefabBackupPath,
+                    prefabBackupCreated);
+                throw;
+            }
+        }
+
+        private static Mesh SaveCollisionMeshAsset(Mesh mesh, string path, string stem)
+        {
+            mesh.name = $"COL_{stem}";
+            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(mesh, existing);
+                UnityEngine.Object.DestroyImmediate(mesh);
+                return existing;
+            }
+
+            AssetDatabase.CreateAsset(mesh, path);
+            return mesh;
+        }
+
+        private static void BakeCollisionMesh(Mesh collisionMesh)
+        {
+            if (collisionMesh == null)
+                throw new InvalidOperationException("Cannot PhysX-bake a null geology collision mesh.");
+
+            if (GeologyForgeConstants.CollisionProxyTriangleCount > GeologyForgeConstants.CollisionTriangleBudget)
+                throw new InvalidOperationException("Cannot PhysX-bake geology collision mesh above budget.");
+
+            UnityEngine.Physics.BakeMesh(collisionMesh.GetEntityId(), true, CollisionCookingOptions);
+        }
+
+        private static Mesh CreateCollisionProxyMesh(string stem, Bounds visualBounds)
+        {
+            Vector3 center = IsFiniteVector(visualBounds.center) ? visualBounds.center : Vector3.zero;
+            Vector3 extents = IsFiniteVector(visualBounds.extents) ? visualBounds.extents : Vector3.one * 0.5f;
+            extents = Vector3.Max(extents + new Vector3(0.04f, 0.04f, 0.04f), new Vector3(0.08f, 0.08f, 0.08f));
+            Vector3 min = center - extents;
+            Vector3 max = center + extents;
+            var vertices = new[]
+            {
+                new Vector3(min.x, min.y, min.z),
+                new Vector3(max.x, min.y, min.z),
+                new Vector3(min.x, max.y, min.z),
+                new Vector3(max.x, max.y, min.z),
+                new Vector3(min.x, min.y, max.z),
+                new Vector3(max.x, min.y, max.z),
+                new Vector3(min.x, max.y, max.z),
+                new Vector3(max.x, max.y, max.z)
+            };
+            var triangles = new[]
+            {
+                0, 2, 1, 1, 2, 3,
+                4, 5, 6, 5, 7, 6,
+                0, 1, 4, 1, 5, 4,
+                2, 6, 3, 3, 6, 7,
+                0, 4, 2, 2, 4, 6,
+                1, 3, 5, 3, 7, 5
+            };
+            Mesh mesh = new Mesh
+            {
+                name = $"COL_{stem}",
+                indexFormat = IndexFormat.UInt16
+            };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0, true);
+            mesh.bounds = new Bounds(center, extents * 2f);
+            mesh.RecalculateNormals();
+            mesh.UploadMeshData(false);
+            return mesh;
+        }
+
+        private static Bounds CalculateCombinedVisualBounds(MeshLodSet lods)
+        {
+            if (lods.Lod0 == null)
+                return new Bounds(Vector3.zero, Vector3.one);
+
+            Bounds bounds = lods.Lod0.bounds;
+            if (lods.Lod1 != null)
+                bounds.Encapsulate(lods.Lod1.bounds);
+            if (lods.Lod2 != null)
+                bounds.Encapsulate(lods.Lod2.bounds);
+            return bounds;
+        }
+
+        private static void SavePrefabAsset(string stem, Mesh lod0, Mesh lod1, Mesh lod2, Mesh collisionMesh, string prefabPath)
+        {
+            Material material = ResolveGeologyMaterial();
+            Bounds visualBounds = CalculateCombinedVisualBounds(new MeshLodSet { Lod0 = lod0, Lod1 = lod1, Lod2 = lod2 });
+            StaticEditorFlags rendererFlags = ResolveRendererStaticFlags(visualBounds);
+            GameObject root = new GameObject(stem);
+            try
+            {
+                GameObjectUtility.SetStaticEditorFlags(root, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+                MeshCollider collider = root.AddComponent<MeshCollider>();
+                collider.convex = true;
+                collider.cookingOptions = CollisionCookingOptions;
+                collider.sharedMesh = collisionMesh;
+
+                LODGroup lodGroup = root.AddComponent<LODGroup>();
+                Renderer r0 = CreateLodRenderer(root, "VIS_LOD0", lod0, material, rendererFlags);
+                Renderer r1 = CreateLodRenderer(root, "VIS_LOD1", lod1 != null ? lod1 : lod0, material, rendererFlags);
+                Renderer r2 = CreateLodRenderer(root, "VIS_LOD2", lod2 != null ? lod2 : lod0, material, rendererFlags);
+                lodGroup.SetLODs(new[]
+                {
+                    new LOD(0.55f, new[] { r0 }),
+                    new LOD(0.22f, new[] { r1 }),
+                    new LOD(0.04f, new[] { r2 })
+                });
+                lodGroup.RecalculateBounds();
+
+                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (prefab == null)
+                    throw new InvalidOperationException("Failed to save geology prefab " + prefabPath + ".");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static Renderer CreateLodRenderer(GameObject root, string name, Mesh mesh, Material material, StaticEditorFlags rendererFlags)
+        {
+            GameObject child = new GameObject(name);
+            child.transform.SetParent(root.transform, false);
+            GameObjectUtility.SetStaticEditorFlags(child, rendererFlags);
+            MeshFilter filter = child.AddComponent<MeshFilter>();
+            filter.sharedMesh = mesh;
+            MeshRenderer renderer = child.AddComponent<MeshRenderer>();
+            ConfigureStaticRockRenderer(renderer);
+            if (material != null)
+                renderer.sharedMaterial = material;
+            return renderer;
+        }
+
+        private static void ConfigureStaticRockRenderer(MeshRenderer renderer)
+        {
+            renderer.shadowCastingMode = ShadowCastingMode.On;
+            renderer.receiveShadows = true;
+            renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            renderer.lightProbeUsage = LightProbeUsage.BlendProbes;
+            renderer.reflectionProbeUsage = ReflectionProbeUsage.BlendProbes;
+        }
+
+        private static StaticEditorFlags ResolveRendererStaticFlags(Bounds visualBounds)
+        {
+            StaticEditorFlags flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic;
+            if (CalculateBoundsVolume(visualBounds) >= GeologyForgeConstants.OccluderStaticMinimumVolumeCubicMeters)
+                flags |= StaticEditorFlags.OccluderStatic;
+            return flags;
+        }
+
+        private static float CalculateBoundsVolume(Bounds bounds)
+        {
+            Vector3 size = bounds.size;
+            if (!IsFiniteVector(size))
+                return 0f;
+            return math.max(0f, size.x) * math.max(0f, size.y) * math.max(0f, size.z);
+        }
+
+        private static Material ResolveGeologyMaterial()
+        {
+            string[] preferredPaths =
+            {
+                "Assets/_Project/Art/Materials/Mat_TriplanarRock.mat",
+                "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat",
+                "Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_cluster_medium_Placeholder.mat"
+            };
+            for (int i = 0; i < preferredPaths.Length; i++)
+            {
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(preferredPaths[i]);
+                if (material != null)
+                    return material;
+            }
+
+            string[] guids = AssetDatabase.FindAssets("TriplanarRock t:Material", new[] { "Assets/_Project" });
+            if (guids != null && guids.Length > 0)
+                return AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guids[0]));
+            return null;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
 
         private static void ResolveGuid128(string assetPath, out ulong high, out ulong low)
@@ -982,11 +1313,11 @@ namespace Hecton8.Editor.GeologyForge
         {
             int slashIndex = assetPath.LastIndexOf('/');
             string fileName = slashIndex >= 0 ? assetPath.Substring(slashIndex + 1) : assetPath;
-            int extensionIndex = fileName.LastIndexOf(".asset", StringComparison.Ordinal);
+            int extensionIndex = fileName.LastIndexOf('.');
             if (extensionIndex < 0)
                 return GeologyForgeConstants.MeshOutputFolder + "/_H8Backups/" + fileName + "_H8BACKUP.asset";
 
-            return GeologyForgeConstants.MeshOutputFolder + "/_H8Backups/" + fileName.Substring(0, extensionIndex) + "_H8BACKUP.asset";
+            return GeologyForgeConstants.MeshOutputFolder + "/_H8Backups/" + fileName.Substring(0, extensionIndex) + "_H8BACKUP" + fileName.Substring(extensionIndex);
         }
 
         private static bool BackupExistingAsset(string assetPath, string backupPath)
@@ -999,7 +1330,7 @@ namespace Hecton8.Editor.GeologyForge
                 AssetDatabase.DeleteAsset(backupPath);
 
             if (!AssetDatabase.CopyAsset(assetPath, backupPath))
-                throw new InvalidOperationException("Failed to create geology mesh backup for " + assetPath + ".");
+                throw new InvalidOperationException("Failed to create geology asset backup for " + assetPath + ".");
 
             return true;
         }
@@ -1025,12 +1356,28 @@ namespace Hecton8.Editor.GeologyForge
             if (!backupCreated)
                 return;
 
-            Mesh backup = AssetDatabase.LoadAssetAtPath<Mesh>(backupPath);
-            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
-            if (backup == null || existing == null)
-                throw new InvalidOperationException("Failed to restore geology mesh backup for " + assetPath + ".");
+            UnityEngine.Object backup = AssetDatabase.LoadMainAssetAtPath(backupPath);
+            UnityEngine.Object existing = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            if (backup == null)
+                throw new InvalidOperationException("Failed to restore geology asset backup for " + assetPath + ".");
 
-            EditorUtility.CopySerialized(backup, existing);
+            if (existing == null)
+            {
+                if (!AssetDatabase.CopyAsset(backupPath, assetPath))
+                    throw new InvalidOperationException("Failed to restore missing geology asset backup for " + assetPath + ".");
+                return;
+            }
+
+            if (backup is Mesh backupMesh && existing is Mesh existingMesh)
+            {
+                EditorUtility.CopySerialized(backupMesh, existingMesh);
+                return;
+            }
+
+            FileUtil.ReplaceFile(backupPath, assetPath);
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetDatabase.LoadMainAssetAtPath(assetPath) == null)
+                throw new InvalidOperationException("Failed to restore geology asset backup for " + assetPath + ".");
         }
 
         private static void DeleteBackupAssets(
@@ -1072,6 +1419,33 @@ namespace Hecton8.Editor.GeologyForge
         {
             if (!string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path)))
                 AssetDatabase.DeleteAsset(path);
+        }
+
+        private static void TryCleanupFailedCollisionAndPrefabSave(
+            string collisionPath,
+            bool collisionCreatedAsset,
+            string collisionBackupPath,
+            bool collisionBackupCreated,
+            string prefabPath,
+            bool prefabCreatedAsset,
+            string prefabBackupPath,
+            bool prefabBackupCreated)
+        {
+            try
+            {
+                RestoreBackupAsset(collisionPath, collisionBackupPath, collisionBackupCreated);
+                RestoreBackupAsset(prefabPath, prefabBackupPath, prefabBackupCreated);
+                if (prefabCreatedAsset)
+                    DeleteCreatedAsset(prefabPath);
+                if (collisionCreatedAsset)
+                    DeleteCreatedAsset(collisionPath);
+                DeleteBackupAsset(prefabBackupPath, prefabBackupCreated);
+                DeleteBackupAsset(collisionBackupPath, collisionBackupCreated);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         private static uint HashFixedString(FixedString64Bytes value)
@@ -1133,10 +1507,10 @@ namespace Hecton8.Editor.GeologyForge
 
             profile.Resolution = math.clamp(profile.Resolution <= 0 ? GeologyForgeConstants.DefaultResolution : profile.Resolution, GeologyForgeConstants.MinimumResolution, GeologyForgeConstants.MaximumResolution);
             profile.Variations = SanitizeVariationCount(profile.Variations);
-            profile.RadiusMeters = math.max(0.25f, FiniteOr(profile.RadiusMeters, 2f));
-            profile.HeightScale = math.max(0.15f, FiniteOr(profile.HeightScale, 1f));
-            profile.Frequency = math.max(0.001f, FiniteOr(profile.Frequency, 1f));
-            profile.NoiseAmplitude = math.max(0f, FiniteOr(profile.NoiseAmplitude, 0f));
+            profile.RadiusMeters = math.clamp(FiniteOr(profile.RadiusMeters, 2f), 0.25f, GeologyForgeConstants.MaximumRadiusMeters);
+            profile.HeightScale = math.clamp(FiniteOr(profile.HeightScale, 1f), 0.15f, GeologyForgeConstants.MaximumHeightScale);
+            profile.Frequency = math.clamp(FiniteOr(profile.Frequency, 1f), 0.001f, GeologyForgeConstants.MaximumFrequency);
+            profile.NoiseAmplitude = math.clamp(FiniteOr(profile.NoiseAmplitude, 0f), 0f, GeologyForgeConstants.MaximumNoiseAmplitudeMeters);
             profile.RidgedWeight = math.saturate(FiniteOr(profile.RidgedWeight, 0f));
             profile.VoronoiWeight = math.saturate(FiniteOr(profile.VoronoiWeight, 0f));
             profile.IsoLevel = math.clamp(FiniteOr(profile.IsoLevel, 0f), -0.5f, 0.5f);
@@ -1151,6 +1525,11 @@ namespace Hecton8.Editor.GeologyForge
             profile.Lod1Budget = math.max(16, profile.Lod1Budget <= 0 ? GeologyForgeConstants.Lod1TriangleBudget : profile.Lod1Budget);
             profile.Lod2Budget = math.max(8, profile.Lod2Budget <= 0 ? GeologyForgeConstants.Lod2TriangleBudget : profile.Lod2Budget);
             return profile;
+        }
+
+        internal static GeologyBakeProfile SanitizeForEditor(GeologyBakeProfile profile)
+        {
+            return SanitizeProfile(profile);
         }
 
         private static float FiniteOr(float value, float fallback)
@@ -1230,7 +1609,7 @@ namespace Hecton8.Editor.GeologyForge
         {
             EnsureFileFolder(GeologyForgeConstants.BakeReportPath);
             var builder = new StringBuilder(4096);
-            builder.Append("{\n  \"agent\": \"SHINOBU_208\",\n  \"status\": \"PENDING_VERIFICATION\",\n  \"generatedMeshCount\": ");
+            builder.Append("{\n  \"agent\": \"1606\",\n  \"status\": \"PENDING_VERIFICATION\",\n  \"generatedMeshCount\": ");
             builder.Append(metrics != null ? metrics.Count : 0);
             builder.Append(",\n  \"meshes\": [\n");
             if (metrics != null)
@@ -1250,6 +1629,8 @@ namespace Hecton8.Editor.GeologyForge
                     builder.Append(m.Lod1Triangles);
                     builder.Append(", \"lod2Tris\": ");
                     builder.Append(m.Lod2Triangles);
+                    builder.Append(", \"collisionTris\": ");
+                    builder.Append(m.CollisionTriangles);
                     builder.Append(", \"vertexStrideBytes\": ");
                     builder.Append(m.VertexStrideBytes);
                     builder.Append(", \"sdfMs\": ");

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -22,6 +23,8 @@ namespace Hecton8.Editor.GeologyForge
         private SliderInt _aoRays;
         private Slider _qualityWeight;
         private IntegerField _variations;
+        private TextField _seed;
+        private Label _budgetSummary;
         private ProgressBar _progress;
         private int _selectedProfileIndex;
 
@@ -44,6 +47,7 @@ namespace Hecton8.Editor.GeologyForge
             _profileDropdown.RegisterValueChangedCallback(OnProfileDropdownChanged);
             rootVisualElement.Add(_profileDropdown);
 
+            _seed = new TextField("Seed");
             _resolution = new SliderInt("SDF Resolution", GeologyForgeConstants.MinimumResolution, GeologyForgeConstants.MaximumResolution);
             _octaves = new SliderInt("Noise Octaves", 1, 8);
             _frequency = new Slider("Frequency", 0.1f, 5f);
@@ -51,8 +55,10 @@ namespace Hecton8.Editor.GeologyForge
             _aoRays = new SliderInt("AO Rays", 1, GeologyForgeConstants.MaximumAoRays);
             _qualityWeight = new Slider("Global Quality Weight", 0f, 1f);
             _variations = new IntegerField("Variations");
+            _budgetSummary = new Label();
             _progress = new ProgressBar { title = "Bake Progress", lowValue = 0f, highValue = 1f, value = 0f };
 
+            rootVisualElement.Add(_seed);
             rootVisualElement.Add(_resolution);
             rootVisualElement.Add(_octaves);
             rootVisualElement.Add(_frequency);
@@ -60,6 +66,7 @@ namespace Hecton8.Editor.GeologyForge
             rootVisualElement.Add(_aoRays);
             rootVisualElement.Add(_qualityWeight);
             rootVisualElement.Add(_variations);
+            rootVisualElement.Add(_budgetSummary);
             rootVisualElement.Add(_progress);
 
             Button reload = new Button(ReloadProfilesAndRepaint) { text = "Reload CSV" };
@@ -106,7 +113,13 @@ namespace Hecton8.Editor.GeologyForge
         {
             _profiles.Clear();
             _profileNames.Clear();
-            GeologyProfileCsv.LoadProfiles(_profiles);
+            GeologyForgeGenerator.TryLoadCsvProfiles(_profiles, "using 1606 validation profiles");
+
+            if (_profiles.Count == 0)
+                GeologyForgeGenerator.AddAgent1606ValidationProfiles(_profiles);
+
+            SanitizeProfilesInPlace(_profiles);
+
             if (_profileNames.Capacity < _profiles.Count)
                 _profileNames.Capacity = _profiles.Count;
 
@@ -114,10 +127,26 @@ namespace Hecton8.Editor.GeologyForge
                 _profileNames.Add(_profiles[i].Name.ToString());
         }
 
+        private static void SanitizeProfilesInPlace(List<GeologyBakeProfile> profiles)
+        {
+            for (int i = 0; i < profiles.Count; i++)
+                profiles[i] = GeologyForgeGenerator.SanitizeForEditor(profiles[i]);
+        }
+
         private void SelectProfile(int index)
         {
+            if (_profiles.Count == 0)
+            {
+                _selectedProfileIndex = 0;
+                if (_budgetSummary != null)
+                    _budgetSummary.text = "No geology profiles loaded";
+                return;
+            }
+
             _selectedProfileIndex = math.clamp(index, 0, math.max(0, _profiles.Count - 1));
             GeologyBakeProfile profile = _profiles[_selectedProfileIndex];
+            profile = GeologyForgeGenerator.SanitizeForEditor(profile);
+            _profiles[_selectedProfileIndex] = profile;
             _resolution?.SetValueWithoutNotify(profile.Resolution);
             _octaves?.SetValueWithoutNotify(profile.Octaves);
             _frequency?.SetValueWithoutNotify(profile.Frequency);
@@ -125,10 +154,19 @@ namespace Hecton8.Editor.GeologyForge
             _aoRays?.SetValueWithoutNotify(profile.AmbientOcclusionRays);
             _qualityWeight?.SetValueWithoutNotify(profile.GlobalQualityWeight);
             _variations?.SetValueWithoutNotify(SanitizeVariationCount(profile.Variations));
+            _seed?.SetValueWithoutNotify(profile.Seed.ToString(CultureInfo.InvariantCulture));
+            if (_budgetSummary != null)
+                _budgetSummary.text = "LOD0 budget " + profile.Lod0Budget.ToString(CultureInfo.InvariantCulture) + " tris / COL proxy " + GeologyForgeConstants.CollisionProxyTriangleCount.ToString(CultureInfo.InvariantCulture) + " tris";
         }
 
         private GeologyBakeProfile ResolveProfileFromFields()
         {
+            if (_profiles.Count == 0)
+            {
+                _profiles.Clear();
+                GeologyForgeGenerator.AddAgent1606ValidationProfiles(_profiles);
+            }
+
             GeologyBakeProfile profile = _profiles[math.clamp(_selectedProfileIndex, 0, _profiles.Count - 1)];
             profile.Resolution = _resolution != null ? _resolution.value : profile.Resolution;
             profile.Octaves = _octaves != null ? _octaves.value : profile.Octaves;
@@ -137,7 +175,23 @@ namespace Hecton8.Editor.GeologyForge
             profile.AmbientOcclusionRays = _aoRays != null ? _aoRays.value : profile.AmbientOcclusionRays;
             profile.GlobalQualityWeight = _qualityWeight != null ? _qualityWeight.value : profile.GlobalQualityWeight;
             profile.Variations = _variations != null ? SanitizeVariationCount(_variations.value) : SanitizeVariationCount(profile.Variations);
-            return profile;
+            profile.Seed = _seed != null ? ParseSeedOrFallback(_seed.value, profile.Seed) : profile.Seed;
+            return GeologyForgeGenerator.SanitizeForEditor(profile);
+        }
+
+        private static uint ParseSeedOrFallback(string value, uint fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return fallback;
+            string trimmed = value.Trim();
+            if (trimmed.StartsWith("0x", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (uint.TryParse(trimmed.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint hexSeed))
+                    return hexSeed;
+                return fallback;
+            }
+
+            return uint.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint seed) ? seed : fallback;
         }
 
         private static int SanitizeVariationCount(int variations)
@@ -207,6 +261,7 @@ namespace Hecton8.Editor.GeologyForge
 
         public static void Build(GeologyBakeProfile profile)
         {
+            profile = GeologyForgeGenerator.SanitizeForEditor(profile);
             int points = PreviewResolution;
             int count = points * points * points;
             float extent = math.max(0.5f, profile.RadiusMeters * 2.25f);
@@ -217,7 +272,7 @@ namespace Hecton8.Editor.GeologyForge
                 _pointCount = 0;
                 // COLD ALLOC: NativeArray<float>[count] — editor preview SDF scratch — owner: GeologyForgePreview
                 density = new NativeArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                new GenerateMockFractalNoiseJob
+                JobHandle previewHandle = new GenerateMockFractalNoiseJob
                 {
                     Density = density,
                     SectorAup = profile.SectorAup,
@@ -233,7 +288,8 @@ namespace Hecton8.Editor.GeologyForge
                     VoronoiWeight = profile.VoronoiWeight,
                     IsoLevel = profile.IsoLevel,
                     GlobalQualityWeight = profile.GlobalQualityWeight
-                }.Run(count);
+                }.Schedule(count, 64);
+                previewHandle.Complete();
 
                 float center = (points - 1) * 0.5f;
                 float surfaceThreshold = voxelStep * 0.45f;

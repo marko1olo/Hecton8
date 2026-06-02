@@ -154,6 +154,7 @@ namespace Hecton8.Narrative
         private bool _pendingPlaybackBitCrushed;
         private float _pendingPlaybackVolume;
         private float _pendingNarrativeInterference01;
+        private AudioGlitchParametersDTO _pendingPlaybackGlitch;
         private AudioClip _pendingPlaybackClip;
         private bool _resolvedLogCatalogFullTelemetryArmed = true;
         private bool _encryptedVoiceRouteMissingTelemetryArmed = true;
@@ -466,20 +467,26 @@ namespace Hecton8.Narrative
                 return;
 
             TrackResolvedLogHash(logHash);
-            float playbackDuration = math.max(0.5f, data.Duration);
+            float playbackDuration = ResolvePlaybackDuration(data.Duration);
             AudioClip playbackClip = data.ResolvedAudioClip;
+            AudioGlitchParametersDTO glitch = ResolveAudioGlitchParameters(logHash, encryptedPreview: false);
+            bool bitCrushRouteActive = false;
             if (playbackClip != null)
             {
-                QueuePlaybackVisualSync(playbackClip, playbackVolume, false);
+                bitCrushRouteActive = QueuePlaybackVisualSync(
+                    playbackClip,
+                    playbackVolume,
+                    ShouldPreferBitCrush(in glitch),
+                    in glitch);
             }
 
             _currentLog = data;
             _currentLogHash = logHash;
             _playbackTimer = playbackDuration;
             _isPlaying = true;
-            _currentPlaybackBitCrushed = false;
+            _currentPlaybackBitCrushed = bitCrushRouteActive;
 
-            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
+            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, in glitch, data);
 
             LogPlaying(logHash, playbackDuration);
         }
@@ -503,7 +510,12 @@ namespace Hecton8.Narrative
             if (playbackClip == null)
                 return;
 
-            bool bitCrushRouteActive = QueuePlaybackVisualSync(playbackClip, playbackVolume, true);
+            AudioGlitchParametersDTO glitch = ResolveAudioGlitchParameters(logHash, encryptedPreview: true);
+            bool bitCrushRouteActive = QueuePlaybackVisualSync(
+                playbackClip,
+                playbackVolume,
+                ShouldPreferBitCrush(in glitch),
+                in glitch);
 
             if (!bitCrushRouteActive && _encryptedVoiceRouteMissingTelemetryArmed)
             {
@@ -516,24 +528,32 @@ namespace Hecton8.Narrative
 
             _currentLog = data;
             _currentLogHash = logHash;
-            float playbackDuration = math.max(0.5f, data.Duration);
+            float playbackDuration = ResolvePlaybackDuration(data.Duration);
             _playbackTimer = playbackDuration;
             _isPlaying = true;
             _currentPlaybackBitCrushed = bitCrushRouteActive;
 
-            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
+            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, in glitch, data);
         }
 
-        private bool QueuePlaybackVisualSync(AudioClip clip, float volume, bool preferBitCrush)
+        private bool QueuePlaybackVisualSync(
+            AudioClip clip,
+            float volume,
+            bool preferBitCrush,
+            in AudioGlitchParametersDTO glitch)
         {
             if (clip == null)
                 return false;
 
             bool bitCrushRouteAvailable = preferBitCrush && _cachedNarrativeAudioSink != null;
+            AudioGlitchParametersDTO safeGlitch = AudioGlitchParametersDTO.Sanitize(in glitch);
             _pendingPlaybackClip = clip;
-            _pendingPlaybackVolume = volume;
+            _pendingPlaybackVolume = Sanitize01(volume);
             _pendingPlaybackBitCrushed = bitCrushRouteAvailable;
-            _pendingNarrativeInterference01 = ResolveNarrativeRadioInterference01();
+            _pendingPlaybackGlitch = safeGlitch;
+            _pendingNarrativeInterference01 = math.max(
+                ResolveNarrativeRadioInterference01(),
+                GlitchPermilleTo01(safeGlitch.CorruptionPermille));
             _pendingPlaybackDirty = true;
             TryRegisterLateFrame();
             return bitCrushRouteAvailable;
@@ -548,6 +568,7 @@ namespace Hecton8.Narrative
             float volume = _pendingPlaybackVolume;
             bool useBitCrush = _pendingPlaybackBitCrushed;
             float interference01 = _pendingNarrativeInterference01;
+            AudioGlitchParametersDTO glitch = _pendingPlaybackGlitch;
             ClearPendingPlaybackSync();
 
             if (playbackClip == null)
@@ -556,7 +577,7 @@ namespace Hecton8.Narrative
             ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
             if (narrativeAudioSink != null)
             {
-                narrativeAudioSink.SetNarrativeRadioInterference(interference01);
+                narrativeAudioSink.SetNarrativeRadioInterference(math.max(interference01, GlitchBandPassTo01(glitch.BandPassByte)));
                 if (useBitCrush && narrativeAudioSink.TryPlayStatic2DBitCrushed(playbackClip, volume))
                     return;
             }
@@ -572,27 +593,100 @@ namespace Hecton8.Narrative
             _pendingPlaybackBitCrushed = false;
             _pendingPlaybackVolume = 0f;
             _pendingNarrativeInterference01 = 0f;
+            _pendingPlaybackGlitch = default;
             _pendingPlaybackClip = null;
+        }
+
+        private AudioGlitchParametersDTO ResolveAudioGlitchParameters(uint logHash, bool encryptedPreview)
+        {
+            float corruption01 = Sanitize01(ResolveNarrativeRadioInterference01());
+            if (encryptedPreview)
+                corruption01 = math.max(corruption01, 0.78f);
+
+            uint ageBucket = (logHash >> 24) & 0xFFu;
+            float age01 = ageBucket * (1f / 255f);
+            corruption01 = math.saturate(math.max(corruption01, age01 * 0.35f));
+            float quality = Sanitize01(HomeostasisBrain.GlobalQualityWeight);
+            float lowTierTaming = math.lerp(0.72f, 1f, quality);
+            float highTierOverdrive = math.lerp(1f, 1.18f, quality);
+
+            ushort corruptionPermille = Unit01ToPermille(corruption01);
+            ushort bitCrushPermille = Unit01ToPermille(
+                (encryptedPreview ? math.max(corruption01, 0.65f) : corruption01 * 0.45f) * lowTierTaming);
+            short pitchShiftCents = (short)math.round(math.lerp(-420f, -80f, 1f - corruption01) * highTierOverdrive);
+            byte bandPassByte = (byte)math.round(math.saturate(corruption01 * highTierOverdrive) * 255f);
+            byte flags = AudioGlitchParametersDTO.FlagDepthDerived | AudioGlitchParametersDTO.FlagBandPass;
+            if (bitCrushPermille > 0)
+                flags |= AudioGlitchParametersDTO.FlagBitCrush;
+            if (pitchShiftCents != 0)
+                flags |= AudioGlitchParametersDTO.FlagPitchShift;
+            if (encryptedPreview)
+                flags |= AudioGlitchParametersDTO.FlagEncryptedPreview;
+
+            AudioGlitchParametersDTO glitch = new AudioGlitchParametersDTO
+            {
+                CorruptionPermille = corruptionPermille,
+                BitCrushPermille = bitCrushPermille,
+                PitchShiftCents = pitchShiftCents,
+                BandPassByte = bandPassByte,
+                Flags = flags
+            };
+            return AudioGlitchParametersDTO.Sanitize(in glitch);
+        }
+
+        private static bool ShouldPreferBitCrush(in AudioGlitchParametersDTO glitch)
+        {
+            return (glitch.Flags & AudioGlitchParametersDTO.FlagBitCrush) != 0 &&
+                   glitch.BitCrushPermille >= 320;
+        }
+
+        private static ushort Unit01ToPermille(float value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            return (ushort)math.clamp((int)math.round(math.saturate(value) * 1000f), 0, 1000);
+        }
+
+        private static float GlitchPermilleTo01(ushort permille)
+        {
+            return math.saturate(permille * 0.001f);
+        }
+
+        private static float GlitchBandPassTo01(byte bandPassByte)
+        {
+            return math.saturate(bandPassByte * (1f / 255f));
         }
 
         private float ResolveNarrativeRadioInterference01()
         {
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
-            float depthMeters = survivalSystem != null ? math.max(0f, survivalSystem.Depth) : 0f;
+            float rawDepthMeters = survivalSystem != null ? survivalSystem.Depth : 0f;
+            float depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
             float depth01 = math.saturate(
                 (depthMeters - NarrativeRadioDeepStartDepthMeters) /
                 math.max(1f, NarrativeRadioDeepFullDepthMeters - NarrativeRadioDeepStartDepthMeters));
 
             TraumaDispatcher traumaDispatcher = playerContext != null ? playerContext.TraumaDispatcher : null;
-            float radiation01 = traumaDispatcher != null ? math.saturate(traumaDispatcher.HazardRadiationSignal01) : 0f;
+            float radiation01 = traumaDispatcher != null ? Sanitize01(traumaDispatcher.HazardRadiationSignal01) : 0f;
             return math.max(depth01, radiation01);
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolvePlaybackDuration(float durationSeconds)
+        {
+            return math.isfinite(durationSeconds) ? math.max(0.5f, durationSeconds) : 0.5f;
         }
 
         public void NotifyAtmosphericWarningStarted(float durationSeconds)
         {
             _atmosphericWarningActive = true;
-            _atmosphericWarningTimer = math.max(_atmosphericWarningTimer, math.max(0.5f, durationSeconds));
+            _atmosphericWarningTimer = math.max(_atmosphericWarningTimer, ResolvePlaybackDuration(durationSeconds));
         }
 
         public void NotifyAtmosphericWarningCompleted()
@@ -620,6 +714,8 @@ namespace Hecton8.Narrative
             _currentLogHash = 0u;
             _playbackTimer = 0f;
             _currentPlaybackBitCrushed = false;
+            ClearPendingPlaybackSync();
+            TryUnregisterLateFrame();
             AudioLogEvents.TryRaisePlaybackStopped(stoppedHash, stoppedLog);
         }
 

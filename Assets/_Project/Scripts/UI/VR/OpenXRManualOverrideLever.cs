@@ -1077,30 +1077,30 @@ namespace Hecton8.UI.VR
                 return;
 
             if (!_registeredTick)
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+                _registeredTick = SystemDispatcher.Register((IUpdatable)this, PriorityLayer.Player);
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.Player);
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.Player);
         }
 
         private void TryUnregisterTick()
         {
             if (_registeredTick)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                SystemDispatcher.Unregister((IUpdatable)this, PriorityLayer.Player);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.Player);
                 _registeredSlowTick = false;
             }
 
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.Player);
                 _registeredLateFrame = false;
             }
         }

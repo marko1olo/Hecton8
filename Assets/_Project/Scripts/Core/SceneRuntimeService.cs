@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
@@ -17,12 +18,14 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int s_x001SceneRuntimeServiceSignalPushDropCount;
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
+        private const double SceneActivationEmergencyReleaseSeconds = 35d;
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string OrbitSceneName = "01_ORBIT";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const string TransitionOverlayRootName = "[SceneRuntimeService_TransitionOverlay]";
         private const string TransitionDitherShaderName = "Hecton8/UI/IGNDitherDissolve";
@@ -40,6 +43,10 @@ namespace Hecton8.Core
         private const float InputReclaimDurationSeconds = 1f;
         private const double TransitionSolveTelemetryThresholdMs = 0.2d;
         private const int TransitionOverlaySortingOrder = 32766;
+        private const float TransitionOverlayReferenceWidth = 1920f;
+        private const float TransitionOverlayReferenceHeight = 1080f;
+        private const float TransitionOverlayCameraDistance = 0.45f;
+        private const float MinimumTransitionDitherCoverageScale = 0.35f;
         private const int TerminalBootBufferLength = 384;
         private const uint TerminalBootHashSalt = 0x9E3779B9u;
         private const uint TransitionSolveBudgetWarningHash = 0x54534F4Cu; // TSOL
@@ -101,6 +108,7 @@ namespace Hecton8.Core
         private bool _registeredSceneService;
         private bool _registeredSceneCallbacks;
         private bool _registeredUpdatable;
+        private bool _registeredLateFrameTickable;
         private bool _registeredHotSwapListener;
         private bool _dispatcherAvailable;
         private bool _sceneLoadInFlight;
@@ -124,6 +132,8 @@ namespace Hecton8.Core
         private RectTransform _cinematicMenuRect;
         private Vector3 _cinematicCameraStartPosition;
         private Vector3 _cinematicCameraTargetPosition;
+        private Vector3 _cinematicCameraControlA;
+        private Vector3 _cinematicCameraControlB;
         private Vector3 _cinematicCameraTargetDelta;
         private Quaternion _cinematicCameraStartRotation;
         private Quaternion _cinematicCameraTargetRotation;
@@ -131,11 +141,18 @@ namespace Hecton8.Core
         private Vector2 _cinematicMenuTargetAnchoredPosition;
         private float _cinematicMenuStartAlpha;
         private GameObject _transitionOverlayRoot;
+        private RectTransform _transitionOverlayRect;
+        private Canvas _transitionOverlayCanvas;
         private CanvasGroup _transitionOverlayGroup;
+        private Camera _transitionOverlayCamera;
         private Material _transitionDitherMaterial;
         private TMP_Text _terminalBootText;
         // COLD ALLOC: char[384] - transition terminal boot text buffer - owner: SceneRuntimeService
         private readonly char[] _terminalBootBuffer = new char[TerminalBootBufferLength];
+        // COLD ALLOC: List<GameObject>[64] - scene-load camera root search scratch - owner: SceneRuntimeService
+        private readonly List<GameObject> _cameraRootSearchBuffer = new List<GameObject>(64);
+        // COLD ALLOC: List<Camera>[16] - scene-load camera search scratch - owner: SceneRuntimeService
+        private readonly List<Camera> _cameraSearchBuffer = new List<Camera>(16);
         private object _terminalBootDispatcherService;
         private object _terminalBootTickService;
         private object _terminalBootSceneService;
@@ -146,6 +163,15 @@ namespace Hecton8.Core
         private ICameraJuiceSystem _cameraJuiceSystem;
         private uint _terminalBootSeed;
         private int _terminalBootLastFrame = -1;
+        private float _transitionVisualOverkill01 = 1f;
+        private float _transitionPresentationElapsedSeconds;
+        private float _transitionPresentationEased;
+        private float _transitionPresentationVisualOverkill01 = 1f;
+        private float _transitionPresentationOverlayAlpha;
+        private float _transitionPresentationDitherCoverage = 1f;
+        private float _transitionPresentationDroneProgress;
+        private bool _transitionPresentationDriveMenu;
+        private bool _transitionPresentationDirty;
         private bool _transitionPerformanceWarningPublished;
 
         /// <summary>
@@ -227,6 +253,7 @@ namespace Hecton8.Core
             if (_isInitialized)
             {
                 TryRegisterUpdatable();
+                TryRegisterLateFrameTickable();
                 TryRegisterSceneService();
                 TryRegisterSceneCallbacks();
                 return;
@@ -234,6 +261,7 @@ namespace Hecton8.Core
 
             _isInitialized = true;
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
             TryRegisterSceneService();
             TryRegisterSceneCallbacks();
         }
@@ -276,6 +304,7 @@ namespace Hecton8.Core
                 _sceneActivationReleased = false;
                 Scene previousScene = SceneManager.GetActiveScene();
                 bool useCinematicTransition = ShouldUseMainMenuCinematicTransition(previousScene, sceneName);
+                GlobalRegistry.BeginSceneRuntimePublicationGate();
                 if (useCinematicTransition)
                     BeginMainMenuCinematicTransition();
 
@@ -294,11 +323,13 @@ namespace Hecton8.Core
                 _pendingSceneLoadOperation.allowSceneActivation = false;
                 int waitFrames = 0;
                 int nextWatchdogFrame = SceneActivationWatchdogInitialFrames;
+                long waitStartTimestamp = Stopwatch.GetTimestamp();
+                bool emergencyReleaseIssued = false;
 
                 while (Application.isPlaying && _isInitialized && isActiveAndEnabled && !_pendingSceneLoadOperation.isDone)
                 {
                     if (useCinematicTransition)
-                        TickMainMenuCinematicTransition(ResolveTransitionUnscaledDeltaTime());
+                        AdvanceMainMenuCinematicTransitionState(ResolveTransitionUnscaledDeltaTime());
 
                     bool loadReady = _pendingSceneLoadOperation.progress >= 0.9f;
                     bool requiresWorldResidencyGate = RequiresWorldResidencyGate(sceneName);
@@ -312,6 +343,23 @@ namespace Hecton8.Core
                     {
                         ReleaseSceneActivation(_pendingSceneLoadOperation);
                         _sceneActivationReleased = true;
+                    }
+                    else if (!_sceneActivationReleased &&
+                             !emergencyReleaseIssued &&
+                             HasSceneActivationEmergencyElapsed(waitStartTimestamp, out double elapsedSeconds))
+                    {
+                        ReleaseSceneActivation(_pendingSceneLoadOperation);
+                        _sceneActivationReleased = true;
+                        emergencyReleaseIssued = true;
+                        LogSceneActivationEmergencyRelease(
+                            sceneName,
+                            _pendingSceneLoadOperation.progress,
+                            loadReady,
+                            poolsReady,
+                            originStable,
+                            gpuResidencyReady,
+                            waitFrames,
+                            elapsedSeconds);
                     }
                     else if (waitFrames >= nextWatchdogFrame)
                     {
@@ -331,6 +379,7 @@ namespace Hecton8.Core
             }
             finally
             {
+                GlobalRegistry.EndSceneRuntimePublicationGate();
                 EndMainMenuCinematicTransition();
                 CompleteMemoryLifecycleTransitionAfterLoadAttempt();
                 _sceneLoadInFlight = false;
@@ -352,6 +401,11 @@ namespace Hecton8.Core
                 _dataVault.RecordHeartbeat();
         }
 
+        public void LateFrameTick()
+        {
+            ApplyQueuedMainMenuCinematicPresentation();
+        }
+
         private void Awake()
         {
             RejectDuplicateRuntimeOwner();
@@ -360,6 +414,7 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             if (_isInitialized)
             {
@@ -372,6 +427,7 @@ namespace Hecton8.Core
         {
             TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
         }
@@ -393,6 +449,7 @@ namespace Hecton8.Core
 
             TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
             EndMainMenuCinematicTransition();
@@ -551,11 +608,11 @@ namespace Hecton8.Core
 
         private static bool ArePersistentWorldPoolsReadyForSceneActivation()
         {
-            if (!GameBootstrapper.ArePreWarmAssetsReady)
-                return false;
-
             ISceneTransitionWorldResidencyBridge registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
+                return true;
+
+            if (!GameBootstrapper.ArePreWarmAssetsReady)
                 return false;
 
             return registry.AreResidentWorldPrefabPoolsReady();
@@ -571,7 +628,8 @@ namespace Hecton8.Core
             return previousScene.IsValid() &&
                    previousScene.isLoaded &&
                    string.Equals(previousScene.name, MainMenuSceneName, StringComparison.Ordinal) &&
-                   string.Equals(nextSceneName, WorldSceneName, StringComparison.Ordinal);
+                   (string.Equals(nextSceneName, WorldSceneName, StringComparison.Ordinal) ||
+                    string.Equals(nextSceneName, OrbitSceneName, StringComparison.Ordinal));
         }
 
         private void BeginMainMenuCinematicTransition()
@@ -580,6 +638,9 @@ namespace Hecton8.Core
             _cinematicTransitionElapsed = 0f;
             _transitionPerformanceWarningPublished = false;
             _cinematicCamera = _configuredCinematicCamera;
+            _transitionOverlayCamera = _cinematicCamera;
+            ClearTransitionPresentationState();
+            _transitionVisualOverkill01 = 1f;
             _cinematicMenuGroup = _configuredCinematicMenuGroup;
             _cinematicMenuRect = _cinematicMenuGroup != null
                 ? _cinematicMenuGroup.transform as RectTransform
@@ -591,6 +652,11 @@ namespace Hecton8.Core
                 _cinematicCameraStartRotation = cameraTransform.rotation;
                 _cinematicCameraTargetPosition = _cinematicCameraStartPosition + (Vector3.down * MainMenuCameraPanDepth);
                 _cinematicCameraTargetDelta = _cinematicCameraTargetPosition - _cinematicCameraStartPosition;
+                Vector3 forward = _cinematicCameraStartRotation * Vector3.forward;
+                _cinematicCameraControlA =
+                    _cinematicCameraStartPosition + (forward * 1.65f) + (Vector3.down * 1.15f);
+                _cinematicCameraControlB =
+                    _cinematicCameraTargetPosition - (forward * 2.15f) + (Vector3.down * 0.35f);
                 _cinematicCameraTargetRotation =
                     _cinematicCameraStartRotation * Quaternion.Euler(MainMenuCameraPanPitchDegrees, 0f, 0f);
             }
@@ -615,18 +681,21 @@ namespace Hecton8.Core
             EnsureTransitionOverlay();
             _terminalBootSeed = ComputeTerminalBootSeed(_pendingSceneName, SystemDispatcher.CurrentFrameIndex);
             _terminalBootLastFrame = -1;
-            UpdateTerminalBootOverlay();
-            if (_transitionOverlayGroup != null)
-                _transitionOverlayGroup.alpha = 0f;
-            SetTransitionDitherCoverage(1f);
+            QueueMainMenuCinematicPresentation(
+                0f,
+                0f,
+                _transitionVisualOverkill01,
+                0f,
+                1f,
+                0f,
+                driveMenu: true);
         }
 
-        private void TickMainMenuCinematicTransition(float unscaledDeltaTime)
+        private void AdvanceMainMenuCinematicTransitionState(float unscaledDeltaTime)
         {
             if (!_cinematicTransitionActive)
                 return;
 
-            long solveStartTicks = Stopwatch.GetTimestamp();
             _cinematicTransitionElapsed = math.min(
                 TransitionDissolveSeconds,
                 _cinematicTransitionElapsed + math.max(0f, unscaledDeltaTime));
@@ -634,20 +703,69 @@ namespace Hecton8.Core
                 ? math.saturate(_cinematicTransitionElapsed / MainMenuCameraPanDurationSeconds)
                 : 1f;
             float eased = SmoothStep01(normalized);
+            float visualOverkill01 = UpdateTransitionVisualOverkill01(normalized);
 
-            ApplyCinematicCameraPose(eased, _cinematicTransitionElapsed);
+            QueueMainMenuCinematicPresentation(
+                _cinematicTransitionElapsed,
+                eased,
+                visualOverkill01,
+                eased,
+                1f,
+                0f,
+                driveMenu: true);
+        }
+
+        private void QueueMainMenuCinematicPresentation(
+            float elapsedSeconds,
+            float eased,
+            float visualOverkill01,
+            float overlayAlpha,
+            float ditherCoverage,
+            float droneProgress,
+            bool driveMenu)
+        {
+            _transitionPresentationElapsedSeconds = math.max(0f, math.select(0f, elapsedSeconds, math.isfinite(elapsedSeconds)));
+            _transitionPresentationEased = math.saturate(math.select(0f, eased, math.isfinite(eased)));
+            _transitionPresentationVisualOverkill01 = math.saturate(math.select(1f, visualOverkill01, math.isfinite(visualOverkill01)));
+            _transitionPresentationOverlayAlpha = math.saturate(math.select(0f, overlayAlpha, math.isfinite(overlayAlpha)));
+            _transitionPresentationDitherCoverage = math.saturate(math.select(0f, ditherCoverage, math.isfinite(ditherCoverage)));
+            _transitionPresentationDroneProgress = math.saturate(math.select(0f, droneProgress, math.isfinite(droneProgress)));
+            _transitionPresentationDriveMenu = driveMenu;
+            _transitionPresentationDirty = true;
+        }
+
+        private void ApplyQueuedMainMenuCinematicPresentation()
+        {
+            if (!_transitionPresentationDirty)
+                return;
+
+            if (!_cinematicTransitionActive)
+            {
+                _transitionPresentationDirty = false;
+                return;
+            }
+
+            _transitionPresentationDirty = false;
+            long solveStartTicks = Stopwatch.GetTimestamp();
+            float eased = _transitionPresentationEased;
+            ApplyCinematicCameraPose(
+                eased,
+                _transitionPresentationElapsedSeconds,
+                _transitionPresentationVisualOverkill01);
+            PlaceTransitionOverlayInCameraView();
 
             if (_transitionOverlayGroup != null)
-                _transitionOverlayGroup.alpha = eased;
-            if (_cinematicMenuGroup != null)
+                _transitionOverlayGroup.alpha = _transitionPresentationOverlayAlpha;
+            if (_transitionPresentationDriveMenu && _cinematicMenuGroup != null)
                 _cinematicMenuGroup.alpha = _cinematicMenuStartAlpha * (1f - eased);
-            if (_cinematicMenuRect != null)
+            if (_transitionPresentationDriveMenu && _cinematicMenuRect != null)
                 _cinematicMenuRect.anchoredPosition =
                     _cinematicMenuStartAnchoredPosition +
                     ((_cinematicMenuTargetAnchoredPosition - _cinematicMenuStartAnchoredPosition) * eased);
 
-            SetTransitionDitherCoverage(1f);
+            SetTransitionDitherCoverage(_transitionPresentationDitherCoverage, _transitionPresentationVisualOverkill01);
             UpdateTerminalBootOverlay();
+            UpdateWorldDroneCrossfade(_transitionPresentationDroneProgress);
             PublishTransitionSolveBudgetWarningIfNeeded(solveStartTicks);
         }
 
@@ -655,7 +773,12 @@ namespace Hecton8.Core
         {
             Scene loadedScene = SceneManager.GetSceneByName(loadedSceneName);
             if (loadedScene.IsValid() && loadedScene.isLoaded)
+            {
                 SceneManager.SetActiveScene(loadedScene);
+                Camera loadedSceneCamera = ResolvePrimarySceneCameraCold(loadedScene);
+                if (loadedSceneCamera != null)
+                    _transitionOverlayCamera = loadedSceneCamera;
+            }
 
             if (previousScene.IsValid() && previousScene.isLoaded && !string.Equals(previousScene.name, loadedSceneName, StringComparison.Ordinal))
             {
@@ -684,49 +807,93 @@ namespace Hecton8.Core
             EnsureTransitionOverlay();
             if (_transitionOverlayGroup == null)
             {
-                UpdateWorldDroneCrossfade(1f);
+                QueueMainMenuCinematicPresentation(
+                    MainMenuCameraPanDurationSeconds,
+                    1f,
+                    _transitionVisualOverkill01,
+                    0f,
+                    0f,
+                    1f,
+                    driveMenu: false);
+                await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
                 return;
             }
 
-            _transitionOverlayGroup.alpha = 1f;
+            QueueMainMenuCinematicPresentation(
+                MainMenuCameraPanDurationSeconds,
+                1f,
+                _transitionVisualOverkill01,
+                1f,
+                1f,
+                0f,
+                driveMenu: false);
             float elapsed = 0f;
             while (Application.isPlaying && elapsed < TransitionDissolveSeconds)
             {
-                long solveStartTicks = Stopwatch.GetTimestamp();
                 elapsed += math.max(0f, ResolveTransitionUnscaledDeltaTime());
                 float normalized = TransitionDissolveSeconds > 0f
                     ? math.saturate(elapsed / TransitionDissolveSeconds)
                     : 1f;
                 float eased = SmoothStep01(normalized);
-                ApplyCinematicCameraPose(1f, MainMenuCameraPanDurationSeconds + elapsed);
-                SetTransitionDitherCoverage(1f - eased);
-                UpdateTerminalBootOverlay();
-                UpdateWorldDroneCrossfade(eased);
-                if (_transitionDitherMaterial == null)
-                    _transitionOverlayGroup.alpha = 1f - eased;
-
-                PublishTransitionSolveBudgetWarningIfNeeded(solveStartTicks);
+                float visualOverkill01 = UpdateTransitionVisualOverkill01(normalized);
+                float overlayAlpha = _transitionDitherMaterial == null
+                    ? 1f - eased
+                    : 1f;
+                QueueMainMenuCinematicPresentation(
+                    MainMenuCameraPanDurationSeconds + elapsed,
+                    1f,
+                    visualOverkill01,
+                    overlayAlpha,
+                    1f - eased,
+                    eased,
+                    driveMenu: false);
                 await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
             }
 
-            SetTransitionDitherCoverage(0f);
-            UpdateWorldDroneCrossfade(1f);
-            _transitionOverlayGroup.alpha = 0f;
+            QueueMainMenuCinematicPresentation(
+                MainMenuCameraPanDurationSeconds + TransitionDissolveSeconds,
+                1f,
+                _transitionVisualOverkill01,
+                0f,
+                0f,
+                1f,
+                driveMenu: false);
+            await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
         }
 
-        private void ApplyCinematicCameraPose(float eased, float elapsedSeconds)
+        private void ApplyCinematicCameraPose(float eased, float elapsedSeconds, float visualOverkill01)
         {
             if (_cinematicCamera == null)
                 return;
 
             Transform cameraTransform = _cinematicCamera.transform;
+            float safeVisualOverkill = math.saturate(math.select(1f, visualOverkill01, math.isfinite(visualOverkill01)));
             float heave = CinematicMath.FastSin(elapsedSeconds * math.PI * 2f * CinematicHeaveFrequencyHz) *
-                          CinematicHeaveAmplitude *
-                          SmoothStep01(eased);
+                           CinematicHeaveAmplitude *
+                           SmoothStep01(eased) *
+                           safeVisualOverkill;
             Vector3 heaveOffset = (_cinematicCameraStartRotation * Vector3.up) * heave;
+            Vector3 splinePosition = ResolveCubicBezier(
+                _cinematicCameraStartPosition,
+                _cinematicCameraControlA,
+                _cinematicCameraControlB,
+                _cinematicCameraTargetPosition,
+                eased);
             cameraTransform.SetPositionAndRotation(
-                _cinematicCameraStartPosition + (_cinematicCameraTargetDelta * eased) + heaveOffset,
+                splinePosition + heaveOffset,
                 Quaternion.SlerpUnclamped(_cinematicCameraStartRotation, _cinematicCameraTargetRotation, eased));
+        }
+
+        private static Vector3 ResolveCubicBezier(Vector3 start, Vector3 controlA, Vector3 controlB, Vector3 end, float t)
+        {
+            float x = math.saturate(math.isfinite(t) ? t : 0f);
+            float omt = 1f - x;
+            float omt2 = omt * omt;
+            float t2 = x * x;
+            return (start * (omt2 * omt)) +
+                   (controlA * (3f * omt2 * x)) +
+                   (controlB * (3f * omt * t2)) +
+                   (end * (t2 * x));
         }
 
         private void EndMainMenuCinematicTransition()
@@ -740,17 +907,44 @@ namespace Hecton8.Core
             _cinematicMenuRect = null;
 
             if (_transitionOverlayRoot != null)
-                Destroy(_transitionOverlayRoot);
+                DestroyTransitionOverlayRoot(_transitionOverlayRoot);
 
-            _transitionOverlayRoot = null;
-            _transitionOverlayGroup = null;
-            _terminalBootText = null;
+            ClearTransitionOverlayObjectReferences();
+            _transitionOverlayCamera = null;
             _terminalBootLastFrame = -1;
             _transitionPerformanceWarningPublished = false;
+            DestroyTransitionDitherMaterial();
+            ClearTransitionPresentationState();
+            ResetWorldEntryFreezeState();
+        }
+
+        private void ClearTransitionPresentationState()
+        {
+            _transitionPresentationElapsedSeconds = 0f;
+            _transitionPresentationEased = 0f;
+            _transitionPresentationVisualOverkill01 = 1f;
+            _transitionPresentationOverlayAlpha = 0f;
+            _transitionPresentationDitherCoverage = 1f;
+            _transitionPresentationDroneProgress = 0f;
+            _transitionPresentationDriveMenu = false;
+            _transitionPresentationDirty = false;
+        }
+
+        private void ClearTransitionOverlayObjectReferences()
+        {
+            _transitionOverlayRoot = null;
+            _transitionOverlayRect = null;
+            _transitionOverlayCanvas = null;
+            _transitionOverlayGroup = null;
+            _terminalBootText = null;
+        }
+
+        private void DestroyTransitionDitherMaterial()
+        {
             if (_transitionDitherMaterial != null)
                 Destroy(_transitionDitherMaterial);
+
             _transitionDitherMaterial = null;
-            ResetWorldEntryFreezeState();
         }
 
         private void PublishTransitionSolveBudgetWarningIfNeeded(long solveStartTicks)
@@ -830,27 +1024,34 @@ namespace Hecton8.Core
 
             GameObject root = new GameObject(TransitionOverlayRootName, typeof(RectTransform), typeof(Canvas), typeof(CanvasGroup)); // COLD ALLOC: GameObject[1] - scene transition blackout overlay - owner: SceneRuntimeService
             root.transform.SetParent(transform, false);
-            if (!root.TryGetComponent(out Canvas canvas) ||
+            if (!root.TryGetComponent(out RectTransform rootRect) ||
+                !root.TryGetComponent(out Canvas canvas) ||
                 !root.TryGetComponent(out CanvasGroup overlayGroup))
             {
-                DestroyTransitionOverlayRoot(root);
+                AbortTransitionOverlayCreation(root);
                 return;
             }
 
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            rootRect.sizeDelta = new Vector2(TransitionOverlayReferenceWidth, TransitionOverlayReferenceHeight);
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = _transitionOverlayCamera;
+            canvas.pixelPerfect = false;
             canvas.sortingOrder = TransitionOverlaySortingOrder;
 
+            _transitionOverlayRect = rootRect;
+            _transitionOverlayCanvas = canvas;
             _transitionOverlayGroup = overlayGroup;
             _transitionOverlayGroup.alpha = 0f;
             _transitionOverlayGroup.interactable = false;
             _transitionOverlayGroup.blocksRaycasts = true;
+            PlaceTransitionOverlayInCameraView();
 
             GameObject imageRoot = new GameObject("DitherBlackout", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - full-screen dither image - owner: SceneRuntimeService
             imageRoot.transform.SetParent(root.transform, false);
             if (!imageRoot.TryGetComponent(out RectTransform imageRect) ||
                 !imageRoot.TryGetComponent(out Image image))
             {
-                DestroyTransitionOverlayRoot(root);
+                AbortTransitionOverlayCreation(root);
                 return;
             }
 
@@ -881,7 +1082,7 @@ namespace Hecton8.Core
             if (!terminalRoot.TryGetComponent(out RectTransform terminalRect) ||
                 !terminalRoot.TryGetComponent(out TextMeshProUGUI terminalText))
             {
-                DestroyTransitionOverlayRoot(root);
+                AbortTransitionOverlayCreation(root);
                 return;
             }
 
@@ -898,6 +1099,89 @@ namespace Hecton8.Core
             _terminalBootText = terminalText;
 
             _transitionOverlayRoot = root;
+        }
+
+        private void AbortTransitionOverlayCreation(GameObject root)
+        {
+            DestroyTransitionOverlayRoot(root);
+            ClearTransitionOverlayObjectReferences();
+            DestroyTransitionDitherMaterial();
+        }
+
+        private void PlaceTransitionOverlayInCameraView()
+        {
+            RectTransform overlayRect = _transitionOverlayRect;
+            Camera overlayCamera = _transitionOverlayCamera != null
+                ? _transitionOverlayCamera
+                : _cinematicCamera;
+            if (overlayRect == null || overlayCamera == null)
+                return;
+
+            Transform cameraTransform = overlayCamera.transform;
+            float distance = math.max(0.01f, TransitionOverlayCameraDistance);
+            float aspect = math.isfinite(overlayCamera.aspect)
+                ? math.max(0.01f, overlayCamera.aspect)
+                : TransitionOverlayReferenceWidth / TransitionOverlayReferenceHeight;
+            float viewHeight;
+            if (overlayCamera.orthographic)
+            {
+                float orthographicSize = math.isfinite(overlayCamera.orthographicSize)
+                    ? overlayCamera.orthographicSize
+                    : 0.5f;
+                viewHeight = math.max(0.01f, orthographicSize * 2f);
+            }
+            else
+            {
+                float fov = math.isfinite(overlayCamera.fieldOfView)
+                    ? math.clamp(overlayCamera.fieldOfView, 1f, 179f)
+                    : 60f;
+                viewHeight = math.max(0.01f, 2f * distance * math.tan(math.radians(fov) * 0.5f));
+            }
+
+            float viewWidth = viewHeight * aspect;
+            float scale = math.max(
+                viewWidth / TransitionOverlayReferenceWidth,
+                viewHeight / TransitionOverlayReferenceHeight);
+            overlayRect.SetPositionAndRotation(
+                cameraTransform.position + (cameraTransform.forward * distance),
+                cameraTransform.rotation);
+            overlayRect.localScale = new Vector3(scale, scale, scale);
+
+            Canvas overlayCanvas = _transitionOverlayCanvas;
+            if (overlayCanvas != null)
+                overlayCanvas.worldCamera = overlayCamera;
+        }
+
+        private Camera ResolvePrimarySceneCameraCold(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return null;
+
+            _cameraRootSearchBuffer.Clear();
+            scene.GetRootGameObjects(_cameraRootSearchBuffer);
+            for (int i = 0; i < _cameraRootSearchBuffer.Count; i++)
+            {
+                GameObject root = _cameraRootSearchBuffer[i];
+                if (root == null)
+                    continue;
+
+                _cameraSearchBuffer.Clear();
+                root.GetComponentsInChildren(false, _cameraSearchBuffer);
+                for (int j = 0; j < _cameraSearchBuffer.Count; j++)
+                {
+                    Camera camera = _cameraSearchBuffer[j];
+                    if (camera != null && camera.enabled)
+                    {
+                        _cameraSearchBuffer.Clear();
+                        _cameraRootSearchBuffer.Clear();
+                        return camera;
+                    }
+                }
+            }
+
+            _cameraSearchBuffer.Clear();
+            _cameraRootSearchBuffer.Clear();
+            return null;
         }
 
         private static void DestroyTransitionOverlayRoot(GameObject root)
@@ -1053,20 +1337,43 @@ namespace Hecton8.Core
 
         private static bool HasMainMenuDissolveReachedActivationTime(float elapsedSeconds)
         {
-            return elapsedSeconds == TransitionDissolveSeconds;
+            return elapsedSeconds >= TransitionDissolveSeconds - math.EPSILON;
         }
 
-        private void SetTransitionDitherCoverage(float coverage)
+        private static bool HasSceneActivationEmergencyElapsed(long startTimestamp, out double elapsedSeconds)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            elapsedSeconds = elapsedTicks / (double)Stopwatch.Frequency;
+            return elapsedSeconds >= SceneActivationEmergencyReleaseSeconds;
+        }
+
+        private float UpdateTransitionVisualOverkill01(float normalized)
+        {
+            float targetQuality = ResolveGlobalQualityWeight01();
+            float desiredVisualOverkill01 = math.lerp(1f, targetQuality, SmoothStep01(normalized));
+            _transitionVisualOverkill01 = math.min(_transitionVisualOverkill01, desiredVisualOverkill01);
+            return _transitionVisualOverkill01;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private void SetTransitionDitherCoverage(float coverage, float visualOverkill01)
         {
             if (_transitionDitherMaterial == null)
                 return;
 
-            _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, math.saturate(coverage));
+            float safeVisualOverkill = math.saturate(math.select(1f, visualOverkill01, math.isfinite(visualOverkill01)));
+            float qualityCoverageScale = math.lerp(MinimumTransitionDitherCoverageScale, 1f, safeVisualOverkill);
+            _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, math.saturate(coverage) * qualityCoverageScale);
         }
 
         private static float SmoothStep01(float value)
         {
-            value = math.saturate(value);
+            value = math.saturate(math.select(0f, value, math.isfinite(value)));
             return value * value * (3f - (2f * value));
         }
 
@@ -1118,6 +1425,24 @@ namespace Hecton8.Core
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSceneActivationEmergencyRelease(
+            string sceneName,
+            float progress,
+            bool loadReady,
+            bool poolsReady,
+            bool originStable,
+            bool gpuResidencyReady,
+            int waitFrames,
+            double elapsedSeconds)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string blockedBy = GetSceneActivationBlockedReason(loadReady, poolsReady, originStable, gpuResidencyReady);
+            Hecton8.Core.H8Debug.LogError(
+                $"[SceneRuntimeService] Emergency-released scene load '{sceneName}' after {elapsedSeconds:0.00}s/{waitFrames} frames. Reason before release: {blockedBy}. Progress: {progress:0.00}.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSceneLoadRejectedInFlight(string sceneName, string pendingSceneName)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1163,8 +1488,8 @@ namespace Hecton8.Core
             if (!_dispatcherAvailable)
                 return;
 
-            SystemDispatcher.Unregister(this, PriorityLayer.Core);
-            _registeredUpdatable = SystemDispatcher.Register(this, PriorityLayer.Core);
+            SystemDispatcher.Unregister((IUpdatable)this, PriorityLayer.Core);
+            _registeredUpdatable = SystemDispatcher.Register((IUpdatable)this, PriorityLayer.Core);
         }
 
         private void RestoreCoreTickAfterRuntimeStateClear()
@@ -1173,7 +1498,9 @@ namespace Hecton8.Core
                 return;
 
             _registeredUpdatable = false;
+            _registeredLateFrameTickable = false;
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
         }
 
         private void TryUnregisterUpdatable()
@@ -1181,8 +1508,29 @@ namespace Hecton8.Core
             if (!_registeredUpdatable)
                 return;
 
-            SystemDispatcher.Unregister(this, PriorityLayer.Core);
+            SystemDispatcher.Unregister((IUpdatable)this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTickable || !Application.isPlaying)
+                return;
+
+            if (!_dispatcherAvailable)
+                return;
+
+            SystemDispatcher.Unregister((ILateFrameTickable)this, PriorityLayer.Core);
+            _registeredLateFrameTickable = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrameTickable)
+                return;
+
+            SystemDispatcher.Unregister((ILateFrameTickable)this, PriorityLayer.Core);
+            _registeredLateFrameTickable = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1197,10 +1545,12 @@ namespace Hecton8.Core
                     _terminalBootDispatcherService = currentService;
                     _tickDispatcher = currentService as ITickDispatcher;
                     TryUnregisterUpdatable();
+                    TryUnregisterLateFrameTickable();
                     if (!_dispatcherAvailable || !_isInitialized || !isActiveAndEnabled)
                         return;
 
                     TryRegisterUpdatable();
+                    TryRegisterLateFrameTickable();
                     break;
                 case GlobalRegistryServiceSlot.TickManager:
                     _terminalBootTickService = currentService;

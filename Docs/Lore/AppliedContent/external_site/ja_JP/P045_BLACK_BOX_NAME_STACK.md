@@ -1,0 +1,30 @@
+---
+packet_id: P045_BLACK_BOX_NAME_STACK
+article_id: hecton8.black_box_name_stack
+locale: ja_JP
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# ブラックボックス名簿スタック
+
+ブラックボックス名簿スタックは植民地配置を終盤結果へ接続する。名前は証拠、交渉材料、追悼、支払い補正、公開情報になる。
+
+## Scanner
+
+スタックは名前、シフトハッシュ、最終圧力状態を保持する。これは設定ではない。証拠だ。
+
+## Terminal
+
+記録スタック可読。乗員IDは避難保留、Atlas修理状態、Deep Reach黒塗り要求と連結。
+
+## Audio
+
+海は会社より名前をよく保存した。
+
+## Field Note
+
+名前はペイロードだ。持ち帰れば結末が変わる。
+
+<!-- External Site; generated from P045_BLACK_BOX_NAME_STACK/ja_JP. -->

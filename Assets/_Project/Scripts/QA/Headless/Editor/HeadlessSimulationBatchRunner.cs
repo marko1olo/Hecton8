@@ -23,8 +23,11 @@ namespace Hecton8.QA.Headless.Editor
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt";
         private const double TimeoutSeconds = 7200.0;
         private const double PollIntervalSeconds = 0.25;
+        private const int ResultReadBufferSize = 4096;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static readonly byte[] ResultReadBuffer = new byte[ResultReadBufferSize];
+        private static readonly byte[] ExitCodeJsonKeyBytes = { (byte)'"', (byte)'e', (byte)'x', (byte)'i', (byte)'t', (byte)'C', (byte)'o', (byte)'d', (byte)'e', (byte)'"' };
         private static double _nextPollTime;
 
         static HeadlessSimulationBatchRunner()
@@ -81,7 +84,10 @@ namespace Hecton8.QA.Headless.Editor
         private static void Tick()
         {
             if (!SessionState.GetBool(ActiveKey, false))
+            {
+                Detach();
                 return;
+            }
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
@@ -181,14 +187,16 @@ namespace Hecton8.QA.Headless.Editor
             exitCode = 1;
             try
             {
-                exitCode = 1;
-                foreach (string line in File.ReadLines(resultPath))
+                int bytesRead;
+                using (FileStream stream = new FileStream(resultPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
-                    if (line.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0)
-                    {
-                        exitCode = 0;
-                        break;
-                    }
+                    bytesRead = stream.Read(ResultReadBuffer, 0, ResultReadBuffer.Length);
+                }
+
+                if (!TryParseExitCode(ResultReadBuffer, bytesRead, out exitCode))
+                {
+                    WriteRunnerStatus("result_exit_code_invalid");
+                    exitCode = 1;
                 }
 
                 return true;
@@ -203,6 +211,84 @@ namespace Hecton8.QA.Headless.Editor
                 WriteRunnerStatus("result_read_pending");
                 return false;
             }
+        }
+
+        private static bool TryParseExitCode(byte[] result, int length, out int exitCode)
+        {
+            exitCode = 1;
+            if (result == null || length <= 0)
+                return false;
+
+            int keyIndex = IndexOf(result, length, ExitCodeJsonKeyBytes, 0);
+            if (keyIndex < 0)
+                return false;
+
+            int colonIndex = IndexOf(result, length, (byte)':', keyIndex + ExitCodeJsonKeyBytes.Length);
+            if (colonIndex < 0)
+                return false;
+
+            int valueStart = colonIndex + 1;
+            while (valueStart < length && IsJsonWhitespace(result[valueStart]))
+                valueStart++;
+
+            int valueEnd = valueStart;
+            int sign = 1;
+            if (valueEnd < length && (result[valueEnd] == (byte)'-' || result[valueEnd] == (byte)'+'))
+            {
+                if (result[valueEnd] == (byte)'-')
+                    sign = -1;
+
+                valueEnd++;
+            }
+
+            int digitStart = valueEnd;
+            int parsed = 0;
+            while (valueEnd < length && result[valueEnd] >= (byte)'0' && result[valueEnd] <= (byte)'9')
+            {
+                parsed = (parsed * 10) + (result[valueEnd] - (byte)'0');
+                valueEnd++;
+            }
+
+            if (valueEnd == digitStart)
+                return false;
+
+            exitCode = parsed * sign;
+            return true;
+        }
+
+        private static int IndexOf(byte[] source, int length, byte[] pattern, int startIndex)
+        {
+            if (pattern.Length == 0 || length < pattern.Length)
+                return -1;
+
+            int lastStart = length - pattern.Length;
+            for (int i = startIndex; i <= lastStart; i++)
+            {
+                int j = 0;
+                while (j < pattern.Length && source[i + j] == pattern[j])
+                    j++;
+
+                if (j == pattern.Length)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int IndexOf(byte[] source, int length, byte value, int startIndex)
+        {
+            for (int i = startIndex; i < length; i++)
+            {
+                if (source[i] == value)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool IsJsonWhitespace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n';
         }
 
         private static bool TryWriteFlagFile()

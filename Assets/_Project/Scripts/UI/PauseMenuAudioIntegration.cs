@@ -11,11 +11,11 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Audio Integration")]
-    public sealed class PauseMenuAudioIntegration : MonoBehaviour
+    public sealed class PauseMenuAudioIntegration : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== SETTINGS ===")]
         [SerializeField, Tooltip("Enable audio feedback")]
@@ -31,9 +31,47 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Play audio even when simulation is paused.")]
         private bool playWhenPaused = true;
 
-        // ══════════════════════════════════════════════════════════
+        private ITickDispatcher _dispatcher;
+        private bool _hotSwapListenerRegistered;
+
+        // ------------------------------------------------------------------
+        // LIFECYCLE
+        // ------------------------------------------------------------------
+
+        private void Awake()
+        {
+            CacheDispatcherCold(GlobalRegistry.TickDispatcher);
+        }
+
+        private void OnEnable()
+        {
+            CacheDispatcherCold(GlobalRegistry.TickDispatcher);
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+            CacheDispatcherCold(null);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                CacheDispatcherCold(currentService as ITickDispatcher);
+        }
+
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Play pause menu open sound.
@@ -110,10 +148,32 @@ namespace Hecton8.UI
             UIAudioFeedback.PlayClickDestructive();
         }
 
-        private static bool IsSimulationPaused()
+        private bool IsSimulationPaused()
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _dispatcher;
             return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
+        }
+
+        private void CacheDispatcherCold(ITickDispatcher dispatcher)
+        {
+            _dispatcher = dispatcher;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
     }
 }

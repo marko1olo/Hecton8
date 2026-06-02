@@ -74,10 +74,10 @@
   "sourceSignalInventory": {
     "auditPath": "Docs/Modding/Signal_Audit_Matrix.md",
     "sourceFile": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads*.cs",
-    "extractionCommand": "rg -o \"public\\s+(?:readonly\\s+|partial\\s+)*struct\\s+[A-Za-z0-9_]+\\s*:\\s*ISignal(?![A-Za-z0-9_])\" Assets/_Project/Scripts/Core/Signals --glob \"GlobalSignalPayloads*.cs\"",
-    "uniqueISignalStructCount": 173,
+    "extractionCommand": "rg --pcre2 -o \"public\\s+(?:readonly\\s+|partial\\s+)*struct\\s+[A-Za-z0-9_]+\\s*:\\s*ISignal(?![A-Za-z0-9_])\" Assets/_Project/Scripts/Core/Signals --glob \"GlobalSignalPayloads*.cs\"",
+    "uniqueISignalStructCount": 175,
     "modProjectedISignalCount": 2,
-    "deniedByDefaultISignalCount": 171,
+    "deniedByDefaultISignalCount": 173,
     "projectedISignals": [
       "CombatDamageSignal",
       "WeatherChangedSignal"
@@ -984,9 +984,9 @@
       "date": "2026-05-30",
       "evidenceClass": "STATIC_SOURCE_VALIDATION",
       "runtimeProof": "PENDING_VERIFICATION",
-      "sourceSignals": 173,
+      "sourceSignals": 175,
       "allowedProjectedSignals": 2,
-      "deniedByDefaultSignals": 171,
+      "deniedByDefaultSignals": 173,
       "acceptedCommandOpcodes": 8,
       "futureCommandAllowedOpcodeCount": 8,
       "futureCommandSandboxValidatorPublic": false,

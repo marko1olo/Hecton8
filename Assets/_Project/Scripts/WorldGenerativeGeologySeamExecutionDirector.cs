@@ -180,6 +180,9 @@ namespace Hecton8.World
         private const string PoolRootName = "__GEOLOGY_SEAM_POOL";
         private const string PrimitiveRootName = "__SEAM_PRIMITIVES";
         private const string GapDitherName = "__SEAM_DITHER";
+#if UNITY_EDITOR
+        private const string EditorDefaultGapDitherMaterialPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
+#endif
         private const int RuntimeKeySelectionCapacity = 128;
         private const int HybridTerrainSeamBuildVersion = 2;
         private const int DebrisPrimitiveCapacity = 14;
@@ -757,6 +760,12 @@ namespace Hecton8.World
         {
             if (gapDitherMaterial != null)
                 return gapDitherMaterial;
+
+#if UNITY_EDITOR
+            gapDitherMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultGapDitherMaterialPath);
+            if (gapDitherMaterial != null)
+                return gapDitherMaterial;
+#endif
 
             if (!_loggedMissingGapDitherMaterial)
             {

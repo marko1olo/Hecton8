@@ -404,10 +404,12 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                     ResolveCoralDamageReaction(reactionPositionWS));
                 float reactiveMask = saturate(input.color.a + input.color.r * 0.35);
                 float retract = reaction01 * reactiveMask;
-                safePositionOS -= input.normalOS * (retract * 0.12);
+                float3 safeNormalOS = all(isfinite(input.normalOS)) ? input.normalOS : float3(0.0, 1.0, 0.0);
+                safeNormalOS = dot(safeNormalOS, safeNormalOS) > 0.000001 ? safeNormalOS : float3(0.0, 1.0, 0.0);
+                safePositionOS -= safeNormalOS * (retract * 0.12);
                 safePositionOS.y *= 1.0 - retract * 0.08;
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
-                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(safeNormalOS, input.tangentOS);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = (half3)HectonCoreLitSafeNormalize(normalInputs.normalWS);
@@ -589,8 +591,10 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 safePositionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
+                float3 safeNormalOS = all(isfinite(input.normalOS)) ? input.normalOS : float3(0.0, 1.0, 0.0);
+                safeNormalOS = dot(safeNormalOS, safeNormalOS) > 0.000001 ? safeNormalOS : float3(0.0, 1.0, 0.0);
                 float3 positionWS = TransformObjectToWorld(safePositionOS);
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 normalWS = TransformObjectToWorldNormal(safeNormalOS);
                 output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
 
                 #if UNITY_REVERSED_Z

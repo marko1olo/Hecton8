@@ -18,24 +18,32 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Audio/Vocal Warning System")]
-    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001DirectSignalPushDropCount_VocalWarningSystem;
         private const string TelemetryDumpPayloadLabel = "vocalWarningTelemetryDumpPayload";
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct VocalWarningDTO
         {
             [FieldOffset(0)] public uint AudioBankHashID;
             [FieldOffset(4)] public float PriorityScore;
             [FieldOffset(8)] public float ExpirationTime;
             [FieldOffset(12)] public uint Flags;
+            [FieldOffset(16)] public long SourceAupGridX;
+            [FieldOffset(24)] public long SourceAupGridY;
+            [FieldOffset(32)] public long SourceAupGridZ;
+            [FieldOffset(40)] public float SourceAupLocalX;
+            [FieldOffset(44)] public float SourceAupLocalY;
+            [FieldOffset(48)] public float SourceAupLocalZ;
+            [FieldOffset(52)] public uint SourceId;
+            [FieldOffset(56)] private ulong _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct VocalWarningPriorityState
+        private struct AlarmStateDTO
         {
-            [FieldOffset(0)] public ulong VwsPriorityWord;
+            [FieldOffset(0)] public ulong activeAlarmsMask;
             [FieldOffset(8)] public uint ActivePriorityCount;
             [FieldOffset(12)] public uint DiscardedExpired;
             [FieldOffset(16)] public uint Sequence;
@@ -136,20 +144,17 @@ namespace Hecton8.Audio
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct VwsTelemetryEntry
         {
-            [FieldOffset(0)] public ulong ActivePriorityWord;
-            [FieldOffset(8)] public uint Frame;
-            [FieldOffset(12)] public uint ActivePriorityCount;
-            [FieldOffset(16)] public uint CurrentAudioBankHashID;
-            [FieldOffset(20)] public uint LastDispatchedAudioBankHashID;
-            [FieldOffset(24)] public float CurrentPriorityScore;
-            [FieldOffset(28)] public float ActiveRemainingSeconds;
-            [FieldOffset(32)] public float BurstExecutionMicros;
-            [FieldOffset(36)] public uint ExpiredDiscardCount;
-            [FieldOffset(40)] public uint FaultFlags;
-            [FieldOffset(44)] public uint InterruptCount;
-            [FieldOffset(48)] public float QualityWeight01;
-            [FieldOffset(52)] public uint HighestPriorityBitIndex;
-            [FieldOffset(56)] public uint SubtitleFrameLatency;
+            [FieldOffset(0)] public long SourceAupGridX;
+            [FieldOffset(8)] public long SourceAupGridY;
+            [FieldOffset(16)] public long SourceAupGridZ;
+            [FieldOffset(24)] public ulong ActiveAlarmsMask;
+            [FieldOffset(32)] public uint Frame;
+            [FieldOffset(36)] public uint ActivePriorityCount;
+            [FieldOffset(40)] public uint CurrentAudioBankHashID;
+            [FieldOffset(44)] public float CurrentPriorityScore;
+            [FieldOffset(48)] public float BurstExecutionMicros;
+            [FieldOffset(52)] public uint FaultFlags;
+            [FieldOffset(56)] public uint HighestPriorityBitIndex;
             [FieldOffset(60)] public ushort DirectionHash;
             [FieldOffset(62)] public byte CurrentWarningId;
             [FieldOffset(63)] public byte LastDispatchedWarningId;
@@ -228,6 +233,8 @@ namespace Hecton8.Audio
             [FieldOffset(4)]
             public uint ActivePriorityCount;
             [FieldOffset(8)]
+            public ulong ActiveAlarmsMask;
+            [FieldOffset(8)]
             public ulong ActivePriorityWord;
             [FieldOffset(16)]
             public uint CurrentAudioBankHashID;
@@ -248,7 +255,7 @@ namespace Hecton8.Audio
         private ref struct VwsVaultViews
         {
             public NativeArray<VocalWarningDTO> Queue;
-            public NativeArray<VocalWarningPriorityState> PriorityState;
+            public NativeArray<AlarmStateDTO> PriorityState;
             public NativeArray<byte> WarningFlags;
             public NativeArray<float> Cooldowns;
             public NativeArray<float> WarningSeverity;
@@ -269,7 +276,7 @@ namespace Hecton8.Audio
         private const float DefaultGain = 0.85f;
         private const uint VocalWarningSystemHash = 0x56333532u; // V352
         private const uint VaultOwnerSignalHash = 0x41565753u; // AVWS
-        private const BufferID VocalWarningPriorityStateBufferId = (BufferID)72430;
+        private const BufferID AlarmStateBufferId = (BufferID)72430;
         private const BufferID VocalWarningCurrentStateBufferId = (BufferID)72431;
         private const BufferID VocalWarningDispatchBufferId = (BufferID)72432;
         private const BufferID VocalWarningProfilesBufferId = (BufferID)72433;
@@ -280,7 +287,7 @@ namespace Hecton8.Audio
         private const uint QueueFlagDirectional = 1u << 3;
         private const uint QueueFlagMock = 1u << 4;
         private const uint QueueFlagPreempted = 1u << 5;
-        private const int PriorityWordBitCount = 64;
+        private const int AlarmBitCount = 64;
         private const int NoPriorityBitIndex = -1;
         private const int LowestCanonicalWarningId = (int)VocalWarningId.CrushDepth;
         private const int HighestCanonicalWarningId = (int)VocalWarningId.PowerLow;
@@ -295,6 +302,8 @@ namespace Hecton8.Audio
         private const uint FaultFlagPriorityInputInvalid = 1u << 2;
         private const uint FaultFlagVocalCueRejected = 1u << 3;
         private const uint FaultFlagSubtitleRejected = 1u << 4;
+        private const uint FaultFlagAlarmMaskOverflow = 1u << 5;
+        private const uint FaultFlagVocalWarningSignalRejected = 1u << 6;
         private const uint PackedWarningIdShift = 8;
         private const uint PackedDirectionShift = 16;
         private const uint PackedDirectionMask = 0xFFFFu << (int)PackedDirectionShift;
@@ -310,7 +319,7 @@ namespace Hecton8.Audio
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<VocalWarningDTO> _vwsQueueHandle;
-        private VaultGenerationHandle<VocalWarningPriorityState> _priorityStateHandle;
+        private VaultGenerationHandle<AlarmStateDTO> _priorityStateHandle;
         private VaultGenerationHandle<byte> _warningFlagsHandle;
         private VaultGenerationHandle<float> _cooldownsHandle;
         private VaultGenerationHandle<float> _warningSeverityHandle;
@@ -325,6 +334,7 @@ namespace Hecton8.Audio
         private int _queueCount;
         private int _registeredUpdate;
         private int _registeredSlowTick;
+        private int _registeredLateFrameTick;
         private int _registeredHotSwap;
         private int _registeredRuntime;
         private int _registeredPostSimulation;
@@ -332,8 +342,12 @@ namespace Hecton8.Audio
         private int _telemetryDumpRequested;
         private int _telemetryDumped;
         private int _telemetrySamplesWritten;
+        private int _visualSyncPresentationPending;
+        private int _pendingExternalFaultFlags;
+        private int _pendingCancelRequest;
         private uint _ownerFrameCounter;
         private uint _lastProcessedFrame = uint.MaxValue;
+        private uint _pendingPresentationFrame;
         private float _globalQualityWeight01 = 1f;
         private float _vwsClockSeconds;
         private float _warningPlaybackRemainingSeconds;
@@ -342,6 +356,12 @@ namespace Hecton8.Audio
         private uint _currentAudioBankHashID;
         private uint _lastDispatchedAudioBankHashID;
         private uint _lastInterruptCount;
+        private long _lastSourceAupGridX;
+        private long _lastSourceAupGridY;
+        private long _lastSourceAupGridZ;
+        private float _lastSourceAupLocalX;
+        private float _lastSourceAupLocalY;
+        private float _lastSourceAupLocalZ;
         private ushort _lastDirectionHash;
         private byte _currentWarningId;
         private byte _lastDispatchedWarningId;
@@ -415,6 +435,14 @@ namespace Hecton8.Audio
             RunVocalWarningFrame(0.1f, NextOwnerFrameId());
         }
 
+        public void LateFrameTick()
+        {
+            if (Volatile.Read(ref _registeredPostSimulation) != 0)
+                return;
+
+            VisualSyncPresentationTick();
+        }
+
         public bool TryQueueWarning(byte warningId, float severity01, float cooldownSeconds, byte flags, uint sourceId)
         {
             if (Volatile.Read(ref _nativeAllocated) == 0 || Volatile.Read(ref _registeredRuntime) == 0)
@@ -423,11 +451,14 @@ namespace Hecton8.Audio
             byte normalized = NormalizeWarningId(warningId);
             if (normalized == 0)
             {
+                AccumulatePendingFault(FaultFlagPriorityInputInvalid);
                 Interlocked.Exchange(ref _telemetryDumpRequested, 1);
                 return false;
             }
 
             uint hash = VocalWarningHashes.FromWarningId(normalized);
+            if (hash == 0u)
+                AccumulatePendingFault(FaultFlagPriorityInputInvalid);
             if (hash == 0u)
                 return false;
 
@@ -443,6 +474,7 @@ namespace Hecton8.Audio
                 ref s_x001DirectSignalPushDropCount_VocalWarningSystem);
             if (!accepted)
             {
+                AccumulatePendingFault(FaultFlagVocalWarningSignalRejected);
                 Interlocked.Exchange(ref _telemetryDumpRequested, 1);
                 return false;
             }
@@ -450,9 +482,45 @@ namespace Hecton8.Audio
             return true;
         }
 
+        private void AccumulatePendingFault(uint faultFlags)
+        {
+            if (faultFlags == 0u)
+                return;
+
+            int mask = unchecked((int)faultFlags);
+            int observed;
+            int next;
+            do
+            {
+                observed = Volatile.Read(ref _pendingExternalFaultFlags);
+                next = observed | mask;
+                if (next == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _pendingExternalFaultFlags, next, observed) != observed);
+        }
+
+        public bool TryReadActiveAlarmsMask(out ulong activeAlarmsMask)
+        {
+            activeAlarmsMask = 0UL;
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !vault.TryReadOnlyHandle(in _priorityStateHandle, out NativeArray<AlarmStateDTO>.ReadOnly priorityState) ||
+                !priorityState.IsCreated ||
+                priorityState.Length <= 0)
+            {
+                return false;
+            }
+
+            activeAlarmsMask = priorityState[0].activeAlarmsMask;
+            return true;
+        }
+
         public void CancelCurrentWarning()
         {
-            CancelRendererPlaybackAndClearQueues();
+            Interlocked.Exchange(ref _pendingCancelRequest, 1);
+            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
         }
 
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
@@ -488,11 +556,12 @@ namespace Hecton8.Audio
                 Queue = views.Queue,
                 PriorityState = views.PriorityState,
                 Tuning = views.Tuning,
+                Profiles = views.Profiles,
                 TimeSeconds = _vwsClockSeconds,
                 Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
                 Count = math.clamp(count, 1, 50)
             };
-            job.Execute();
+            job.Run();
             _queueCount = ResolveActivePriorityCount(ref views);
             return true;
         }
@@ -554,13 +623,14 @@ namespace Hecton8.Audio
             VwsTelemetryEntry entry = telemetryRing[cursor % telemetryRing.Length];
             snapshot.Frame = entry.Frame;
             snapshot.ActivePriorityCount = entry.ActivePriorityCount;
-            snapshot.ActivePriorityWord = entry.ActivePriorityWord;
+            snapshot.ActiveAlarmsMask = entry.ActiveAlarmsMask;
+            snapshot.ActivePriorityWord = entry.ActiveAlarmsMask;
             snapshot.CurrentAudioBankHashID = entry.CurrentAudioBankHashID;
             snapshot.CurrentPriorityScore = entry.CurrentPriorityScore;
             snapshot.BurstExecutionMicros = entry.BurstExecutionMicros;
-            snapshot.ExpiredDiscardCount = entry.ExpiredDiscardCount;
+            snapshot.ExpiredDiscardCount = 0u;
             snapshot.FaultFlags = entry.FaultFlags;
-            snapshot.InterruptCount = entry.InterruptCount;
+            snapshot.InterruptCount = _lastInterruptCount;
             return entry.Frame != 0u || entry.ActivePriorityCount != 0u || entry.CurrentAudioBankHashID != 0u;
         }
 
@@ -573,7 +643,7 @@ namespace Hecton8.Audio
                 Volatile.Read(ref _nativeAllocated) == 0 ||
                 vault == null ||
                 !vault.TryReadOnlyHandle(in _vwsQueueHandle, out NativeArray<VocalWarningDTO>.ReadOnly queue) ||
-                !vault.TryReadOnlyHandle(in _priorityStateHandle, out NativeArray<VocalWarningPriorityState>.ReadOnly priorityState) ||
+                !vault.TryReadOnlyHandle(in _priorityStateHandle, out NativeArray<AlarmStateDTO>.ReadOnly priorityState) ||
                 !queue.IsCreated ||
                 !priorityState.IsCreated ||
                 priorityState.Length <= 0)
@@ -581,7 +651,7 @@ namespace Hecton8.Audio
 
             int count = math.clamp((int)priorityState[0].ActivePriorityCount, 0, QueueCapacity);
             if (priorityOrderIndex >= count ||
-                !VocalWarningPriorityWordOps.TryGetByPriorityOrder(queue, priorityState, priorityOrderIndex, out VocalWarningDTO dto))
+                !AlarmBitmaskOps.TryGetByPriorityOrder(queue, priorityState, priorityOrderIndex, out VocalWarningDTO dto))
             {
                 return false;
             }
@@ -609,6 +679,8 @@ namespace Hecton8.Audio
                 _registeredUpdate = 1;
             if (GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment))
                 _registeredSlowTick = 1;
+            if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment))
+                _registeredLateFrameTick = 1;
         }
 
         private void UnregisterRuntime()
@@ -620,6 +692,8 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (Interlocked.Exchange(ref _registeredLateFrameTick, 0) != 0)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredRuntime, 0) != 0)
@@ -667,8 +741,8 @@ namespace Hecton8.Audio
                 QueueCapacity,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _priorityStateHandle = vault.EnsureGenerationHandle<VocalWarningPriorityState>(
-                VocalWarningPriorityStateBufferId,
+            _priorityStateHandle = vault.EnsureGenerationHandle<AlarmStateDTO>(
+                AlarmStateBufferId,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
@@ -727,6 +801,10 @@ namespace Hecton8.Audio
             _lastProcessedFrame = uint.MaxValue;
             Interlocked.Exchange(ref _telemetryDumpRequested, 0);
             Interlocked.Exchange(ref _telemetryDumped, 0);
+            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
+            Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+            Interlocked.Exchange(ref _pendingCancelRequest, 0);
+            _pendingPresentationFrame = 0u;
             unsafe
             {
                 if (views.PriorityState.IsCreated && views.PriorityState.Length > 0)
@@ -750,6 +828,7 @@ namespace Hecton8.Audio
                     NativeElementRef(views.WarningSourceIds, i) = 0u;
                 for (int i = 0; i < views.Profiles.Length; i++)
                     NativeElementRef(views.Profiles, i) = default;
+                InitializeDefaultProfiles(ref views);
                 for (int i = 0; i < views.TelemetryRing.Length; i++)
                     NativeElementRef(views.TelemetryRing, i) = default;
             }
@@ -766,6 +845,10 @@ namespace Hecton8.Audio
             _queueCount = 0;
             _currentWarningId = 0;
             _currentAudioBankHashID = 0u;
+            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
+            Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+            Interlocked.Exchange(ref _pendingCancelRequest, 0);
+            _pendingPresentationFrame = 0u;
             if (vault != null)
                 EnsureNativeStorage();
         }
@@ -774,7 +857,7 @@ namespace Hecton8.Audio
         {
             IDataVault vault = _dataVault;
             ReleaseVaultBuffer(vault, ref _vwsQueueHandle, BufferID.AudioVocalWarningQueue);
-            ReleaseVaultBuffer(vault, ref _priorityStateHandle, VocalWarningPriorityStateBufferId);
+            ReleaseVaultBuffer(vault, ref _priorityStateHandle, AlarmStateBufferId);
             ReleaseVaultBuffer(vault, ref _warningFlagsHandle, BufferID.AudioVocalWarningFlags);
             ReleaseVaultBuffer(vault, ref _cooldownsHandle, BufferID.AudioVocalWarningCooldowns);
             ReleaseVaultBuffer(vault, ref _warningSeverityHandle, BufferID.AudioVocalWarningSeverity);
@@ -884,11 +967,24 @@ namespace Hecton8.Audio
             _queueCount = 0;
             _currentWarningId = 0;
             _currentAudioBankHashID = 0u;
+            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
+            Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+            Interlocked.Exchange(ref _pendingCancelRequest, 0);
+            _pendingPresentationFrame = 0u;
+            _lastSourceAupGridX = 0L;
+            _lastSourceAupGridY = 0L;
+            _lastSourceAupGridZ = 0L;
+            _lastSourceAupLocalX = 0f;
+            _lastSourceAupLocalY = 0f;
+            _lastSourceAupLocalZ = 0f;
         }
 
         private void RunVocalWarningFrame(float deltaTime, uint frame)
         {
             if (Volatile.Read(ref _nativeAllocated) == 0)
+                return;
+
+            if (Volatile.Read(ref _visualSyncPresentationPending) != 0)
                 return;
 
             if (_lastProcessedFrame == frame)
@@ -897,6 +993,19 @@ namespace Hecton8.Audio
 
             if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
                 return;
+
+            bool cancelRequested = Interlocked.Exchange(ref _pendingCancelRequest, 0) != 0;
+            uint pendingFaultFlags = (uint)Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+            if (cancelRequested)
+                CancelRendererPlaybackAndClearQueues(ref views, false);
+            if (pendingFaultFlags != 0u)
+                MarkPriorityFault(ref views, pendingFaultFlags);
+            if (cancelRequested)
+            {
+                _pendingPresentationFrame = frame;
+                Volatile.Write(ref _visualSyncPresentationPending, 1);
+                return;
+            }
 
             float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
             _vwsClockSeconds += dt;
@@ -913,6 +1022,7 @@ namespace Hecton8.Audio
                 WarningSeverity = views.WarningSeverity,
                 WarningSourceIds = views.WarningSourceIds,
                 Tuning = views.Tuning,
+                Profiles = views.Profiles,
                 VocalWarnings = SignalBus<VocalWarningSignal>.GetFrameSnapshotArray(),
                 VitalWarnings = SignalBus<VitalWarningSignal>.GetFrameSnapshotArray(),
                 CrushWarnings = SignalBus<CrushWarningSignal>.GetFrameSnapshotArray(),
@@ -933,9 +1043,9 @@ namespace Hecton8.Audio
             };
 
             long startTicks = Stopwatch.GetTimestamp();
-            evaluateJob.Execute();
+            evaluateJob.Run();
 
-            DispatchVoiceOverJob dispatchJob = new DispatchVoiceOverJob
+            EvaluateAlarmPriorityJob dispatchJob = new EvaluateAlarmPriorityJob
             {
                 Queue = views.Queue,
                 PriorityState = views.PriorityState,
@@ -948,15 +1058,38 @@ namespace Hecton8.Audio
                 VoiceGain = voiceGain,
                 Frame = frame
             };
-            dispatchJob.Execute();
+            dispatchJob.Run();
             long endTicks = Stopwatch.GetTimestamp();
 
             _lastBurstExecutionMicros = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
+            _pendingPresentationFrame = frame;
+            Volatile.Write(ref _visualSyncPresentationPending, 1);
+        }
+
+        private void CompletePresentationPhase(ref VwsVaultViews views, uint frame)
+        {
             PublishDispatchIfNeeded(ref views, frame);
             PullCurrentState(ref views);
             WriteTelemetry(ref views, frame);
 
             FlushTelemetryDumpRequest();
+        }
+
+        private void VisualSyncPresentationTick()
+        {
+            if (Interlocked.Exchange(ref _visualSyncPresentationPending, 0) == 0)
+                return;
+
+            if (Volatile.Read(ref _nativeAllocated) == 0)
+                return;
+
+            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+            {
+                Volatile.Write(ref _visualSyncPresentationPending, 1);
+                return;
+            }
+
+            CompletePresentationPhase(ref views, _pendingPresentationFrame);
         }
 
         private uint NextOwnerFrameId()
@@ -1029,6 +1162,12 @@ namespace Hecton8.Audio
             _lastDispatchedAudioBankHashID = dispatch.AudioBankHashID;
             _lastDispatchedWarningId = dispatch.WarningId;
             _lastDirectionHash = dispatch.DirectionHash;
+            _lastSourceAupGridX = dispatch.SourceAupGridX;
+            _lastSourceAupGridY = dispatch.SourceAupGridY;
+            _lastSourceAupGridZ = dispatch.SourceAupGridZ;
+            _lastSourceAupLocalX = dispatch.SourceAupLocalX;
+            _lastSourceAupLocalY = dispatch.SourceAupLocalY;
+            _lastSourceAupLocalZ = dispatch.SourceAupLocalZ;
             unsafe
             {
                 NativeElementRef(views.Dispatch, 0) = default;
@@ -1042,7 +1181,7 @@ namespace Hecton8.Audio
 
             unsafe
             {
-                ref VocalWarningPriorityState state = ref NativeElementRef(views.PriorityState, 0);
+                ref AlarmStateDTO state = ref NativeElementRef(views.PriorityState, 0);
                 state.FaultFlags |= faultFlags;
             }
         }
@@ -1090,34 +1229,57 @@ namespace Hecton8.Audio
 
         private void CancelRendererPlaybackAndClearQueues()
         {
+            if (TryResolveVwsOwnerViews(out VwsVaultViews views))
+            {
+                CancelRendererPlaybackAndClearQueues(ref views, true);
+                return;
+            }
+
+            ClearPresentationState(true);
+        }
+
+        private void CancelRendererPlaybackAndClearQueues(ref VwsVaultViews views, bool clearPendingFaults)
+        {
+            ClearPresentationState(clearPendingFaults);
+            ClearQueuedWarnings(ref views);
+        }
+
+        private void ClearPresentationState(bool clearPendingFaults)
+        {
+            _queueCount = 0;
             _currentWarningId = 0;
             _currentAudioBankHashID = 0u;
             _currentPriorityScore = 0f;
             _warningPlaybackRemainingSeconds = 0f;
-            if (Volatile.Read(ref _nativeAllocated) == 0)
-                return;
-
-            ClearQueuedWarnings();
+            Interlocked.Exchange(ref _pendingCancelRequest, 0);
+            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
+            if (clearPendingFaults)
+                Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+            _pendingPresentationFrame = 0u;
+            _lastSourceAupGridX = 0L;
+            _lastSourceAupGridY = 0L;
+            _lastSourceAupGridZ = 0L;
+            _lastSourceAupLocalX = 0f;
+            _lastSourceAupLocalY = 0f;
+            _lastSourceAupLocalZ = 0f;
         }
 
-        private void ClearQueuedWarnings()
+        private static void ClearQueuedWarnings(ref VwsVaultViews views)
         {
-            if (TryResolveVwsOwnerViews(out VwsVaultViews views))
-            {
-                unsafe
-                {
-                    for (int i = 0; i < views.Queue.Length; i++)
-                        NativeElementRef(views.Queue, i) = default;
-                    if (views.PriorityState.IsCreated && views.PriorityState.Length > 0)
-                        NativeElementRef(views.PriorityState, 0) = default;
-                    if (views.CurrentState.IsCreated && views.CurrentState.Length > 0)
-                        NativeElementRef(views.CurrentState, 0) = default;
-                    if (views.Dispatch.IsCreated && views.Dispatch.Length > 0)
-                        NativeElementRef(views.Dispatch, 0) = default;
-                }
-            }
+            if (!views.Queue.IsCreated)
+                return;
 
-            _queueCount = 0;
+            unsafe
+            {
+                for (int i = 0; i < views.Queue.Length; i++)
+                    NativeElementRef(views.Queue, i) = default;
+                if (views.PriorityState.IsCreated && views.PriorityState.Length > 0)
+                    NativeElementRef(views.PriorityState, 0) = default;
+                if (views.CurrentState.IsCreated && views.CurrentState.Length > 0)
+                    NativeElementRef(views.CurrentState, 0) = default;
+                if (views.Dispatch.IsCreated && views.Dispatch.Length > 0)
+                    NativeElementRef(views.Dispatch, 0) = default;
+            }
         }
 
         private void WriteTelemetry(ref VwsVaultViews views, uint frame)
@@ -1130,7 +1292,7 @@ namespace Hecton8.Audio
             if ((uint)cursor >= (uint)telemetryRing.Length)
                 cursor = 0;
 
-            VocalWarningPriorityState priorityState = default;
+            AlarmStateDTO priorityState = default;
             VocalWarningCurrentState current = default;
             unsafe
             {
@@ -1156,21 +1318,18 @@ namespace Hecton8.Audio
                 {
                     Frame = frame,
                     ActivePriorityCount = priorityState.ActivePriorityCount,
-                    ActivePriorityWord = priorityState.VwsPriorityWord,
+                    ActiveAlarmsMask = priorityState.activeAlarmsMask,
                     CurrentAudioBankHashID = current.AudioBankHashID,
-                    LastDispatchedAudioBankHashID = _lastDispatchedAudioBankHashID,
                     CurrentPriorityScore = current.PriorityScore,
-                    ActiveRemainingSeconds = current.PlaybackRemainingSeconds,
                     BurstExecutionMicros = _lastBurstExecutionMicros,
-                    ExpiredDiscardCount = (uint)math.max(0, priorityState.DiscardedExpired),
                     FaultFlags = faultFlags,
-                    InterruptCount = current.LastInterruptCount,
-                    QualityWeight01 = _globalQualityWeight01,
                     CurrentWarningId = VocalWarningHashes.ToWarningId(current.AudioBankHashID),
                     LastDispatchedWarningId = _lastDispatchedWarningId,
                     DirectionHash = _lastDirectionHash,
                     HighestPriorityBitIndex = priorityState.HighestPriorityBitIndex,
-                    SubtitleFrameLatency = 0u
+                    SourceAupGridX = _lastSourceAupGridX,
+                    SourceAupGridY = _lastSourceAupGridY,
+                    SourceAupGridZ = _lastSourceAupGridZ
                 };
             }
 
@@ -1279,7 +1438,7 @@ namespace Hecton8.Audio
             if (!views.PriorityState.IsCreated || views.PriorityState.Length <= 0)
                 return 0;
 
-            VocalWarningPriorityState state;
+            AlarmStateDTO state;
             unsafe
             {
                 state = NativeElementRef(views.PriorityState, 0);
@@ -1394,7 +1553,7 @@ namespace Hecton8.Audio
         private static int ResolvePriorityBitIndex(byte warningId)
         {
             byte normalized = NormalizeWarningId(warningId);
-            return normalized == 0 ? NoPriorityBitIndex : PriorityWordBitCount - normalized;
+            return normalized == 0 ? NoPriorityBitIndex : normalized - 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1432,6 +1591,63 @@ namespace Hecton8.Audio
                 DefaultBasePriority = 64f,
                 Flags = 0u,
                 Revision = 1u
+            };
+        }
+
+        private static void InitializeDefaultProfiles(ref VwsVaultViews views)
+        {
+            if (!views.Profiles.IsCreated || views.Profiles.Length < CanonicalWarningCount)
+                return;
+
+            unsafe
+            {
+                NativeElementRef(views.Profiles, 0) = CreateDefaultProfile(
+                    (byte)VocalWarningId.CrushDepth,
+                    VocalWarningHashes.CrushDepth,
+                    940f,
+                    2.5f,
+                    1.9f);
+                NativeElementRef(views.Profiles, 1) = CreateDefaultProfile(
+                    (byte)VocalWarningId.HullBreach,
+                    VocalWarningHashes.HullBreach,
+                    1000f,
+                    3.5f,
+                    2.1f);
+                NativeElementRef(views.Profiles, 2) = CreateDefaultProfile(
+                    (byte)VocalWarningId.OxygenLow,
+                    VocalWarningHashes.OxygenLow,
+                    820f,
+                    2.5f,
+                    1.65f);
+                NativeElementRef(views.Profiles, 3) = CreateDefaultProfile(
+                    (byte)VocalWarningId.Radiation,
+                    VocalWarningHashes.Radiation,
+                    430f,
+                    4f,
+                    1.35f);
+                NativeElementRef(views.Profiles, 4) = CreateDefaultProfile(
+                    (byte)VocalWarningId.PowerLow,
+                    VocalWarningHashes.PowerLow,
+                    120f,
+                    6f,
+                    1.15f);
+            }
+        }
+
+        private static VocalWarningProfileDTO CreateDefaultProfile(
+            byte warningId,
+            uint audioBankHashID,
+            float basePriority,
+            float cooldownSeconds,
+            float durationSeconds)
+        {
+            return new VocalWarningProfileDTO
+            {
+                AudioBankHashID = audioBankHashID,
+                BasePriority = basePriority,
+                CooldownSeconds = cooldownSeconds,
+                DurationSeconds = durationSeconds,
+                Flags = warningId
             };
         }
 
@@ -1499,10 +1715,57 @@ namespace Hecton8.Audio
                     break;
             }
 
+            return ResolvePriorityScoreWithBase(basePriority, severity01, producerPriority, packedFlags, in resolved);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolvePriorityScoreFromProfiles(
+            uint warningHash,
+            float severity01,
+            int producerPriority,
+            uint packedFlags,
+            in VocalWarningTuningDTO tuning,
+            NativeArray<VocalWarningProfileDTO> profiles)
+        {
+            if (TryResolveProfile(warningHash, profiles, out VocalWarningProfileDTO profile) &&
+                math.isfinite(profile.BasePriority) &&
+                profile.BasePriority > 0f)
+            {
+                return ResolvePriorityScoreWithBase(profile.BasePriority, severity01, producerPriority, packedFlags, in tuning);
+            }
+
+            return ResolvePriorityScore(warningHash, severity01, producerPriority, packedFlags, in tuning);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveProfile(
+            uint warningHash,
+            NativeArray<VocalWarningProfileDTO> profiles,
+            out VocalWarningProfileDTO profile)
+        {
+            profile = default;
+            if (warningHash == 0u || !profiles.IsCreated)
+                return false;
+
+            int index = ResolvePriorityBitIndex(VocalWarningHashes.ToWarningId(warningHash));
+            if ((uint)index >= (uint)profiles.Length)
+                return false;
+
+            VocalWarningProfileDTO candidate = profiles[index];
+            if (candidate.AudioBankHashID != warningHash)
+                return false;
+
+            profile = candidate;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolvePriorityScoreWithBase(float basePriority, float severity01, int producerPriority, uint packedFlags, in VocalWarningTuningDTO tuning)
+        {
             float severity = math.saturate(math.select(0f, severity01, math.isfinite(severity01)));
-            float criticalBoost = (packedFlags & QueueFlagCritical) != 0u ? resolved.CriticalBoost : 0f;
-            float producerBoost = math.clamp(producerPriority, 0, 255) * resolved.ProducerPriorityScale;
-            return basePriority + severity * resolved.SeverityBoost + criticalBoost + producerBoost;
+            float criticalBoost = (packedFlags & QueueFlagCritical) != 0u ? tuning.CriticalBoost : 0f;
+            float producerBoost = math.clamp(producerPriority, 0, 255) * tuning.ProducerPriorityScale;
+            return basePriority + severity * tuning.SeverityBoost + criticalBoost + producerBoost;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1548,10 +1811,39 @@ namespace Hecton8.Audio
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveVwsSpatialBlend01(uint packedFlags, float qualityWeight01, in VocalWarningDTO warning)
+        {
+            if ((packedFlags & QueueFlagDirectional) == 0u || !HasFiniteSourceAup(in warning))
+                return 0f;
+
+            float quality = SmoothQuality01(qualityWeight01);
+            return math.lerp(0f, 0.18f, quality * quality);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasFiniteSourceAup(in VocalWarningDTO warning)
+        {
+            float3 local = new float3(warning.SourceAupLocalX, warning.SourceAupLocalY, warning.SourceAupLocalZ);
+            bool finite = math.all(math.isfinite(local));
+            bool hasGrid = warning.SourceAupGridX != 0L || warning.SourceAupGridY != 0L || warning.SourceAupGridZ != 0L;
+            bool hasLocal = math.lengthsq(local) > 0.000001f;
+            return finite && (hasGrid || hasLocal);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static AbsoluteUniversePosition SanitizeSourceAup(in AbsoluteUniversePosition sourceAup)
+        {
+            float3 local = new float3(sourceAup.LocalX, sourceAup.LocalY, sourceAup.LocalZ);
+            if (!math.all(math.isfinite(local)))
+                return default;
+
+            return sourceAup;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ResolveCuePriority(int priorityBitIndex, float priorityScore)
         {
-            int firstPriorityBit = PriorityWordBitCount - HighestCanonicalWarningId;
-            int canonicalRank = math.clamp(priorityBitIndex - firstPriorityBit + 1, 1, CanonicalWarningCount);
+            int canonicalRank = math.clamp(priorityBitIndex + 1, 1, CanonicalWarningCount);
             int bandBase = ((canonicalRank - 1) * CuePriorityBandSize) + 1;
             int bandOffset = math.clamp(
                 (int)math.round(math.saturate(priorityScore / 1400f) * (CuePriorityBandSize - 1)),
@@ -1739,9 +2031,11 @@ namespace Hecton8.Audio
             [NoAlias]
             public NativeArray<VocalWarningDTO> Queue;
             [NoAlias]
-            public NativeArray<VocalWarningPriorityState> PriorityState;
+            public NativeArray<AlarmStateDTO> PriorityState;
             [ReadOnly, NoAlias]
             public NativeArray<VocalWarningTuningDTO> Tuning;
+            [ReadOnly, NoAlias]
+            public NativeArray<VocalWarningProfileDTO> Profiles;
             public float TimeSeconds;
             public uint Seed;
             public int Count;
@@ -1751,6 +2045,7 @@ namespace Hecton8.Audio
                 uint state = math.max(1u, Seed);
                 int count = math.clamp(Count, 1, 50);
                 VocalWarningTuningDTO tuning = ResolveTuning(Tuning);
+                AbsoluteUniversePosition sourceAup = default;
                 for (int i = 0; i < count; i++)
                 {
                     state = state * 1664525u + 1013904223u;
@@ -1761,11 +2056,17 @@ namespace Hecton8.Audio
                     VocalWarningDTO dto = new VocalWarningDTO
                     {
                         AudioBankHashID = hash,
-                        PriorityScore = ResolvePriorityScore(hash, severity, 0, flags, in tuning),
+                        PriorityScore = ResolvePriorityScoreFromProfiles(hash, severity, 0, flags, in tuning, Profiles),
                         ExpirationTime = TimeSeconds + ResolveExpirationSeconds(hash, severity),
-                        Flags = flags
+                        Flags = flags,
+                        SourceAupGridX = sourceAup.GridX,
+                        SourceAupGridY = sourceAup.GridY,
+                        SourceAupGridZ = sourceAup.GridZ,
+                        SourceAupLocalX = sourceAup.LocalX,
+                        SourceAupLocalY = sourceAup.LocalY,
+                        SourceAupLocalZ = sourceAup.LocalZ
                     };
-                    VocalWarningPriorityWordOps.Insert(Queue, PriorityState, in dto);
+                    AlarmBitmaskOps.Insert(Queue, PriorityState, in dto);
                 }
             }
         }
@@ -1776,7 +2077,7 @@ namespace Hecton8.Audio
             [NoAlias]
             public NativeArray<VocalWarningDTO> Queue;
             [NoAlias]
-            public NativeArray<VocalWarningPriorityState> PriorityState;
+            public NativeArray<AlarmStateDTO> PriorityState;
             [NoAlias]
             public NativeArray<float> Cooldowns;
             [NoAlias]
@@ -1787,6 +2088,8 @@ namespace Hecton8.Audio
             public NativeArray<uint> WarningSourceIds;
             [ReadOnly, NoAlias]
             public NativeArray<VocalWarningTuningDTO> Tuning;
+            [ReadOnly, NoAlias]
+            public NativeArray<VocalWarningProfileDTO> Profiles;
             [ReadOnly, NoAlias] public NativeArray<VocalWarningSignal>.ReadOnly VocalWarnings;
             [ReadOnly, NoAlias] public NativeArray<VitalWarningSignal>.ReadOnly VitalWarnings;
             [ReadOnly, NoAlias] public NativeArray<CrushWarningSignal>.ReadOnly CrushWarnings;
@@ -1810,9 +2113,10 @@ namespace Hecton8.Audio
                 if (!Queue.IsCreated || !PriorityState.IsCreated || PriorityState.Length <= 0)
                     return;
 
-                VocalWarningPriorityWordOps.DiscardExpired(Queue, PriorityState, TimeSeconds);
+                AlarmBitmaskOps.DiscardExpired(Queue, PriorityState, TimeSeconds);
                 DecayCooldowns();
                 VocalWarningTuningDTO tuning = ResolveTuning(Tuning);
+                AbsoluteUniversePosition defaultSourceAup = default;
 
                 int evaluations = 0;
                 for (int i = 0; i < FloodSignals.Length && evaluations < MaxEvaluations; i++)
@@ -1822,7 +2126,7 @@ namespace Hecton8.Audio
                         continue;
 
                     float severity = math.saturate(math.max(signal.FillRatio01, signal.TotalWaterMassKg / math.max(1f, signal.BaseMassKg)));
-                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.SourceBodyId, 0, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.SourceBodyId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1831,7 +2135,7 @@ namespace Hecton8.Audio
                     FluidIncursionSignal signal = FluidSignals[i];
                     ushort direction = ResolveCompassDirectionHash(in ListenerAup, in signal.LeakAup);
                     float severity = math.max(signal.FloodLevel01, signal.FlowRate01);
-                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.CompartmentId, direction, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.CompartmentId, in signal.LeakAup, direction, false, in tuning))
                         evaluations++;
                 }
 
@@ -1840,7 +2144,7 @@ namespace Hecton8.Audio
                     PipeRuptureSignal signal = PipeSignals[i];
                     ushort direction = ResolveCompassDirectionHash(in ListenerAup, in signal.RuptureAup);
                     float severity = math.saturate(signal.PressureKPa * (1f / 2000f));
-                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.NetworkId, direction, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.HullBreach, (byte)VocalWarningId.HullBreach, severity, FallbackCooldownSeconds, VocalWarningSignalFlags.HabitatIntegrityCompromised, signal.NetworkId, in signal.RuptureAup, direction, false, in tuning))
                         evaluations++;
                 }
 
@@ -1848,7 +2152,7 @@ namespace Hecton8.Audio
                 {
                     OxygenCriticalSignal signal = OxygenSignals[i];
                     float severity = math.max(1f - math.saturate(signal.Oxygen01), signal.Severity * (1f / 255f));
-                    if (TryQueue(VocalWarningHashes.OxygenLow, (byte)VocalWarningId.OxygenLow, severity, FallbackCooldownSeconds, signal.Flags, signal.SourceId, 0, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.OxygenLow, (byte)VocalWarningId.OxygenLow, severity, FallbackCooldownSeconds, signal.Flags, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1857,7 +2161,7 @@ namespace Hecton8.Audio
                     CrushWarningSignal signal = CrushWarnings[i];
                     uint hash = ResolveHashFromIdOrHash(signal.WarningHash, (byte)VocalWarningId.CrushDepth);
                     byte warningId = VocalWarningHashes.ToWarningId(hash);
-                    if (TryQueue(hash, warningId, signal.Severity01, FallbackCooldownSeconds, signal.Flags, signal.SourceId, 0, false, in tuning))
+                    if (TryQueue(hash, warningId, signal.Severity01, FallbackCooldownSeconds, signal.Flags, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1866,7 +2170,7 @@ namespace Hecton8.Audio
                     VocalWarningSignal signal = VocalWarnings[i];
                     uint hash = ResolveHashFromIdOrHash(signal.WarningHash, signal.Priority);
                     byte warningId = VocalWarningHashes.ToWarningId(hash);
-                    if (TryQueue(hash, warningId, signal.Severity01, signal.CooldownSeconds, signal.Flags, signal.SourceId, 0, false, in tuning))
+                    if (TryQueue(hash, warningId, signal.Severity01, signal.CooldownSeconds, signal.Flags, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1876,7 +2180,7 @@ namespace Hecton8.Audio
                     uint hash = ResolveHashFromIdOrHash(signal.WarningHash, (byte)VocalWarningId.OxygenLow);
                     byte warningId = VocalWarningHashes.ToWarningId(hash);
                     float severity = math.max(signal.Vital01, signal.Severity01);
-                    if (TryQueue(hash, warningId, severity, FallbackCooldownSeconds, signal.Flags, signal.SourceId, 0, false, in tuning))
+                    if (TryQueue(hash, warningId, severity, FallbackCooldownSeconds, signal.Flags, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1884,7 +2188,7 @@ namespace Hecton8.Audio
                 {
                     BrownoutSignal signal = Brownouts[i];
                     float severity = math.max(signal.Severity01, 1f - math.saturate(signal.SupplyRatio));
-                    if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, signal.Flags, signal.NetworkId, 0, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, signal.Flags, signal.NetworkId, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1898,7 +2202,7 @@ namespace Hecton8.Audio
                     byte warningId = VocalWarningHashes.ToWarningId(hash);
                     byte flags = signal.State == SystemHealthIndexSignal.StateCritical ? VocalWarningSignalFlags.HabitatIntegrityCompromised : (byte)0;
                     float severity = math.max(1f - math.saturate(signal.Health01), math.saturate(signal.Pressure01));
-                    if (TryQueue(hash, warningId, severity, FallbackCooldownSeconds, flags, signal.SourceHash, 0, false, in tuning))
+                    if (TryQueue(hash, warningId, severity, FallbackCooldownSeconds, flags, signal.SourceHash, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1906,7 +2210,7 @@ namespace Hecton8.Audio
                 {
                     RadiationDoseSignal signal = RadiationSignals[i];
                     ushort direction = ResolveCompassDirectionHash(in ListenerAup, in signal.PositionAup);
-                    if (TryQueue(VocalWarningHashes.Radiation, (byte)VocalWarningId.Radiation, signal.Intensity01, FallbackCooldownSeconds, 0, signal.SourceId, direction, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.Radiation, (byte)VocalWarningId.Radiation, signal.Intensity01, FallbackCooldownSeconds, 0, signal.SourceId, in signal.PositionAup, direction, false, in tuning))
                         evaluations++;
                 }
 
@@ -1917,7 +2221,7 @@ namespace Hecton8.Audio
                         continue;
 
                     float severity = math.saturate((25f - signal.BatteryPercent) * (1f / 25f));
-                    if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, 0, signal.SourceHash, 0, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, 0, signal.SourceHash, in defaultSourceAup, 0, false, in tuning))
                         evaluations++;
                 }
 
@@ -1927,7 +2231,7 @@ namespace Hecton8.Audio
                     if ((signal.Flags & SurvivalVitalsChangedSignalFlags.OxygenCritical) != 0u || signal.Oxygen01 < 0.22f)
                     {
                         float severity = 1f - math.saturate(signal.Oxygen01);
-                        if (TryQueue(VocalWarningHashes.OxygenLow, (byte)VocalWarningId.OxygenLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, 0, false, in tuning))
+                        if (TryQueue(VocalWarningHashes.OxygenLow, (byte)VocalWarningId.OxygenLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                             evaluations++;
                     }
 
@@ -1937,7 +2241,7 @@ namespace Hecton8.Audio
                     if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && signal.Energy01 < 0.18f)
                     {
                         float severity = 1f - math.saturate(signal.Energy01);
-                        if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, 0, false, in tuning))
+                        if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                             evaluations++;
                     }
                 }
@@ -1956,7 +2260,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            private unsafe bool TryQueue(uint hash, byte warningId, float severity01, float cooldownSeconds, byte signalFlags, uint sourceId, ushort directionHash, bool mock, in VocalWarningTuningDTO tuning)
+            private unsafe bool TryQueue(uint hash, byte warningId, float severity01, float cooldownSeconds, byte signalFlags, uint sourceId, in AbsoluteUniversePosition sourceAup, ushort directionHash, bool mock, in VocalWarningTuningDTO tuning)
             {
                 warningId = NormalizeWarningId(warningId);
                 if (hash == 0u || warningId == 0)
@@ -1967,7 +2271,7 @@ namespace Hecton8.Audio
 
                 uint packedFlags = PackFlags(warningId, signalFlags, directionHash, mock);
                 float severity = ResolveSeverity01(severity01);
-                float priorityScore = ResolvePriorityScore(hash, severity, 0, packedFlags, in tuning);
+                float priorityScore = ResolvePriorityScoreFromProfiles(hash, severity, 0, packedFlags, in tuning, Profiles);
                 if (!math.isfinite(priorityScore))
                 {
                     MarkFault(FaultFlagPriorityInvalid);
@@ -1986,14 +2290,22 @@ namespace Hecton8.Audio
                 if (WarningSourceIds.IsCreated && warningId < WarningSourceIds.Length)
                     WarningSourceIdRef(warningId) = sourceId;
 
+                AbsoluteUniversePosition safeSourceAup = SanitizeSourceAup(in sourceAup);
                 VocalWarningDTO dto = new VocalWarningDTO
                 {
                     AudioBankHashID = hash,
                     PriorityScore = priorityScore,
                     ExpirationTime = TimeSeconds + ResolveExpirationSeconds(hash, severity),
-                    Flags = packedFlags
+                    Flags = packedFlags,
+                    SourceAupGridX = safeSourceAup.GridX,
+                    SourceAupGridY = safeSourceAup.GridY,
+                    SourceAupGridZ = safeSourceAup.GridZ,
+                    SourceAupLocalX = safeSourceAup.LocalX,
+                    SourceAupLocalY = safeSourceAup.LocalY,
+                    SourceAupLocalZ = safeSourceAup.LocalZ,
+                    SourceId = sourceId
                 };
-                return VocalWarningPriorityWordOps.Insert(Queue, PriorityState, in dto);
+                return AlarmBitmaskOps.Insert(Queue, PriorityState, in dto);
             }
 
             private unsafe void MarkFault(uint fault)
@@ -2001,15 +2313,15 @@ namespace Hecton8.Audio
                 if (!PriorityState.IsCreated || PriorityState.Length <= 0)
                     return;
 
-                ref VocalWarningPriorityState state = ref PriorityStateRef();
+                ref AlarmStateDTO state = ref PriorityStateRef();
                 state.FaultFlags |= fault;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private unsafe ref VocalWarningPriorityState PriorityStateRef()
+            private unsafe ref AlarmStateDTO PriorityStateRef()
             {
                 void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(PriorityState);
-                return ref UnsafeUtility.AsRef<VocalWarningPriorityState>(pointer);
+                return ref UnsafeUtility.AsRef<AlarmStateDTO>(pointer);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2042,12 +2354,12 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct DispatchVoiceOverJob : IJob
+        private struct EvaluateAlarmPriorityJob : IJob
         {
             [NoAlias]
             public NativeArray<VocalWarningDTO> Queue;
             [NoAlias]
-            public NativeArray<VocalWarningPriorityState> PriorityState;
+            public NativeArray<AlarmStateDTO> PriorityState;
             [NoAlias]
             public NativeArray<VocalWarningCurrentState> CurrentState;
             [NoAlias]
@@ -2069,7 +2381,7 @@ namespace Hecton8.Audio
 
                 ref VocalWarningDispatchDTO dispatch = ref DispatchRef();
                 dispatch = default;
-                VocalWarningPriorityWordOps.DiscardExpired(Queue, PriorityState, TimeSeconds);
+                AlarmBitmaskOps.DiscardExpired(Queue, PriorityState, TimeSeconds);
 
                 ref VocalWarningCurrentState currentSlot = ref CurrentStateRef();
                 VocalWarningCurrentState current = currentSlot;
@@ -2082,7 +2394,7 @@ namespace Hecton8.Audio
                 }
 
                 VocalWarningTuningDTO tuning = ResolveTuning(Tuning);
-                if (!VocalWarningPriorityWordOps.Peek(Queue, PriorityState, out VocalWarningDTO candidate, out int candidateBitIndex))
+                if (!AlarmBitmaskOps.Peek(Queue, PriorityState, out VocalWarningDTO candidate, out int candidateBitIndex))
                 {
                     currentSlot = current;
                     return;
@@ -2090,7 +2402,7 @@ namespace Hecton8.Audio
 
                 bool active = current.AudioBankHashID != 0u && current.PlaybackRemainingSeconds > 0f;
                 int currentBitIndex = VocalWarningSystem.ResolvePriorityBitIndex(VocalWarningHashes.ToWarningId(current.AudioBankHashID));
-                bool higherPriorityBit = active && candidateBitIndex > currentBitIndex;
+                bool higherPriorityBit = active && candidateBitIndex < currentBitIndex;
                 bool canInterrupt = active &&
                                     (higherPriorityBit ||
                                      (candidate.PriorityScore > current.PriorityScore + tuning.InterruptionThreshold &&
@@ -2101,7 +2413,7 @@ namespace Hecton8.Audio
                     return;
                 }
 
-                if (!VocalWarningPriorityWordOps.Pop(Queue, PriorityState, out candidate, out candidateBitIndex))
+                if (!AlarmBitmaskOps.Pop(Queue, PriorityState, out candidate, out candidateBitIndex))
                 {
                     currentSlot = current;
                     return;
@@ -2137,13 +2449,13 @@ namespace Hecton8.Audio
                     VolumeScalar = math.saturate(math.select(DefaultGain, VoiceGain, math.isfinite(VoiceGain))),
                     PlaybackSpeed = 1f,
                     RadioDistortion01 = distortion,
-                    SpatialBlend01 = (flags & QueueFlagDirectional) != 0u ? math.lerp(0.18f, 0.35f, SmoothQuality01(QualityWeight01)) : 0f,
-                    SourceAupGridX = 0,
-                    SourceAupGridY = 0,
-                    SourceAupGridZ = 0,
-                    SourceAupLocalX = 0f,
-                    SourceAupLocalY = 0f,
-                    SourceAupLocalZ = 0f,
+                    SpatialBlend01 = ResolveVwsSpatialBlend01(flags, QualityWeight01, in candidate),
+                    SourceAupGridX = candidate.SourceAupGridX,
+                    SourceAupGridY = candidate.SourceAupGridY,
+                    SourceAupGridZ = candidate.SourceAupGridZ,
+                    SourceAupLocalX = candidate.SourceAupLocalX,
+                    SourceAupLocalY = candidate.SourceAupLocalY,
+                    SourceAupLocalZ = candidate.SourceAupLocalZ,
                     Flags = flags,
                     DurationSeconds = duration,
                     SubtitlePriority = (byte)math.clamp(ResolveCuePriority(candidateBitIndex, candidate.PriorityScore), 0, 255),
@@ -2168,15 +2480,15 @@ namespace Hecton8.Audio
             }
         }
 
-        private static class VocalWarningPriorityWordOps
+        private static class AlarmBitmaskOps
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool Insert(
                 NativeArray<VocalWarningDTO> queue,
-                NativeArray<VocalWarningPriorityState> priorityState,
+                NativeArray<AlarmStateDTO> priorityState,
                 in VocalWarningDTO value)
             {
-                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < PriorityWordBitCount)
+                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < AlarmBitCount)
                     return false;
 
                 if (value.AudioBankHashID == 0u || !math.isfinite(value.PriorityScore) || !math.isfinite(value.ExpirationTime))
@@ -2188,16 +2500,16 @@ namespace Hecton8.Audio
                 int bitIndex = ResolvePriorityBitIndex(ExtractWarningId(value.Flags));
                 if (bitIndex == NoPriorityBitIndex)
                     bitIndex = ResolvePriorityBitIndex(VocalWarningHashes.ToWarningId(value.AudioBankHashID));
-                if ((uint)bitIndex >= PriorityWordBitCount)
+                if ((uint)bitIndex >= AlarmBitCount)
                 {
-                    MarkFault(priorityState, FaultFlagPriorityInputInvalid);
+                    MarkFault(priorityState, FaultFlagPriorityInputInvalid | FaultFlagAlarmMaskOverflow);
                     return false;
                 }
 
-                ref VocalWarningPriorityState state = ref StateRef(priorityState);
+                ref AlarmStateDTO state = ref StateRef(priorityState);
                 ulong bitMask = 1UL << bitIndex;
                 ref VocalWarningDTO slot = ref NodeRef(queue, bitIndex);
-                bool occupied = (state.VwsPriorityWord & bitMask) != 0UL && slot.AudioBankHashID != 0u;
+                bool occupied = (state.activeAlarmsMask & bitMask) != 0UL && slot.AudioBankHashID != 0u;
                 if (!occupied || HigherPriorityThan(in value, in slot))
                 {
                     slot = value;
@@ -2208,10 +2520,10 @@ namespace Hecton8.Audio
                     slot.Flags |= value.Flags & (QueueFlagCritical | QueueFlagInterrupt | QueueFlagHabitatIntegrity | QueueFlagDirectional | QueueFlagMock);
                 }
 
-                state.VwsPriorityWord |= bitMask;
-                state.ActivePriorityCount = (uint)CountBits64(state.VwsPriorityWord);
+                state.activeAlarmsMask |= bitMask;
+                state.ActivePriorityCount = (uint)CountBits64(state.activeAlarmsMask);
                 state.LastAcceptedBitIndex = (uint)bitIndex;
-                state.HighestPriorityBitIndex = (uint)ResolveHighestPriorityBitIndex(state.VwsPriorityWord);
+                state.HighestPriorityBitIndex = (uint)ResolveHighestPriorityBitIndex(state.activeAlarmsMask);
                 state.Sequence++;
                 return true;
             }
@@ -2219,18 +2531,18 @@ namespace Hecton8.Audio
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool Peek(
                 NativeArray<VocalWarningDTO> queue,
-                NativeArray<VocalWarningPriorityState> priorityState,
+                NativeArray<AlarmStateDTO> priorityState,
                 out VocalWarningDTO value,
                 out int bitIndex)
             {
                 value = default;
                 bitIndex = NoPriorityBitIndex;
-                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < PriorityWordBitCount)
+                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < AlarmBitCount)
                     return false;
 
-                VocalWarningPriorityState state = StateRef(priorityState);
-                bitIndex = ResolveHighestPriorityBitIndex(state.VwsPriorityWord);
-                if ((uint)bitIndex >= PriorityWordBitCount)
+                AlarmStateDTO state = StateRef(priorityState);
+                bitIndex = ResolveHighestPriorityBitIndex(state.activeAlarmsMask);
+                if ((uint)bitIndex >= AlarmBitCount)
                     return false;
 
                 value = NodeRef(queue, bitIndex);
@@ -2240,26 +2552,26 @@ namespace Hecton8.Audio
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool Pop(
                 NativeArray<VocalWarningDTO> queue,
-                NativeArray<VocalWarningPriorityState> priorityState,
+                NativeArray<AlarmStateDTO> priorityState,
                 out VocalWarningDTO value,
                 out int bitIndex)
             {
                 value = default;
                 bitIndex = NoPriorityBitIndex;
-                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < PriorityWordBitCount)
+                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < AlarmBitCount)
                     return false;
 
-                ref VocalWarningPriorityState state = ref StateRef(priorityState);
-                bitIndex = ResolveHighestPriorityBitIndex(state.VwsPriorityWord);
-                if ((uint)bitIndex >= PriorityWordBitCount)
+                ref AlarmStateDTO state = ref StateRef(priorityState);
+                bitIndex = ResolveHighestPriorityBitIndex(state.activeAlarmsMask);
+                if ((uint)bitIndex >= AlarmBitCount)
                     return false;
 
                 ulong bitMask = 1UL << bitIndex;
                 value = NodeRef(queue, bitIndex);
                 NodeRef(queue, bitIndex) = default;
-                state.VwsPriorityWord &= ~bitMask;
-                state.ActivePriorityCount = (uint)CountBits64(state.VwsPriorityWord);
-                state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(state.VwsPriorityWord);
+                state.activeAlarmsMask &= ~bitMask;
+                state.ActivePriorityCount = (uint)CountBits64(state.activeAlarmsMask);
+                state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(state.activeAlarmsMask);
                 state.Sequence++;
                 return value.AudioBankHashID != 0u;
             }
@@ -2267,14 +2579,14 @@ namespace Hecton8.Audio
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static void DiscardExpired(
                 NativeArray<VocalWarningDTO> queue,
-                NativeArray<VocalWarningPriorityState> priorityState,
+                NativeArray<AlarmStateDTO> priorityState,
                 float timeSeconds)
             {
-                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < PriorityWordBitCount)
+                if (!queue.IsCreated || !priorityState.IsCreated || priorityState.Length <= 0 || queue.Length < AlarmBitCount)
                     return;
 
-                ref VocalWarningPriorityState state = ref StateRef(priorityState);
-                ulong activeWord = state.VwsPriorityWord;
+                ref AlarmStateDTO state = ref StateRef(priorityState);
+                ulong activeWord = state.activeAlarmsMask;
                 ulong scanWord = activeWord;
                 uint discarded = 0u;
                 while (scanWord != 0UL)
@@ -2294,7 +2606,7 @@ namespace Hecton8.Audio
                 if (discarded == 0u)
                     return;
 
-                state.VwsPriorityWord = activeWord;
+                state.activeAlarmsMask = activeWord;
                 state.ActivePriorityCount = (uint)CountBits64(activeWord);
                 state.DiscardedExpired += discarded;
                 state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(activeWord);
@@ -2303,7 +2615,7 @@ namespace Hecton8.Audio
 
             public static bool TryGetByPriorityOrder(
                 NativeArray<VocalWarningDTO> queue,
-                NativeArray<VocalWarningPriorityState> priorityState,
+                NativeArray<AlarmStateDTO> priorityState,
                 int priorityOrderIndex,
                 out VocalWarningDTO value)
             {
@@ -2312,12 +2624,12 @@ namespace Hecton8.Audio
                     !queue.IsCreated ||
                     !priorityState.IsCreated ||
                     priorityState.Length <= 0 ||
-                    queue.Length < PriorityWordBitCount)
+                    queue.Length < AlarmBitCount)
                 {
                     return false;
                 }
 
-                ulong scanWord = StateRef(priorityState).VwsPriorityWord;
+                ulong scanWord = StateRef(priorityState).activeAlarmsMask;
                 int order = 0;
                 while (scanWord != 0UL)
                 {
@@ -2338,7 +2650,7 @@ namespace Hecton8.Audio
 
             public static bool TryGetByPriorityOrder(
                 NativeArray<VocalWarningDTO>.ReadOnly queue,
-                NativeArray<VocalWarningPriorityState>.ReadOnly priorityState,
+                NativeArray<AlarmStateDTO>.ReadOnly priorityState,
                 int priorityOrderIndex,
                 out VocalWarningDTO value)
             {
@@ -2347,12 +2659,12 @@ namespace Hecton8.Audio
                     !queue.IsCreated ||
                     !priorityState.IsCreated ||
                     priorityState.Length <= 0 ||
-                    queue.Length < PriorityWordBitCount)
+                    queue.Length < AlarmBitCount)
                 {
                     return false;
                 }
 
-                ulong scanWord = priorityState[0].VwsPriorityWord;
+                ulong scanWord = priorityState[0].activeAlarmsMask;
                 int order = 0;
                 while (scanWord != 0UL)
                 {
@@ -2372,32 +2684,33 @@ namespace Hecton8.Audio
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static void MarkFault(NativeArray<VocalWarningPriorityState> priorityState, uint fault)
+            private static void MarkFault(NativeArray<AlarmStateDTO> priorityState, uint fault)
             {
                 if (!priorityState.IsCreated || priorityState.Length <= 0)
                     return;
 
-                ref VocalWarningPriorityState state = ref StateRef(priorityState);
+                ref AlarmStateDTO state = ref StateRef(priorityState);
                 state.FaultFlags |= fault;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static int ResolveHighestPriorityBitIndex(ulong priorityWord)
+            private static int ResolveHighestPriorityBitIndex(ulong activeAlarmsMask)
             {
-                uint high = (uint)(priorityWord >> 32);
-                uint low = (uint)priorityWord;
-                bool useHigh = high != 0u;
-                uint selected = math.select(low | 1u, high, useHigh);
-                int baseIndex = math.select(0, 32, useHigh);
-                int candidateIndex = baseIndex + (31 - math.lzcnt(selected));
-                return math.select(NoPriorityBitIndex, candidateIndex, priorityWord != 0UL);
+                uint low = (uint)activeAlarmsMask;
+                uint high = (uint)(activeAlarmsMask >> 32);
+                bool useLow = low != 0u;
+                bool hasAny = activeAlarmsMask != 0UL;
+                uint selected = math.select(1u, math.select(high, low, useLow), hasAny);
+                int baseIndex = math.select(32, 0, useLow);
+                int candidateIndex = baseIndex + math.tzcnt(selected);
+                return math.select(NoPriorityBitIndex, candidateIndex, hasAny);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static uint ResolveHighestPriorityBitIndexOrMax(ulong priorityWord)
+            private static uint ResolveHighestPriorityBitIndexOrMax(ulong activeAlarmsMask)
             {
-                int bitIndex = ResolveHighestPriorityBitIndex(priorityWord);
-                return (uint)math.select(-1, bitIndex, priorityWord != 0UL);
+                int bitIndex = ResolveHighestPriorityBitIndex(activeAlarmsMask);
+                return (uint)math.select(-1, bitIndex, activeAlarmsMask != 0UL);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2417,12 +2730,12 @@ namespace Hecton8.Audio
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static ref VocalWarningPriorityState StateRef(NativeArray<VocalWarningPriorityState> priorityState)
+            private static ref AlarmStateDTO StateRef(NativeArray<AlarmStateDTO> priorityState)
             {
                 unsafe
                 {
                     byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(priorityState);
-                    return ref UnsafeUtility.AsRef<VocalWarningPriorityState>(basePtr);
+                    return ref UnsafeUtility.AsRef<AlarmStateDTO>(basePtr);
                 }
             }
 
@@ -2453,7 +2766,10 @@ namespace Hecton8.Audio
             public uint GetDependencyHash(int dependencyIndex) => 0u;
             public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
-            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+                _owner.VisualSyncPresentationTick();
+            }
 
             public void PostSimulationTick(in DispatcherTimingDTO timing)
             {

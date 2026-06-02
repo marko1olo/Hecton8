@@ -58,6 +58,19 @@ namespace Hecton8.UI
         private static readonly Color MechModeText = new Color(0.9f, 0.96f, 0.72f, 0.94f);
         private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
         private static readonly int FaceColorId = Shader.PropertyToID("_FaceColor");
+        private static readonly int PdaShellTitleKeyHash = LocHash.Compute(LocalizationKeys.PDA_SHELL_TITLE);
+        private static readonly int PdaTabInventoryKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_INVENTORY);
+        private static readonly int PdaTabLoadoutKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_LOADOUT);
+        private static readonly int PdaTabConstructionKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_CONSTRUCTION);
+        private static readonly int PdaTabBarterKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_BARTER);
+        private static readonly int PdaTabDataLogKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_DATA_LOG);
+        private static readonly int PdaTabSpectrumKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_SPECTRUM);
+        private static readonly int PdaTabDiagnosticsKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_DIAGNOSTICS);
+        private static readonly int PdaTabUnknownKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_UNKNOWN);
+        private static readonly int PdaMechModeActiveKeyHash = LocHash.Compute(LocalizationKeys.PDA_MECH_MODE_ACTIVE);
+        private static readonly int PdaFooterLeftKeyHash = LocHash.Compute(LocalizationKeys.PDA_FOOTER_LEFT);
+        private static readonly int PdaFooterRightOnlineKeyHash = LocHash.Compute(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE);
+        private static readonly int PdaFooterRightStandbyKeyHash = LocHash.Compute(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY);
         private static readonly char[] s_emptyBuffer = new char[1];
 
         [Header("References")]
@@ -158,7 +171,7 @@ namespace Hecton8.UI
         private char[] _leftFooterBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[128] - PDA right footer staging buffer - owner: PDAShellChrome
         private char[] _rightFooterBuffer = new char[ChromeTextBufferCapacity];
-        // COLD ALLOC: char[160] — PDA caller-owned glitch scratch buffer — owner: PDAShellChrome
+        // COLD ALLOC: char[160] - PDA caller-owned glitch scratch buffer - owner: PDAShellChrome
         private char[] _glitchScratchBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[64] - PDA context tag staging buffer - owner: PDAShellChrome
         private char[] _contextTagBuffer = new char[ChromeTextBufferCapacity];
@@ -1089,19 +1102,19 @@ namespace Hecton8.UI
 
         private void RefreshLocalizedTextCache()
         {
-            _localizedTitleLength = CopyLocalizedSpan(LocalizationKeys.PDA_SHELL_TITLE, TitleTextValue.AsSpan(), _localizedTitleBuffer);
-            _localizedTabInventoryLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_INVENTORY, ActiveTabInventory.AsSpan(), _localizedTabInventoryBuffer);
-            _localizedTabLoadoutLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_LOADOUT, ActiveTabLoadout.AsSpan(), _localizedTabLoadoutBuffer);
-            _localizedTabConstructionLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_CONSTRUCTION, ActiveTabConstruction.AsSpan(), _localizedTabConstructionBuffer);
-            _localizedTabBarterLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_BARTER, ActiveTabBarter.AsSpan(), _localizedTabBarterBuffer);
-            _localizedTabDataLogLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_DATA_LOG, ActiveTabDataLog.AsSpan(), _localizedTabDataLogBuffer);
-            _localizedTabSpectrumLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_SPECTRUM, ActiveTabSpectrum.AsSpan(), _localizedTabSpectrumBuffer);
-            _localizedTabDiagnosticsLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_DIAGNOSTICS, ActiveTabDiagnostics.AsSpan(), _localizedTabDiagnosticsBuffer);
-            _localizedTabUnknownLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_UNKNOWN, ActiveTabUnknown.AsSpan(), _localizedTabUnknownBuffer);
-            _localizedMechModeTagLength = CopyLocalizedSpan(LocalizationKeys.PDA_MECH_MODE_ACTIVE, MechModeTag.AsSpan(), _localizedMechModeTagBuffer);
-            ReadOnlySpan<char> leftFooterFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_LEFT, LeftFooterFormat.AsSpan());
-            ReadOnlySpan<char> rightFooterOnlineFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE, RightFooterOnlineFormat.AsSpan());
-            ReadOnlySpan<char> rightFooterStandbyFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY, RightFooterStandbyFormat.AsSpan());
+            _localizedTitleLength = CopyLocalizedSpan(PdaShellTitleKeyHash, TitleTextValue.AsSpan(), _localizedTitleBuffer);
+            _localizedTabInventoryLength = CopyLocalizedSpan(PdaTabInventoryKeyHash, ActiveTabInventory.AsSpan(), _localizedTabInventoryBuffer);
+            _localizedTabLoadoutLength = CopyLocalizedSpan(PdaTabLoadoutKeyHash, ActiveTabLoadout.AsSpan(), _localizedTabLoadoutBuffer);
+            _localizedTabConstructionLength = CopyLocalizedSpan(PdaTabConstructionKeyHash, ActiveTabConstruction.AsSpan(), _localizedTabConstructionBuffer);
+            _localizedTabBarterLength = CopyLocalizedSpan(PdaTabBarterKeyHash, ActiveTabBarter.AsSpan(), _localizedTabBarterBuffer);
+            _localizedTabDataLogLength = CopyLocalizedSpan(PdaTabDataLogKeyHash, ActiveTabDataLog.AsSpan(), _localizedTabDataLogBuffer);
+            _localizedTabSpectrumLength = CopyLocalizedSpan(PdaTabSpectrumKeyHash, ActiveTabSpectrum.AsSpan(), _localizedTabSpectrumBuffer);
+            _localizedTabDiagnosticsLength = CopyLocalizedSpan(PdaTabDiagnosticsKeyHash, ActiveTabDiagnostics.AsSpan(), _localizedTabDiagnosticsBuffer);
+            _localizedTabUnknownLength = CopyLocalizedSpan(PdaTabUnknownKeyHash, ActiveTabUnknown.AsSpan(), _localizedTabUnknownBuffer);
+            _localizedMechModeTagLength = CopyLocalizedSpan(PdaMechModeActiveKeyHash, MechModeTag.AsSpan(), _localizedMechModeTagBuffer);
+            ReadOnlySpan<char> leftFooterFormat = ResolveLocalizedSpan(PdaFooterLeftKeyHash, LeftFooterFormat.AsSpan());
+            ReadOnlySpan<char> rightFooterOnlineFormat = ResolveLocalizedSpan(PdaFooterRightOnlineKeyHash, RightFooterOnlineFormat.AsSpan());
+            ReadOnlySpan<char> rightFooterStandbyFormat = ResolveLocalizedSpan(PdaFooterRightStandbyKeyHash, RightFooterStandbyFormat.AsSpan());
             _localizedLeftFooterNumericTemplateLength = CopyNumericTemplate(leftFooterFormat, LeftFooterNumericTemplate.AsSpan(), _localizedLeftFooterNumericTemplateBuffer);
             _localizedRightFooterOnlineNumericTemplateLength = CopyNumericTemplate(rightFooterOnlineFormat, RightFooterOnlineNumericTemplate.AsSpan(), _localizedRightFooterOnlineNumericTemplateBuffer);
             _localizedRightFooterStandbyNumericTemplateLength = CopyNumericTemplate(rightFooterStandbyFormat, RightFooterStandbyNumericTemplate.AsSpan(), _localizedRightFooterStandbyNumericTemplateBuffer);
@@ -1109,18 +1122,18 @@ namespace Hecton8.UI
             CacheSinglePlaceholderTemplate(IntrusionHintFormat.AsSpan());
         }
 
-        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
             ILocalizationStressPresentationReadModel manager = _localization;
-            if (manager == null)
+            if (manager == null || keyHash == 0)
                 return fallback;
 
-            return manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback);
+            return manager.GetRawSpanOrFallback(keyHash, fallback);
         }
 
-        private int CopyLocalizedSpan(string key, ReadOnlySpan<char> fallback, char[] destination)
+        private int CopyLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback, char[] destination)
         {
-            return CopySpanToFixedBuffer(ResolveLocalizedSpan(key, fallback), destination);
+            return CopySpanToFixedBuffer(ResolveLocalizedSpan(keyHash, fallback), destination);
         }
 
         private static int CopyNumericTemplate(ReadOnlySpan<char> template, ReadOnlySpan<char> fallback, char[] destination)
@@ -1510,7 +1523,7 @@ namespace Hecton8.UI
             if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredToTickManager = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1518,7 +1531,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
 
             _registeredToTickManager = false;
         }

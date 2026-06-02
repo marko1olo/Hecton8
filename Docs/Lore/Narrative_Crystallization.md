@@ -1040,3 +1040,42 @@ Reason:
 - This keeps the game from collapsing into "one evil AI + one magic resource."
 - The world becomes richer and more replayable: other moons, other resource incentives, other salvage rumors, different ecological and geological seeds.
 - The crime remains specific: Deep Reach did not simply lie; it built a decision machine where humans lost priority.
+
+## Control Pass 17 - Ownership / Moon Catalog / Blue Debt Behavior / False Endings / Motive
+
+User direction:
+
+- Proceed with deeper joint reasoning rather than simple answers.
+- Keep developing the complex unresolved nodes.
+
+Working locks / syntheses:
+
+- Black Keel ownership:
+  - public: Aegir claim-pool automated tender;
+  - legal: debt-impounded / insurance-custody hardware;
+  - hidden: Deep Reach priority hooks in payload recovery, route certificates, quarantine, and old claim law.
+- Aegir moons:
+  - use real astronomy anchor: Epsilon Eridani / Ran and Epsilon Eridani b / AEgir as source-bound reference;
+  - HECTON-8 remains fictional;
+  - build a plausible twelve-body moon catalog with orbit/geology/route roles;
+  - use catalog labels plus Marauder field names.
+- Blue debt:
+  - pressure-rated containment required for value;
+  - good samples carry weak Atlas-compatible pressure-harmonic behavior;
+  - contamination is industrial/ecological, not virus/magic.
+- False endings:
+  - Material Ending: payout / credits / truth failure;
+  - Partial Exit: same seed can continue, but contract/world pressure worsens;
+  - Corporate Capture and Coward Exit remain optional families.
+- Player motive:
+  - professional interest first;
+  - recovered names make it personal;
+  - Barnard/frontier link localizes the guilt;
+  - late contract-trap evidence reveals the player was selected as useful disposable labor.
+
+Reason:
+
+- This keeps player independence and Deep Reach pressure at the same time.
+- Other moons become route, relay, and false-ending infrastructure without moving the game off HECTON-8.
+- Blue debt becomes a salvage-engineering problem, not magic.
+- Personal stakes are earned through exploration, which preserves the tens-of-hours structure.

@@ -13,13 +13,17 @@ namespace Hecton8.QA.Editor
         private const string ActiveKey = "H8.QA.Endurance.Active";
         private const string StartTimeKey = "H8.QA.Endurance.StartTime";
         private const string ExitRequestedKey = "H8.QA.Endurance.ExitRequested";
+        private const string ExitCodeKey = "H8.QA.Endurance.ExitCode";
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const string FlagRelativePath = "Temp/H8_QA_ENDURANCE_10KM.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/QAEnduranceResult_QA_WATCHDOG_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/QAEnduranceBatchRunner_QA_WATCHDOG_BOT.txt";
         private const double TimeoutSeconds = 7200.0;
         private const double PollIntervalSeconds = 0.25;
+        private const int ResultReadBufferSize = 4096;
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static readonly byte[] ResultReadBuffer = new byte[ResultReadBufferSize];
+        private static readonly byte[] ExitCodeZeroPattern = { (byte)'e', (byte)'x', (byte)'i', (byte)'t', (byte)'C', (byte)'o', (byte)'d', (byte)'e', (byte)'=', (byte)'0' };
         private static double _nextPollTime;
 
         static QAEnduranceBatchRunner()
@@ -35,16 +39,23 @@ namespace Hecton8.QA.Editor
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
             _nextPollTime = 0.0;
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
-            Directory.CreateDirectory(Path.GetDirectoryName(ResolveProjectPath(FlagRelativePath)));
-            File.WriteAllBytes(ResolveProjectPath(FlagRelativePath), FlagBytes);
+            if (!TryWriteFlagFile())
+            {
+                RequestStop(1, "flag_write_failed");
+                return;
+            }
+
             WriteRunnerStatus("started");
             Attach();
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 
-            if (File.Exists(BootstrapScenePath))
-                EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Single);
+            if (!TryEnsureBootstrapScene())
+            {
+                RequestStop(1, "bootstrap_scene_unavailable");
+                return;
+            }
 
             if (!EditorApplication.isPlayingOrWillChangePlaymode)
                 EditorApplication.isPlaying = true;
@@ -64,7 +75,10 @@ namespace Hecton8.QA.Editor
         private static void Tick()
         {
             if (!SessionState.GetBool(ActiveKey, false))
+            {
+                Detach();
                 return;
+            }
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
@@ -80,8 +94,9 @@ namespace Hecton8.QA.Editor
             string resultPath = ResolveProjectPath(ResultRelativePath);
             if (File.Exists(resultPath))
             {
-                int exitCode = ResolveExitCode(resultPath);
-                RequestStop(exitCode, exitCode == 0 ? "completed" : "runtime_fault");
+                if (TryResolveExitCode(resultPath, out int exitCode))
+                    RequestStop(exitCode, exitCode == 0 ? "completed" : "runtime_fault");
+
                 return;
             }
 
@@ -93,12 +108,20 @@ namespace Hecton8.QA.Editor
 
             if (SessionState.GetBool(ExitRequestedKey, false))
             {
-                CompleteAfterPlayStopped(SessionState.GetInt("H8.QA.Endurance.ExitCode", 1));
+                CompleteAfterPlayStopped(SessionState.GetInt(ExitCodeKey, 1));
                 return;
             }
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                if (!TryEnsureBootstrapScene())
+                {
+                    RequestStop(1, "bootstrap_scene_unavailable");
+                    return;
+                }
+
                 EditorApplication.isPlaying = true;
+            }
         }
 
         private static bool ShouldPollNow()
@@ -124,7 +147,7 @@ namespace Hecton8.QA.Editor
         {
             WriteRunnerStatus(status);
             TryDeleteFile(ResolveProjectPath(FlagRelativePath));
-            SessionState.SetInt("H8.QA.Endurance.ExitCode", exitCode);
+            SessionState.SetInt(ExitCodeKey, exitCode);
             SessionState.SetBool(ExitRequestedKey, true);
 
             if (EditorApplication.isPlaying)
@@ -149,15 +172,52 @@ namespace Hecton8.QA.Editor
                 EditorApplication.Exit(exitCode);
         }
 
-        private static int ResolveExitCode(string resultPath)
+        private static bool TryResolveExitCode(string resultPath, out int exitCode)
         {
-            foreach (string line in File.ReadLines(resultPath))
+            exitCode = 1;
+            try
             {
-                if (string.Equals(line, "exitCode=0", StringComparison.Ordinal))
-                    return 0;
+                exitCode = FileContainsPattern(resultPath, ExitCodeZeroPattern) ? 0 : 1;
+                return true;
+            }
+            catch (IOException)
+            {
+                WriteRunnerStatus("result_read_pending");
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                WriteRunnerStatus("result_read_pending");
+                return false;
+            }
+        }
+
+        private static bool FileContainsPattern(string path, byte[] pattern)
+        {
+            int matched = 0;
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                int bytesRead;
+                while ((bytesRead = stream.Read(ResultReadBuffer, 0, ResultReadBuffer.Length)) > 0)
+                {
+                    for (int i = 0; i < bytesRead; i++)
+                    {
+                        byte value = ResultReadBuffer[i];
+                        if (value == pattern[matched])
+                        {
+                            matched++;
+                            if (matched == pattern.Length)
+                                return true;
+                        }
+                        else
+                        {
+                            matched = value == pattern[0] ? 1 : 0;
+                        }
+                    }
+                }
             }
 
-            return 1;
+            return false;
         }
 
         private static string ResolveProjectPath(string relativePath)
@@ -165,23 +225,75 @@ namespace Hecton8.QA.Editor
             return Path.Combine(Directory.GetCurrentDirectory(), relativePath.Replace('/', Path.DirectorySeparatorChar));
         }
 
+        private static bool TryWriteFlagFile()
+        {
+            try
+            {
+                string flagPath = ResolveProjectPath(FlagRelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(flagPath));
+                File.WriteAllBytes(flagPath, FlagBytes);
+                return true;
+            }
+            catch (Exception)
+            {
+                WriteRunnerStatus("flag_write_failed");
+                return false;
+            }
+        }
+
+        private static bool TryEnsureBootstrapScene()
+        {
+            try
+            {
+                if (!File.Exists(BootstrapScenePath))
+                {
+                    WriteRunnerStatus("bootstrap_scene_missing");
+                    return false;
+                }
+
+                string activePath = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
+                if (!string.Equals(activePath, BootstrapScenePath, StringComparison.Ordinal))
+                    EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Single);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                WriteRunnerStatus("bootstrap_scene_open_failed");
+                return false;
+            }
+        }
+
         private static void WriteRunnerStatus(string status)
         {
-            string path = ResolveProjectPath(RunnerStatusRelativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (StreamWriter writer = new StreamWriter(path, true))
+            try
             {
-                writer.Write(DateTime.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                writer.Write(' ');
-                writer.Write(status);
-                writer.Write(System.Environment.NewLine);
+                string path = ResolveProjectPath(RunnerStatusRelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                using (StreamWriter writer = new StreamWriter(path, true))
+                {
+                    writer.Write(DateTime.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                    writer.Write(' ');
+                    writer.Write(status);
+                    writer.Write(System.Environment.NewLine);
+                }
+            }
+            catch (Exception)
+            {
             }
         }
 
         private static void TryDeleteFile(string path)
         {
-            if (File.Exists(path))
-                File.Delete(path);
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception)
+            {
+                WriteRunnerStatus("delete_failed");
+            }
         }
     }
 }

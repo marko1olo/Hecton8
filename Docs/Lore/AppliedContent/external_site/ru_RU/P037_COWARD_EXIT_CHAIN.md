@@ -1,0 +1,30 @@
+---
+packet_id: P037_COWARD_EXIT_CHAIN
+article_id: hecton8.coward_exit_chain
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Цепочка трусливого выхода
+
+Эта семья концовок уважает свободу игрока, но не награждает незнание слишком чисто. Это реальный маршрут, не фальшивый game-over.
+
+## Scanner
+
+Этот выход настоящий. И пустой: чиненная капсула, узкая погода, без правды, без чистой выплаты.
+
+## Terminal
+
+Цепочка подъема доступна после герметизации, резерва батарей, relay-ping и прогноза разрыва шторма. Контракт считает итог неполным salvage.
+
+## Audio
+
+Ты можешь сбежать. Океан за спиной ничего тебе не объяснит.
+
+## Field Note
+
+Ранний уход должен быть решением, но не удовлетворением.
+
+<!-- External Site; generated from P037_COWARD_EXIT_CHAIN/ru_RU. -->

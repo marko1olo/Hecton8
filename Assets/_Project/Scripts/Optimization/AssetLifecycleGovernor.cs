@@ -3980,7 +3980,7 @@ namespace Hecton8.Optimization
             bool isDistantHlod = record.Priority == AssetPriorityTier.Tier5DistantHlod ||
                                  record.Priority == AssetPriorityTier.Tier6Speculative;
 
-            if (!dispatcher.Enqueue(key, record.Priority, isDistantHlod, out int requestId))
+            if (!dispatcher.Enqueue(key, record.Priority, isDistantHlod, record.SizeBytes, out int requestId))
                 return;
 
             record.ActiveRequestId = requestId;

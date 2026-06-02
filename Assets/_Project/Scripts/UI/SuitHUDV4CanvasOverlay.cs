@@ -44,17 +44,17 @@ namespace Hecton8.UI
         private const int MaxHudDynamicTextBufferChars = 4096;
         private static readonly char[] s_sharedOversizedHudTextBuffer = new char[MaxHudDynamicTextBufferChars]; // COLD ALLOC: char[4096] - editor/no-GC fallback for oversized HUD text staging - owner: SuitHUDV4CanvasOverlay
         private static bool s_stencilRenderGraphRuntimeActive;
-        // COLD ALLOC: Vector3[8] — threat chevron mesh build scratch — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Vector3[8] - threat chevron mesh build scratch - owner: SuitHUDV4CanvasOverlay
         private static readonly Vector3[] s_threatChevronMeshVertices = new Vector3[8];
-        // COLD ALLOC: Vector2[8] — threat chevron mesh UV scratch — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Vector2[8] - threat chevron mesh UV scratch - owner: SuitHUDV4CanvasOverlay
         private static readonly Vector2[] s_threatChevronMeshUvs = new Vector2[8];
-        // COLD ALLOC: int[12] — threat chevron mesh index scratch — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: int[12] - threat chevron mesh index scratch - owner: SuitHUDV4CanvasOverlay
         private static readonly int[] s_threatChevronMeshTriangles = new int[12];
         private const int ThreatChevronRollRight = 0;
         private const int ThreatChevronRollUp = 1;
         private const int ThreatChevronRollLeft = 2;
         private const int ThreatChevronRollDown = 3;
-        // COLD ALLOC: Quaternion[4] — threat chevron cardinal roll LUT — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Quaternion[4] - threat chevron cardinal roll LUT - owner: SuitHUDV4CanvasOverlay
         private static readonly Quaternion[] s_threatChevronRollByDominantAxis =
         {
             Quaternion.identity,
@@ -638,11 +638,11 @@ namespace Hecton8.UI
                 return;
 
             if (!canvas.TryGetComponent(out HectonUIScaler _))
-                // COLD ALLOC: HectonUIScaler[1] — primary HUD canvas bootstrap binding — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: HectonUIScaler[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<HectonUIScaler>();
 
             if (!canvas.TryGetComponent(out SuitHUDV4CanvasOverlay _))
-                // COLD ALLOC: SuitHUDV4CanvasOverlay[1] — primary HUD canvas bootstrap binding — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: SuitHUDV4CanvasOverlay[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<SuitHUDV4CanvasOverlay>();
         }
 
@@ -769,29 +769,29 @@ namespace Hecton8.UI
         private bool _rootBaseAnchoredPositionCaptured;
         private Vector2 _rootBaseAnchoredPosition;
         private GameLanguage _localizedMeasurementLanguage = GameLanguage.English;
-        // COLD ALLOC: char[256] — cached suit label staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - cached suit label staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _cachedSuitLabelBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _cachedSuitLabelLength;
-        // COLD ALLOC: char[256] — localized depth metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - localized depth metric template buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _depthTemplateBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _depthTemplateLength;
-        // COLD ALLOC: char[256] — localized temperature metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - localized temperature metric template buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _temperatureTemplateBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _temperatureTemplateLength;
-        // COLD ALLOC: char[256] — localized pressure metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - localized pressure metric template buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _pressureTemplateBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _pressureTemplateLength;
-        // COLD ALLOC: char[64] — depth meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] - depth meter display staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _depthDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        // COLD ALLOC: char[64] — temperature meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] - temperature meter display staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _temperatureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        // COLD ALLOC: char[64] — pressure meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] - pressure meter display staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _pressureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        // COLD ALLOC: char[64] — compass ribbon display staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] - compass ribbon display staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _headingDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
-        // COLD ALLOC: char[256] — LOAD telemetry fallback staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - LOAD telemetry fallback staging buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _loadDisplayFallbackBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        // COLD ALLOC: char[256] — caller-owned HUD glitch scratch buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - caller-owned HUD glitch scratch buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _glitchScratchBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private IDataVault _glitchVault;
         private VaultGenerationHandle<byte> _glitchTableHandle;
@@ -828,7 +828,7 @@ namespace Hecton8.UI
         private readonly GameObject[] _quickbarSlotPrefabCache = new GameObject[QuickbarSlotCount];
         private int _cachedHullStressWhisperBucket = int.MinValue;
         private bool _cachedHullStressWhisperRtl;
-        // COLD ALLOC: char[256] — cached hull-stress whisper text buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[256] - cached hull-stress whisper text buffer - owner: SuitHUDV4CanvasOverlay
         private char[] _cachedHullStressWhisperBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _cachedHullStressWhisperLength;
         private HectonMapMagicVegetationBridge _vegetationBridge;
@@ -868,13 +868,13 @@ namespace Hecton8.UI
         private float _appliedAcousticRadarIntensity;
         private Mesh _threatChevronMesh;
         private Material _threatChevronMaterial;
-        // COLD ALLOC: Matrix4x4[4] — instanced threat-chevron draw mirror — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Matrix4x4[4] - instanced threat-chevron draw mirror - owner: SuitHUDV4CanvasOverlay
         private readonly Matrix4x4[] _threatChevronMatrixMirror = new Matrix4x4[MaxThreatChevronCount];
-        // COLD ALLOC: float[4] — per-chevron alpha cache for alpha-faded threat warnings — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: float[4] - per-chevron alpha cache for alpha-faded threat warnings - owner: SuitHUDV4CanvasOverlay
         private readonly float[] _threatChevronAlphaMirror = new float[MaxThreatChevronCount];
-        // COLD ALLOC: Vector4[4] — per-chevron instanced alpha payload — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Vector4[4] - per-chevron instanced alpha payload - owner: SuitHUDV4CanvasOverlay
         private readonly Vector4[] _threatChevronInstanceDataMirror = new Vector4[MaxThreatChevronCount];
-        // COLD ALLOC: ThreatChevronState[4] — cached top threat-grid chevron slots — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: ThreatChevronState[4] - cached top threat-grid chevron slots - owner: SuitHUDV4CanvasOverlay
         private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[MaxThreatChevronCount];
         private uint _threatChevronActiveMask;
         private MaterialPropertyBlock _threatChevronPropertyBlock;
@@ -1203,6 +1203,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _runtimeHudCallbacksActive = Application.isPlaying;
+            CharBufferPool.BindDataVaultCold(GlobalRegistry.DataVault);
             CharBufferPool.Prewarm();
             _hudProxyLightKey = unchecked((int)(EntityId.ToULong(gameObject.GetEntityId()) ^ 0x48445544u));
             if (_hudProxyLightKey == 0)
@@ -2089,6 +2090,7 @@ namespace Hecton8.UI
 
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                    CharBufferPool.BindDataVaultCold(nextVault);
                     BindGlitchTableVault(nextVault);
                     return;
 
@@ -3938,7 +3940,7 @@ namespace Hecton8.UI
             {
                 _root.TryGetComponent(out _rootCanvasGroup);
                 if (_rootCanvasGroup == null)
-                    // COLD ALLOC: CanvasGroup[1] — HUD root visibility latch bootstrap — owner: SuitHUDV4CanvasOverlay
+                    // COLD ALLOC: CanvasGroup[1] - HUD root visibility latch bootstrap - owner: SuitHUDV4CanvasOverlay
                     _rootCanvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
 
                 _hasAppliedRootVisibility = false;
@@ -3958,7 +3960,7 @@ namespace Hecton8.UI
                 _root.TryGetComponent(out _rootScissorMask);
 
             if (_rootScissorMask == null)
-                // COLD ALLOC: RectMask2D[1] — helmet-frame scissor mask bootstrap — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: RectMask2D[1] - helmet-frame scissor mask bootstrap - owner: SuitHUDV4CanvasOverlay
                 _rootScissorMask = _root.gameObject.AddComponent<RectMask2D>();
 
             _rootScissorMask.padding = new Vector4(
@@ -3976,7 +3978,7 @@ namespace Hecton8.UI
 
             target.TryGetComponent(out CanvasGroup canvasGroup);
             if (canvasGroup == null)
-                // COLD ALLOC: CanvasGroup[1] — isolated HUD group visibility latch bootstrap — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: CanvasGroup[1] - isolated HUD group visibility latch bootstrap - owner: SuitHUDV4CanvasOverlay
                 canvasGroup = target.gameObject.AddComponent<CanvasGroup>();
 
             return canvasGroup;
@@ -4019,7 +4021,7 @@ namespace Hecton8.UI
 
             target.TryGetComponent(out Canvas canvas);
             if (canvas == null)
-                // COLD ALLOC: Canvas[1] — isolated dynamic HUD rebuild bucket bootstrap — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: Canvas[1] - isolated dynamic HUD rebuild bucket bootstrap - owner: SuitHUDV4CanvasOverlay
                 canvas = target.gameObject.AddComponent<Canvas>();
 
             canvas.overrideSorting = true;
@@ -5398,7 +5400,7 @@ namespace Hecton8.UI
 
             RectTransform iconRect = CreateRect("GaugeIcon", refs.Root);
             Anchor(iconRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-26f, 28f), gaugeIconSize);
-            // COLD ALLOC: RawImage[1] — gauge icon hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: RawImage[1] - gauge icon hierarchy bootstrap - owner: SuitHUDV4CanvasOverlay
             refs.Icon = iconRect.gameObject.AddComponent<RawImage>();
             refs.Icon.texture = iconTexture;
             refs.Icon.raycastTarget = false;
@@ -5411,7 +5413,7 @@ namespace Hecton8.UI
 
             RectTransform backRect = CreateRect("GaugeRingBack", refs.Root);
             Anchor(backRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
-            // COLD ALLOC: GaugeRingGraphic[1] — gauge backdrop ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: GaugeRingGraphic[1] - gauge backdrop ring hierarchy bootstrap - owner: SuitHUDV4CanvasOverlay
             refs.RingBack = backRect.gameObject.AddComponent<GaugeRingGraphic>();
             refs.RingBack.Configure(false, resolvedRingThicknessScale, resolvedFrameThicknessScale);
             refs.RingBack.SetFillAmount(1f);
@@ -5420,7 +5422,7 @@ namespace Hecton8.UI
 
             RectTransform fillRect = CreateRect("GaugeRingFill", refs.Root);
             Anchor(fillRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
-            // COLD ALLOC: GaugeRingGraphic[1] — gauge fill ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: GaugeRingGraphic[1] - gauge fill ring hierarchy bootstrap - owner: SuitHUDV4CanvasOverlay
             refs.RingFill = fillRect.gameObject.AddComponent<GaugeRingGraphic>();
             refs.RingFill.Configure(false, resolvedRingThicknessScale, resolvedFrameThicknessScale);
             refs.RingFill.SetFillAmount(1f);
@@ -5428,7 +5430,7 @@ namespace Hecton8.UI
 
             RectTransform frameRect = CreateRect("GaugeRingFrame", refs.Root);
             Anchor(frameRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
-            // COLD ALLOC: GaugeRingGraphic[1] — gauge frame ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: GaugeRingGraphic[1] - gauge frame ring hierarchy bootstrap - owner: SuitHUDV4CanvasOverlay
             refs.RingFrame = frameRect.gameObject.AddComponent<GaugeRingGraphic>();
             refs.RingFrame.Configure(true, resolvedRingThicknessScale, resolvedFrameThicknessScale);
             refs.RingFrame.SetFillAmount(1f);
@@ -5482,7 +5484,7 @@ namespace Hecton8.UI
 
                 RectTransform iconRect = CreateRect("Icon", refs.Root);
                 Stretch(iconRect, 7f, 7f, 7f, 7f);
-                // COLD ALLOC: Image[1] — quickbar slot icon hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: Image[1] - quickbar slot icon hierarchy bootstrap - owner: SuitHUDV4CanvasOverlay
                 refs.Icon = iconRect.gameObject.AddComponent<Image>();
                 refs.Icon.preserveAspect = true;
                 refs.Icon.raycastTarget = false;
@@ -5712,8 +5714,7 @@ namespace Hecton8.UI
                 return 0;
             }
 
-            string persistentId = tool.ToolData.PersistentId;
-            return !string.IsNullOrWhiteSpace(persistentId) ? LocHash.Compute(persistentId) : 0;
+            return tool.ToolData.PersistentHashId;
         }
 
         private int ResolveQuickbarSlotHash(int slotIndex, GameObject prefab)
@@ -5792,7 +5793,7 @@ namespace Hecton8.UI
 
         private RectTransform CreateRect(string name, RectTransform parent)
         {
-            // COLD ALLOC: GameObject[1] — HUD RectTransform hierarchy bootstrap factory — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: GameObject[1] - HUD RectTransform hierarchy bootstrap factory - owner: SuitHUDV4CanvasOverlay
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
@@ -5805,7 +5806,7 @@ namespace Hecton8.UI
         private Image CreateImage(string name, RectTransform parent, Color color)
         {
             RectTransform rect = CreateRect(name, parent);
-            // COLD ALLOC: Image[1] — HUD image hierarchy bootstrap factory — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: Image[1] - HUD image hierarchy bootstrap factory - owner: SuitHUDV4CanvasOverlay
             Image image = rect.gameObject.AddComponent<Image>();
             image.color = color;
             image.material = null;
@@ -5821,7 +5822,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI CreateText(string name, RectTransform parent, float size, FontStyles style, TextAlignmentOptions alignment, float alpha, TMP_FontAsset fontAsset)
         {
             RectTransform rect = CreateRect(name, parent);
-            // COLD ALLOC: TextMeshProUGUI[1] — HUD text hierarchy bootstrap factory — owner: SuitHUDV4CanvasOverlay
+            // COLD ALLOC: TextMeshProUGUI[1] - HUD text hierarchy bootstrap factory - owner: SuitHUDV4CanvasOverlay
             TextMeshProUGUI label = rect.gameObject.AddComponent<TextMeshProUGUI>();
             TMP_FontAsset resolvedFont = fontAsset != null ? fontAsset : ResolveLabelFontAsset();
             label.font = resolvedFont;
@@ -5873,7 +5874,7 @@ namespace Hecton8.UI
                 return false;
 
             string fontName = fontAsset.name;
-            return fontName.Contains("Digit") || fontName.Contains("Ñ†Ð¸Ñ„");
+            return fontName.Contains("Digit") || fontName.Contains("циф");
         }
 
         private static Color Alpha(Color color, float alpha)
@@ -7290,7 +7291,7 @@ namespace Hecton8.UI
                 if (!allowCreation)
                     return null;
 
-                // COLD ALLOC: HectonUIScaler[1] — canvas matrix scaler bootstrap — owner: SuitHUDV4CanvasOverlay
+                // COLD ALLOC: HectonUIScaler[1] - canvas matrix scaler bootstrap - owner: SuitHUDV4CanvasOverlay
                 _cachedUiScaler = canvas.gameObject.AddComponent<HectonUIScaler>();
             }
 
@@ -7490,25 +7491,22 @@ namespace Hecton8.UI
             if (_lateFrameTickRegistered && _slowTickRegistered)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_lateFrameTickRegistered)
             {
-                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             }
 
             if (_slowTickRegistered)
                 return;
 
-            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void QueueStencilSuppressionApply()
         {
             _pendingStencilSuppressionApply = true;
-            if (!_lateFrameTickRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_lateFrameTickRegistered && Application.isPlaying)
+                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void QueueReactiveLateFrameSolve(float deltaTime)
@@ -7527,14 +7525,14 @@ namespace Hecton8.UI
         {
             if (_lateFrameTickRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameTickRegistered = false;
             }
 
             if (!_slowTickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _slowTickRegistered = false;
         }
 
@@ -7653,7 +7651,7 @@ namespace Hecton8.UI
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
-        [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Scale Policy ------------------")]
         [Tooltip("Reference UI resolution used by the root transform matrix.")]
         [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
         [Tooltip("CanvasScaler-compatible logarithmic width/height blend. 0 = width, 1 = height.")]
@@ -7752,7 +7750,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!TryResolveExistingContentRootCold() && EnsureContentRoot() == null)
+            if (!TryResolveExistingContentRootCold())
                 return;
 
             ApplyScaleToResolvedContentRoot(_contentRoot, force: true);
@@ -7906,6 +7904,11 @@ namespace Hecton8.UI
         private RectTransform EnsureContentRoot()
         {
             ResolveCanvas();
+            return EnsureContentRootFromCachedCanvas();
+        }
+
+        private RectTransform EnsureContentRootFromCachedCanvas()
+        {
             if (_targetCanvas == null)
                 return null;
 
@@ -7918,10 +7921,13 @@ namespace Hecton8.UI
 
             if (_contentRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
+                // COLD ALLOC: GameObject[1] - matrix-scaled HUD content root - owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _contentRoot);
+                _contentRoot = rootObject.transform as RectTransform;
+                if (_contentRoot == null)
+                    return null;
+
                 _contentRoot.SetParent(canvasRoot, false);
             }
 
@@ -8076,15 +8082,15 @@ namespace Hecton8.UI
             if (!_runtimeScalerCallbacksActive)
                 return;
 
-            if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
+            if (!_registeredToTickManager)
             {
-                _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToTickManager = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             }
 
-            if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
+            if (_registeredToSlowTickManager)
                 return;
 
-            _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registeredToSlowTickManager = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -8124,14 +8130,14 @@ namespace Hecton8.UI
         {
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
 
             if (!_registeredToSlowTickManager)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredToSlowTickManager = false;
         }
 

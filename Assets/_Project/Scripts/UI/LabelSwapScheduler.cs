@@ -13,12 +13,14 @@ namespace Hecton8.UI
     public sealed class LabelSwapScheduler
     {
         public const int MaxPerTick = 18;
+        public const int MaxQueueCapacity = 2048;
 
-        // COLD ALLOC: PendingSwap[512] - staged TMP swap ring buffer with optional prefetched UTF-8 slice - owner: LabelSwapScheduler
-        private readonly PendingSwap[] _pending = new PendingSwap[512];
+        // COLD ALLOC: PendingSwap[2048] — staged TMP swap ring buffer matched to TMP_TextRegistry capacity — owner: LabelSwapScheduler
+        private readonly PendingSwap[] _pending = new PendingSwap[MaxQueueCapacity];
         private int _head;
         private int _tail;
         private int _count;
+        private int _overflowCount;
 
         /// <summary>
         /// Pending entry count.
@@ -31,6 +33,11 @@ namespace Hecton8.UI
         public bool HasPending => _count > 0;
 
         /// <summary>
+        /// Number of swap entries rejected after the fixed pending ring saturated.
+        /// </summary>
+        public int OverflowCount => _overflowCount;
+
+        /// <summary>
         /// Reset the scheduler.
         /// </summary>
         public void Clear()
@@ -41,6 +48,7 @@ namespace Hecton8.UI
             _head = 0;
             _tail = 0;
             _count = 0;
+            _overflowCount = 0;
         }
 
         /// <summary>
@@ -56,8 +64,15 @@ namespace Hecton8.UI
         /// </summary>
         public bool Enqueue(TMP_TextEntry entry, int2 utf8Slice, bool hasPrefetchedSlice)
         {
-            if (_count >= _pending.Length || entry.Text == null)
+            if (entry.Text == null)
                 return false;
+
+            if (_count >= _pending.Length)
+            {
+                if (_overflowCount < int.MaxValue)
+                    _overflowCount++;
+                return false;
+            }
 
             if (!hasPrefetchedSlice)
                 utf8Slice = new int2(-1, 0);

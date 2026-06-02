@@ -1,0 +1,30 @@
+---
+packet_id: P011_DOMAIN_MARKS_2190
+article_id: human.domain_marks_2190
+locale: ar_SA
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# علامات النطاقات 2190
+
+Domain Marks 2190 يضع HECTON-8 داخل مجال بشري ناضج لكنه متباعد. الإعداد بين نجمي، لكن المسافة ما زالت تحكم المساعدة.
+
+## Scanner
+
+علامات نطاقات مختلطة. لوحة Sol، ختم Barnard، عهدة مسار Luyten.
+
+## Terminal
+
+Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+
+## Audio
+
+هذا المكان ليس خارج الحضارة. إنه شكل الحضارة عندما تنتصر المسافة.
+
+## Field Note
+
+كبرت البشرية. الإنقاذ ما زال يحتاج إلى السفر.
+
+<!-- External Site; generated from P011_DOMAIN_MARKS_2190/ar_SA. -->

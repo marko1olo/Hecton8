@@ -1,6 +1,7 @@
 using System;
 using TMPro;
 using Hecton8.Core;
+using Hecton8.Input;
 using Hecton8.Modding;
 using Unity.Mathematics;
 using UnityEngine;
@@ -20,10 +21,46 @@ namespace Hecton8.UI
     public sealed class SettingsPanel : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         private static ILocalizationTextReadModel s_localization;
+        private static readonly int SettingsPresetsKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_PRESETS);
+        private static readonly int SettingsGraphicsKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_GRAPHICS);
+        private static readonly int SettingsAudioKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_AUDIO);
+        private static readonly int SettingsQualityLevelKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_QUALITY_LEVEL);
+        private static readonly int SettingsFovKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_FOV);
+        private static readonly int SettingsShadowDistanceKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_SHADOW_DISTANCE);
+        private static readonly int SettingsShadowQualityKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_SHADOW_QUALITY);
+        private static readonly int SettingsAntiAliasingKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_ANTI_ALIASING);
+        private static readonly int SettingsTextureQualityKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_TEXTURE_QUALITY);
+        private static readonly int SettingsMenuVisualStyleKeyHash = LocHash.Compute("settings.menu_visual_style");
+        private static readonly int SettingsMenuVisualConceptKeyHash = LocHash.Compute("settings.menu_visual_concept");
+        private static readonly int SettingsTextScaleKeyHash = LocHash.Compute("settings.text_scale");
+        private static readonly int SettingsUiMotionScaleKeyHash = LocHash.Compute("settings.ui_motion_scale");
+        private static readonly int SettingsVsyncKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_VSYNC);
+        private static readonly int SettingsFullscreenKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_FULLSCREEN);
+        private static readonly int SettingsAoKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_AO);
+        private static readonly int SettingsBloomKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_BLOOM);
+        private static readonly int SettingsMotionBlurKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_MOTION_BLUR);
+        private static readonly int SettingsMasterVolumeKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_MASTER_VOLUME);
+        private static readonly int SettingsMusicVolumeKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_MUSIC_VOLUME);
+        private static readonly int SettingsSfxVolumeKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_SFX_VOLUME);
+        private static readonly int SettingsAmbientVolumeKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_AMBIENT_VOLUME);
+        private static readonly int SettingsResetDefaultsKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_RESET_DEFAULTS);
+        private static readonly int SettingsApplyKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_APPLY);
+        private static readonly int SettingsCancelKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_CANCEL);
+        private static readonly int SettingsValueOffKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_VALUE_OFF);
+        private static readonly int SettingsPresetLowKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_PRESET_LOW);
+        private static readonly int SettingsPresetMediumKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_PRESET_MEDIUM);
+        private static readonly int SettingsPresetHighKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_PRESET_HIGH);
+        private static readonly int SettingsPresetUltraKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_PRESET_ULTRA);
+        private static readonly int ErrorSettingsUnavailableKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE);
+        private const uint UiTextHashSeed = 2166136261u;
+        private const uint UiTextHashPrime = 16777619u;
+        private const int TextScalePercentMin = 78;
+        private const int TextScalePercentMax = 135;
+        private const int TextScalePercentLabelCount = TextScalePercentMax - TextScalePercentMin + 1;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== GRAPHICS ===")]
         [SerializeField] private Button btnPresetLow;
@@ -62,6 +99,16 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Creates cold runtime rows in scene-authored settings panels when menu visual controls are not wired.")]
         private bool autoCreateMenuVisualStyleRow = true;
 
+        [Header("=== ACCESSIBILITY ===")]
+        [SerializeField] private Slider sliderTextScale;
+        [SerializeField] private TMP_Text txtTextScale;
+        [SerializeField] private Slider sliderUiMotionScale;
+        [SerializeField] private TMP_Text txtUiMotionScale;
+        [SerializeField, Tooltip("Creates a cold runtime text-scale row in scene-authored settings panels when accessibility controls are not wired.")]
+        private bool autoCreateAccessibilityTextScaleRow = true;
+        [SerializeField, Tooltip("Creates a cold runtime UI motion comfort row in scene-authored settings panels when accessibility controls are not wired.")]
+        private bool autoCreateAccessibilityMotionScaleRow = true;
+
         [Header("=== AUDIO ===")]
         [SerializeField] private Slider sliderMasterVolume;
         [SerializeField] private Slider sliderMusicVolume;
@@ -99,9 +146,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Toggle debounce interval (seconds)")]
         private float toggleDebounceInterval = 0.05f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private SettingsManager _settings;
         private bool _initialized;
@@ -129,6 +176,8 @@ namespace Hecton8.UI
         private int _cachedGraphicsPreset = -1;
         private int _cachedMenuVisualStyleIndex = -1;
         private int _cachedMenuVisualConceptIndex = -1;
+        private float _cachedTextScale = AccessibilitySettings.DefaultTextScale;
+        private float _cachedUiMotionScale = AccessibilitySettings.DefaultUiMotionScale;
         private int _openedMenuVisualStyleIndex = -1;
         private int _openedMenuVisualConceptIndex = -1;
 
@@ -151,6 +200,8 @@ namespace Hecton8.UI
         private UnityAction _resetDefaultsAction;
         private UnityAction _applyAction;
         private UnityAction _cancelAction;
+        private Action _retryApplyModalAction;
+        private Action _resetDefaultsModalAction;
         private UnityAction<bool> _vsyncChangedAction;
         private UnityAction<bool> _fullscreenChangedAction;
         private UnityAction<bool> _ambientOcclusionChangedAction;
@@ -162,6 +213,8 @@ namespace Hecton8.UI
         private UnityAction<float> _ambientVolumeChangedAction;
         private UnityAction<float> _fieldOfViewChangedAction;
         private UnityAction<float> _shadowDistanceChangedAction;
+        private UnityAction<float> _textScaleChangedAction;
+        private UnityAction<float> _uiMotionScaleChangedAction;
 
         private static readonly string[] ShadowQualityNames = { "Off", "Low", "Medium", "High" };
         private static readonly string[] AntiAliasingNames = { "None", "FXAA", "SMAA", "TAA" };
@@ -171,6 +224,7 @@ namespace Hecton8.UI
         private static readonly CachedTextLabel[] VolumePercentLabels = new CachedTextLabel[101]; // COLD ALLOC: label[101] - volume percentage char buffers - owner: SettingsPanel
         private static readonly CachedTextLabel[] FOVLabels = new CachedTextLabel[51]; // COLD ALLOC: label[51] - FOV char buffers - owner: SettingsPanel
         private static readonly CachedTextLabel[] ShadowDistanceLabels = new CachedTextLabel[251]; // COLD ALLOC: label[251] - shadow distance char buffers - owner: SettingsPanel
+        private static readonly CachedTextLabel[] TextScalePercentLabels = new CachedTextLabel[TextScalePercentLabelCount]; // COLD ALLOC: label[58] - text scale percentage char buffers - owner: SettingsPanel
 
         // ZERO-GC: Dirty flags to prevent unnecessary SetText calls
         private int _prevMasterVolumeIndex = -1;
@@ -179,6 +233,8 @@ namespace Hecton8.UI
         private int _prevAmbientVolumeIndex = -1;
         private int _prevFOVIndex = -1;
         private int _prevShadowDistanceIndex = -1;
+        private int _prevTextScaleIndex = -1;
+        private int _prevUiMotionScaleIndex = -1;
         private uint _prevQualityLevelTextHash;
         private uint _prevShadowQualityTextHash;
         private uint _prevAntiAliasingTextHash;
@@ -212,6 +268,9 @@ namespace Hecton8.UI
 
             for (int i = 0; i <= 250; i++)
                 ShadowDistanceLabels[i] = CreateSuffixedNumericLabel(50 + i, 'm');
+
+            for (int i = 0; i < TextScalePercentLabels.Length; i++)
+                TextScalePercentLabels[i] = CreateSuffixedNumericLabel(TextScalePercentMin + i, '%');
         }
 
         private static CachedTextLabel CreateSuffixedNumericLabel(int value, char suffix)
@@ -234,15 +293,17 @@ namespace Hecton8.UI
             return 1;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
             EnsureListenerActionsCached();
             EnsureMenuStyleControlsCold();
             EnsureMenuConceptControlsCold();
+            EnsureAccessibilityTextScaleControlsCold();
+            EnsureAccessibilityMotionScaleControlsCold();
             BindButtons();
         }
 
@@ -251,6 +312,8 @@ namespace Hecton8.UI
             EnsureListenerActionsCached();
             EnsureMenuStyleControlsCold();
             EnsureMenuConceptControlsCold();
+            EnsureAccessibilityTextScaleControlsCold();
+            EnsureAccessibilityMotionScaleControlsCold();
             BindButtons();
 
             if (!_initialized)
@@ -290,9 +353,9 @@ namespace Hecton8.UI
                 comparisonView.Hide();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INITIALIZATION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Initialize()
         {
@@ -331,6 +394,8 @@ namespace Hecton8.UI
             _resetDefaultsAction = OnResetDefaults; // COLD ALLOC: UnityAction[1] - cached reset defaults listener - owner: SettingsPanel
             _applyAction = OnApply; // COLD ALLOC: UnityAction[1] - cached apply listener - owner: SettingsPanel
             _cancelAction = OnCancel; // COLD ALLOC: UnityAction[1] - cached cancel listener - owner: SettingsPanel
+            _retryApplyModalAction = OnApply; // COLD ALLOC: Action[1] - cached settings apply retry modal listener - owner: SettingsPanel
+            _resetDefaultsModalAction = OnResetDefaults; // COLD ALLOC: Action[1] - cached settings reset modal listener - owner: SettingsPanel
             _vsyncChangedAction = OnVsyncChanged; // COLD ALLOC: UnityAction<bool>[1] - cached vsync listener - owner: SettingsPanel
             _fullscreenChangedAction = OnFullscreenChanged; // COLD ALLOC: UnityAction<bool>[1] - cached fullscreen listener - owner: SettingsPanel
             _ambientOcclusionChangedAction = OnAmbientOcclusionChanged; // COLD ALLOC: UnityAction<bool>[1] - cached ambient occlusion listener - owner: SettingsPanel
@@ -342,6 +407,8 @@ namespace Hecton8.UI
             _ambientVolumeChangedAction = OnAmbientVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached ambient volume listener - owner: SettingsPanel
             _fieldOfViewChangedAction = OnFieldOfViewChanged; // COLD ALLOC: UnityAction<float>[1] - cached field of view listener - owner: SettingsPanel
             _shadowDistanceChangedAction = OnShadowDistanceChanged; // COLD ALLOC: UnityAction<float>[1] - cached shadow distance listener - owner: SettingsPanel
+            _textScaleChangedAction = OnTextScaleChanged; // COLD ALLOC: UnityAction<float>[1] - cached text scale listener - owner: SettingsPanel
+            _uiMotionScaleChangedAction = OnUiMotionScaleChanged; // COLD ALLOC: UnityAction<float>[1] - cached UI motion scale listener - owner: SettingsPanel
         }
 
         private void EnsureListenerActionsCached()
@@ -350,8 +417,12 @@ namespace Hecton8.UI
                 _cancelAction != null &&
                 _masterVolumeChangedAction != null &&
                 _shadowDistanceChangedAction != null &&
+                _textScaleChangedAction != null &&
+                _uiMotionScaleChangedAction != null &&
                 _menuStyleIncreaseAction != null &&
-                _menuConceptIncreaseAction != null)
+                _menuConceptIncreaseAction != null &&
+                _retryApplyModalAction != null &&
+                _resetDefaultsModalAction != null)
             {
                 return;
             }
@@ -640,6 +711,219 @@ namespace Hecton8.UI
                 txtMenuVisualConcept = FindDirectChildComponentCold<TMP_Text>(row, "Txt_MenuVisualConcept");
         }
 
+        private void EnsureAccessibilityTextScaleControlsCold()
+        {
+            if (!autoCreateAccessibilityTextScaleRow)
+                return;
+
+            if (sliderTextScale != null && txtTextScale != null)
+                return;
+
+            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            if (graphicsSection == null)
+                return;
+
+            Transform existingRow = graphicsSection.Find("Row_TextScale");
+            if (existingRow == null)
+                existingRow = CreateAccessibilityTextScaleRowCold(graphicsSection);
+
+            CacheAccessibilityTextScaleRowCold(existingRow);
+        }
+
+        private Transform CreateAccessibilityTextScaleRowCold(Transform parent)
+        {
+            GameObject rowObject = new GameObject("Row_TextScale", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional accessibility text-scale row.
+            rowObject.transform.SetParent(parent, false);
+
+            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            rowRect.localScale = Vector3.one;
+
+            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            rowLayout.minHeight = 34f;
+            rowLayout.preferredHeight = 36f;
+
+            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.childAlignment = TextAnchor.MiddleLeft;
+            rowGroup.childControlHeight = true;
+            rowGroup.childControlWidth = true;
+            rowGroup.childForceExpandHeight = false;
+            rowGroup.childForceExpandWidth = false;
+            rowGroup.spacing = 10f;
+
+            TMP_Text label = CreateMenuStyleTextCold(rowObject.transform, "Label_Row_TextScale", "TEXT SCALE".AsSpan(), TextAlignmentOptions.Left, 12f);
+            ConfigureMenuStyleLayoutCold(label.gameObject, 170f, 0f);
+
+            sliderTextScale = CreateTextScaleSliderCold(rowObject.transform, "Slider_TextScale");
+            ConfigureMenuStyleLayoutCold(sliderTextScale.gameObject, 0f, 1f);
+
+            txtTextScale = CreateMenuStyleTextCold(rowObject.transform, "Txt_TextScale", "100%".AsSpan(), TextAlignmentOptions.Center, 10.5f);
+            ConfigureMenuStyleLayoutCold(txtTextScale.gameObject, 62f, 0f);
+
+            return rowObject.transform;
+        }
+
+        private void CacheAccessibilityTextScaleRowCold(Transform row)
+        {
+            if (row == null)
+                return;
+
+            if (sliderTextScale == null)
+                sliderTextScale = FindDirectChildComponentCold<Slider>(row, "Slider_TextScale");
+            if (txtTextScale == null)
+                txtTextScale = FindDirectChildComponentCold<TMP_Text>(row, "Txt_TextScale");
+        }
+
+        private void EnsureAccessibilityMotionScaleControlsCold()
+        {
+            if (!autoCreateAccessibilityMotionScaleRow)
+                return;
+
+            if (sliderUiMotionScale != null && txtUiMotionScale != null)
+                return;
+
+            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            if (graphicsSection == null)
+                return;
+
+            Transform existingRow = graphicsSection.Find("Row_UiMotionScale");
+            if (existingRow == null)
+                existingRow = CreateAccessibilityMotionScaleRowCold(graphicsSection);
+
+            CacheAccessibilityMotionScaleRowCold(existingRow);
+        }
+
+        private Transform CreateAccessibilityMotionScaleRowCold(Transform parent)
+        {
+            GameObject rowObject = new GameObject("Row_UiMotionScale", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional accessibility motion row.
+            rowObject.transform.SetParent(parent, false);
+
+            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            rowRect.localScale = Vector3.one;
+
+            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            rowLayout.minHeight = 34f;
+            rowLayout.preferredHeight = 36f;
+
+            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.childAlignment = TextAnchor.MiddleLeft;
+            rowGroup.childControlHeight = true;
+            rowGroup.childControlWidth = true;
+            rowGroup.childForceExpandHeight = false;
+            rowGroup.childForceExpandWidth = false;
+            rowGroup.spacing = 10f;
+
+            TMP_Text label = CreateMenuStyleTextCold(rowObject.transform, "Label_Row_UiMotionScale", "UI MOTION".AsSpan(), TextAlignmentOptions.Left, 12f);
+            ConfigureMenuStyleLayoutCold(label.gameObject, 170f, 0f);
+
+            sliderUiMotionScale = CreateUiMotionScaleSliderCold(rowObject.transform, "Slider_UiMotionScale");
+            ConfigureMenuStyleLayoutCold(sliderUiMotionScale.gameObject, 0f, 1f);
+
+            txtUiMotionScale = CreateMenuStyleTextCold(rowObject.transform, "Txt_UiMotionScale", "100%".AsSpan(), TextAlignmentOptions.Center, 10.5f);
+            ConfigureMenuStyleLayoutCold(txtUiMotionScale.gameObject, 62f, 0f);
+
+            return rowObject.transform;
+        }
+
+        private void CacheAccessibilityMotionScaleRowCold(Transform row)
+        {
+            if (row == null)
+                return;
+
+            if (sliderUiMotionScale == null)
+                sliderUiMotionScale = FindDirectChildComponentCold<Slider>(row, "Slider_UiMotionScale");
+            if (txtUiMotionScale == null)
+                txtUiMotionScale = FindDirectChildComponentCold<TMP_Text>(row, "Txt_UiMotionScale");
+        }
+
+        private static Slider CreateTextScaleSliderCold(Transform parent, string name)
+        {
+            return CreateScalarSliderCold(
+                parent,
+                name,
+                AccessibilitySettings.MinimumTextScale,
+                AccessibilitySettings.MaximumTextScale,
+                AccessibilitySettings.DefaultTextScale);
+        }
+
+        private static Slider CreateUiMotionScaleSliderCold(Transform parent, string name)
+        {
+            return CreateScalarSliderCold(
+                parent,
+                name,
+                AccessibilitySettings.MinimumUiMotionScale,
+                AccessibilitySettings.MaximumUiMotionScale,
+                AccessibilitySettings.DefaultUiMotionScale);
+        }
+
+        private static Slider CreateScalarSliderCold(Transform parent, string name, float minValue, float maxValue, float defaultValue)
+        {
+            GameObject sliderObject = new GameObject(name, typeof(RectTransform), typeof(Slider)); // COLD ALLOC: optional accessibility slider.
+            sliderObject.transform.SetParent(parent, false);
+
+            Slider slider = sliderObject.GetComponent<Slider>();
+            slider.minValue = minValue;
+            slider.maxValue = maxValue;
+            slider.value = defaultValue;
+            slider.wholeNumbers = false;
+            slider.direction = Slider.Direction.LeftToRight;
+
+            Image background = CreateSliderImageCold(sliderObject.transform, "Background", new Color(0.030f, 0.060f, 0.065f, 0.78f));
+            RectTransform backgroundRect = background.rectTransform;
+            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(1f, 0.5f);
+            backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(0f, 8f);
+            backgroundRect.anchoredPosition = Vector2.zero;
+
+            GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform)); // COLD ALLOC: optional slider fill area.
+            fillAreaObject.transform.SetParent(sliderObject.transform, false);
+            RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
+            fillAreaRect.anchorMin = Vector2.zero;
+            fillAreaRect.anchorMax = Vector2.one;
+            fillAreaRect.offsetMin = new Vector2(9f, 0f);
+            fillAreaRect.offsetMax = new Vector2(-9f, 0f);
+
+            Image fill = CreateSliderImageCold(fillAreaObject.transform, "Fill", new Color(0.230f, 0.780f, 0.720f, 0.90f));
+            RectTransform fillRect = fill.rectTransform;
+            fillRect.anchorMin = new Vector2(0f, 0.5f);
+            fillRect.anchorMax = new Vector2(1f, 0.5f);
+            fillRect.pivot = new Vector2(0.5f, 0.5f);
+            fillRect.sizeDelta = new Vector2(0f, 8f);
+            fillRect.anchoredPosition = Vector2.zero;
+
+            GameObject handleAreaObject = new GameObject("Handle Slide Area", typeof(RectTransform)); // COLD ALLOC: optional slider handle area.
+            handleAreaObject.transform.SetParent(sliderObject.transform, false);
+            RectTransform handleAreaRect = handleAreaObject.GetComponent<RectTransform>();
+            handleAreaRect.anchorMin = Vector2.zero;
+            handleAreaRect.anchorMax = Vector2.one;
+            handleAreaRect.offsetMin = new Vector2(9f, 0f);
+            handleAreaRect.offsetMax = new Vector2(-9f, 0f);
+
+            Image handle = CreateSliderImageCold(handleAreaObject.transform, "Handle", new Color(0.950f, 0.600f, 0.240f, 0.98f));
+            RectTransform handleRect = handle.rectTransform;
+            handleRect.anchorMin = new Vector2(0f, 0.5f);
+            handleRect.anchorMax = new Vector2(0f, 0.5f);
+            handleRect.pivot = new Vector2(0.5f, 0.5f);
+            handleRect.sizeDelta = new Vector2(18f, 18f);
+            handleRect.anchoredPosition = Vector2.zero;
+
+            slider.fillRect = fillRect;
+            slider.handleRect = handleRect;
+            slider.targetGraphic = handle;
+
+            return slider;
+        }
+
+        private static Image CreateSliderImageCold(Transform parent, string name, Color color)
+        {
+            GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image)); // COLD ALLOC: optional slider image.
+            imageObject.transform.SetParent(parent, false);
+
+            Image image = imageObject.GetComponent<Image>();
+            image.color = color;
+            return image;
+        }
+
         private static T FindDirectChildComponentCold<T>(Transform parent, string childName) where T : Component
         {
             Transform child = parent.Find(childName);
@@ -768,6 +1052,18 @@ namespace Hecton8.UI
                 sliderShadowDistance.onValueChanged.AddListener(_shadowDistanceChangedAction);
             }
 
+            if (sliderTextScale != null)
+            {
+                sliderTextScale.onValueChanged.RemoveListener(_textScaleChangedAction);
+                sliderTextScale.onValueChanged.AddListener(_textScaleChangedAction);
+            }
+
+            if (sliderUiMotionScale != null)
+            {
+                sliderUiMotionScale.onValueChanged.RemoveListener(_uiMotionScaleChangedAction);
+                sliderUiMotionScale.onValueChanged.AddListener(_uiMotionScaleChangedAction);
+            }
+
             _slidersBound = true;
         }
 
@@ -794,12 +1090,18 @@ namespace Hecton8.UI
             if (sliderShadowDistance != null)
                 sliderShadowDistance.onValueChanged.RemoveListener(_shadowDistanceChangedAction);
 
+            if (sliderTextScale != null)
+                sliderTextScale.onValueChanged.RemoveListener(_textScaleChangedAction);
+
+            if (sliderUiMotionScale != null)
+                sliderUiMotionScale.onValueChanged.RemoveListener(_uiMotionScaleChangedAction);
+
             _slidersBound = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LOAD/REFRESH
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void LoadCurrentSettings()
         {
@@ -824,6 +1126,8 @@ namespace Hecton8.UI
             _cachedGraphicsPreset = _settings.GraphicsPreset;
             _cachedMenuVisualStyleIndex = MenuVisualStyleCatalog.ToIndex(_settings.MenuVisualStyle);
             _cachedMenuVisualConceptIndex = MenuVisualConceptCatalog.ToIndex(_settings.MenuVisualConcept);
+            _cachedTextScale = SanitizeTextScale(_settings.TextScale);
+            _cachedUiMotionScale = SanitizeUiMotionScale(_settings.UiMotionScale);
         }
 
         private void CaptureMenuVisualCancelSnapshot()
@@ -852,6 +1156,7 @@ namespace Hecton8.UI
             RefreshAdvancedGraphicsUI();
             RefreshMenuVisualStyleUI();
             RefreshMenuVisualConceptUI();
+            RefreshAccessibilityUI();
         }
 
         private void RefreshQualityUI()
@@ -995,9 +1300,50 @@ namespace Hecton8.UI
                 ref _prevMenuVisualConceptTextHash);
         }
 
-        // ══════════════════════════════════════════════════════════
-        // CALLBACKS — GRAPHICS
-        // ══════════════════════════════════════════════════════════
+        private void RefreshAccessibilityUI()
+        {
+            _cachedTextScale = SanitizeTextScale(_cachedTextScale);
+            _cachedUiMotionScale = SanitizeUiMotionScale(_cachedUiMotionScale);
+
+            if (sliderTextScale != null)
+            {
+                sliderTextScale.minValue = AccessibilitySettings.MinimumTextScale;
+                sliderTextScale.maxValue = AccessibilitySettings.MaximumTextScale;
+                sliderTextScale.SetValueWithoutNotify(_cachedTextScale);
+            }
+
+            if (sliderUiMotionScale != null)
+            {
+                sliderUiMotionScale.minValue = AccessibilitySettings.MinimumUiMotionScale;
+                sliderUiMotionScale.maxValue = AccessibilitySettings.MaximumUiMotionScale;
+                sliderUiMotionScale.SetValueWithoutNotify(_cachedUiMotionScale);
+            }
+
+            RefreshTextScaleValueLabel();
+            RefreshUiMotionScaleValueLabel();
+        }
+
+        private void RefreshTextScaleValueLabel()
+        {
+            if (txtTextScale == null)
+                return;
+
+            int index = ResolveTextScaleLabelIndex(_cachedTextScale);
+            SetCachedLabelIfChanged(txtTextScale, TextScalePercentLabels, index, ref _prevTextScaleIndex);
+        }
+
+        private void RefreshUiMotionScaleValueLabel()
+        {
+            if (txtUiMotionScale == null)
+                return;
+
+            int index = ResolveUiMotionScaleLabelIndex(_cachedUiMotionScale);
+            SetCachedLabelIfChanged(txtUiMotionScale, VolumePercentLabels, index, ref _prevUiMotionScaleIndex);
+        }
+
+        // ----------------------------------------------------------
+        // CALLBACKS - GRAPHICS
+        // ----------------------------------------------------------
 
         private void OnPresetLow()
         {
@@ -1156,6 +1502,34 @@ namespace Hecton8.UI
             }
         }
 
+        private void OnTextScaleChanged(float value)
+        {
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
+            _cachedTextScale = SanitizeTextScale(value);
+
+            if (sliderTextScale != null && math.abs(sliderTextScale.value - _cachedTextScale) > 0.0001f)
+                sliderTextScale.SetValueWithoutNotify(_cachedTextScale);
+
+            RefreshTextScaleValueLabel();
+        }
+
+        private void OnUiMotionScaleChanged(float value)
+        {
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
+            _cachedUiMotionScale = SanitizeUiMotionScale(value);
+
+            if (sliderUiMotionScale != null && math.abs(sliderUiMotionScale.value - _cachedUiMotionScale) > 0.0001f)
+                sliderUiMotionScale.SetValueWithoutNotify(_cachedUiMotionScale);
+
+            RefreshUiMotionScaleValueLabel();
+        }
+
         private void OnAntiAliasingDecrease()
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing - 1, 0, 3);
@@ -1312,32 +1686,34 @@ namespace Hecton8.UI
 
         private void RefreshLocalizedLabels()
         {
-            ApplyLocalizedLabel("Container/Section_Presets/Label_Presets", LocalizationKeys.SETTINGS_PRESETS, "PRESETS");
-            ApplyLocalizedLabel("Container/Section_Graphics/Label_Graphics", LocalizationKeys.SETTINGS_GRAPHICS, "GRAPHICS");
-            ApplyLocalizedLabel("Container/Section_Audio/Label_Audio", LocalizationKeys.SETTINGS_AUDIO, "AUDIO");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_QualityLevel/Label_Row_QualityLevel", LocalizationKeys.SETTINGS_QUALITY_LEVEL, "QUALITY LEVEL");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_FOV/Label_Row_FOV", LocalizationKeys.SETTINGS_FOV, "FIELD OF VIEW");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowDistance/Label_Row_ShadowDistance", LocalizationKeys.SETTINGS_SHADOW_DISTANCE, "SHADOW DISTANCE");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowQuality/Label_Row_ShadowQuality", LocalizationKeys.SETTINGS_SHADOW_QUALITY, "SHADOW QUALITY");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_AntiAliasing/Label_Row_AntiAliasing", LocalizationKeys.SETTINGS_ANTI_ALIASING, "ANTI-ALIASING");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_TextureQuality/Label_Row_TextureQuality", LocalizationKeys.SETTINGS_TEXTURE_QUALITY, "TEXTURE QUALITY");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualStyle/Label_Row_MenuVisualStyle", "settings.menu_visual_style", "MENU STYLE");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualConcept/Label_Row_MenuVisualConcept", "settings.menu_visual_concept", "MENU CONCEPT");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Vsync/Label", LocalizationKeys.SETTINGS_VSYNC, "V-SYNC");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Fullscreen/Label", LocalizationKeys.SETTINGS_FULLSCREEN, "FULLSCREEN");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_AO/Label", LocalizationKeys.SETTINGS_AO, "AMBIENT OCCLUSION");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Bloom/Label", LocalizationKeys.SETTINGS_BLOOM, "BLOOM");
-            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_MotionBlur/Label", LocalizationKeys.SETTINGS_MOTION_BLUR, "MOTION BLUR");
-            ApplyLocalizedLabel("Container/Section_Audio/Row_MasterVolume/Label_Row_MasterVolume", LocalizationKeys.SETTINGS_MASTER_VOLUME, "MASTER");
-            ApplyLocalizedLabel("Container/Section_Audio/Row_MusicVolume/Label_Row_MusicVolume", LocalizationKeys.SETTINGS_MUSIC_VOLUME, "MUSIC");
-            ApplyLocalizedLabel("Container/Section_Audio/Row_SfxVolume/Label_Row_SfxVolume", LocalizationKeys.SETTINGS_SFX_VOLUME, "SFX");
-            ApplyLocalizedLabel("Container/Section_Audio/Row_AmbientVolume/Label_Row_AmbientVolume", LocalizationKeys.SETTINGS_AMBIENT_VOLUME, "AMBIENT");
-            ApplyLocalizedLabel("Container/Row_Actions/Btn_ResetDefaults/Text", LocalizationKeys.SETTINGS_RESET_DEFAULTS, "RESET");
-            ApplyLocalizedLabel("Container/Row_Actions/Btn_Apply/Text", LocalizationKeys.SETTINGS_APPLY, "APPLY");
-            ApplyLocalizedLabel("Container/Row_Actions/Btn_Cancel/Text", LocalizationKeys.SETTINGS_CANCEL, "CANCEL");
+            ApplyLocalizedLabel("Container/Section_Presets/Label_Presets", SettingsPresetsKeyHash, "PRESETS");
+            ApplyLocalizedLabel("Container/Section_Graphics/Label_Graphics", SettingsGraphicsKeyHash, "GRAPHICS");
+            ApplyLocalizedLabel("Container/Section_Audio/Label_Audio", SettingsAudioKeyHash, "AUDIO");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_QualityLevel/Label_Row_QualityLevel", SettingsQualityLevelKeyHash, "QUALITY LEVEL");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_FOV/Label_Row_FOV", SettingsFovKeyHash, "FIELD OF VIEW");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowDistance/Label_Row_ShadowDistance", SettingsShadowDistanceKeyHash, "SHADOW DISTANCE");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowQuality/Label_Row_ShadowQuality", SettingsShadowQualityKeyHash, "SHADOW QUALITY");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_AntiAliasing/Label_Row_AntiAliasing", SettingsAntiAliasingKeyHash, "ANTI-ALIASING");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_TextureQuality/Label_Row_TextureQuality", SettingsTextureQualityKeyHash, "TEXTURE QUALITY");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualStyle/Label_Row_MenuVisualStyle", SettingsMenuVisualStyleKeyHash, "MENU STYLE");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualConcept/Label_Row_MenuVisualConcept", SettingsMenuVisualConceptKeyHash, "MENU CONCEPT");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_TextScale/Label_Row_TextScale", SettingsTextScaleKeyHash, "TEXT SCALE");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_UiMotionScale/Label_Row_UiMotionScale", SettingsUiMotionScaleKeyHash, "UI MOTION");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Vsync/Label", SettingsVsyncKeyHash, "V-SYNC");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Fullscreen/Label", SettingsFullscreenKeyHash, "FULLSCREEN");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_AO/Label", SettingsAoKeyHash, "AMBIENT OCCLUSION");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Bloom/Label", SettingsBloomKeyHash, "BLOOM");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_MotionBlur/Label", SettingsMotionBlurKeyHash, "MOTION BLUR");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_MasterVolume/Label_Row_MasterVolume", SettingsMasterVolumeKeyHash, "MASTER");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_MusicVolume/Label_Row_MusicVolume", SettingsMusicVolumeKeyHash, "MUSIC");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_SfxVolume/Label_Row_SfxVolume", SettingsSfxVolumeKeyHash, "SFX");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_AmbientVolume/Label_Row_AmbientVolume", SettingsAmbientVolumeKeyHash, "AMBIENT");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_ResetDefaults/Text", SettingsResetDefaultsKeyHash, "RESET");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_Apply/Text", SettingsApplyKeyHash, "APPLY");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_Cancel/Text", SettingsCancelKeyHash, "CANCEL");
         }
 
-        private void ApplyLocalizedLabel(string relativePath, string key, string fallback)
+        private void ApplyLocalizedLabel(string relativePath, int keyHash, string fallback)
         {
             Transform target = transform.Find(relativePath);
             if (target == null)
@@ -1347,7 +1723,7 @@ namespace Hecton8.UI
                 return;
 
             LocalizedTMPAutoSizer.Configure(label, label.fontSize * 0.72f, label.fontSize, TextOverflowModes.Ellipsis, TextWrappingModes.NoWrap);
-            SetTextIfChanged(label, ResolveLocalizedSpan(key, fallback));
+            SetTextIfChanged(label, ResolveLocalizedSpan(keyHash, fallback));
         }
 
         private static void SetValueTextIfChanged(TMP_Text label, ReadOnlySpan<char> text, ref uint previousHash)
@@ -1355,7 +1731,7 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
-            uint textHash = unchecked((uint)LocHash.Compute(text));
+            uint textHash = ComputeUiTextHash(text);
             if (previousHash == textHash)
                 return;
 
@@ -1382,7 +1758,7 @@ namespace Hecton8.UI
             cursor += CopySpanToBuffer(value, buffer, cursor);
 
             ReadOnlySpan<char> text = buffer.AsSpan(0, cursor);
-            uint textHash = unchecked((uint)LocHash.Compute(text));
+            uint textHash = ComputeUiTextHash(text);
             if (previousHash == textHash)
                 return;
 
@@ -1403,6 +1779,18 @@ namespace Hecton8.UI
             previousIndex = index;
         }
 
+        private static uint ComputeUiTextHash(ReadOnlySpan<char> text)
+        {
+            uint hash = UiTextHashSeed;
+            for (int i = 0; i < text.Length; i++)
+            {
+                hash ^= text[i];
+                hash *= UiTextHashPrime;
+            }
+
+            return hash;
+        }
+
         private static void SetTextIfChanged(TMP_Text label, ReadOnlySpan<char> text)
         {
             if (label != null)
@@ -1414,24 +1802,54 @@ namespace Hecton8.UI
             return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        private static float SanitizeTextScale(float scale)
+        {
+            if (!math.isfinite(scale) || scale <= 0f)
+                return AccessibilitySettings.DefaultTextScale;
+
+            return math.clamp(scale, AccessibilitySettings.MinimumTextScale, AccessibilitySettings.MaximumTextScale);
+        }
+
+        private static int ResolveTextScaleLabelIndex(float scale)
+        {
+            float safeScale = SanitizeTextScale(scale);
+            int percent = Mathf.RoundToInt(safeScale * 100f);
+            return Mathf.Clamp(percent - TextScalePercentMin, 0, TextScalePercentLabelCount - 1);
+        }
+
+        private static float SanitizeUiMotionScale(float scale)
+        {
+            if (!math.isfinite(scale))
+                return AccessibilitySettings.DefaultUiMotionScale;
+
+            return math.clamp(scale, AccessibilitySettings.MinimumUiMotionScale, AccessibilitySettings.MaximumUiMotionScale);
+        }
+
+        private static int ResolveUiMotionScaleLabelIndex(float scale)
+        {
+            float safeScale = SanitizeUiMotionScale(scale);
+            int percent = Mathf.RoundToInt(safeScale * 100f);
+            return Mathf.Clamp(percent, 0, 100);
+        }
+
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, string fallback)
         {
             ILocalizationTextReadModel manager = s_localization;
             if (manager == null)
                 return fallback.AsSpan();
 
-            return manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan());
+            return manager.GetRawSpanOrFallback(keyHash, fallback.AsSpan());
         }
 
         private static ReadOnlySpan<char> ResolveLocalizedShadowQualityName(int shadowQualityIndex)
         {
             return shadowQualityIndex switch
             {
-                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF"),
-                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
-                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
-                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
-                _ => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF")
+                0 => ResolveLocalizedSpan(SettingsValueOffKeyHash, "OFF"),
+                1 => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW"),
+                2 => ResolveLocalizedSpan(SettingsPresetMediumKeyHash, "MEDIUM"),
+                3 => ResolveLocalizedSpan(SettingsPresetHighKeyHash, "HIGH"),
+                _ => ResolveLocalizedSpan(SettingsValueOffKeyHash, "OFF")
             };
         }
 
@@ -1439,18 +1857,18 @@ namespace Hecton8.UI
         {
             return textureQualityIndex switch
             {
-                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
-                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
-                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
-                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
-                _ => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW")
+                0 => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW"),
+                1 => ResolveLocalizedSpan(SettingsPresetMediumKeyHash, "MEDIUM"),
+                2 => ResolveLocalizedSpan(SettingsPresetHighKeyHash, "HIGH"),
+                3 => ResolveLocalizedSpan(SettingsPresetUltraKeyHash, "ULTRA"),
+                _ => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW")
             };
         }
 
         private static ReadOnlySpan<char> ResolveLocalizedAntiAliasingName(int antiAliasingIndex)
         {
             if (antiAliasingIndex <= 0)
-                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF");
+                return ResolveLocalizedSpan(SettingsValueOffKeyHash, "OFF");
 
             return AntiAliasingNames[Mathf.Clamp(antiAliasingIndex, 0, AntiAliasingNames.Length - 1)].AsSpan();
         }
@@ -1459,17 +1877,17 @@ namespace Hecton8.UI
         {
             return qualityIndex switch
             {
-                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
-                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
-                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
-                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
+                0 => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW"),
+                1 => ResolveLocalizedSpan(SettingsPresetMediumKeyHash, "MEDIUM"),
+                2 => ResolveLocalizedSpan(SettingsPresetHighKeyHash, "HIGH"),
+                3 => ResolveLocalizedSpan(SettingsPresetUltraKeyHash, "ULTRA"),
                 _ => "--".AsSpan()
             };
         }
 
-        // ══════════════════════════════════════════════════════════
-        // CALLBACKS — AUDIO
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // CALLBACKS - AUDIO
+        // ----------------------------------------------------------
 
         private void OnMasterVolumeChanged(float value)
         {
@@ -1547,9 +1965,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        // CALLBACKS — ACTIONS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        // CALLBACKS - ACTIONS
+        // ----------------------------------------------------------
 
         private void OnResetDefaults()
         {
@@ -1619,6 +2037,8 @@ namespace Hecton8.UI
                 _settings.TextureQuality = _cachedTextureQuality;
                 _settings.MenuVisualStyle = MenuVisualStyleCatalog.FromIndex(_cachedMenuVisualStyleIndex);
                 _settings.MenuVisualConcept = MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex);
+                _settings.TextScale = _cachedTextScale;
+                _settings.UiMotionScale = _cachedUiMotionScale;
                 CaptureMenuVisualCancelSnapshot();
 
                 // Verify all settings applied successfully
@@ -1632,15 +2052,15 @@ namespace Hecton8.UI
             if (!success)
             {
                 int messageLength = CopyLocalizedSpanToModalBuffer(
-                    LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE,
+                    ErrorSettingsUnavailableKeyHash,
                     "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?");
                 
                 Hecton.UI.MainMenu.ModalWindow.ShowWithCustomLabels(
                     "Settings Apply Failed",
                     _modalMessageBuffer,
                     messageLength,
-                    () => OnApply(), // Retry
-                    () => OnResetDefaults(), // Revert to defaults
+                    _retryApplyModalAction,
+                    _resetDefaultsModalAction,
                     "Retry",
                     "Revert to Defaults");
             }
@@ -1657,9 +2077,9 @@ namespace Hecton8.UI
             RefreshAllUI();
         }
 
-        private int CopyLocalizedSpanToModalBuffer(string key, string fallback)
+        private int CopyLocalizedSpanToModalBuffer(int keyHash, string fallback)
         {
-            return CopySpanToBuffer(ResolveLocalizedSpan(key, fallback), _modalMessageBuffer, 0);
+            return CopySpanToBuffer(ResolveLocalizedSpan(keyHash, fallback), _modalMessageBuffer, 0);
         }
 
         private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer, int offset)

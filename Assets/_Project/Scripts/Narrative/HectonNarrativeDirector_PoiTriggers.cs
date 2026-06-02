@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
+using Hecton8.Data;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.World;
@@ -48,7 +49,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(16)] public uint LoreHash;
         [FieldOffset(20)] public uint Flags;
         [FieldOffset(24)] public int BitIndex;
-        [FieldOffset(28)] public uint Reserved0;
+        [FieldOffset(28)] public uint AppliedLoreHash;
         [FieldOffset(32)] private ulong _pad0;
         [FieldOffset(40)] private ulong _pad1;
         [FieldOffset(48)] private ulong _pad2;
@@ -1060,6 +1061,12 @@ namespace Hecton8.Gameplay
         private JobHandle _aupNarrativePoiJobHandle;
         private long _aupNarrativePoiJobTimestamp;
         private uint _aupNarrativePoiScheduledFrame;
+        private uint _lastAppliedLoreImpactBiomeHash;
+        private uint _lastAppliedLoreImpactEntryHash;
+        private uint _lastAppliedLoreImpactScanId;
+        private uint _lastAppliedLoreImpactSourceId;
+        private float _pendingAppliedLoreAudioGhost01;
+        private bool _hasPendingAppliedLoreAudioGhost;
         private VaultGenerationHandle<ulong> _questDagGlobalStateMaskHandle;
         private bool _aupNarrativePoiJobScheduled;
         private bool _aupNarrativePoiLateRegistered;
@@ -1126,11 +1133,91 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            FlushAppliedLoreAudioGhostVisualSync();
             CompleteAupNarrativePoiJobIfReady();
+        }
+
+        private void ConsumeAppliedLoreWorldImpactSignals()
+        {
+            ReadOnlySpan<ScanCompleteSignal> scanSignals = SignalBus<ScanCompleteSignal>.GetFrameSnapshot();
+            for (int i = 0; i < scanSignals.Length; i++)
+            {
+                ScanCompleteSignal signal = scanSignals[i];
+                if (signal.EntryHash == 0u || IsDuplicateAppliedLoreWorldImpact(in signal))
+                    continue;
+
+                if (H8AppliedLoreRuntime.TryRaiseScanCompleteWorldImpact(
+                    in signal,
+                    _lastAppliedLoreImpactBiomeHash,
+                    ref s_x001HectonNarrativeDirectorSignalPushDropCount,
+                    out uint currentBiomeHash,
+                    out float acousticInterference01))
+                {
+                    CacheAppliedLoreWorldImpactSignal(in signal);
+                    _lastAppliedLoreImpactBiomeHash = currentBiomeHash;
+                    QueueAppliedLoreAudioGhost(acousticInterference01);
+                }
+            }
+        }
+
+        private bool IsDuplicateAppliedLoreWorldImpact(in ScanCompleteSignal signal)
+        {
+            return signal.EntryHash == _lastAppliedLoreImpactEntryHash &&
+                   signal.ScanId == _lastAppliedLoreImpactScanId &&
+                   signal.SourceId == _lastAppliedLoreImpactSourceId;
+        }
+
+        private void CacheAppliedLoreWorldImpactSignal(in ScanCompleteSignal signal)
+        {
+            _lastAppliedLoreImpactEntryHash = signal.EntryHash;
+            _lastAppliedLoreImpactScanId = signal.ScanId;
+            _lastAppliedLoreImpactSourceId = signal.SourceId;
+        }
+
+        private void QueueAppliedLoreAudioGhost(float acousticInterference01)
+        {
+            if (acousticInterference01 <= 0f || !math.isfinite(acousticInterference01))
+                return;
+
+            _pendingAppliedLoreAudioGhost01 = math.max(
+                _pendingAppliedLoreAudioGhost01,
+                math.saturate(acousticInterference01));
+            _hasPendingAppliedLoreAudioGhost = true;
+        }
+
+        private void FlushAppliedLoreAudioGhostVisualSync()
+        {
+            if (!_hasPendingAppliedLoreAudioGhost)
+                return;
+
+            float acousticInterference01 = _pendingAppliedLoreAudioGhost01;
+            _pendingAppliedLoreAudioGhost01 = 0f;
+            _hasPendingAppliedLoreAudioGhost = false;
+
+            if (acousticInterference01 <= 0f || !math.isfinite(acousticInterference01))
+                return;
+
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _narrativeAudioSink;
+            if (narrativeAudioSink == null)
+                return;
+
+            narrativeAudioSink.SetNarrativeRadioInterference(acousticInterference01);
+        }
+
+        private void ClearAppliedLoreWorldImpactState()
+        {
+            _lastAppliedLoreImpactBiomeHash = 0u;
+            _lastAppliedLoreImpactEntryHash = 0u;
+            _lastAppliedLoreImpactScanId = 0u;
+            _lastAppliedLoreImpactSourceId = 0u;
+            _pendingAppliedLoreAudioGhost01 = 0f;
+            _hasPendingAppliedLoreAudioGhost = false;
         }
 
         public void Tick(float deltaTime)
         {
+            ConsumeAppliedLoreWorldImpactSignals();
+
             if (!ShouldScanAupNarrativeTriggers(deltaTime))
                 return;
 
@@ -1207,7 +1294,7 @@ namespace Hecton8.Gameplay
                     LoreHash = trigger.LoreHash,
                     Flags = (uint)(byte)trigger.Flags,
                     BitIndex = bitIndex,
-                    Reserved0 = 0u
+                    AppliedLoreHash = trigger.AppliedLoreHash
                 };
                 count++;
             }
@@ -1286,6 +1373,7 @@ namespace Hecton8.Gameplay
                                        presentation.BiomeHash != 0u ||
                                        presentation.SoundscapeHash != 0u ||
                                        presentation.LoreHash != 0u ||
+                                       presentation.AppliedLoreHash != 0u ||
                                        presentation.Flags != 0u;
                 int bitIndex = hasPresentation
                     ? presentation.BitIndex
@@ -1521,6 +1609,7 @@ namespace Hecton8.Gameplay
                                    presentation.BiomeHash != 0u ||
                                    presentation.SoundscapeHash != 0u ||
                                    presentation.LoreHash != 0u ||
+                                   presentation.AppliedLoreHash != 0u ||
                                    presentation.Flags != 0u;
             int bitIndex = hasPresentation
                 ? presentation.BitIndex
@@ -1530,9 +1619,9 @@ namespace Hecton8.Gameplay
             string discoveryId = (uint)poiIndex < (uint)_poiDiscoveryIds.Length
                 ? _poiDiscoveryIds[poiIndex]
                 : null;
-            uint discoveryHash = string.IsNullOrWhiteSpace(discoveryId)
-                ? poiHash
-                : NarrativeEvents.ComputeDiscoveryHash(discoveryId);
+            uint discoveryHash = (uint)poiIndex < (uint)_poiDiscoveryHashes.Length
+                ? _poiDiscoveryHashes[poiIndex]
+                : 0u;
             if (discoveryHash == 0u)
                 discoveryHash = poiHash;
 
@@ -1543,6 +1632,13 @@ namespace Hecton8.Gameplay
             uint loreHash = presentation.LoreHash;
             if (loreDatabase != null && loreHash != 0u)
                 loreDatabase.TryUnlockByHash(loreHash);
+
+            uint appliedLoreHash = presentation.AppliedLoreHash;
+            if (appliedLoreHash != 0u)
+            {
+                AbsoluteUniversePosition poiAup = CreateAupFromPoiDto(in dto);
+                H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(appliedLoreHash, in poiAup, discoveryHash);
+            }
 
             PublishBiomeSignal(in dto, in presentation, poiHash);
             PublishSoundscapeSignal(in dto, in presentation, poiHash);
@@ -1595,7 +1691,7 @@ namespace Hecton8.Gameplay
                     LoreHash = 0u,
                     Flags = 0u,
                     BitIndex = i & 63,
-                    Reserved0 = 0u
+                    AppliedLoreHash = 0u
                 };
             }
         }
@@ -1643,6 +1739,7 @@ namespace Hecton8.Gameplay
                                        presentation.BiomeHash != 0u ||
                                        presentation.SoundscapeHash != 0u ||
                                        presentation.LoreHash != 0u ||
+                                       presentation.AppliedLoreHash != 0u ||
                                        presentation.Flags != 0u;
                 int bitIndex = hasPresentation
                     ? presentation.BitIndex

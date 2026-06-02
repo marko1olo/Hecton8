@@ -290,7 +290,7 @@ Compile/profiler proof: pending.
 - Latest scoped runtime build: `dotnet build Assembly-CSharp.csproj --no-restore /nr:false -p:UseSharedCompilation=false -p:BuildProjectReferences=false -v:minimal` passed in `00:00:10.15`; warning `MSB9008` for missing `Hecton8.Input.csproj` remains.
 - Loop 41 compile: not launched because latest guard sample was CPU `8.0%`, but 8 active compiler processes (`dotnet` plus `VBCSCompiler`) were present.
 - Build rule: no build above `50%` CPU or while compiler processes run.
-- Build status: runtime slice compiled; full Editor compile blocked by unrelated dependency.
+- Build status: CLI runtime slice compiled only; full Editor compile and Unity runtime proof were blocked by unrelated dependency.
 
 ## Forbidden
 

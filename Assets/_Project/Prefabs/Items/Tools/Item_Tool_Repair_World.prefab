@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5372305160425189637}
   - component: {fileID: 5772722546686862795}
   - component: {fileID: 7985043108422708796}
+  - component: {fileID: 4780174402305940784}
   m_Layer: 3
   m_Name: Item_Tool_Repair_World
   m_TagString: Untagged
@@ -124,10 +125,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2cd0a26230a82814f9bc8693bf6bc066, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.PickupItem
   itemData: {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
   quantity: 1
+  persistWorldState: 1
 --- !u!114 &7985043108422708796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138,10 +140,50 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2c1b93c96a0183429ad1cfe015f3b02, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.InteractionHighlighter
   highlightMode: 0
   highlightColor: {r: 0.25, g: 0.7, b: 1, a: 1}
   intensity: 2.5
   fadeDuration: 0.12
   targetRenderers: []
+--- !u!114 &4780174402305940784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4481981618318248590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c67cc21e3ed74e0409eecc155c308112, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.ScannableFragment
+  scanTime: 3
+  canBeScanned: 1
+  unlockId: unknown_tech
+  researchData: {fileID: 0}
+  appliedLoreQuarterPacketHash: 0
+  appliedLoreHalfPacketHash: 523047024
+  appliedLoreFinalPacketHash: 0
+  fragmentRenderer: {fileID: 0}
+  scanGlowColor: {r: 0.3, g: 0.8, b: 1, a: 1}
+  completeParticles: {fileID: 0}
+  vibrationAmplitude: 0.02
+  vibrationFrequency: 5
+  scanningSound: {fileID: 0}
+  completeSound: {fileID: 0}
+  scanVolume: 0.6
+  interactText: Scan Fragment
+  OnProgressChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnScanComplete:
+    m_PersistentCalls:
+      m_Calls: []
+  OnScanStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnScanStopped:
+    m_PersistentCalls:
+      m_Calls: []

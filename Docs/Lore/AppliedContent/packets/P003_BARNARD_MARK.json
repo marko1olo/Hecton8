@@ -1,0 +1,162 @@
+{
+  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+  "packet_id": "P003_BARNARD_MARK",
+  "article_id": "player.barnard_mark",
+  "title_key": "LORE_P003_BARNARD_MARK_TITLE",
+  "status": "release_set_001",
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "unlock": {
+    "primary": "unlock.first_barnard_mark",
+    "poi_tags": [
+      "poi.worker_locker",
+      "poi.shift_board"
+    ],
+    "biome_tags": [
+      "biome.drowned_infrastructure"
+    ]
+  },
+  "localized": {
+    "en_US": {
+      "title": "Barnard Mark",
+      "scanner": "Barnard Yards stamp. Not Deep Reach issue. Somebody brought home equipment to the bottom of this moon.",
+      "field_note": "You can ignore a dead corporation. Harder to ignore a wrench from your own yard.",
+      "terminal": "PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED.",
+      "audio": "That mark is Barnard. Same cut pattern. Same cheap alloy. Whoever carried this down here knew the same shops you did.",
+      "in_game_wiki": "The first Barnard mark on HECTON-8 is small enough to miss: a tool stamp, a maintenance habit, a supply label. That is why it matters. HECTON-8 stops being a remote contract when the same marks begin appearing beside names, evacuation routes, and failed authorizations.",
+      "external_site": "The Barnard Mark turns salvage into motive. It connects the player to HECTON-8 through labor, tools, and names instead of exposition."
+    },
+    "ru_RU": {
+      "title": "Метка Barnard",
+      "scanner": "Штамп Barnard Yards. Не имущество Deep Reach. Кто-то принес домашний инструмент на дно этой луны.",
+      "field_note": "Мертвую корпорацию можно игнорировать. Гаечный ключ из твоего двора - сложнее.",
+      "terminal": "МАРШРУТ ПЕРСОНАЛА: HOLD. МАРШРУТ РЕСУРСА: ACTIVE. МАРШРУТ SUBSTRATE: PROTECTED.",
+      "audio": "Это метка Barnard. Тот же рисунок реза. Тот же дешевый сплав. Кто принес это сюда, знал те же мастерские, что и ты.",
+      "in_game_wiki": "Первая метка Barnard на HECTON-8 достаточно мала, чтобы ее пропустить: штамп на инструменте, ремонтная привычка, ярлык поставки. Поэтому она важна. HECTON-8 перестает быть удаленным контрактом, когда те же метки начинают появляться рядом с именами, маршрутами эвакуации и проваленными разрешениями.",
+      "external_site": "Метка Barnard превращает salvage в мотив. Она связывает игрока с HECTON-8 через труд, инструменты и имена, а не через прямую экспозицию."
+    },
+    "ja_JP": {
+      "title": "Barnardの刻印",
+      "scanner": "Barnard Yardsの刻印。Deep Reach支給品ではない。誰かが故郷の道具をこの月の底まで持ち込んだ。",
+      "field_note": "死んだ企業は無視できる。自分のヤードのレンチは無視しにくい。",
+      "terminal": "人員ルート: 保留。資源ルート: 有効。基質ルート: 保護。",
+      "audio": "これはBarnardの刻印だ。同じ切削跡。同じ安い合金。これを持ち込んだ奴は、お前と同じ工場を知っていた。",
+      "in_game_wiki": "HECTON-8で最初に見つかるBarnardの刻印は見逃せるほど小さい。工具印、整備の癖、補給ラベル。だから重要だ。同じ印が名前、避難経路、失敗した承認の横に出始めると、この月は遠い契約ではなくなる。",
+      "external_site": "Barnardの刻印はサルベージを動機に変える。説明ではなく、労働、道具、名前によってプレイヤーをHECTON-8へ結びつける。"
+    },
+    "zh_CN": {
+      "title": "Barnard标记",
+      "scanner": "Barnard Yards印记。不是Deep Reach配发。有人把家里的装备带到了这颗月球底部。",
+      "field_note": "你可以无视一家死公司。可来自自己船坞的扳手就没那么容易无视。",
+      "terminal": "人员路线：保持。资源路线：启用。基质路线：保护。",
+      "audio": "那是Barnard的标记。同样的切痕。同样的廉价合金。把它带到这里的人，知道你也知道的那些工坊。",
+      "in_game_wiki": "HECTON-8上的第一个Barnard标记小到可能被错过：工具戳、维修习惯、补给标签。正因如此它才重要。当同样的标记开始出现在姓名、撤离路线和失败授权旁边时，HECTON-8就不再只是远方合同。",
+      "external_site": "Barnard标记把打捞变成动机。它通过劳动、工具和姓名，而不是说明台词，把玩家与HECTON-8连接起来。"
+    },
+    "fr_FR": {
+      "title": "Marque Barnard",
+      "scanner": "Marque Barnard Yards. Pas une dotation Deep Reach. Quelqu'un a amené du matériel de chez lui au fond de cette lune.",
+      "field_note": "On peut ignorer une corporation morte. Plus dur d'ignorer une clé venue de ton propre chantier.",
+      "terminal": "ROUTE PERSONNEL: HOLD. ROUTE RESSOURCE: ACTIVE. ROUTE SUBSTRAT: PROTECTED.",
+      "audio": "C'est une marque Barnard. Même coupe. Même alliage bon marché. Celui qui a porté ça ici connaissait les mêmes ateliers que toi.",
+      "in_game_wiki": "La première marque Barnard sur HECTON-8 est assez petite pour être manquée: estampille d'outil, habitude de maintenance, étiquette de ravitaillement. C'est pour cela qu'elle compte. HECTON-8 cesse d'être un contrat lointain quand les mêmes marques apparaissent près des noms, des routes d'évacuation et des autorisations ratées.",
+      "external_site": "La marque Barnard transforme le salvage en motivation. Elle relie le joueur à HECTON-8 par le travail, les outils et les noms, pas par l'exposition."
+    },
+    "es_ES": {
+      "title": "Marca Barnard",
+      "scanner": "Sello de Barnard Yards. No es equipo de Deep Reach. Alguien llevó material de casa al fondo de esta luna.",
+      "field_note": "Puedes ignorar una corporación muerta. Es más difícil ignorar una llave de tu propio astillero.",
+      "terminal": "RUTA PERSONAL: HOLD. RUTA RECURSO: ACTIVE. RUTA SUSTRATO: PROTECTED.",
+      "audio": "Esa marca es Barnard. Mismo patrón de corte. Misma aleación barata. Quien trajo esto aquí conocía los mismos talleres que tú.",
+      "in_game_wiki": "La primera marca Barnard en HECTON-8 es tan pequeña que puede pasarse por alto: sello de herramienta, hábito de mantenimiento, etiqueta de suministro. Por eso importa. HECTON-8 deja de ser un contrato remoto cuando esas marcas aparecen junto a nombres, rutas de evacuación y autorizaciones fallidas.",
+      "external_site": "La marca Barnard convierte el salvamento en motivo. Une al jugador con HECTON-8 mediante trabajo, herramientas y nombres, no mediante exposición directa."
+    },
+    "de_DE": {
+      "title": "Barnard-Marke",
+      "scanner": "Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand brachte Heimatausrüstung bis auf den Grund dieses Mondes.",
+      "field_note": "Eine tote Firma kann man ignorieren. Einen Schraubenschlüssel aus der eigenen Werft schwerer.",
+      "terminal": "PERSONALROUTE: HOLD. RESSOURCENROUTE: ACTIVE. SUBSTRATROUTE: PROTECTED.",
+      "audio": "Das ist Barnard. Gleiches Schnittmuster. Gleiche billige Legierung. Wer das hierher brachte, kannte dieselben Werkstätten wie du.",
+      "in_game_wiki": "Die erste Barnard-Marke auf HECTON-8 ist klein genug, um sie zu übersehen: Werkzeugstempel, Wartungsgewohnheit, Versorgungsetikett. Genau deshalb zählt sie. HECTON-8 ist kein ferner Vertrag mehr, wenn dieselben Marken neben Namen, Evakuierungsrouten und gescheiterten Freigaben auftauchen.",
+      "external_site": "Die Barnard-Marke macht aus Bergung ein Motiv. Sie bindet den Spieler durch Arbeit, Werkzeuge und Namen an HECTON-8, nicht durch Erklärungstext."
+    },
+    "pl_PL": {
+      "title": "Znak Barnard",
+      "scanner": "Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś przyniósł domowe narzędzie na dno tego księżyca.",
+      "field_note": "Martwą korporację można zignorować. Klucz z własnej stoczni trudniej.",
+      "terminal": "TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED.",
+      "audio": "To znak Barnard. Ten sam wzór cięcia. Ten sam tani stop. Kto to tu przyniósł, znał te same warsztaty co ty.",
+      "in_game_wiki": "Pierwszy znak Barnard na HECTON-8 jest tak mały, że łatwo go przegapić: stempel narzędzia, nawyk naprawczy, etykieta dostawy. Dlatego ma znaczenie. HECTON-8 przestaje być odległym kontraktem, gdy te same znaki pojawiają się obok nazwisk, tras ewakuacji i nieudanych autoryzacji.",
+      "external_site": "Znak Barnard zmienia salvage w motyw. Łączy gracza z HECTON-8 przez pracę, narzędzia i nazwiska, nie przez ekspozycję."
+    },
+    "uk_UA": {
+      "title": "Мітка Barnard",
+      "scanner": "Штамп Barnard Yards. Не спорядження Deep Reach. Хтось приніс домашній інструмент на дно цього місяця.",
+      "field_note": "Мертву корпорацію можна ігнорувати. Гайковий ключ із твого двору - важче.",
+      "terminal": "МАРШРУТ ПЕРСОНАЛУ: HOLD. МАРШРУТ РЕСУРСУ: ACTIVE. МАРШРУТ СУБСТРАТУ: PROTECTED.",
+      "audio": "Це мітка Barnard. Той самий різ. Той самий дешевий сплав. Хто приніс це сюди, знав ті самі майстерні, що й ти.",
+      "in_game_wiki": "Перша мітка Barnard на HECTON-8 така мала, що її можна пропустити: штамп інструмента, ремонтна звичка, ярлик поставки. Тому вона важлива. HECTON-8 перестає бути далеким контрактом, коли ті самі мітки з'являються біля імен, маршрутів евакуації й провалених дозволів.",
+      "external_site": "Мітка Barnard перетворює salvage на мотив. Вона пов'язує гравця з HECTON-8 через працю, інструменти й імена, а не через пояснення."
+    },
+    "ar_SA": {
+      "title": "علامة Barnard",
+      "scanner": "ختم Barnard Yards. ليس إصدار Deep Reach. شخص ما أحضر معدات بيته إلى قاع هذا القمر.",
+      "field_note": "يمكنك تجاهل شركة ميتة. تجاهل مفتاح من حوضك أصعب.",
+      "terminal": "مسار الأفراد: HOLD. مسار المورد: ACTIVE. مسار الركيزة: PROTECTED.",
+      "audio": "هذه علامة Barnard. نمط القطع نفسه. السبيكة الرخيصة نفسها. من حملها إلى هنا عرف الورش التي تعرفها.",
+      "in_game_wiki": "أول علامة Barnard على HECTON-8 صغيرة بما يكفي لتفوتك: ختم أداة، عادة صيانة، ملصق توريد. لذلك هي مهمة. يتوقف HECTON-8 عن كونه عقدا بعيدا عندما تبدأ العلامات نفسها بالظهور قرب الأسماء ومسارات الإخلاء والتصاريح الفاشلة.",
+      "external_site": "تحول علامة Barnard أعمال الإنقاذ إلى دافع. إنها تربط اللاعب بـ HECTON-8 عبر العمل والأدوات والأسماء، لا عبر الشرح المباشر."
+    },
+    "id_ID": {
+      "title": "Tanda Barnard",
+      "scanner": "Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa peralatan rumah ke dasar bulan ini.",
+      "field_note": "Kau bisa mengabaikan korporasi mati. Lebih sulit mengabaikan kunci dari galanganmu sendiri.",
+      "terminal": "RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED.",
+      "audio": "Itu tanda Barnard. Pola potong yang sama. Paduan murah yang sama. Siapa pun yang membawanya ke sini tahu bengkel yang sama denganmu.",
+      "in_game_wiki": "Tanda Barnard pertama di HECTON-8 cukup kecil untuk terlewat: cap alat, kebiasaan perawatan, label suplai. Karena itu ia penting. HECTON-8 berhenti menjadi kontrak jauh saat tanda yang sama muncul di samping nama, rute evakuasi, dan otorisasi yang gagal.",
+      "external_site": "Tanda Barnard mengubah salvage menjadi motif. Ia menghubungkan pemain ke HECTON-8 lewat kerja, alat, dan nama, bukan paparan langsung."
+    },
+    "ko_KR": {
+      "title": "Barnard 표식",
+      "scanner": "Barnard Yards 도장. Deep Reach 지급품이 아니다. 누군가 고향 장비를 이 달의 바닥까지 가져왔다.",
+      "field_note": "죽은 회사를 무시하는 건 쉽다. 자기 조선소의 렌치를 무시하는 건 어렵다.",
+      "terminal": "인원 경로: HOLD. 자원 경로: ACTIVE. 기질 경로: PROTECTED.",
+      "audio": "저 표식은 Barnard다. 같은 절삭 패턴. 같은 싸구려 합금. 이걸 여기까지 들고 온 자는 너와 같은 작업장을 알았다.",
+      "in_game_wiki": "HECTON-8에서 처음 발견되는 Barnard 표식은 놓칠 만큼 작다. 공구 도장, 정비 습관, 보급 라벨. 그래서 중요하다. 같은 표식이 이름, 대피 경로, 실패한 승인 옆에 나타나기 시작하면 HECTON-8은 더 이상 먼 계약이 아니다.",
+      "external_site": "Barnard 표식은 인양을 동기로 바꾼다. 설명이 아니라 노동, 도구, 이름으로 플레이어를 HECTON-8에 연결한다."
+    },
+    "he_IL": {
+      "title": "סימן Barnard",
+      "scanner": "חותמת Barnard Yards. לא ציוד של Deep Reach. מישהו הביא כלי ביתי לתחתית הירח הזה.",
+      "field_note": "אפשר להתעלם מתאגיד מת. קשה יותר להתעלם ממפתח מהמספנה שלך.",
+      "terminal": "מסלול כוח אדם: HOLD. מסלול משאב: ACTIVE. מסלול מצע: PROTECTED.",
+      "audio": "זה סימן Barnard. אותו דגם חיתוך. אותה סגסוגת זולה. מי שהביא את זה לכאן הכיר את אותן סדנאות כמוך.",
+      "in_game_wiki": "סימן Barnard הראשון על HECTON-8 קטן מספיק כדי להחמיץ אותו: חותמת כלי, הרגל תחזוקה, תווית אספקה. לכן הוא חשוב. HECTON-8 מפסיק להיות חוזה רחוק כשהסימנים האלה מתחילים להופיע ליד שמות, נתיבי פינוי ואישורים שכשלו.",
+      "external_site": "סימן Barnard הופך חילוץ למניע. הוא קושר את השחקן ל-HECTON-8 דרך עבודה, כלים ושמות, לא דרך הסבר."
+    },
+    "pt_BR": {
+      "title": "Marca Barnard",
+      "scanner": "Selo da Barnard Yards. Não é equipamento Deep Reach. Alguém levou ferramenta de casa ao fundo desta lua.",
+      "field_note": "Você pode ignorar uma corporação morta. Mais difícil ignorar uma chave da sua própria oficina.",
+      "terminal": "ROTA DE PESSOAL: HOLD. ROTA DE RECURSO: ACTIVE. ROTA DE SUBSTRATO: PROTECTED.",
+      "audio": "Essa marca é Barnard. Mesmo padrão de corte. Mesma liga barata. Quem trouxe isso aqui conhecia as mesmas oficinas que você.",
+      "in_game_wiki": "A primeira marca Barnard em HECTON-8 é pequena o bastante para passar despercebida: selo de ferramenta, hábito de manutenção, etiqueta de suprimento. Por isso importa. HECTON-8 deixa de ser um contrato distante quando as mesmas marcas aparecem ao lado de nomes, rotas de evacuação e autorizações falhas.",
+      "external_site": "A Marca Barnard transforma salvage em motivo. Ela conecta o jogador a HECTON-8 por trabalho, ferramentas e nomes, não por exposição direta."
+    },
+    "nl_NL": {
+      "title": "Barnard-merk",
+      "scanner": "Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand bracht thuisgereedschap naar de bodem van deze maan.",
+      "field_note": "Een dood bedrijf kun je negeren. Een sleutel uit je eigen werf minder makkelijk.",
+      "terminal": "PERSONEELSROUTE: HOLD. GRONDSTOFROUTE: ACTIVE. SUBSTRAATROUTE: PROTECTED.",
+      "audio": "Dat is Barnard. Zelfde snijpatroon. Zelfde goedkope legering. Wie dit hier bracht, kende dezelfde werkplaatsen als jij.",
+      "in_game_wiki": "Het eerste Barnard-merk op HECTON-8 is klein genoeg om te missen: een gereedschapsstempel, onderhoudsgewoonte, voorraadlabel. Daarom telt het. HECTON-8 is geen verre opdracht meer wanneer dezelfde merken verschijnen naast namen, evacuatieroutes en mislukte autorisaties.",
+      "external_site": "Het Barnard-merk verandert berging in motief. Het verbindt de speler met HECTON-8 via werk, gereedschap en namen, niet via uitleg."
+    }
+  }
+}

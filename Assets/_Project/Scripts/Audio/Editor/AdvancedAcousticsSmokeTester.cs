@@ -752,7 +752,7 @@ namespace Hecton8.Audio.Editor
 
             if (audioLogEvents.Length > 0)
             {
-                string audioLogEnqueue = ExtractMethodBody(audioLogEvents, "private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)");
+                string audioLogEnqueue = ExtractMethodBody(audioLogEvents, "private static bool Enqueue(");
                 string queueOverflow = ExtractMethodBody(audioLogEvents, "private static void ReportQueueOverflow(AudioLogEventType type)");
                 string referenceSlotOverflow = ExtractMethodBody(audioLogEvents, "private static void ReportReferenceSlotOverflow(AudioLogEventType type)");
                 string resetBody = ExtractMethodBody(audioLogEvents, "private static void ResetStaticState()");

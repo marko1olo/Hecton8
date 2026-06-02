@@ -485,6 +485,153 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SubtitleManager1623_ApexIntegratorRoute_IsPhaseSafeAndZeroGc()
+        {
+            string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
+            string source = File.ReadAllText(Path.Combine(scriptsRoot, "UI/SubtitleManager.cs"));
+            string sync = File.ReadAllText(Path.Combine(scriptsRoot, "UI/BabelSubtitleSyncRuntime.cs"));
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string presentation = ExtractMethodBody(source, "private void AdvanceSubtitlePresentation(");
+            string displayResolved = ExtractMethodBody(source, "private bool DisplaySubtitleResolved(");
+            string fallbackCopy = ExtractMethodBody(source, "private static int CopyFallbackSpanToBabelLease(");
+            string powerRefresh = ExtractMethodBody(source, "private bool RefreshPowerTextGlitch(");
+            string powerSignal = ExtractMethodBody(source, "private static float ResolvePowerTextGlitchSignalTarget01()");
+            string powerApply = ExtractMethodBody(source, "private int ApplyPowerTextGlitchIfNeeded(");
+            string powerCandidateCount = ExtractMethodBody(source, "private static int CountPowerTextGlitchCandidates(");
+            string powerMutableGlyph = ExtractMethodBody(source, "private static bool IsPowerTextGlitchMutableGlyph(");
+            string renderCopy = ExtractMethodBody(source, "private int CopyBufferedDisplayToRenderBuffer(");
+            string quality = ExtractMethodBody(source, "private static float ResolveSubtitleQualityWeight01()");
+            string acquireMutation = ExtractMethodBody(sync, "private static bool TryAcquireSubtitleMutationBuffer<T>(");
+            string recordDecode = ExtractMethodBody(sync, "public static void RecordDecode(");
+            string writeTelemetry = ExtractMethodBody(sync, "private static void WriteFrameTelemetry(float decodeMilliseconds)");
+            string recordUiFailure = ExtractMethodBody(sync, "public static void RecordUIOptimizationFailure(");
+
+            StringAssert.Contains("public bool DisplaySubtitle(uint textHash, ReadOnlySpan<char> fallback, float duration)", source);
+            StringAssert.Contains("public bool DisplaySubtitle(uint textHash, ReadOnlySpan<char> fallback, float duration, BabelFormatArgs formatArgs)", source);
+            StringAssert.Contains("CopyFallbackSpanToBabelLease(textHash, fallback, lease.Span)", displayResolved);
+            StringAssert.Contains("lease.CopyToTmpBuffer(length)", displayResolved);
+            StringAssert.Contains("SignalBus<BatteryLevelSignal>.GetFrameSnapshot()", powerSignal);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", powerSignal);
+            StringAssert.Contains("HomeostasisBrain.GlobalQualityWeight", quality);
+            StringAssert.Contains("AdvanceSubtitlePresentation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);", lateFrame);
+            StringAssert.Contains("RefreshPowerTextGlitch(deltaTime);", presentation);
+            StringAssert.Contains("ApplyPowerTextGlitchIfNeeded(renderLength)", renderCopy);
+            StringAssert.Contains("CountPowerTextGlitchCandidates(renderSpan)", powerApply);
+            StringAssert.Contains("insideRichTextTag", powerApply);
+            StringAssert.Contains("remainingCandidates", powerApply);
+            StringAssert.DoesNotContain("seed % (uint)safeLength", powerApply);
+            StringAssert.Contains("value == '<'", powerCandidateCount);
+            StringAssert.Contains("value == '>'", powerCandidateCount);
+            StringAssert.Contains("value != '<'", powerMutableGlyph);
+            StringAssert.Contains("value != '>'", powerMutableGlyph);
+
+            AssertHotBodyHasNoColdLookups(lateFrame, "SubtitleManager.LateFrameTick");
+            AssertHotBodyHasNoColdLookups(presentation, "SubtitleManager.AdvanceSubtitlePresentation");
+            AssertHotBodyHasNoColdLookups(powerRefresh, "SubtitleManager.RefreshPowerTextGlitch");
+            AssertHotBodyHasNoColdLookups(powerSignal, "SubtitleManager.ResolvePowerTextGlitchSignalTarget01");
+            AssertHotBodyHasNoColdLookups(powerApply, "SubtitleManager.ApplyPowerTextGlitchIfNeeded");
+            AssertHotBodyHasNoColdLookups(renderCopy, "SubtitleManager.CopyBufferedDisplayToRenderBuffer");
+
+            AssertZeroGcTextBody(displayResolved, "SubtitleManager.DisplaySubtitleResolved");
+            AssertZeroGcTextBody(fallbackCopy, "SubtitleManager.CopyFallbackSpanToBabelLease");
+            AssertZeroGcTextBody(powerRefresh, "SubtitleManager.RefreshPowerTextGlitch");
+            AssertZeroGcTextBody(powerSignal, "SubtitleManager.ResolvePowerTextGlitchSignalTarget01");
+            AssertZeroGcTextBody(powerApply, "SubtitleManager.ApplyPowerTextGlitchIfNeeded");
+            AssertZeroGcTextBody(powerCandidateCount, "SubtitleManager.CountPowerTextGlitchCandidates");
+            AssertZeroGcTextBody(powerMutableGlyph, "SubtitleManager.IsPowerTextGlitchMutableGlyph");
+
+            Assert.AreEqual(1, CountToken(acquireMutation, "TryAcquireMutationGuard("), "mutation acquire count");
+            Assert.AreEqual(1, CountToken(acquireMutation, "ReleaseMutationGuard("), "mutation release count");
+            Assert.AreEqual(1, CountToken(acquireMutation, "finally"), "mutation acquire finally");
+            StringAssert.Contains("WriteFrameTelemetry(", recordDecode);
+            Assert.AreEqual(1, CountToken(writeTelemetry, "TryAcquireTelemetryMutationBuffer("), "decode telemetry acquire");
+            Assert.AreEqual(1, CountToken(writeTelemetry, "ReleaseTelemetryMutationBuffer("), "decode telemetry release");
+            Assert.AreEqual(1, CountToken(writeTelemetry, "finally"), "decode telemetry finally");
+            Assert.AreEqual(1, CountToken(recordUiFailure, "TryAcquireUIOptimizationTelemetryMutationBuffer("), "ui telemetry acquire");
+            Assert.AreEqual(1, CountToken(recordUiFailure, "ReleaseUIOptimizationTelemetryMutationBuffer("), "ui telemetry release");
+            Assert.AreEqual(1, CountToken(recordUiFailure, "finally"), "ui telemetry finally");
+        }
+
+        [Test]
+        public void TMPTextRegistry1623_FailsClosedInsteadOfResizingManagedArrays()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/TMP_TextRegistry.cs"));
+            string register = ExtractMethodBody(source, "internal static void Register(");
+
+            StringAssert.Contains("private const int FixedRegistryCapacity = 2048;", source);
+            StringAssert.Contains("private static readonly HectonTextNode[] s_nodes", source);
+            StringAssert.Contains("private static readonly TMP_TextEntry[] s_entries", source);
+            StringAssert.Contains("public static int Capacity => s_nodes.Length;", source);
+            StringAssert.Contains("public static int OverflowCount => s_overflowCount;", source);
+            StringAssert.Contains("if (s_count >= s_nodes.Length)", register);
+            StringAssert.Contains("s_overflowCount++", register);
+            StringAssert.DoesNotContain("EnsureCapacity(", source);
+            StringAssert.DoesNotContain("newCapacity", source);
+            StringAssert.DoesNotContain("resizedNodes", source);
+            StringAssert.DoesNotContain("resizedEntries", source);
+            StringAssert.DoesNotContain("Array.Resize", source);
+        }
+
+        [Test]
+        public void LabelSwapScheduler1623_CapacityMatchesTextRegistryAndFailsClosed()
+        {
+            string registrySource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/TMP_TextRegistry.cs"));
+            string schedulerSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/LabelSwapScheduler.cs"));
+            string enqueue = ExtractMethodBody(schedulerSource, "public bool Enqueue(TMP_TextEntry entry, int2 utf8Slice, bool hasPrefetchedSlice)");
+            string clear = ExtractMethodBody(schedulerSource, "public void Clear()");
+
+            StringAssert.Contains("private const int FixedRegistryCapacity = 2048;", registrySource);
+            StringAssert.Contains("public const int MaxQueueCapacity = 2048;", schedulerSource);
+            StringAssert.Contains("new PendingSwap[MaxQueueCapacity]", schedulerSource);
+            StringAssert.Contains("public int OverflowCount => _overflowCount;", schedulerSource);
+            StringAssert.Contains("if (_count >= _pending.Length)", enqueue);
+            StringAssert.Contains("_overflowCount++", enqueue);
+            StringAssert.Contains("_overflowCount = 0;", clear);
+            StringAssert.DoesNotContain("new PendingSwap[512]", schedulerSource);
+            StringAssert.DoesNotContain("Queue<", schedulerSource);
+            StringAssert.DoesNotContain("List<", schedulerSource);
+            StringAssert.DoesNotContain("Array.Resize", schedulerSource);
+        }
+
+        [Test]
+        public void LocalizedTextMadnessFx1623_PrimesMeshPaddingOutsidePerFrameActiveState()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/LocalizedTextMadnessFx.cs"));
+            string bind = ExtractMethodBody(source, "public void Bind(");
+            string setEffectActive = ExtractMethodBody(source, "public void SetEffectActive(");
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string applyActive = ExtractMethodBody(source, "private void ApplyActiveState(");
+            string primePadding = ExtractMethodBody(source, "private void PrimeActiveMeshPadding()");
+            string applyIdle = ExtractMethodBody(source, "private void ApplyIdleState()");
+
+            StringAssert.Contains("private bool _activePaddingPrimed;", source);
+            StringAssert.Contains("PrimeActiveMeshPadding();", bind);
+            StringAssert.Contains("PrimeActiveMeshPadding();", setEffectActive);
+            StringAssert.Contains("ApplyActiveState(phase);", lateFrame);
+            StringAssert.Contains("if (!_activePaddingPrimed)", applyActive);
+            StringAssert.Contains("PrimeActiveMeshPadding();", applyActive);
+            StringAssert.DoesNotContain("UpdateMeshPadding", applyActive);
+            Assert.AreEqual(1, CountToken(primePadding, "UpdateMeshPadding("), "active padding prime count");
+            Assert.AreEqual(1, CountToken(applyIdle, "UpdateMeshPadding("), "idle padding reset count");
+            AssertHotBodyHasNoColdLookups(lateFrame, "LocalizedTextMadnessFx.LateFrameTick");
+            AssertZeroGcTextBody(lateFrame, "LocalizedTextMadnessFx.LateFrameTick");
+        }
+
+        [Test]
+        public void LocalizedTMPAutoSizer1623_RepairsCollapsedRectsOncePerPendingLateFrame()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/LocalizedTMPAutoSizer.cs"));
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string applyConfiguration = ExtractMethodBody(source, "private void ApplyConfiguration()");
+
+            StringAssert.Contains("ApplyConfiguration();", lateFrame);
+            StringAssert.DoesNotContain("RepairCollapsedRectHierarchy();", lateFrame);
+            Assert.AreEqual(1, CountToken(applyConfiguration, "RepairCollapsedRectHierarchy();"), "configuration repair count");
+            AssertHotBodyHasNoColdLookups(lateFrame, "LocalizedTMPAutoSizer.LateFrameTick");
+            AssertZeroGcTextBody(lateFrame, "LocalizedTMPAutoSizer.LateFrameTick");
+        }
+
+        [Test]
         public void HudNotification_UsesSpanAndFixedBufferEntrypointsOnly()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/HUDNotification.cs"));
@@ -927,11 +1074,15 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("IDataVault", source);
             StringAssert.DoesNotContain("VisibleHashPrefetchBufferId", source);
             string languageChangeBody = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            string collectSwapQueue = ExtractMethodBody(source, "private void CollectSwapQueue(");
             StringAssert.DoesNotContain("UpdateStatusLabel", languageChangeBody);
             StringAssert.DoesNotContain("ApplyVisibleAlpha", languageChangeBody);
             StringAssert.Contains("LocRegistry.ResolveVisibleTextOffsetPrefetchBudget(registeredCount)", source);
             StringAssert.Contains("LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice)", source);
             StringAssert.Contains("_swapScheduler.Enqueue(entry, prefetchedSlice, hasPrefetchedSlice)", source);
+            StringAssert.Contains("if (LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice))", collectSwapQueue);
+            StringAssert.Contains("hasPrefetchedSlice = true;", collectSwapQueue);
+            Assert.AreEqual(1, CountToken(collectSwapQueue, "prefetchedCount++;"), "prefetch budget must count successful slices only");
             StringAssert.Contains("public bool Enqueue(TMP_TextEntry entry, int2 utf8Slice, bool hasPrefetchedSlice)", schedulerSource);
             StringAssert.Contains("public static int ResolveVisibleTextOffsetPrefetchBudget(int requestedCount)", registrySource);
             StringAssert.Contains("public static bool TryResolveVisibleTextOffsetSlice(uint keyHash, out int2 slice)", registrySource);
@@ -1111,6 +1262,30 @@ namespace Hecton8.Tests.Editor
 
                 Assert.Fail(label + " contains forbidden GetComponent call");
             }
+        }
+
+        private static void AssertHotBodyHasNoColdLookups(string source, string label)
+        {
+            AssertForbiddenTextBridgeAbsent(source, label, "GlobalRegistry.Get<");
+            AssertForbiddenTextBridgeAbsent(source, label, "FindObjectOfType");
+            AssertForbiddenTextBridgeAbsent(source, label, "FindObjectsOfType");
+            AssertForbiddenTextBridgeAbsent(source, label, "GameObject.Find");
+            AssertForbiddenTextBridgeAbsent(source, label, "Camera.main");
+            AssertForbiddenTextBridgeAbsent(source, label, "GetComponent(");
+            AssertForbiddenTextBridgeAbsent(source, label, "TryGetComponent(");
+        }
+
+        private static void AssertZeroGcTextBody(string source, string label)
+        {
+            AssertForbiddenTextBridgeAbsent(source, label, "string.Format");
+            AssertForbiddenTextBridgeAbsent(source, label, ".ToString(");
+            AssertForbiddenTextBridgeAbsent(source, label, ".text =");
+            AssertForbiddenTextBridgeAbsent(source, label, "SetText(");
+            AssertForbiddenTextBridgeAbsent(source, label, "new string(");
+            AssertForbiddenTextBridgeAbsent(source, label, "StringBuilder");
+            AssertForbiddenTextBridgeAbsent(source, label, "Array.Resize");
+            AssertForbiddenTextBridgeAbsent(source, label, "foreach (");
+            AssertForbiddenTextBridgeAbsent(source, label, ".ToCharArray()");
         }
 
         private static string ExtractMethodBody(string source, string marker)

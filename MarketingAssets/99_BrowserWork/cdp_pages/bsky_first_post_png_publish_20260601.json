@@ -1,0 +1,297 @@
+{
+  "generated_at": "2026-05-31T20:18:50.216Z",
+  "platform": "bluesky",
+  "mode": "publish",
+  "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+  "mediaPath": "C:\\hades\\Hecton8\\MarketingAssets\\00_Brand\\PlatformExports\\bluesky_profile_1000.png",
+  "readyState": {
+    "url": "https://bsky.app/",
+    "title": "Discover — Bluesky",
+    "textareas": [
+      {
+        "i": 0,
+        "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+        "role": null,
+        "aria": null,
+        "rect": {
+          "x": 474.0625,
+          "y": 108.5096206665039,
+          "w": 491.09375,
+          "h": 131.97116088867188,
+          "cx": 719.609375,
+          "cy": 174.49520111083984
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "i": 0,
+        "text": "What's up?",
+        "disabled": false,
+        "rect": {
+          "x": 394.30767822265625,
+          "y": 91.97115325927734,
+          "w": 600,
+          "h": 65.98558044433594,
+          "cx": 694.3076782226562,
+          "cy": 124.96394348144531
+        }
+      },
+      {
+        "i": 1,
+        "text": "Add image",
+        "disabled": false,
+        "rect": {
+          "x": 955.3173217773438,
+          "y": 111.97115325927734,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 967.3125143051147,
+          "cy": 123.96634578704834
+        }
+      },
+      {
+        "i": 2,
+        "text": "",
+        "disabled": false,
+        "rect": {
+          "x": 464.295654296875,
+          "y": 318.6899108886719,
+          "w": 514.9879760742188,
+          "h": 475.9134826660156,
+          "cx": 721.7896423339844,
+          "cy": 556.6466522216797
+        }
+      },
+      {
+        "i": 3,
+        "text": "Teni Games\n‪@teni-games.bsky.social‬",
+        "disabled": false,
+        "rect": {
+          "x": 170.30526733398438,
+          "y": 15.997596740722656,
+          "w": 208.0048065185547,
+          "h": 47.99279022216797,
+          "cx": 274.3076705932617,
+          "cy": 39.99399185180664
+        }
+      },
+      {
+        "i": 4,
+        "text": "New post",
+        "disabled": false,
+        "rect": {
+          "x": 182.3004608154297,
+          "y": 523.8101196289062,
+          "w": 137.59616088867188,
+          "h": 43.990386962890625,
+          "cx": 251.09854125976562,
+          "cy": 545.8053131103516
+        }
+      },
+      {
+        "i": 5,
+        "text": "Trending options",
+        "disabled": false,
+        "rect": {
+          "x": 1286.53125,
+          "y": 242.7163543701172,
+          "w": 25,
+          "h": 25,
+          "cx": 1299.03125,
+          "cy": 255.2163543701172
+        }
+      },
+      {
+        "i": 6,
+        "text": "Cancel",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 58.762020111083984,
+          "w": 63.605770111083984,
+          "h": 35.98557662963867,
+          "cx": 442.8726177215576,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 7,
+        "text": "Drafts",
+        "disabled": false,
+        "rect": {
+          "x": 858.8221435546875,
+          "y": 58.762020111083984,
+          "w": 67.09134674072266,
+          "h": 35.98557662963867,
+          "cx": 892.3678169250488,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 8,
+        "text": "Post",
+        "disabled": false,
+        "rect": {
+          "x": 933.8942260742188,
+          "y": 58.762020111083984,
+          "w": 59.65144348144531,
+          "h": 35.98557662963867,
+          "cx": 963.7199478149414,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 9,
+        "text": "ALT",
+        "disabled": false,
+        "rect": {
+          "x": 427.06732177734375,
+          "y": 279.4711608886719,
+          "w": 55.3125,
+          "h": 17.980770111083984,
+          "cx": 454.72357177734375,
+          "cy": 288.46154594421387
+        }
+      },
+      {
+        "i": 10,
+        "text": "Edit image",
+        "disabled": false,
+        "rect": {
+          "x": 605.108154296875,
+          "y": 279.4711608886719,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 617.103346824646,
+          "cy": 291.46635341644287
+        }
+      },
+      {
+        "i": 11,
+        "text": "Remove image",
+        "disabled": false,
+        "rect": {
+          "x": 637.0913696289062,
+          "y": 279.4711608886719,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 649.0865621566772,
+          "cy": 291.46635341644287
+        }
+      },
+      {
+        "i": 12,
+        "text": "Add alt text",
+        "disabled": false,
+        "rect": {
+          "x": 423.0649108886719,
+          "y": 301.4783630371094,
+          "w": 242.0192413330078,
+          "h": 216.00961303710938,
+          "cx": 544.0745315551758,
+          "cy": 409.48316955566406
+        }
+      },
+      {
+        "i": 13,
+        "text": "Anyone can interact",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 605.7451782226562,
+          "w": 182.4038543701172,
+          "h": 32.980770111083984,
+          "cx": 502.2716598510742,
+          "cy": 622.2355632781982
+        }
+      },
+      {
+        "i": 14,
+        "text": "Labels",
+        "disabled": false,
+        "rect": {
+          "x": 601.4663696289062,
+          "y": 605.7451782226562,
+          "w": 97.99279022216797,
+          "h": 32.980770111083984,
+          "cx": 650.4627647399902,
+          "cy": 622.2355632781982
+        }
+      },
+      {
+        "i": 15,
+        "text": "Add media to post",
+        "disabled": false,
+        "rect": {
+          "x": 410.0721130371094,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 430.060094833374,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 16,
+        "text": "Select GIF",
+        "disabled": true,
+        "rect": {
+          "x": 450.048095703125,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 470.03607749938965,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 17,
+        "text": "Open emoji picker",
+        "disabled": false,
+        "rect": {
+          "x": 490.0240478515625,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 510.01202964782715,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 18,
+        "text": "Add another post to thread",
+        "disabled": false,
+        "rect": {
+          "x": 802.3677978515625,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 822.3557796478271,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 19,
+        "text": "English",
+        "disabled": false,
+        "rect": {
+          "x": 842.34375,
+          "y": 654.9759521484375,
+          "w": 74.20673370361328,
+          "h": 32.980770111083984,
+          "cx": 879.4471168518066,
+          "cy": 671.4663372039795
+        }
+      }
+    ],
+    "body": "Discover\nFollowing\nVideo\nWhat's up?\n‪Sara Cress‬\n ‪@saracress.bsky.social‬\n· 16h\nI would normally post about Bert or any of our other foster kittens, but tonight is for Juniper. She is 16 years old. I have been with her since birth. She is from Pasadena, Texas, where I grew up.\n\nShe isn’t doing great. I can tell we’re heading for the end. But this is her tonight.\n208\n177\n4.5K\n‪POMARANC‬\n ‪@pomaranc.bsky.social‬\n· 6h\nDubrovnik, Croatia ❤️\n\n#dubrovnik #croatia\n📸: onixion\n\n#photography\n24\n85\n914\n‪Titania‬\n ‪@titaniasrealm.bsky.social‬\n· 4h\nNight Hunter by Vitali Skvorkin\nALT\n23\n241\n1.6K\n‪Pam Keith‬\n ‪@pamkeithdc.bsky.social‬\n· 23h\nTexas Tech QB Brandon Sorsby bet on his own games.\n\nHe got caught.  Many other have as well and haven’t been caught (yet).\n\nSports gambling is ruining sports. \n\nThat is all\n206\n644\n3.9K\n‪Stardust 🌏🎬‬\n ‪@stardustbluepr.com‬\n· 3h\nThe law, sponsored by Sen. Brent Taylor (R-Memphis) and Rep. Ed Butler (R-Rickman), requires data centers that have a peak demand of at least 50 megawatts of electricity during the first 3 years of operation to pay for their own electricity infrastructure so ratepayers aren’t stuck with the bill.\nNew Tennessee law requires data centers to pay for their own electricity infrastructure\nThe law requires data centers with peak demands of at least 50 megawatts to pay for their own electricity infrastructure.\nwww.wate.com\n94\n256\n821\n‪Patch Zircher‬\n ‪@patrickzircher.bsky.social‬\n· 17h\nThere were times, as a teen, I think I read 1 out of 3 books in the sf/fantasy section.\n47\n35\n631\n‪Runs with scissors in the dark‬\n ‪@tevistickles.bsky.social‬\n· 1d\nOh dear God!!!\nThis is exactly what happens when dogs and cats lay down together. 😳\n#Caturday\n179\n664\n4.5K\n‪Danhanjon‬\n ‪@danhanjon.bsky.social‬\n· 11h\nEveryone has the best dog. However this dog is the actual best dog. And today is her 10th birthday. \n\nHappy birthday,  Libby\n175\n159\n3.9K\n‪Tits McGee‬\n ‪@scientits.bsky.social‬\n· 2h\nStudios need to give $10 million to 20 promising filmmakers, instead of spending $200 million on yet another identikit CGI effort that inevitably won’t even come close to making back the budget\n‪Bloody Disgusting‬\n ‪@bloody-disgusting.com‬\n· 5h\nToo early for an official figure but it looks like BACKROOMS will debut to $81 million this weekend in the United States, and $118 million worldwide.\n\nThe film's budget? $10 million.\n\nKane Parsons, ladies and gentlemen.\n2\n79\n306\n‪4fuxake‬\n ‪@blueheartedly1.bsky.social‬\n· 1h\nI want a president who investigates people who sexually assaulted women in the Epstein files, not a president who investigates a woman he sexually assaulted.\n37\n372\n1.3K\n‪Marc Elias‬\n ‪@marcelias.bsky.social‬\n· 1h\n👀\n‪Hoosier Dad‬\n ‪@hoosierdad.bsky.social‬\n· 1d\nThen you need the Democratic nominee for President to announce Marc Elias as their pick for AG!\n77\n157\n910\n‪Royston‬\n ‪@voodooroy.bsky.social‬\n· 2h\nMy dog Ringo has just reminded me that sand people are easily startled, but they’ll soon be back, and in greater numbers.\nALT\n18\n26\n618\n‪For the Love of Missy‬\n ‪@missybbbobtail.bsky.social‬\n· 8h\nReasons I rejected my food\ntoday:\n1. The bowl is the wrong color \n2. You said “good job” while I was eating and it distracted me. \n3. You left and didn’t watch me eat \n4. I wanted the other flavor I also don’t eat \n5. My bowl wasn’t positioned where I like it \n6. I wanted wet food and not dry\n139\n187\n2.2K\n‪Phil Lewis‬\n ‪@phillewis.bsky.social‬\n· 17h\nBringing emotional basketball back! It’s okay to feel something!!\n49\n419\n2.5K\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nSen. Andy Kim: \"It's a choice. Delaney Hall is run by GEO Group. GEO Group is getting a nearly $1 billion contract to run Delaney Hall. They tell me there is one full-time doctor for 800 detainees. They could have more doctors if they wanted to, but that's cutting into their profits.\"\n246\n2.3K\n5.9K\n‪Tara Dublin, Rock Star Author📚❤️‍🔥🤘🏻‬\n ‪@taradublinrocks.com‬\n· 5h\n41 years ago today I got this postcard from \n@stephenking.bsky.social\n after I wrote "
+  },
+  "beforeScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_first_post_png_publish_20260601_before_publish.png",
+  "afterScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_first_post_png_publish_20260601_after_publish.png",
+  "clickResult": {
+    "url": "https://bsky.app/",
+    "title": "Discover — Bluesky",
+    "body": "Discover\nFollowing\nVideo\nWhat's up?\n‪Sara Cress‬\n ‪@saracress.bsky.social‬\n· 16h\nI would normally post about Bert or any of our other foster kittens, but tonight is for Juniper. She is 16 years old. I have been with her since birth. She is from Pasadena, Texas, where I grew up.\n\nShe isn’t doing great. I can tell we’re heading for the end. But this is her tonight.\n208\n177\n4.5K\n‪POMARANC‬\n ‪@pomaranc.bsky.social‬\n· 6h\nDubrovnik, Croatia ❤️\n\n#dubrovnik #croatia\n📸: onixion\n\n#photography\n24\n85\n914\n‪Titania‬\n ‪@titaniasrealm.bsky.social‬\n· 4h\nNight Hunter by Vitali Skvorkin\nALT\n23\n241\n1.6K\n‪Pam Keith‬\n ‪@pamkeithdc.bsky.social‬\n· 23h\nTexas Tech QB Brandon Sorsby bet on his own games.\n\nHe got caught.  Many other have as well and haven’t been caught (yet).\n\nSports gambling is ruining sports. \n\nThat is all\n206\n644\n3.9K\n‪Stardust 🌏🎬‬\n ‪@stardustbluepr.com‬\n· 3h\nThe law, sponsored by Sen. Brent Taylor (R-Memphis) and Rep. Ed Butler (R-Rickman), requires data centers that have a peak demand of at least 50 megawatts of electricity during the first 3 years of operation to pay for their own electricity infrastructure so ratepayers aren’t stuck with the bill.\nNew Tennessee law requires data centers to pay for their own electricity infrastructure\nThe law requires data centers with peak demands of at least 50 megawatts to pay for their own electricity infrastructure.\nwww.wate.com\n94\n256\n821\n‪Patch Zircher‬\n ‪@patrickzircher.bsky.social‬\n· 17h\nThere were times, as a teen, I think I read 1 out of 3 books in the sf/fantasy section.\n47\n35\n631\n‪Runs with scissors in the dark‬\n ‪@tevistickles.bsky.social‬\n· 1d\nOh dear God!!!\nThis is exactly what happens when dogs and cats lay down together. 😳\n#Caturday\n179\n664\n4.5K\n‪Danhanjon‬\n ‪@danhanjon.bsky.social‬\n· 11h\nEveryone has the best dog. However this dog is the actual best dog. And today is her 10th birthday. \n\nHappy birthday,  Libby\n175\n159\n3.9K\n‪Tits McGee‬\n ‪@scientits.bsky.social‬\n· 2h\nStudios need to give $10 million to 20 promising filmmakers, instead of spending $200 million on yet another identikit CGI effort that inevitably won’t even come close to making back the budget\n‪Bloody Disgusting‬\n ‪@bloody-disgusting.com‬\n· 5h\nToo early for an official figure but it looks like BACKROOMS will debut to $81 million this weekend in the United States, and $118 million worldwide.\n\nThe film's budget? $10 million.\n\nKane Parsons, ladies and gentlemen.\n2\n79\n306\n‪4fuxake‬\n ‪@blueheartedly1.bsky.social‬\n· 1h\nI want a president who investigates people who sexually assaulted women in the Epstein files, not a president who investigates a woman he sexually assaulted.\n37\n372\n1.3K\n‪Marc Elias‬\n ‪@marcelias.bsky.social‬\n· 1h\n👀\n‪Hoosier Dad‬\n ‪@hoosierdad.bsky.social‬\n· 1d\nThen you need the Democratic nominee for President to announce Marc Elias as their pick for AG!\n77\n157\n910\n‪Royston‬\n ‪@voodooroy.bsky.social‬\n· 2h\nMy dog Ringo has just reminded me that sand people are easily startled, but they’ll soon be back, and in greater numbers.\nALT\n18\n26\n618\n‪For the Love of Missy‬\n ‪@missybbbobtail.bsky.social‬\n· 8h\nReasons I rejected my food\ntoday:\n1. The bowl is the wrong color \n2. You said “good job” while I was eating and it distracted me. \n3. You left and didn’t watch me eat \n4. I wanted the other flavor I also don’t eat \n5. My bowl wasn’t positioned where I like it \n6. I wanted wet food and not dry\n139\n187\n2.2K\n‪Phil Lewis‬\n ‪@phillewis.bsky.social‬\n· 17h\nBringing emotional basketball back! It’s okay to feel something!!\n49\n419\n2.5K\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nSen. Andy Kim: \"It's a choice. Delaney Hall is run by GEO Group. GEO Group is getting a nearly $1 billion contract to run Delaney Hall. They tell me there is one full-time doctor for 800 detainees. They could have more doctors if they wanted to, but that's cutting into their profits.\"\n246\n2.3K\n5.9K\n‪Tara Dublin, Rock Star Author📚❤️‍🔥🤘🏻‬\n ‪@taradublinrocks.com‬\n· 5h\n41 years ago today I got this postcard from \n@stephenking.bsky.social\n after I wrote to him via his publisher for a paper I was writing for my Honors English class \n\nIt arrived the day after I got a form letter & printed bio & it’s lived on every desk I’ve ever had ever since as daily writing inspo ❤️‍🔥\n24\n57\n754\n‪Matt‬\n ‪@nosoupforgeorge.bsky.social‬\n· 1h\nThe DOJ is now 163 days overdue to release the Epstein files.\n‪Matt‬\n ‪@nosoupforgeorge.bsky.social‬\n· 1d\nThe DOJ is now 162 days overdue to release the Epstein files.\n5\n55\n162\n‪NBA‬\n ‪@nba.com‬\n· 16h\nVictor Wembanyama embrac"
+  }
+}

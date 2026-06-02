@@ -97,6 +97,7 @@ namespace Hecton8.Interaction
         private int _faunaSpatialHandle;
         private bool _registeredToSlowTick;
         private bool _registeredToFixedTick;
+        private bool _registeredPhysicsBodyTracking;
         private Vector3 _lastSpatialPosition;
         private bool _worldStateIdentityResolved;
         private bool _worldStateIdentityAvailable;
@@ -276,7 +277,7 @@ namespace Hecton8.Interaction
         private void RefreshCachedItemHash()
         {
             _cachedItemHashId = itemData != null
-                ? Hecton.Localization.LocHash.Compute(itemData.PersistentId)
+                ? itemData.PersistentHashId
                 : 0;
         }
 
@@ -304,9 +305,7 @@ namespace Hecton8.Interaction
             RegisterSpatialHandle();
             TryRegisterSlowTick();
             TryRegisterFixedTick();
-
-            if (_rigidbody != null && !_rigidbody.isKinematic)
-                s_physicsStateEvents?.RegisterBodyStateTracking(_rigidbody);
+            TryRegisterPhysicsBodyTracking();
         }
 
         private void Start()
@@ -314,6 +313,7 @@ namespace Hecton8.Interaction
             RefreshColdRegistryReferences();
             TryRegisterSlowTick();
             TryRegisterFixedTick();
+            TryRegisterPhysicsBodyTracking();
         }
 
         private void OnDisable()
@@ -326,8 +326,7 @@ namespace Hecton8.Interaction
             ClearPersistentWorldRecord();
             RestoreDamping();
             RestoreLootMagnetRuntimeState();
-            if (_rigidbody != null)
-                s_physicsStateEvents?.UnregisterBodyStateTracking(_rigidbody);
+            TryUnregisterPhysicsBodyTracking();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -341,8 +340,7 @@ namespace Hecton8.Interaction
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             RestoreLootMagnetRuntimeState();
-            if (_rigidbody != null)
-                s_physicsStateEvents?.UnregisterBodyStateTracking(_rigidbody);
+            TryUnregisterPhysicsBodyTracking();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -367,6 +365,8 @@ namespace Hecton8.Interaction
         {
             if (_rigidbody == null || _rigidbody.isKinematic || fdt <= 0f)
                 return;
+
+            TryRegisterPhysicsBodyTracking();
 
             if (_rigidbody.IsSleeping())
                 return;
@@ -484,6 +484,28 @@ namespace Hecton8.Interaction
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
             _registeredToFixedTick = false;
+        }
+
+        private void TryRegisterPhysicsBodyTracking()
+        {
+            if (_registeredPhysicsBodyTracking || _rigidbody == null || _rigidbody.isKinematic || !Application.isPlaying)
+                return;
+
+            IPhysicsStateEventService physicsStateEvents = s_physicsStateEvents;
+            if (physicsStateEvents == null || !physicsStateEvents.IsInitialized)
+                return;
+
+            physicsStateEvents.RegisterBodyStateTracking(_rigidbody);
+            _registeredPhysicsBodyTracking = true;
+        }
+
+        private void TryUnregisterPhysicsBodyTracking()
+        {
+            if (!_registeredPhysicsBodyTracking)
+                return;
+
+            s_physicsStateEvents?.UnregisterBodyStateTracking(_rigidbody);
+            _registeredPhysicsBodyTracking = false;
         }
 
         public void OnHoverStart()

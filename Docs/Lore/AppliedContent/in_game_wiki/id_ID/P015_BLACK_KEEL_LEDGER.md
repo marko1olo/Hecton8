@@ -1,0 +1,30 @@
+---
+packet_id: P015_BLACK_KEEL_LEDGER
+article_id: ships.black_keel_ledger
+locale: id_ID
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Ledger Black Keel
+
+Ledger Black Keel menjelaskan mengapa carrier bisa menghubungi, menuntun, menagih, menunda, memulihkan, atau meninggalkan pemain tanpa menjadi penjahat. Ini infrastruktur claim-pool publik dengan debt custody dan prioritas Deep Reach tersembunyi.
+
+## Scanner
+
+Ledger claim-pool tender. Custody carrier publik, utang asuransi, hook prioritas Deep Reach tersembunyi.
+
+## Terminal
+
+Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+
+## Audio
+
+Black Keel bukan kapalmu. Itu mesin yang tahu utangmu.
+
+## Field Note
+
+Kapal bisa membantumu tanpa berpihak padamu.
+
+<!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/id_ID. -->

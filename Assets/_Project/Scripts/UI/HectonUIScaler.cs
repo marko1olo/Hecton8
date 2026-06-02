@@ -15,7 +15,7 @@ namespace Hecton8.UI
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
-        [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Scale Policy ------------------")]
         [Tooltip("Reference UI resolution used by the root transform matrix.")]
         [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
         [Tooltip("CanvasScaler-compatible logarithmic width/height blend. 0 = width, 1 = height.")]
@@ -161,11 +161,8 @@ namespace Hecton8.UI
             RectTransform contentRoot = TryGetCachedContentRoot();
             if (_pendingContentRootBootstrap)
             {
-                if (contentRoot == null && TryResolveExistingContentRootCold())
+                if (contentRoot == null && TryResolveExistingContentRootFromCachedCanvas())
                     contentRoot = _contentRoot;
-
-                if (contentRoot == null)
-                    contentRoot = EnsureContentRoot();
 
                 if (contentRoot == null)
                 {
@@ -321,6 +318,11 @@ namespace Hecton8.UI
             if (_targetCanvas == null)
                 ResolveCanvas();
 
+            return TryResolveExistingContentRootFromCachedCanvas();
+        }
+
+        private bool TryResolveExistingContentRootFromCachedCanvas()
+        {
             if (_targetCanvas == null)
                 return false;
 
@@ -343,6 +345,11 @@ namespace Hecton8.UI
         private RectTransform EnsureContentRoot()
         {
             ResolveCanvas();
+            return EnsureContentRootFromCachedCanvas();
+        }
+
+        private RectTransform EnsureContentRootFromCachedCanvas()
+        {
             if (_targetCanvas == null)
                 return null;
 
@@ -355,10 +362,13 @@ namespace Hecton8.UI
 
             if (_contentRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
+                // COLD ALLOC: GameObject[1] - matrix-scaled HUD content root - owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 _contentRoot = rootObject.transform as RectTransform;
+                if (_contentRoot == null)
+                    return null;
+
                 _contentRoot.SetParent(canvasRoot, false);
             }
 
@@ -565,29 +575,29 @@ namespace Hecton8.UI
             if (_registeredToTickManager && _registeredToSlowTickManager)
                 return;
 
-            if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
+            if (!_registeredToTickManager)
             {
-                _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToTickManager = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             }
 
-            if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
+            if (_registeredToSlowTickManager)
                 return;
 
-            _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registeredToSlowTickManager = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
 
             if (!_registeredToSlowTickManager)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredToSlowTickManager = false;
         }
 

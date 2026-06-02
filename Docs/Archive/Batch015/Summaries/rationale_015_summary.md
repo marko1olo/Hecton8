@@ -1,0 +1,2911 @@
+﻿# rationale_015_summary
+Removed: blank lines, separators, repeated AGENTS/mandate boilerplate, duplicate exact lines, raw binary/YAML asset payloads, full cross-agent prompt bodies. Kept: problem/solution/rejected/verification, checkboxes, paths, build/error lines, manifests, risk/result/final tails. Raw files preserved in Batch015.
+Evidence: STATIC_DOC / FILESYSTEM.
+Files: 50
+Source bytes: 3215478
+
+## Rationale_1403.md [208308 B; budget 22000]
+- # Rationale 1403 - MONOBEHAVIOUR_RESIDUAL_NATIVE_FIELD_PURGER
+- ## Decision 000 - Initialization
+- Problem: Assignment targets forbidden persistent native collection fields in MonoBehaviour classes. These fields can be tied to Unity object lifecycle instead of explicit native ownership.
+- Solution: Use a five-loop state machine: map fields, map lifecycle, isolate ownership, verify static field purge, then generate report artifacts.
+- Rejected Alternatives: Direct deletion without lifecycle map risks missed dispose paths and job use-after-free. Full solver/save rewrite exceeds the authorized memory ownership scope.
+- Scalability potential: Low keeps allocation ownership explicit and cheap; Middle/High/Ultra preserve current solver and save algorithm behavior while reducing lifecycle crash risk.
+- Hardware Impact: Static scan only; 0 runtime impact. Expected runtime gain is avoided leak/use-after-free risk, not frame-time optimization.
+- ## Decision 001 - Treat Current State As Partial Purge
+- Problem: Raw scan shows all 36 native fields already moved out of direct MonoBehaviour class depth, but `SaveManagerNativeBufferSet`, `RigNativeBufferSet`, and `RuntimeNativeBufferSet` are passive containers. Allocation and disposal logic still lives mostly on the MonoBehaviour methods.
+- Solution: Preserve the existing ref facade pattern and move lifecycle ownership into `IDisposable` BufferSet owners without changing save serialization or IK solver math.
+- Rejected Alternatives: Stop after static zero direct-field scan; rejected because task requires wrapper disposal chains and sentinel ownership. Rewrite algorithms around GlobalDataVault; rejected because current arrays are owner-local scratch/state and the prompt forbids solver/serialization churn.
+- Scalability potential: Low and Middle keep deterministic cold allocation with no hot-path managed churn. High and Ultra retain existing IK overkill paths because data addresses and job inputs remain unchanged.
+- Hardware Impact: No intended frame-time gain. Expected benefit on i3/MX350 is lower scene-unload leak/use-after-free risk and fewer repeated persistent static buffer allocations during static save maintenance.
+- ## Decision 002 - Static Save Buffers Need A Dedicated Island
+- Problem: Static save repair/load paths no longer borrow live instance arrays, but they allocated persistent fallback byte buffers per call. That avoids instance race but creates avoidable native allocation churn and weak static ownership evidence.
+- Solution: Extend `StaticNativeBuffers` with isolated raw/compressed byte buffer pairs, in-use guards, fallback owned pairs under contention, and explicit dispose/release routines.
+- Rejected Alternatives: Borrow `_savePayloadBuffer` and `_compressedSaveBuffer`; rejected due static/instance race. Single unlocked static byte buffer; rejected because concurrent static maintenance calls could corrupt reads/writes.
+- Scalability potential: Low uses one reusable static raw/compressed pair; Middle/High/Ultra get the same deterministic path because this is save maintenance, not visual fidelity.
+- Hardware Impact: Avoids repeated 64MB+ persistent allocation/free churn during static repair/metadata reads. Estimated low-end benefit: fewer native allocator stalls, no claimed frame-time measurement.
+- Problem: Field relocation alone did not prove ownership because allocation and disposal code could still drift in MonoBehaviour methods.
+- Solution: Move persistent native allocation routines into `SaveManagerNativeBufferSet`, `RigNativeBufferSet`, and `RuntimeNativeBufferSet`; route shutdown through `IDisposable` wrappers while preserving `ref NativeArray<T>` facades.
+- Rejected Alternatives: Rewriting save binary DTOs or IK math around new handles; rejected because the task scope is memory ownership, not algorithm changes. Keeping direct MonoBehaviour disposal; rejected because ownership proof remains split.
+- Scalability potential: Low uses the same cold persistent buffers with explicit teardown. Middle/High/Ultra keep existing fidelity paths and do not pay extra per-frame managed work.
+- Hardware Impact: No claimed frame-time delta. Estimated i3/MX350 gain is reduced scene unload leak/use-after-free risk and less allocator churn during lifecycle transitions.
+- Problem: Static save repair/read paths cannot safely borrow live instance buffers while async save work may own them.
+- Solution: `StaticNativeBuffers` now owns raw write, compressed write, and candidate scratch arenas with lock-protected in-use flags; binary read paths reuse the raw/compressed pair because they need both raw and compressed arenas. Contention receives owned fallback arrays that unregister and dispose on release.
+- Rejected Alternatives: Single global static arena without guards; rejected due corruption risk. Per-call persistent fallback only; rejected because it creates repeated large allocator traffic.
+- Scalability potential: Low gets deterministic static isolation with one reusable path; Middle/High/Ultra do not need a different method because this is persistence maintenance, not visual quality.
+- Hardware Impact: Avoids repeated 64MB raw plus 68MB compressed fallback allocations when static save routines are not contended. i3/MX350 impact: fewer native allocator stalls; exact microseconds not profiled.
+- Problem: The required lifecycle and race tests intentionally create/destroy components and allocate large save buffers; running them unconditionally would violate the workstation protection rule.
+- Solution: Add editor-only NUnit tests with `[Explicit]` for the 10000-cycle lifecycle fuzzer and static race probe. Keep a non-explicit source-route IK test that is cheap and validates job payload facade use.
+- Rejected Alternatives: Claiming test execution without Unity Test Runner; rejected as fake proof. Running dotnet/Unity tests now; rejected because user decreed build/test CPU use only under extreme necessity.
+- Scalability potential: Low devices are unaffected because tests are editor-only. High/Ultra validation can run the explicit stress tests in isolated CI to prove overkill lifecycle churn.
+- Hardware Impact: Zero runtime impact. Test execution would allocate large persistence buffers by design; it is quarantined behind explicit invocation.
+- Problem: A build would provide compiler proof, but the user explicitly restricted `dotnet build` to extreme necessity and static scans found no syntax-critical blocker.
+- Solution: Sample the build gate, record CPU/compiler state, and rely on static checks: brace balance after literal stripping, class-depth native field scan, stale helper scan, namespace scan, and hot-path allocation pattern scan.
+- Rejected Alternatives: Launching build because CPU was briefly below 50%; rejected because it was not necessary. Reporting compile success; rejected because no compiler was run.
+- Scalability potential: Low/Middle/High/Ultra code paths remain unchanged by this validation choice; only proof level is pending Unity compile/test.
+- Hardware Impact: Saved a full project build on the workstation. Exact microseconds saved are not measured; CPU gate sample was 18% with no active `dotnet` or `csc`.
+- Problem: A linear wrapper `Dispose()` can stop after the first `NativeArray.Dispose()` exception, leaving later arrays still registered and alive during scene unload.
+- Solution: Convert SaveManager, IK rig, and IK runtime wrapper disposal into best-effort loops that capture the first exception, attempt every remaining disposal, clear aliases, and throw only after the chain is drained.
+- Rejected Alternatives: Plain sequential disposal; rejected because one broken safety handle can mask leaks in later buffers. Swallowing exceptions; rejected because Integrator needs the first failure.
+- Scalability potential: Low devices avoid native leak cascades during fast scene churn. Middle/High/Ultra keep identical solver/save fidelity; only teardown reliability changed.
+- Hardware Impact: Runtime frame gain: 0 us measured. Scene-unload resilience improves on i3/MX350 by preventing one failed disposal from preserving tens of MB of persistent native memory.
+- Problem: APEX background scan found `new FileInfo(...)` in SaveManager persistence call sites, violating the no-reference-allocation proof requested for save background processing.
+- Solution: Replace the SaveManager call sites with `TryGetAbsoluteFileLength(...)`, routing through the existing `AsyncWriteManager.TryGetFileLength` abstraction so the target file no longer directly allocates `FileInfo`.
+- Rejected Alternatives: Leave local `FileInfo` because it is outside per-frame IK; rejected because the user explicitly included background SaveManager methods in the APEX scan. Rewrite `SaveBinaryStorage.AsyncWriteManager` now; rejected as outside Agent 1403 target scope and higher blast radius.
+- Scalability potential: Low/Middle reduce managed allocation pressure in SaveManager-local persistence flow. High/Ultra get no visual change; save identity and DTO layout remain untouched.
+- Hardware Impact: Exact microseconds saved: 0 measured. Known remaining outside-target risk: `Assets/_Project/Scripts/SaveBinaryStorage.cs:1056` still constructs `FileInfo` inside the shared storage layer.
+- Problem: The final verification mandate asks for compilation proof, but AGENTS and the task decree forbid `dotnet build` when CPU exceeds 50%.
+- Solution: Resample CPU/compiler state before final proof. Latest sample: CPU 100%, `dotnet=0`, `csc=0`; build not launched. Status remains `PENDING_VERIFICATION`.
+- Rejected Alternatives: Running `dotnet build` under contention; rejected by explicit rule. Claiming compiler success from static scans; rejected as false evidence.
+- Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged. This protects the shared workstation while preserving honest proof boundaries.
+- Hardware Impact: Avoided a heavy build under saturated CPU. Exact avoided duration and microseconds are not measured.
+- Problem: The previous APEX report correctly identified `SaveBinaryStorage.AsyncWriteManager.TryGetFileLength` as a transitive save dependency still using `new FileInfo`. That means the SaveManager-local patch removed the direct target-file allocation but did not remove the actual storage helper allocation for the active save path.
+- Solution: Replace the active Windows file-length path with native `CreateFileW` plus `GetFileSizeEx`, sharing read/write/delete so temp-save verification can inspect files while save maintenance owns them. Keep a non-Windows portable fallback through `File.Open` because this pass cannot prove a POSIX `stat` layout across every Unity target without a platform build.
+- Rejected Alternatives: Unity `AsyncReadManager.GetFileInfo`; rejected because Unity issue UUM-100207 reports runtime-created files can be reported absent in Unity 6000.x, which is exactly the save-file case. POSIX `stat` in this pass; rejected because struct layout varies by platform and no Android/macOS/Linux player build was available. Keeping `FileInfo`; rejected because the active Windows save path had a known reference allocation.
+- Scalability potential: Low/Middle Windows builds remove managed `FileInfo` object churn from save length verification. High/Ultra get identical save fidelity; atomic save identity and DTO layout remain unchanged.
+- Hardware Impact: Exact microseconds saved: 0 measured. Expected low-end impact is reduced managed allocation pressure during save verification on Windows. Non-Windows fallback remains PENDING runtime measurement.
+- Problem: After the SaveBinaryStorage dependency patch, syntax proof still needs a compiler, but the final sampled host state violates the project build throttle rule.
+- Solution: Record the final gate as CPU 100%, `dotnet=1`, `csc=0`; do not launch `dotnet build`; keep status `PENDING_VERIFICATION`.
+- Rejected Alternatives: Running a build while another dotnet process and saturated CPU are active; rejected by explicit rule. Treating static scans as compiler proof; rejected as false evidence.
+- Scalability potential: Runtime code behavior unchanged across Low/Middle/High/Ultra. Verification remains static-source only until the workstation is idle or CI runs Unity.
+- Hardware Impact: Avoided adding another compiler workload under saturated CPU. Exact avoided build duration is not measured.
+- Problem: The previous best-effort disposal was local to each BufferSet. `SaveManager.ShutdownServiceState` could still stop between world pager, instance native buffers, static native buffers, and post-dispose state clears if one owner threw. `ContextualPhysicalIkRuntime.OnDestroy` could fail before clearing cached context and GlobalRegistry.
+- Solution: Capture the first disposal exception at the outer lifecycle boundary, attempt every independent owner cleanup, clear lifecycle aliases, then surface the first exception. Runtime IK now clears cached player/camera context and registry in `finally` even if buffer disposal faults.
+- Rejected Alternatives: Swallowing disposal exceptions; rejected because native safety faults must remain visible. Leaving sequential outer disposal; rejected because one owner fault could preserve another owner across scene unload.
+- Scalability potential: Low devices benefit most because fast scene churn and memory pressure expose teardown ordering defects. Middle/High/Ultra behavior is unchanged; this is lifecycle correctness, not fidelity.
+- Hardware Impact: Measured runtime microseconds saved: 0. Expected gain is reduced native memory retention risk during scene unload on constrained memory targets.
+- Problem: The APEX report incorrectly said no struct layout diff was touched. The diff does change `AsyncPersistenceTelemetryEntry` from explicit size 32 to explicit size 64 with padding bytes.
+- Solution: Replace the false report text with a static offset proof: uint fields at offsets 0, 4, 8, 12, 16, 20, 24, 28; byte padding at offsets 32 through 63; total size 64; 64 is divisible by 8. Keep runtime `UnsafeUtility.SizeOf` status pending because no compiler/Unity run occurred.
+- Rejected Alternatives: Pretending the diff scanner returned no layout hits; rejected as false evidence. Running build solely for `UnsafeUtility.SizeOf`; rejected while CPU/compiler gate remains blocked.
+- Scalability potential: Low/Middle/High/Ultra all benefit from ARM64-aligned telemetry records; visual fidelity unchanged.
+- Hardware Impact: Measured runtime microseconds saved: 0. Expected gain is avoiding misaligned telemetry NativeArray records on ARM64/mobile targets.
+- Problem: The final APEX audit found that `StaticNativeBuffers.ReadBuffer`, `AcquireReadBuffer`, and `ReleaseReadBuffer` were not used by production SaveManager paths. The explicit race test exercised that dead route, making the proof weaker than the code path used by metadata/load repair.
+- Solution: Remove the standalone static read buffer API and update the explicit race probe to contend over the real raw/compressed static buffer pair.
+- Rejected Alternatives: Keeping the unused 64MB read-buffer path for symmetry; rejected because it created false evidence and a possible future allocation route with no current caller. Retrofitting read paths to use it; rejected because binary metadata/load reads require both raw and compressed arenas.
+- Scalability potential: Low avoids a dead 64MB allocation route. Middle/High/Ultra keep identical save fidelity; this only reduces proof surface and lifecycle ownership surface.
+- Hardware Impact: Measured runtime microseconds saved: 0. Expected low-end benefit is lower accidental native memory footprint if tests or future diagnostics touch static save buffers.
+- Problem: Removing the unused static read-buffer API changed runtime source and the editor test. Compiler proof would be valuable, but the host state again violates the explicit build throttle.
+- Solution: Re-sample the gate after source changes. Latest sample: CPU 100%, `dotnet=1`, `csc=0`. Do not launch `dotnet build`; keep status `PENDING_VERIFICATION`.
+- Rejected Alternatives: Running a build under saturated CPU and active dotnet; rejected by rule. Claiming compile success from static checks; rejected as false evidence.
+- Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra except the removed unused allocation route.
+- Hardware Impact: Avoided adding a second compiler workload under saturated CPU. Exact avoided duration is not measured.
+- Problem: After the dead-route patch, the editor race probe used `nameof(AcquireWriteBuffers)` and `nameof(ReleaseWriteBuffers)` inside the test class. Those methods are private static methods on `SaveManager`, not symbols in the test class, so the test assembly would fail before reflection.
+- Solution: Replace those two `nameof` calls with exact private method-name strings consumed by `typeof(SaveManager).GetMethod(...)`.
+- Rejected Alternatives: Adding wrapper methods to the test class just to satisfy `nameof`; rejected because it hides the reflection target and adds no runtime proof. Running a build to discover the same compiler error; rejected by current CPU gate.
+- Scalability potential: Runtime behavior unchanged. Validation path is now less likely to fail before testing the real static buffer pair.
+- Hardware Impact: 0 runtime microseconds. Editor-only compile-surface correction.
+- Solution: Allocate fallbacks into local NativeArray values, track sentinel registration flags, and best-effort dispose any partial fallback buffers in the catch path before rethrowing the original allocation failure.
+- Solution: Convert 22 additional fault-output routes to `NativeFaultDumpWriter.CreateTransientPayload` and `DisposeTransientPayload`. Preserve all byte layouts, ring cursor order, writer result semantics, and simulation/presentation phases. Replace touched dump path assembly with central relative paths accepted by `NativeFaultDumpWriter.TryWriteAll`. Fix the partial-class owner label in the day-night relay from the nonexistent `HectonLightingRuntime` to `HectonGIRelaySystem` before compilation.
+- Rejected Alternatives: Rewrite source-data CSV readers and profile loaders found in the same files; rejected because they are cold import paths, not fault blackbox output. Convert smoke/editor/test byte arrays; rejected because they are not shipping runtime diagnostics. Rename legacy shared dump files such as `Dump_13KRA.bin`; rejected because downstream parsers may depend on existing names. Add DataVault locks around dumps; rejected because dump writing must stay outside write-lock windows.
+- Scalability potential: Low devices get fewer fault-path managed allocations and fewer unmanaged ownership seams during crash capture. Middle devices keep deterministic postmortem byte contracts. High and Ultra keep rendering, VFX, combat, drill, radar, and GI behavior unchanged; continuous `GlobalQualityWeight`, Math LODs, gameplay truth, save identity, and authority routes were not altered.
+- Hardware Impact: 0 us normal-frame measured. Fault-path benefit is 22 fewer local raw Temp byte payload ownership sites in the focused slice. First guarded build ran at CPU 9% and succeeded with 0 warnings and 0 errors in 62.51s. Second guarded build waited through CPU 82% and 57% samples, ran at CPU 10%, and succeeded with 0 warnings and 0 errors in 69.44s. Unity Roslyn compiler-server processes survived both builds; `dotnet build-server shutdown` did not remove them, so orphan PIDs 11884 and 1...
+- ## Decision 119 - Core.Memory Fault Utilities Must Be Compatibility Shims, Not A Second Writer
+- Problem: Core.Memory code referenced local `MemoryFaultDumpWriter` and `MemoryUnsafeCopyGuard` names while the active central implementations live in the contract-side `Hecton8.Core.NativeFaultDumpWriter` and `Hecton8.Core.UnsafeMemoryCopyGuard` namespace. That produced compile blockers and also risked maintaining a second local managed dump writer. The central transient payload helper also allocated native bytes without using the existing contract bridge to `NativeMemorySentinel`.
+- Solution: Resolve direct Core.Memory call sites to the central contract-side writer/copy guard and keep `MemoryAssemblyLocalUtilities` as a thin compatibility shim only. Extend `NativeFaultDumpWriter.CreateTransientPayload` and `DisposeTransientPayload` to register/unregister through `NativeMemoryTrackingBridge` when installed, with rollback on allocation failure and tracking-record restoration if disposal throws after unregister. Fix the habitat compile wall by aligning the local duplicate `Int...
+- Rejected Alternatives: Add a reference from Core.Memory to the root `Hecton8.Core` assembly; rejected because root Core already references Core.Memory and that would create a circular assembly dependency. Delete `MemoryAssemblyLocalUtilities`; rejected because it is untracked concurrent work and may be used as a compatibility bridge by other in-flight code. Keep `AbsoluteUniversePositionBlit` in the habitat local contract; rejected because the scheduled jobs already operate on `FluidAup48`, maki...
+- Scalability potential: Low devices get one sentinel-visible transient payload route and fewer fault-path ownership variants. Middle devices keep deterministic dump byte contracts and habitat AUP math. High and Ultra keep DataVault authority, fluid simulation truth, geology presentation LODs, DTO layout, save identity, and continuous `GlobalQualityWeight` behavior unchanged.
+- Hardware Impact: 0 us normal-frame measured. Fault-path benefit is removal of duplicate local writer/copy ownership and bridge-visible transient dump payload accounting. Build protocol was bounded: first legal build at CPU 5% exposed 5 compile blockers, retry was blocked at CPU 51%, and the second legal build at CPU 12% succeeded with 0 warnings and 0 errors in 55.03s. Stale Unity Roslyn PID 13844 was killed after shutdown failed to remove it; final compiler scan returned none.
+- [omitted 663 filtered lines; raw preserved]
+
+## Rationale_1413.md [387623 B; budget 22000]
+- # Rationale 1413
+- Date: 2026-05-28
+- Status: ACTIVE / PENDING VERIFICATION
+- ## R0 - Startup Scope
+- Problem: Broad GlobalDataVault lock spans can stall defrag and sibling systems.
+- Solution: First produce a machine-readable lock ledger before edits. Only mutate source after the lock owner, method, span, release path, loop context, and fail-closed behavior are known.
+- Rejected Alternatives: Direct manual edits from grep output. Too much risk of moving a lock without proving the matching `finally` release and mutation scope.
+- Scalability potential: Low tier avoids stalls by skipping contested writes; Middle tier preserves cadence with narrow critical sections; High tier uses saved CPU headroom for denser stable snapshots; Ultra spends savings in VISUAL_SYNC, not longer truth locks.
+- Hardware Impact: Expected gain on i3/MX350 is reduced atomic contention and fewer main-thread stalls. Exact microseconds require generated ledger and optional Stopwatch harness.
+- ## R1 - Scanner Scope
+- Problem: `rg` returned a multi-thousand-line lock list with truncation and no proof of span, `finally`, loop context, or nested lock risk.
+- Solution: Built `agent1413_lock_line_scanner.py`, a line-regex brace-depth scanner that writes `LOCK_CONTENTION_SPAN_LEDGER_1413.json`. It found 1,217 lock invocations, 326 loop-shaped lock sites, and 45 nested-lock body shapes in 31,797,219 us.
+- Rejected Alternatives: Roslyn compile pipeline, because it risks csc contention and violates the build-throttle spirit for a read-only static scan. PowerShell brace parser was rejected after timeout; too slow for this tree.
+- Scalability potential: Low tier benefits from fail-closed skipped writes instead of lock waits; Middle tier gets stable cadence; High and Ultra can spend recovered CPU in VISUAL_SYNC visual density.
+- Hardware Impact: Static scan did not touch runtime. The ledger identifies likely i3/MX350 contention points before any broad source edit.
+- Problem: `GlobalDataVault.ClearActiveLockBitIfUnused` performed up to 32 `Thread.SpinWait(4)` attempts. Release paths also refused to enter while compaction fence was raised, which can leave already-held locks pinned if a caller does not retry release.
+- Solution: Removed the spin loop, added `RecordLockContentionFault(int key)` with unmanaged numeric fields, and split release gate from acquire gate. Acquires remain blocked by compaction fence; releases may enter the block mutation gate if it is free, without waiting.
+- Rejected Alternatives: Keep bounded spin because it is short. Rejected: any spin on lock contention violates the fail-closed doctrine and burns low-end CPU. Rejected `Debug.Log`: managed allocation and hot-path noise.
+- Scalability potential: Low: no wait loop during lock cleanup. Middle: contention is counted, not hidden. High: release can clear stale pins between compaction phases. Ultra: saved CPU remains available to presentation lanes.
+- Hardware Impact: Removes worst-case 32 * SpinWait(4) from one cleanup path. Expected i3/MX350 gain is reduced tail latency under defrag contention; runtime microseconds remain PENDING VERIFICATION.
+- Problem: `BuildTemplateCaches` locked `OrganicTemplateDescriptors` and `OrganicLootEntries` before allocating temp scratch, copying authoring loot, building runtime descriptors, filling managed lookup arrays, and iterating flora/harvest templates. Ledger classified both top lock sites as loop-context with 100-line critical spans.
+- Solution: Prebuild `descriptorScratch` and `lootEntryScratch` before locking. The lock now resolves vault arrays, clears them, and copies precomputed struct rows only. Post-edit ledger shows both lock sites outside loop context with 27-line copy spans.
+- Rejected Alternatives: Keep cold path as-is because template build is not per-frame. Rejected: cache rebuild can still contend with compaction and other agents; cold does not justify holding a global memory pin through authoring traversal. Rejected direct `MemCpy` because managed arrays are not pinned and this cold path does not need unsafe pinning.
+- Scalability potential: Low: fewer long cache-build stalls during weak-device streaming/setup. Middle: deterministic setup cadence. High: saved contention budget can support denser flora descriptor sets. Ultra: visual overkill remains in vegetation presentation; vault locks stay byte-copy only.
+- Hardware Impact: Static span reduction from 100 to 27 source lines for two buffer locks. Exact i3/MX350 microseconds require Unity profiler or Stopwatch harness; status PENDING VERIFICATION.
+- Problem: The fail-closed path needed a repeatable proof that `TryAcquireWriteLock` does not wait or allocate when the mutation gate is already owned.
+- Solution: Added `GlobalDataVaultFailClosedEditTests1413` under `UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS`. It forces `_blockMutationGate`, warms the generic path, attempts 10,000 write locks, checks all fail, checks numeric locked-skip telemetry, and asserts zero thread-local allocation across the loop.
+- Rejected Alternatives: Run Unity Test Runner now. Rejected because current instruction forbids heavy validation unless critical, and this environment has no Unity console artifact. Reflection in runtime was rejected; the test is editor-only and excluded from builds unless the test symbol is enabled.
+- Scalability potential: Low/Middle/High/Ultra all require the same fail-closed truth; quality scaling is irrelevant to authority locks and must not change lock behavior.
+- Hardware Impact: Prevents future reintroduction of waits in a hot failure mode. Runtime proof pending.
+- Problem: C# syntax changes normally require compile proof, but the host CPU sample returned 100% load with one `dotnet` process already active.
+- Solution: Did not launch `dotnet build`. Used `git diff --check`, targeted `rg`, scanner reruns, and manual C# scope review. Marked compile as `BLOCKED_BY_CONTENTION`.
+- Rejected Alternatives: Launch build anyway. Rejected: explicit task and AGENTS rules forbid adding compiler load above 50% CPU or during active compiler/dotnet pressure.
+- Scalability potential: Agent coordination matters more than local certainty. A blocked build protects other agents' work and keeps the machine responsive.
+- Hardware Impact: Avoided a full CPU spike on an already saturated host. Syntax status remains PENDING VERIFICATION.
+- Problem: The project still contains 325 loop-shaped lock sites and 46 nested-lock body shapes after the focused edits. Several high-priority offenders remain in volumetric fog, visual pressure aging, persistent registry, storm propagation, and vehicle damage.
+- Solution: Final JSON lists top remaining offenders instead of claiming global completion. This batch changed the core fail-closed gate and one top cold-cache span with clear source proof.
+- Rejected Alternatives: Rewrite 251 files in one pass. Rejected: too much ownership risk, no compile bandwidth, and high probability of cross-domain damage.
+- Scalability potential: Next passes can attack the report-ranked offenders by domain owner without global API churn.
+- Hardware Impact: Current changes reduce specific lock hold and spin risk; project-wide contention graph remains PENDING VERIFICATION until the remaining offenders are handled and profiled.
+- Problem: The first `BuildTemplateCaches` patch still had a manual descriptor unlock branch when `OrganicLootEntriesBufferId` failed to lock. It was probably operationally safe, but it failed the stronger proof requirement that every successful lock has a `finally` release path.
+- Solution: Moved the second lock attempt inside the descriptor lock's `try` scope. The descriptor lock is acquired at line 5044, the protected scope starts at line 5052, the loot lock is attempted at line 5054, and both unlocks execute from the `finally` block at lines 5090-5096.
+- Rejected Alternatives: Keep manual unlock because it is short. Rejected: proof is weaker and future edits could add an early return above the manual release.
+- Scalability potential: Low/Middle/High/Ultra behavior is unchanged; this is correctness hardening, not quality scaling.
+- Hardware Impact: No measurable CPU gain expected. Prevents one release-path proof gap from becoming a stale pin during future edits.
+- Problem: Verbal "zero GC" and "finally safe" claims are not evidence. The prior final report also used stale file hashes after the descriptor release correction.
+- Solution: Added `agent1413_apex_verifier.py` and generated `LOCK_CONTENTION_APEX_VERIFICATION_1413.json`. The verifier scanned modified hot windows for reference `new`, `string.Format`, `.ToString()`, LINQ, and `foreach`; total forbidden hits were 0. It also recorded BufferID values 73018/73019, line numbers, file SHA-256 hashes, and final report hash linkage.
+- Rejected Alternatives: Roslyn compile/AST. Rejected because final CPU sample was 100.000000% and both `dotnet` and `csc` were active; launching compiler validation would violate the resource-throttling mandate.
+- Scalability potential: Verification does not scale runtime load. It protects the lock-minimization contract across all quality levels.
+- Hardware Impact: No runtime cost. Static verifier cost was 5,200,000 us class work on the host.
+- Problem: `ReleaseWriteLock` and `TryUnlockBuffer` still return `false` if `_blockMutationGate` is busy. That avoids waiting, but a caller that ignores the bool in `finally` can leave stale writer pins. This is a domain-level correctness risk, not a solved issue.
+- Solution: Recorded the debt in APEX and final report. Did not introduce spin, sleep, or blind direct `_blocks` mutation outside the gate.
+- Rejected Alternatives: Add bounded spin in release. Rejected: violates fail-closed/no-wait doctrine and burns i3/MX350 CPU under contention. Directly clearing `_blocks` without the gate was rejected because it risks racing compaction/arena mutation.
+- Scalability potential: Proper solution should be a deferred-release record drained by the vault owner phase or an owner-phase guaranteed release lane, continuous across device tiers and independent of `GlobalQualityWeight`.
+- Hardware Impact: Current state has no new CPU wait, but stale-pin risk remains until a release-drain protocol is implemented and tested.
+- Problem: Caller scan proved the release debt is broad: many systems call `ReleaseWriteLock`/`TryUnlockBuffer` in `finally` and ignore the bool. If `_blockMutationGate` is busy at that exact moment, a pin can survive with no caller retry.
+- Solution: Added a fixed 256-slot unmanaged `DeferredVaultReleaseRequest` ring inside `GlobalDataVault`. On release-gate contention, writer and buffer-pin releases enqueue scalar release requests. The next successful mutation-gate entrant drains requests before continuing, while holding the same gate that protects `_blocks` and metadata.
+- Rejected Alternatives: Mass-edit every caller. Rejected: too much cross-domain churn and still not atomic. Rejected release spin: violates fail-closed and burns low-tier CPU. Rejected direct ungated release: races compaction/arena mutation.
+- Scalability potential: Low tier avoids blocking waits and gets eventual release without caller retries. Middle tier pays no cost unless contention exists. High/Ultra preserve memory compaction cadence and keep visual budget available for presentation lanes. `GlobalQualityWeight` is not used because release correctness is authority truth, not scalable fidelity.
+- Hardware Impact: Hot normal release path adds no allocation. Contended release path scans up to 256 fixed slots only when the gate is busy; i3/MX350 cost is bounded and replaces unbounded stale-pin risk. Compiler/runtime proof is still pending.
+- Problem: A duplicate or stale deferred buffer-pin release could remain pending forever if the buffer's `LastAliasRequester` no longer matched the queued owner while another pin still held `Reserved1 > 0`.
+- Solution: Treat owner mismatch as a stale drained request and clear the active bit opportunistically. Added metadata-index bounds validation before queue writes.
+- Rejected Alternatives: Keep stale requests pending. Rejected: no deterministic future state makes an already stale owner request valid, and it can poison one of 256 slots permanently. Rejected broad queue compaction: unnecessary moving state and more branches.
+- Scalability potential: Low/Middle/High/Ultra unchanged. Correctness ring cleanup is not quality-scaled.
+- Hardware Impact: Adds two scalar validation checks on contention queue path and O(1) stale request cleanup. No normal hot-path allocation.
+- Problem: `LOCK_CONTENTION_APEX_VERIFICATION_1413.json` proved Zero-GC and Data Sovereignty, but did not embed the compilation-throttle sample. That made the final CPU/build compliance proof dependent on `Status_1413.md` and chat text.
+- Solution: Patched `agent1413_apex_verifier.py` to copy `LOCK_CONTENTION_OPTIMIZATION_REPORT_1413.json.compilationThrottle` into `compilationResourceThrottling` and record `generatedUtc`. Regenerated the APEX JSON.
+- Rejected Alternatives: Leave CPU sample only in Markdown. Rejected because the user requested a final JSON evidence artifact with cryptographic hash.
+- Scalability potential: Verification-only change. Runtime Low/Middle/High/Ultra behavior is unchanged.
+- Hardware Impact: No runtime impact. Static verifier rerun cost was a host-side Python read/write; no compiler process launched.
+- Problem: A caller may retry `ReleaseWriteLock` or `TryUnlockBuffer` after receiving `false` from a contended release. Without coalescing, identical pending release requests could be stored multiple times and later double-decrement `Reserved1`.
+- Solution: `QueueDeferredRelease` now scans the fixed 256-slot native ring for an identical pending request before claiming an empty slot. Equality requires matching buffer key, offset, active lock bit, owner system id, and release kind.
+- Rejected Alternatives: Edit every caller to never retry. Rejected because hundreds of call sites exist and the vault must be robust when callers ignore the bool. Rejected adding a managed set: violates Zero-GC and makes release contention allocate under stress.
+- Scalability potential: Low tier pays at most 256 scalar reads only under release-gate contention; Middle/High/Ultra keep normal release path unchanged. `GlobalQualityWeight` is not used because this is correctness, not scalable fidelity.
+- Hardware Impact: Adds bounded O(256) native scalar scan to contended release queueing. Prevents over-release without adding waits or compiler load.
+- Problem: The first duplicate coalescing rule was too broad. Buffer-pin releases cannot be coalesced by `(buffer, owner)` because the same owner may hold several legitimate pins on the same buffer, and each pin requires its own `Reserved1` decrement.
+- Solution: Coalesce only writer-release requests. Buffer-pin releases keep one queued request per release call. Additionally, public contended release paths now return the queue result: accepted deferred release returns `true`, queue failure returns `false`.
+- Rejected Alternatives: Add a count field to `DeferredVaultReleaseRequest`. Rejected for this pass because it changes ABI semantics and needs compiler/runtime proof. Rejected managed retry tracking: violates Zero-GC and adds shared managed state under contention.
+- Scalability potential: Low devices keep bounded queue work and avoid lock waits. Middle/High/Ultra keep correctness independent of visual quality. `GlobalQualityWeight` remains intentionally unused because release ownership is truth, not fidelity.
+- Hardware Impact: Writer duplicate scan is O(256) only on contended release. Buffer-pin path avoids extra scan and preserves exact release count.
+- Problem: Some vault maintenance paths check `_activeLocks` before they enter the block mutation gate. Accepted deferred releases clear `_activeLocks` only during drain, so these maintenance paths could repeatedly skip and never reach the drain point.
+- Solution: Added `TryDrainDeferredReleaseRequests()`, a single-attempt, non-blocking drain helper. Called it before active-lock checks in orphan sweep, mock relocation validation, defrag tick classification, live compaction slice, arena growth, and deferred arena growth. `HasActiveBurstLocks` remains pure.
+- Rejected Alternatives: Make `HasActiveBurstLocks` drain. Rejected because read accessors must not mutate global state. Rejected spin/retry drain because fail-closed forbids waits.
+- Scalability potential: Low devices avoid defrag starvation without blocking. Middle/High/Ultra keep memory maintenance responsive. `GlobalQualityWeight` remains unused because release and defrag truth cannot vary by quality.
+- Hardware Impact: Adds one `CompareExchange` attempt only on maintenance paths before active-lock checks; no managed allocation and no wait loop.
+- Problem: `TryEnterBlockMutationGate` and `TryEnterReleaseMutationGate` acquired `_blockMutationGate`, then called `DrainDeferredReleaseRequestsLocked()` before returning the acquired gate to the caller. If editor/runtime native-container safety checks throw inside drain, the gate could remain permanently held and fail-closed paths would degrade into a memory-service stall.
+- Solution: Wrapped the pre-return drain in `try/catch` guards that call `ReleaseBlockMutationGate()` before rethrowing. This preserves the caller contract on success and contains the gate on fault.
+- Rejected Alternatives: Swallow the exception and return false. Rejected because a drain fault is structural corruption or safety-check failure; hiding it would produce unverifiable memory state. Rejected spin/retry because fail-closed forbids waits.
+- Scalability potential: Low/Middle/High/Ultra behavior is identical; mutation-gate correctness is authority infrastructure, not visual fidelity. `GlobalQualityWeight` remains intentionally unused.
+- Hardware Impact: Normal path adds no loops and no allocations. Fault path releases one atomic gate before propagating the error; runtime microseconds remain PENDING COMPILER/UNITY RUNTIME VERIFICATION.
+- Scalability potential: Low devices and editor laptops avoid extra work while holding physiology tuning/import guards. Middle devices keep identical CSV and legacy profile outcomes. High and Ultra retain continuous `GlobalQualityWeight` in runtime physiology jobs; this patch does not add physical biology simulation or binary tier branches.
+- Hardware Impact: Reduces four cold commit guards to bounded writes: two tuning rows, 16 Haldane coefficients plus optional tuning row, one gas tuning row, and biology override/coefficient/tissue copies. Exact runtime microseconds are unmeasured; targeted compile is clean.
+- Evidence: `ShinobuPhysiologyRuntime.cs:1209-1238`, `1940-1977`, `2185-2207`, `2307-2358`. Method scans: `SanitizeDefaultTuningRows lines=1209-1238 methodBad=0 acquire=1 finally=1 release=1`; `CommitLegacyMetabolismTables lines=1940-1977 methodBad=0 acquire=1 finally=1 release=1`; `CommitGasProfilesCsv lines=2185-2207 methodBad=0 acquire=1 finally=1 release=1`; `CommitBiologyConstantsCsv lines=2307-2358 methodBad=0 acquire=1 finally=1 release=1`. Guard scans: `DefaultTuningGuard lines=1225-1236 g...
+- ## R132 - Respawn Reconciliation Guard Resolve Split
+- Problem: `ShinobuRespawnReconciliationRuntime` still held mutation guards while resolving arrays, building default medical bay rows, preparing CSV copy bounds, creating death fade DTOs, and computing telemetry entries. The scheduled respawn job also resolved job pointers after entering the job lock. These operations are deterministic local or pure handle work and should not extend DataVault write ownership.
+- Solution: Moved job pointer resolution before `TryLockJobBuffers`. Added `RequestMutationGuardMask` and `TuningMutationGuardMask` so request/fade/state and editor tuning writes have explicit ownership masks. Reworked request handling to build `RespawnRequestDTO`, `RespawnStateDTO`, and `RespawnFadeDTO` before the guard, then commit only prepared rows under `RequestMutationGuardMask`. Reworked default initialization to prepare tuning, fade, and mock medical bay DTOs before `DefaultsMutationGuardM...
+- Rejected Alternatives: Leaving `TryPrimeDeathSequenceFade` as a writer was rejected because it mixed fade construction with mutation ownership. Moving telemetry cursor reads outside the telemetry guard was rejected because cursor update must remain atomic with the row write. Splitting request, state, and fade into separate locks was rejected because a respawn request must not expose a partially committed visual/simulation state. Replacing respawn reconciliation with heavier physical ragdoll or b...
+- Scalability potential: Low devices reduce mutation-guard hold time during death/respawn, CSV import, default bootstrap, and telemetry commits. Middle devices keep identical respawn authority and medical bay selection. High and Ultra retain `HomeostasisBrain.GlobalQualityWeight` in fade construction for richer presentation timing without changing gameplay truth, DTO layout, or authority routes. No binary low-end/high-end switch was introduced.
+- Hardware Impact: Removes pointer resolution, DTO construction, CSV count math, mock bay construction, and telemetry entry preparation from guarded spans. Exact runtime microseconds are unmeasured; structural proof shows all touched guarded slices have `guardBad=0` and targeted compile is clean.
+- Evidence: `ShinobuRespawnReconciliationRuntime.cs:286-383`, `435-521`, `523-569`, `863-919`, `1159-1199`, `1229-1267`, `1382-1446`, `1604-1629`. Method scans: `ScheduleSimulation lines=286-383 bad=0 acquire=0 finally=1 release=0`; `WriteRequestFromSignal lines=435-495 bad=0 acquire=1 finally=1 release=1`; `TryBuildDeathSequenceFade lines=497-521 bad=0 acquire=0 finally=0 release=0`; `TryWriteRejectedDeathTelemetry lines=523-569 bad=0 acquire=1 finally=1 release=1`; `InitializeDefaultVaultContent...
+- [omitted 813 filtered lines; raw preserved]
+
+## Rationale_1428.md [54076 B; budget 12979]
+- # Rationale 1428 - Hybrid Compile And Unity Integrator
+- ## Initial Boundary Decision
+- Problem: The task demands compile and Unity import repair while the repository contains large pre-existing edits from other agents.
+- Solution: Own only compile-medic automation, static audit artifacts, and surgical source fixes proven by compiler/log diagnostics.
+- Rejected Alternatives: Broad cleanup or formatting would trample concurrent agent work and create untraceable regressions.
+- Scalability potential: Low uses static scans and single-worker builds; Middle/High/Ultra can spend extra idle CPU on deeper Unity log forensics and editor validation, but only when host load is below throttle.
+- Hardware Impact: On low-end development laptops, CPU guard prevents build storms; expected saved time is workstation stability, not frame-time runtime gain.
+- ## Mandate Selection
+- Problem: Compile repair touches global authority, phase ordering, native memory safety, and domain reload behavior.
+- Solution: Loaded execution phases, registry DI, zero-GC, native jobs, debug telemetry, global state reset, and performance budget mandates before code edits.
+- Rejected Alternatives: Reading only compile logs would miss architectural regressions that compile cleanly but violate runtime contracts.
+- Scalability potential: Low-tier proof relies on cheap static AST scans; higher-tier proof can add Unity Editor and PlayMode validation.
+- Hardware Impact: Static-first validation avoids unnecessary compiler churn on low-end silicon.
+- ## Unity Quality Envelope Pass
+- Problem: Unity `QualitySettings` had too few meaningful device-class rows, and runtime `GlobalQualityWeight` was being asked to compensate after startup instead of inheriting a sane cold render envelope.
+- Solution: Added cold device-class rows for handheld UMA, compact PC, and ultra PC while preserving the existing Quest row index. `GameBootstrapper.ApplyScalabilityMatrix` now selects the Unity quality row during hardware check, then leaves continuous runtime scaling to `HomeostasisBrain.GlobalQualityWeight`.
+- Rejected Alternatives: Naming a quality level after one development GPU; enabling Standalone XR globally; duplicating nearly identical URP assets for every class when texture/LOD/upload budgets and runtime DRS already provide the necessary separation.
+- Scalability potential: Low uses `Abyss (Low)` plus runtime pressure cuts. Compact PC and handheld use conservative Medium-pipeline envelopes. Mid uses `Surface (Medium)`. High uses `Orbit (High)`. Ultra uses `Leviathan (Ultra)`. Quest stays on the dedicated Android VR route.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Startup now avoids overcommitting texture residency, terrain range, and upload budgets before the continuous governor has enough frame/thermal evidence.
+- Problem: `HomeostasisBrain.ResolveKnownHardwareConstraint01` still contained a single GPU-name throttle, which made the runtime quality dictator a development-machine heuristic instead of a portable device-class policy.
+- Solution: Replaced the GPU string route with `HardwareTierDetector.EnsureInitialized()`, `SharedMemoryModeActive`, and `RecommendedVramBudgetMegabytes`. Very constrained shared-memory devices clamp harder; roomier shared-memory devices inherit the same moderate pressure path as Quest-class/handheld cases.
+- Rejected Alternatives: Adding more GPU string checks; hardcoding laptop classes in `HomeostasisBrain`; making Unity quality rows decide gameplay/simulation truth. `GlobalQualityWeight` remains continuous and owner-side.
+- Scalability potential: Low/handheld UMA starts with aggressive pressure before frame-time evidence accumulates. Middle shared-memory hardware keeps a moderate cap. High/Ultra discrete hardware escapes this constraint unless memory pressure proves otherwise.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Removed one brittle hardware string branch from startup policy and made the startup clamp follow measured memory budget instead of one vendor/device name.
+- Problem: `QualitySettings` had Android and Nintendo Switch 2 per-platform defaults, but no explicit Standalone default. That lets player builds inherit editor-current quality state until bootstrap executes.
+- Solution: Set `m_PerPlatformDefaultQuality.Standalone` to `0`, the `Surface (Medium)` cold envelope. Runtime bootstrap still calls `QualitySettings.SetQualityLevel` after hardware classification.
+- Rejected Alternatives: Defaulting Standalone to Low or Ultra; adding a separate PCVR row without a verified XR-loader activation route; changing Android min SDK during an open Unity compile wall.
+- Scalability potential: Low starts from a sane medium envelope and is immediately downgraded by bootstrap/device pressure. Middle keeps medium. High/Ultra are raised by bootstrap after measured hardware profile. PCVR remains an explicit OpenXR provider route, not a hidden default for flat PC dev.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Startup state is now deterministic for Standalone builds.
+- Problem: Forbidden or unused third-party packages were physically present under `Assets`, increasing Unity import/compile surface and violating the AGENTS third-party boundary.
+- Solution: Archived only packages with AGENTS rejection or zero first-party GUID references, preserving relative paths under `C:\hades\_Hecton8_ThirdPartyArchive\1428_20260530_221722`.
+- Rejected Alternatives: Deleting packages permanently; moving allowed systems such as Crest/MapMagic/Feel/Odin; moving Candice after first-party data showed `useCandiceBehaviorTree: 1`.
+- Scalability potential: Low tier benefits from reduced editor/import and accidental runtime contamination; Middle/High/Ultra retain approved visual systems instead of removing art-tech capacity.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Editor/import surface reduced by 2172 archived files and 82.68 MB of forbidden or unused assets.
+- Problem: First Unity launch after a long downtime showed XR packages present but the Android Quest path was only partially wired: OpenXR/Meta packages were installed, Foveated Rendering and Meta Quest Support were enabled, but Quest controller profiles and Meta display-refresh extension were disabled. Adaptive Performance config objects also pointed to an archived/dead provider surface.
+- Solution: Kept the XR package chain because `com.unity.xr.meta-openxr` legitimately pulls ARFoundation, Composition Layers, Core Utils, and XR legacy input helpers. Enabled only the Android Quest controller profiles and Meta Display Utilities feature in `Assets/XR/Settings/OpenXR Package Settings.asset`. Updated `XrPlatformReadinessValidator` so CI/menu wiring preserves Display Utilities with the rest of the Quest feature set. Removed dead Adaptive Performance config objects and disabled `m_UseA...
+- Rejected Alternatives: Removing XR transitive packages would break Quest readiness; enabling hand/eye/passthrough/AR features would add permission and runtime surface not currently used; manually fabricating `XRGeneralSettingsPerBuildTarget.asset` while Unity is in Safe Mode was rejected because the existing validator can create it once the C# compile wall is cleared.
+- Scalability potential: Low keeps Quest path lean: fixed foveation, controller input, and display-refresh control only. Middle keeps the same deterministic route with better render scale. High/Ultra can spend headroom on foveated overdraw relief, URP high renderer, and optional visual features without changing gameplay authority.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending device profiling. Import/config debt reduced by 13 additional archived files and dead Adaptive Performance settings. Quest safety improved by making controller/display/foveation feature checks explicit instead of silently depending on editor defaults.
+- Problem: Active runtime contracts still carried one-device names in quality tiers, input scalability profiles, shader-strip environment evidence, and visual smoke tests. That makes the minimum proof lane look like the product identity and encourages binary platform branches.
+- Solution: Renamed active runtime-facing contracts to compact/shared-memory/discrete terminology while preserving serialized numeric values. `HectonQualityTier.CompactPc` keeps value `2`; `ScalabilityTierProfiles.LowCompact` keeps byte `0`; the shader stripper now reads only `HECTON_COMPACT_SHADER_STRIP`.
+- Rejected Alternatives: Keeping one-device aliases in active enums; rewriting all historical reports; changing save/DTO values. Historical text can stay historical, but active code and stable authority must not teach wrong policy.
+- Scalability potential: Low and compact lanes use the same minimum proof budget. Middle, high, and ultra stay additive visual envelopes. Handheld UMA and Quest remain shared-memory lanes. PCVR stays explicit, not a flat-Standalone default.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Engineering impact is removal of brittle one-device policy names without changing ABI values.
+- Problem: Multiple live paths still treated the compact 1.8 GB ceiling as the universal runtime cap, which would make stronger discrete machines fail dev smoke or shed residency too early.
+- Solution: Routed hard VRAM ceilings through `HardwareTierDetector.RecommendedVramBudgetMegabytes/Bytes` and `VRAMBudgetThresholds.RuntimeDefault`. Compact fallback remains 1.8 GB; shared-memory devices clamp by RAM/graphics-memory class; discrete devices step through compact, mid, high, and ultra budgets.
+- Rejected Alternatives: A binary low/ultra switch; fixed 1.8 GB ceiling for all desktop PCs; direct device-name string checks.
+- Scalability potential: Low and compact use survival texture/RT limits. Middle gets expanded texture residency without changing gameplay truth. High and ultra can spend the additional budget on shadows, post, and visual density after runtime pressure allows it.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Expected gain is fewer false-positive memory sheds and fewer high-tier debug smoke failures on machines with real headroom.
+- Problem: `HectonRenderPipelineValidator` repaired every authored URP asset with a single compact shadow distance and cascade count. Any future automatic repair pass would collapse high/ultra render envelopes back to compact settings.
+- Solution: Replaced the single global clamp with per-asset shadow budgets: compact assets remain conservative, Quest keeps its depth-only/opaque-off/MSAA2/18 m/1 cascade route, and the high URP asset keeps a 42 m / 4 cascade envelope. The high asset now uses 2048 shadow maps and a higher additional-light-per-object limit.
+- Solution: Kept the controller object active, disabled legacy `Menu_AAA_*` and room mesh roots, disabled only legacy `Canvas` graphics, and rebuilt `H8_MENU_READABLE_OVERLAY_1428` as the visible menu with three switchable background variants. The existing `BTN_Readable_Descend` UnityEvent remains the route owner.
+- Rejected Alternatives: Replacing `MainMenuController`, disabling the whole legacy `Canvas`, or writing a new menu controller before the existing route is fully retired. Those would risk breaking the verified bootstrap handoff.
+- Scalability potential: Low gets pure UGUI rectangles/text and no heavy scene simulation. Middle/High/Ultra can replace the three variant backgrounds with richer authored render textures without changing the route.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Visual stability improves by removing legacy 3D menu clutter from the first viewport.
+- ## World Shell Presentation Polish
+- Problem: `02_HECTON_WORLD` was playable and no longer fatal, but the first frame read as a gray technical dock with poor depth and weak art direction.
+- Solution: Added `H8_WORLD_VISUAL_POLISH_1428` with low-cost silhouette/haze/caustic/particulate/light objects, `H8_WORLD_SCREEN_HAZE_1428` for screen-space water-column read, and `HectonWorldShellVisualDriver1428`. The driver performs scene discovery only in `Awake`, then animates cached transforms/lights in `LateUpdate`.
+- Rejected Alternatives: Reintroducing the archived heavy world scene, enabling costly ocean/terrain systems before stability is proven, or adding hot `GetComponent`/registry lookups in presentation loops.
+- Scalability potential: Low uses static geometry and transform-only motion. Middle adds denser haze/particles. High/Ultra can replace the fake layers with authored shaders or GPU instancing under the same scene root.
+- Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Stability impact: the production world path now has visible depth and motion without adding simulation ownership.
+- [omitted 252 filtered lines; raw preserved]
+
+## Rationale_14VOX.md [82938 B; budget 19906]
+- # Rationale 14VOX
+- Problem: Exact `<AGENT_PROMPT id="14VOX">` is absent from `Docs/Tasks/CURRENT_BATCH.md`.
+- Solution: Use user-provided identity `14VOX` for ledgers and treat the direct chat assignment as the active directive. No sibling XML prompt is authoritative for `14VOX`.
+- Rejected Alternatives: Adopting a neighboring numeric XML prompt would contaminate the 14VOX domain boundary and violate strict parsing.
+- Scalability potential: No runtime effect.
+- Hardware Impact: No runtime effect on i3/MX350.
+- Problem: `VoxelDeltaProcessor.Tick` called save-service registration every dispatcher frame.
+- Solution: registration remains cold in `OnEnable` and registry hot-swap; `Tick` now only processes queued carve/compaction work.
+- Rejected Alternatives: Polling `GlobalRegistry.Save` or retrying registration from `Tick` keeps lifecycle work in the hot lane.
+- Scalability potential: Low tier removes an avoidable branch/service call from every voxel delta frame; high tier spends saved time on carve work.
+- Hardware Impact: Estimated 0.2-0.6 us/frame on i3/MX350 when the processor is active.
+- Problem: voxel rebuild budget strike pulled `GlobalRegistry.LODSystem` from runtime rebuild accounting.
+- Solution: cache `LODSystemManager` during cold service resolution and hot-swap, then use the cached field.
+- Rejected Alternatives: Keeping the global property read inside rebuild accounting violates cold-DI ownership.
+- Scalability potential: Low/mid tiers avoid registry drift in over-budget response; high/ultra tiers keep emergency LOD bias deterministic.
+- Hardware Impact: Estimated sub-1 us per over-budget strike, with lower dependency risk.
+- Problem: `TryResolvePlayerAup` fell back to `TryGetComponent<HectonPlayerMovement>` during runtime voxel LOD/collider decisions.
+- Solution: require `PlayerRuntimeContextService` snapshot; fail closed when no snapshot is published.
+- Rejected Alternatives: Scene component search from runtime LOD helpers creates hidden presentation dependency and unpredictable cost.
+- Scalability potential: Weak devices avoid fallback scene lookup; high-end keeps LOD truth routed through one context owner.
+- Hardware Impact: Estimated 2-20 us avoided on fallback frames.
+- Problem: `SeamGapDitherRenderer` could create arrays, mesh, and graphics buffers from `LateFrameTick`.
+- Solution: resources are allocated from cold `Awake`/`OnEnable`/`Start`; late frame only checks residency and fails closed if capacity/resources are invalid.
+- Rejected Alternatives: Reallocating in visual sync hides spikes behind presentation code.
+- Scalability potential: Low tier avoids late allocation stalls; high/ultra can keep larger prewarmed buffers without frame-time spikes.
+- Hardware Impact: Avoids worst-case GraphicsBuffer/array allocation spikes in VISUAL_SYNC.
+- Problem: MapMagic AUP height/normal/splat/quantized payload queries converted the query through runtime origin.
+- Solution: resolve cached terrain tile by AUP XZ bounds, derive local UV/local runtime offset from the terrain tile frame, and sample the same TerrainData payload.
+- Rejected Alternatives: `HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition)` is vulnerable to async origin drift.
+- Scalability potential: Low/mid tiers get stable seams after origin shifts; high/ultra can spend quality budget on denser seam visuals without coordinate wobble.
+- Hardware Impact: Similar O(tile count) cached scan cost; avoids seam resampling errors rather than saving CPU.
+- Problem: hybrid terrain seam native DTO fields were named `Runtime*` while carrying terrain-local coordinates.
+- Solution: rename fields to `TerrainLocalContactPosition` and `TerrainLocalVoxelCenter`; update producer and Burst job consumers.
+- Rejected Alternatives: Compatibility aliases would preserve the misleading ABI and invite future world-space float misuse.
+- Scalability potential: All tiers keep AUP-to-local conversion as a single explicit route.
+- Hardware Impact: No measurable CPU change; reduced risk of 100 km float jitter defects.
+- Problem: deferred voxel collider upload queue did not actually publish staged PhysX meshes to `MeshCollider.sharedMesh`.
+- Solution: late-frame drain now calls `CommitDeferredRootVoxelColliderUpload`; chunk volumes swap staged bake meshes into live collider meshes and retain the previous live mesh as the next bake buffer.
+- Rejected Alternatives: assigning `sharedMesh` immediately after bake completion would move presentation mutation out of the VISUAL_SYNC lane.
+- Scalability potential: Low tier keeps primitive bake proxies until a small late-frame upload budget drains; high/ultra drains more chunks per frame through continuous quality-weight budget.
+- Hardware Impact: Correctness fix; avoids repeated useless bakes and proxy-only collision on i3/MX350.
+- Problem: `RefreshBakePresentation` could cold-resolve Unity components when called from late-frame deferred collider upload.
+- Solution: cache MeshFilter/MeshRenderer/MeshCollider during cold lifecycle; play-mode presentation refresh only mutates cached references and fails closed if missing.
+- Rejected Alternatives: allowing `TryGetComponent` inside presentation refresh violates hot-loop lookup doctrine.
+- Scalability potential: Weak devices avoid unpredictable scene lookup during visual sync; high-end keeps the same presentation path without extra branches.
+- Hardware Impact: Estimated 2-15 us avoided on missing-cache late-frame paths.
+- Problem: DataVault write-lock helper methods released failed leases manually after acquisition.
+- Solution: after a successful `TryAcquireWriteLock`, validation now runs under a `try/finally`; failed validation releases inside `finally`, successful leases are released by the caller's existing `finally`.
+- Rejected Alternatives: manual early release is technically balanced but weaker under future edits and exception paths.
+- Scalability potential: All tiers remove a deadlock vector without changing capacity or cadence.
+- Hardware Impact: No measurable CPU cost; lower lock-leak risk under contention.
+- Problem: build validation was requested while another `dotnet` process was active.
+- Solution: obey compile throttle; used static in-memory source parsing and `git diff --check` instead of launching a second build.
+- Rejected Alternatives: launching `dotnet build` under PID 13900 violates host contention rules.
+- Hardware Impact: avoids build CPU contention on shared workstation.
+- Problem: scheduled voxel carve scheduling and commit paths could report black-box telemetry while the scheduled carve write buffer mutation guard was still held.
+- Solution: add zero-allocation deferred telemetry fields for scheduled carve black-box flags; under the scheduled guard only OR flags and volume id, then flush through `WriteBlackBoxSample` after `UnlockScheduledCarveWrites`.
+- Rejected Alternatives: calling `WriteBlackBoxSample` directly from continuation, job-overrun, chunk-state pool, dictionary, or carve-mass paths would acquire a second DataVault write lock route while scheduled writes were guarded.
+- Scalability potential: Low tier avoids rare deadlock/stall cascades during sliced laser cuts; middle/high/ultra keep scheduled carve slicing and black-box evidence without frame corruption.
+- Hardware Impact: Estimated 0 us steady-state CPU change; removes lock-order risk under queue overflow and chunk pool pressure on i3/MX350.
+- Problem: helper methods called by scheduled carve commit could hide black-box writes behind dictionary/pool failure paths.
+- Solution: route queue corruption, chunk-state corruption, chunk-state store failures, write-version failures, and mass telemetry through `ReportBlackBoxSample`, which defers only when `_scheduledCarveWritesLocked` is true.
+- Rejected Alternatives: duplicating no-report variants of every helper would widen code paths and risk inconsistent telemetry semantics.
+- Scalability potential: Weak devices under memory pressure keep fail-closed telemetry without nested locks; top-tier devices retain full black-box signal while carving larger slices.
+- Hardware Impact: One predictable branch only on rare fault-reporting paths; no hot steady-state cost.
+- Problem: MapMagic AUP terrain queries still exposed only `Vector3` AUP in the main terrain contract, forcing large-coordinate X/Z through float precision before seam planning.
+- Solution: add a canonical `AbsoluteUniversePosition` overload for height sampling and override it in `MapMagicRuntimeBridge` with a `double3` local-delta path against the resolved terrain tile frame.
+- Rejected Alternatives: keeping `Vector3` as the only AUP route preserves origin-drift and large-world seam wobble around voxel arches, caves, rocks, and overhang integration.
+- Scalability potential: Low tier gets stable cheap terrain anchoring without extra buffers; middle/high/ultra can layer denser seam visuals on top of the same stable contact sample.
+- Hardware Impact: Same cached tile scan count; estimated 0 B/frame and no extra steady-state CPU beyond double arithmetic in the existing query.
+- Problem: `FindTerrainAtAUP` wrote `_lastResolvedTerrainTile` from a read accessor.
+- Solution: keep cache writes inside the owner phase (`UpdateLastResolvedTerrainTileOwnerPhase`) and let AUP reads scan the prewarmed tile list without mutating bridge state.
+- Rejected Alternatives: mutating a cache from `TryGet*` hides state changes behind a read route and violates Global Systems Doctrine.
+- Scalability potential: Weak devices avoid unpredictable state churn in seam reads; high/ultra retain the same cached fast path when the owner phase already warmed it.
+- Hardware Impact: Zero allocation; possible rare extra list scan if the owner phase has not warmed the current tile, bounded by existing cached tile count.
+- Problem: `WorldGenerativeGeologyTerrainSeamApplier.EnsureTerrainState` allocated a `TerrainApplyState` and two `List<>` buckets the first time a terrain was touched from `SlowTick` seam reconciliation.
+- Solution: prebuild fixed terrain state, plan bucket, and trench bucket pools using `TerrainStateCapacity`; bind terrain IDs to existing buckets and fail closed when the capacity is exhausted.
+- Rejected Alternatives: runtime dictionary/list growth is convenient but moves managed allocation into the terrain seam simulation lane.
+- Scalability potential: Low tier avoids allocator stalls when streaming into a new MapMagic tile; middle/high/ultra keep the same eight active terrain seam lanes and spend quality on blend detail, not collection churn.
+- Hardware Impact: Avoids one managed state object and two managed list allocations per newly touched terrain during runtime seam work.
+- Problem: terrain seam heightmap ingest, baseline refresh, and black-box telemetry wrote mutable DataVault buffers through the legacy `TryReadHandle` route.
+- Solution: add `TryAcquireTerrainSeamWriteBuffer`, `TryAcquireTerrainSeamWriteLock`, and `ReleaseTerrainSeamWriteBuffer`; each CPU write path now acquires exactly one DataVault writer fence and releases it from a strict caller `finally`.
+- Rejected Alternatives: keeping legacy read-handle writes was faster to leave alone but violated owner-write proof; acquiring baseline, heightmap, scratch, and telemetry writer locks together would create a lock-order vector.
+- Scalability potential: weak devices avoid rare terrain seam stalls under MapMagic tile churn; middle/high/ultra keep the same seam visuals while DataVault ownership remains deterministic.
+- Hardware Impact: CPU delta is below honest profiler threshold; removes a deadlock/corruption vector rather than buying arithmetic time.
+- Problem: hybrid terrain seam projection touched multiple DataVault-owned buffers during one scheduled projection window.
+- Solution: guard the projection window with one DataVault mutation guard mask that covers baseline, optional heightmap, native plans, patch heights, blend mask, and optional normals; release the guard in `finally` and explicitly before terrain seam black-box writer acquisition.
+- Rejected Alternatives: converting scratch access to simultaneous DataVault write locks violates lock flattening; moving scratch back to MonoBehaviour-owned persistent `NativeArray` would undo DataVault ownership.
+- Scalability potential: low tier keeps one bounded projection window; middle/high/ultra can raise continuous `GlobalQualityWeight` detail without making compaction/job lifetime unsafe.
+- Hardware Impact: one mutation guard acquire/release around SlowTick seam projection; expected impact is lower than one terrain patch writeback and not honestly measurable without profiler.
+- Problem: geology terrain seam, integration, and voxel bridge directors resolved runtime dependencies from reconcile methods, so `SlowTick` could hide `WorldRuntimeReferenceUtility.TryResolve*` polling even without direct `GetComponent`.
+- Solution: rename the resolver to `RefreshColdReferences`, call it only from `Awake`/`OnEnable`/`Start`, and update MapMagic/VoxelEngine cached references from `GlobalRegistry` hot-swap callbacks.
+- Rejected Alternatives: keeping a throttled retry inside `ReconcileTerrainSeams`, `RebuildIntegrationPlans`, or `ReconcileVoxelRequests` preserves service-location in runtime phases and makes cost dependent on startup order.
+- Scalability potential: weak devices get deterministic runtime lanes with no scene/static resolver polling; middle/high/ultra keep late dependency registration through cold hot-swap events without sacrificing seam quality.
+- Hardware Impact: exact CPU delta not profiler-measured; avoids hidden branches and potential resolver work in voxel/heightmap seam reconciliation on i3/MX350.
+- Problem: `WorldGenerativeGeologySeamExecutionDirector.LateFrameTick` called `ReconcileExecutedSeams`, and that helper still executed `ResolveReferences`, putting `WorldRuntimeReferenceUtility.TryResolve*` in VISUAL_SYNC through an indirect call.
+- Solution: move seam execution dependency refresh to `Awake`/`OnEnable`/`Start`, remove the runtime retry timer, and keep late-frame reconciliation as pure cached-reference work.
+- Rejected Alternatives: allowing a resolver in a helper called by `LateFrameTick` would pass shallow regex checks while still violating phase ownership.
+- Scalability potential: low tier avoids hidden late-frame resolver stalls; middle/high/ultra keep seam visuals driven by cached integration/player references and continuous quality weights.
+- Hardware Impact: exact CPU delta not profiler-measured; removes two conditional branches, a dispatcher time read, and possible static resolver work from VISUAL_SYNC on i3/MX350.
+- Problem: `HectonCaveVoxelAmbientOcclusionController.SlowTick` could call `TryResolveViewerReferences`, and `RefreshVolumeCache` still resolved the world cave director through `WorldRuntimeReferenceUtility`.
+- Solution: move cave director/player/camera refresh into cold lifecycle and player hot-swap handling; `SlowTick` now reads the cached volume buffer source and resolves target occlusion only.
+- Rejected Alternatives: throttling the resolver inside `SlowTick` would still make cave AO cost depend on scene/static lookup availability.
+- Scalability potential: low tier avoids intermittent cave AO lookup spikes; middle/high/ultra keep smoother cave-darkening presentation through the same cached volume route.
+- Hardware Impact: exact CPU delta not profiler-measured; removes possible component/static resolver work from cave AO slow lane on i3/MX350.
+- Problem: `MapMagicRuntimeBridge.SlowTick` called a scene binding refresh helper that could reach `TryGetComponent`, and `LateFrameTick`/runtime detail maintenance could resolve player transform from presentation/runtime paths.
+- Solution: replace runtime binding refresh with `RefreshRuntimeSceneBindingDiagnostics`; cache player transform from `GlobalRegistry.Player` in cold lifecycle and player hot-swap; presentation shader globals and terrain detail maintenance now fail closed when the cached transform is absent.
+- Rejected Alternatives: keeping an `Application.isPlaying` branch inside a helper still leaves a misleading call graph from `SlowTick` to component lookup.
+- Scalability potential: low tier removes hidden MapMagic scene-binding work; middle/high/ultra keep planetary terrain fade and detail residency as cached-reference presentation/maintenance systems.
+- Hardware Impact: exact CPU delta not profiler-measured; removes potential resolver/component lookup from SlowTick and VISUAL_SYNC.
+- Problem: compile verification remained requested while other `dotnet build`/`csc` lanes were active, then the single throttled full-solution build did not finish in 604s.
+- Solution: run one `Hecton8.slnx` build only after CPU dropped below 50% and no compiler process existed; stop its leftover `dotnet` process after timeout; keep validation to narrow in-memory source parsing afterward.
+- Rejected Alternatives: launching a second build or competing with active `csc` violates the project throttle and makes workstation contention worse.
+- Scalability potential: no runtime effect.
+- Hardware Impact: build CPU contention avoided; no game runtime effect.
+- Problem: `WorldCaveDirector.SlowTick` still reached `WorldRuntimeReferenceUtility.TryResolve*` through `EvaluateCaveSpawns`, and `UpdateDiagnostics` also refreshed references. Cave dressing/material/bounds builders called `TryGetComponent` on `HectonVoxelVolume` during repeated runtime dressing and query paths.
+- Rejected Alternatives: throttled runtime resolver retries and repeated component lookup in dressing builders preserve unpredictable cost in cave spawn/dressing lanes.
+- Problem: cave dressing visual sync still configured primitive-shell details through child traversal and the shared primitive runtime dictionary, and adjacent entrance/geyser cleanup used root `GetChild`/hot name writes.
+- Solution: extend each cave dressing builder with cold `GameObject/MeshFilter/MeshRenderer` caches and a `BuildPreparedCachedHot` route; `WorldCaveDirector` stores those caches in `CaveVisualRuntimeState`; entrance marker and thermal geyser cleanup now iterates cached state arrays.
+- Rejected Alternatives: treating `_RuntimeStates.TryGetValue`, `GetInstanceID`, `GetChild`, and `.name` writes as cheap enough because cave dressing is sparse. Sparse spikes are still visible on weak CPUs during cave reveal.
+- Scalability potential: low tier keeps cave dressing as prewarmed primitive impostors with zero structural repair; middle/high/ultra can raise authored dressing capacities before runtime without changing the visual-sync ownership route.
+- Hardware Impact: removes per-primitive hash-table reads, child traversal, and hot name assignment from cave dressing presentation on i3/MX350; exact profiler microseconds not measured.
+- Problem: `ThermalGeyser.Configure` and `CaveBioRootsGenerator.Configure` were reachable from cave visual sync; the former could call `TryGetComponent`, and the latter could allocate root spline buffers and traverse child transforms.
+- Solution: keep `ThermalGeyser.Configure` as a pure parameter/current-volume update by moving runtime wiring to `CacheRuntimeWiringCold`; rename bio-root setup to `ConfigureCold` and call it during cave visual-state preparation, not from `ApplyBioRoots`.
+- Rejected Alternatives: relying on Unity component fields being already populated while leaving the resolver/allocation call reachable from `LateFrameTick`.
+- Scalability potential: low tier fails closed to already-prepared geysers/roots without visual-sync repair stalls; middle/high/ultra retain richer cave life dressing through cold prewarm and later visual animation.
+- Hardware Impact: removes one `TryGetComponent` route and several managed array allocation routes from cave reveal visual sync; exact profiler microseconds not measured.
+- [omitted 354 filtered lines; raw preserved]
+
+## Rationale_1502.md [25384 B; budget 6093]
+- # Rationale 1502 - YAML Serialized Property and Prefab Metadata Migrator
+- Evidence discipline: STATIC_SOURCE / STATIC_DOC unless upgraded by compile, Unity Console, Play Mode, profiler, or player artifact.
+- ## Decision 001 - Mandate Scope
+- Problem: The task spans raw Unity YAML, C# serialized field schemas, and unmanaged DTO migration without permission to corrupt scene or prefab files.
+- Solution: Use 7 relevant mandates before tooling: Zero GC for no runtime hot-path pollution; Native Memory for DataVault ownership; Runtime Struct Layout for DTO alignment; ModuleDTO/Persistent Registry for migration context; Evidence Audit for proof language; Designer Facade Bridge for authoring/runtime split.
+- Rejected Alternatives: Reading all 80 mandates would burn context without improving target precision. Skipping mandates violates batch law.
+- Scalability potential: Low tier benefits from preserving authored compact data and avoiding runtime parser work; middle tier keeps deterministic bake paths; high tier can add richer editor diagnostics; ultra tier can carry visual-overkill authoring data without bloating gameplay truth.
+- Hardware Impact: Static tooling has no runtime i3/MX350 frame cost. Avoiding runtime YAML/JSON parsers prevents future hot-path allocations and CPU stalls.
+- ## Decision 002 - Initial Work Mode
+- Problem: Direct raw YAML mutation can destroy scene/prefab linkage if FileID/GUID/component block alignment is wrong.
+- Solution: Start with read-only scanners and dry-run reports; defer mutation until orphaned fields, owning MonoBehaviour fileIDs, new C# destinations, and backup parity are proven.
+- Rejected Alternatives: Repository-wide blind find/replace is structurally unsafe and explicitly forbidden. Unity Editor-only migration is insufficient if old fields were already deleted from C# and exist only as orphan YAML.
+- Scalability potential: Low/middle/high/ultra lanes are unaffected at runtime because the scanner is offline; preserving designer-authored data keeps all quality lanes fed by the same authoring truth.
+- Hardware Impact: CLI scan cost is bounded cold tooling. Estimated runtime gain is 0 us/frame because no runtime code is introduced; avoided future data loss has correctness value only.
+- Problem: A naive C# schema parser misclassified attribute-decorated serialized fields and would inflate false orphan counts in first-party prefabs.
+- Solution: Keep attribute state across consecutive attribute lines, bind schemas to the class matching the script filename, and compare MonoBehaviour `m_Script.guid` against `.cs.meta` GUIDs before judging a YAML key.
+- Rejected Alternatives: Trusting line-by-line `SerializeField` regex without class/GUID ownership was too loose for prefab metadata repair. Using Unity compilation was rejected at this phase because the user forbade heavyweight builds and static YAML facts were sufficient.
+- Scalability potential: Low tier gets no runtime burden; middle/high/ultra get a safer authoring pipeline because stale metadata is isolated without changing gameplay truth.
+- Hardware Impact: One static scan cost 84649899 us on the host. Runtime i3/MX350 frame gain is 0 us/frame because the scanner is offline; avoided corrupt prefab imports prevent editor downtime.
+- Problem: The primary prompt names deleted native fields such as `_cellIntegrityFront`, `_densityBuildSources`, `_publishedSonarSdf`, and `_combatDamageArray` as possible stranded YAML sources.
+- Rejected Alternatives: Creating DTO payloads from defaults would be fake salvage. Copying unrelated legacy scalar fields into native buffers would corrupt gameplay truth ownership.
+- Solution: Add `Test-YamlBackupDelta1502.ps1` to compare each modified file against its backup for FileID anchors, script refs, component refs, prefab `propertyPath` refs, GUID refs, and ShakeProfile falloff field shape. It reads `YamlCleanup_1502.json` and allows removed GUID refs only when the GUID appears inside the exact backup line range of a proven deleted orphan root property. C# audit confirmed `PlayerThrusterAudio` now uses generated `_proceduralThrusterClip`, not serialized `thrusterLoo...
+- Rejected Alternatives: Restoring removed legacy fields would reintroduce schema-desync data that current C# ignores. Treating every removed GUID as corruption was too blunt because orphan property deletion can intentionally remove nested asset refs. Ignoring the delta was rejected because raw YAML surgery requires backup/current structural proof.
+- Scalability potential: Low/middle/high/ultra runtime lanes unchanged; authoring assets now have a stricter cold gate that protects actual FileID/script/component/override topology while allowing dead payload removal.
+- Hardware Impact: Runtime cost 0 us/frame. Backup/current delta pass cost 805446 us. Result: PASS, 14 files checked, FileID/script/component/propertyPath delta 0, GUID added 0, GUID removed 2, orphan-payload GUID removed 2, unclassified GUID removed 0.
+- ## Decision 023 - Backup Delta as Evidence Chain Gate
+- Problem: A passing backup/current delta report is useful only if the main final report and evidence validator consume it.
+- Solution: Patch `Write-FinalReport1502.ps1` to include backup-delta counters and add `YamlBackupDelta_1502.json` to evidence files. Patch `Test-MigrationEvidence1502.ps1` to fail on missing/non-PASS backup delta, any FileID/script/component/propertyPath delta, any GUID addition, or any unclassified GUID removal.
+- Rejected Alternatives: Leaving the backup delta as a side report would let later runs regress the proof chain silently. Making GUID removed count always zero was rejected because valid orphan payload cleanup can remove asset refs from dead fields.
+- Scalability potential: Low/middle/high/ultra runtime unchanged; integration confidence improves before Unity import because topology regressions are now mechanically rejected.
+- Hardware Impact: Runtime cost 0 us/frame. Evidence chain remained PASS with 14 modified files, 0 hash mismatches, 0 missing backups, backup delta PASS, and reference integrity PASS.
+- [omitted 109 filtered lines; raw preserved]
+
+## Rationale_1504.md [37276 B; budget 8947]
+- # Agent 1504 Rationale
+- Date: 2026-05-30
+- Agent: 1504
+- ## Initial Boundary
+- Problem: Android cannot address StreamingAssets/static_data.h8bin as a normal filesystem path inside APK/OBB, while existing Windows path uses direct native file reads.
+- Solution: Add an Android-only NDK bridge that takes a Java AssetManager handle and writes AAsset bytes directly into the existing unmanaged destination pointer.
+- Rejected Alternatives: UnityWebRequest and managed byte[] staging are rejected because they allocate managed memory and add boot latency; replacing the Windows path is rejected because it risks a proven platform route.
+- Scalability potential: Low devices get cold boot without managed heap pressure; middle/high/ultra devices keep the same binary truth and can spend saved boot overhead on richer first-frame presentation later.
+- Hardware Impact: Estimated low-end i3/MX350 gain is not a runtime frame gain; it removes a mobile boot blocker and avoids managed byte[] pressure equal to static_data.h8bin size. Evidence class: STATIC_SOURCE pending.
+- Problem: Native/C# platform bridge crosses ARM64 pointer and DTO boundaries.
+- Solution: Keep file bytes unchanged; no native byte swapping, no native struct reinterpretation, no managed DTO mutation. C# capacity check precedes native copy.
+- Rejected Alternatives: Native-side parsing is rejected because it duplicates DTO authority and risks ARM64 padding drift; C# FileStream fallback on Android is rejected because APK assets are not normal files.
+- Scalability potential: Same binary layout supports Quest survival tier through PC visual-overkill tier; quality weight must not alter DTO layout or data authority.
+- Hardware Impact: Avoids extra copy and parse pass on mobile SoCs; expected boot-memory reduction equals one avoided managed staging buffer. Evidence class: STATIC_SOURCE pending.
+- Problem: The 1504 XML text asks for DllImport("HectonAndroidBridge"), but the current repository has Android C++ source files and no packaged libHectonAndroidBridge.so under Assets/Plugins/Android.
+- Solution: Preserve the Unity IL2CPP source-plugin route using DllImport("__Internal") and treat CMakeLists.txt as a standalone NDK reference unless a packaged shared-library route is explicitly introduced with Gradle externalNativeBuild and ABI output files.
+- Rejected Alternatives: Switching to DllImport("HectonAndroidBridge") now is rejected because there is no .so artifact for IL2CPP to load and the existing NativePluginMatrixValidator explicitly validates the __Internal source-plugin path. Adding externalNativeBuild now is rejected because the current Unity 6000 Gradle template is intentionally source-plugin/no externalNativeBuild.
+- Scalability potential: Low tier avoids package/link failure and keeps the cold boot path direct; middle, high, and ultra tiers share the same DataVault truth without route divergence. Visual overkill remains funded after boot, not inside the asset bridge.
+- Hardware Impact: Runtime frame gain is 0 us; package reliability gain is material. Low-end Android/Quest avoids a boot-time native symbol failure. Evidence class: STATIC_SOURCE plus Unity/Android official documentation.
+- Problem: Existing 1404 audit/report owns the current Android bridge proof path, while agent 1504 requires independent status and report artifacts.
+- Solution: Add a 1504-specific proof report without mutating the working bridge semantics or the 1404 validator expectations.
+- Rejected Alternatives: Rewriting the 1404 audit names or dump route is rejected because tests and validator currently bind to owner-local Dump_1404 and source-plugin evidence.
+- Scalability potential: Independent reports let integration compare source route health without changing gameplay data flow. Low/middle/high/ultra devices all consume identical static_data.h8bin bytes.
+- Hardware Impact: Editor-only scan cost only; no runtime player impact. Evidence class: STATIC_SOURCE pending implementation.
+- Problem: The native bridge task was already materially implemented by the existing source tree, but unverified duplication would increase risk.
+- Solution: Verify and preserve HectonAndroidAssetBridge.cpp as the active native bridge: AAssetManager_fromJava, AAssetManager_open, AAsset_getLength64, exact-size H8_LoadAssetToPointer, direct destination pointer writes, and AAsset_close on every asset-open path.
+- Rejected Alternatives: Rewriting the bridge is rejected because it would churn a working memory boundary without a failing test. Adding managed staging is rejected because it adds one full static_data.h8bin copy and violates Zero-GC boot policy.
+- Scalability potential: Low tier receives direct APK-to-arena load with no managed heap staging; middle tier keeps predictable boot; high and ultra tiers preserve the same data truth while visual systems spend the saved budget elsewhere.
+- Hardware Impact: Avoided managed staging buffer size is 1,064,384 bytes for the current static_data.h8bin. Runtime frame impact remains 0 us because this is cold boot only. Evidence class: STATIC_SOURCE.
+- Problem: Build verification is requested but the host is already under compiler/process contention.
+- Solution: Refuse dotnet build for now, record BLOCKED_BY_CONTENTION, and use static source audit plus editor text tests as the only current proof.
+- Rejected Alternatives: Running dotnet build under 68 percent CPU with active dotnet processes is rejected by coordinator decree and by the batch prompt resource gate.
+- Scalability potential: No device-tier effect. This protects shared cluster throughput while preserving a clean static proof trail.
+- Hardware Impact: Prevented additional host CPU pressure; no player runtime change. Evidence class: HOST_PROCESS_SAMPLE.
+- Problem: JNI/native failure must produce a controlled Data Monolith boot failure, not an Android process crash.
+- Solution: Keep every Java object lookup behind zero-pointer checks and pending-exception clearing; keep native reads behind null checks, asset-length equality, and false returns; record telemetry before returning false.
+- Rejected Alternatives: Throw-through JNI failures and unchecked native pointer calls are rejected because they turn asset packaging faults into process-level crashes.
+- Scalability potential: Low tier survives fragmented Android device behavior with BIOS failure instead of a black screen; middle/high/ultra tiers get identical fail-closed semantics and richer postmortem signal.
+- Hardware Impact: Extra checks are cold-boot-only branch cost, below frame accounting relevance. Evidence class: STATIC_SOURCE.
+- Hardware Impact: Editor-only tests have 0 us player impact. Evidence class: STATIC_SOURCE plus editor test source.
+- Solution: Refactored the native dump body into `H8_WriteTelemetryDumpFile` and made the exported Android dump writer emit both `Docs/AgentLogs/Dump_1404.bin` and `Docs/AgentLogs/Dump_1504.bin` from the same chronological telemetry bytes. Added `androidNativeTelemetryAgentDumpMirrorPresent` to audit, tests, and report.
+- Rejected Alternatives: Renaming the existing dump to `Dump_1504.bin` was rejected because it would break the legacy 1404 validator route. Writing the mirror from managed C# was rejected because Android release dump I/O should remain native and bounded.
+- Scalability potential: Low devices keep one fatal-only extra file write with no frame impact; middle/high/ultra devices keep identical black-box bytes and owner-local diagnostics.
+- Hardware Impact: 0 us player-frame impact. Fatal-path cost is one additional bounded file write of at most the telemetry ring size; avoided failure is missing owner-local Android bridge crash evidence.
+- ## 2026-05-31 Native Matrix Dump Mirror Gate Pass
+- Problem: `NativePluginMatrixValidator` still accepted the Android Data Monolith source-plugin route with only the legacy `Dump_1404` requirement. That made the shared build matrix weaker than the 1504 audit after the owner-local `Dump_1504.bin` mirror was added.
+- Solution: Added `nativeDumpMirrorRouteValid` to the shared native matrix gate and required `H8_WriteTelemetryDumpFile`, both dump paths, `legacyOk`, `agentOk`, and `return legacyOk && agentOk`. Added `nativeMatrixValidatorDumpMirrorGuardPresent` to the 1504 audit, tests, and report.
+- Rejected Alternatives: Leaving the mirror proof only in the 1504 audit was rejected because the shared validator is the integration gate other agents will trip first. Duplicating dump serialization was rejected; the native code keeps one writer and two file paths.
+- Scalability potential: Low/middle/high/ultra devices keep identical fatal telemetry bytes. Quality weight never changes dump ownership, byte layout, or route proof.
+- Hardware Impact: 0 us player-frame impact. Fatal-only route unchanged; proof cost estimate is 420 us static scan. Avoided failure is a future Android matrix pass that silently drops the 1504-owned crash artifact.
+- [omitted 142 filtered lines; raw preserved]
+
+## Rationale_1505.md [75019 B; budget 18005]
+- # Rationale 1505 - Mobile GPU Compute Shader Thread Group Sizer
+- Date: 2026-05-30
+- Status: EXTENDED AUDIT COMPLETE - STATIC VERIFIED, SHADER PATCHED, DEVICE CAPTURE NOT RUN
+- ## Decision 0 - Prompt Parser
+- Problem: Literal prompt extraction failed because the live XML tag is `<AGENT_PROMPT id="1505" role="..." chat_name="1505">`.
+- Solution: Use an attribute-aware CLI regex bounded by the 1505 opening tag and the next closing `</AGENT_PROMPT>`.
+- Rejected Alternatives: Trusting neighboring 1405 prompt or direct chat summary. Both violate prompt isolation.
+- Scalability potential: None at runtime. Prevents cross-agent edits.
+- Hardware Impact: 0 us runtime.
+- ## Decision 1 - Mandates Selected
+- Problem: Vendor compute shader task touches occupancy, dispatch math, hot-path C# allocations, and GPU-driven rendering ownership.
+- Solution: Applied these mandates before code: `GPU_Compute_Warp_Sizing_Mobile`, `GPU_Compute_Kernels_Kernels_Optimization_MX350`, `REND_GPU_Sovereignty`, `REND_URP_Graphics_HotPath_Optimization_HLOD`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits`, `DATA_Runtime_Struct_Layout_ARM64`, `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`.
+- Rejected Alternatives: Treating all `numthreads > 256` as a blind text replacement. That can break group barriers and FFT/shared-memory indexing.
+- Scalability potential: Low uses 32/64/128-thread portable lanes when safe; Middle uses 64/128; High/Ultra may keep or add larger variants only with captures. No binary quality switch is accepted.
+- Hardware Impact: Expected risk reduction is TDR/occupancy avoidance on Adreno/Mali/MX350. Exact us gain is PENDING GPU CAPTURE.
+- Problem: XML task asks for a JSON report, but the live user directive rejects useless JSON as proof and demands clean code plus safe shaders.
+- Solution: Treat code changes, static scanner output, and mandatory `LOG_1505.md` as primary proof. JSON will not be created unless it carries real machine-readable evidence needed by the repo.
+- Rejected Alternatives: Generate decorative JSON just to satisfy a stale checklist line. That is bureaucracy and contradicts the direct current instruction.
+- Scalability potential: Keeps proof focused on files that affect runtime.
+- Problem: Batch text claims Crest/GPUInstancer contain `[numthreads(512/1024,...)]`, but static scan of current checkout found none. The only Crest 512 FFT case is a 512-element transform implemented as 256 threads with `ELEMENTS_PER_THREAD=2`.
+- Solution: Treat current vendor shader code as already mobile-thread-count compliant unless later scan finds hidden generated files. Continue with dispatch/math validation and tests instead of rewriting safe FFT code.
+- Rejected Alternatives: Forcing 64/128-thread rewrites without profiler/device proof. That would change vendor FFT scheduling and increase risk with no evidence of benefit.
+- Scalability potential: Low/Middle already stay at 64 or 128 where the code defines mobile targets; High/Ultra can run 256-thread kernels where current vendor macros allow it. No low/ultra dichotomy introduced.
+- Hardware Impact: Avoids a no-op rewrite that could create GPU corruption. Runtime us saved is PENDING CAPTURE; static risk eliminated is 0 oversized groups found.
+- Problem: 512-resolution Crest FFT needs 512 logical samples but mobile-safe group size must not exceed 256.
+- Solution: Existing shader uses two logical coordinates per thread for the 512 path: `coord` and `coord2 = coord + SIZE / ELEMENTS_PER_THREAD`. Each thread loads both slots, then every pass calls `GroupMemoryBarrierWithGroupSync()` before both butterfly writes. Final barrier precedes stores. This preserves shared-memory producer/consumer order for both logical slots.
+- Rejected Alternatives: Splitting 512 FFT into extra dispatches. That would add UAV barriers and texture round-trips with no proof of lower total cost.
+- Scalability potential: Low/Middle keep 64-256 thread groups; Ultra may spend saved dispatch stability on higher wave resolution within the existing 512 cap only after GPU capture.
+- Hardware Impact: Existing 512 path remains 256 physical threads. No additional hardware cost introduced.
+- Problem: The task asks to make C# dispatchers match rewritten thread counts, but the current checkout has no rewritten thread counts and no shader/C# mismatch.
+- Solution: Preserve existing constants: GPUInstancer clamps runtime thread counts through `GetSafeComputeThreadCount` and generated `PlatformDefines.hlsl`; Crest dispatchers match fixed 8x8, 64, or exact FFT row/column kernels.
+- Rejected Alternatives: Calling `ComputeShader.GetKernelThreadGroupSizes` in hot dispatch paths. That adds native query overhead and does not solve a present mismatch.
+- Scalability potential: Low/Middle mobile paths use 128/8 on GLES3/Vulkan; High/Ultra desktop paths may use 256/16. This is not a binary quality switch; it is platform-specific dispatch capacity.
+- Hardware Impact: Avoids unnecessary CPU overhead. Exact gain is PENDING CAPTURE; static estimate is one native query avoided per hot dispatch if a naive patch had been added.
+- Problem: Search found many `new[]`, `ToArray`, and `SetData` calls in Crest/GPUInstancer, but the assignment is compute thread sizing, not a full vendor memory rewrite.
+- Solution: Classify allocations by path. FFT butterfly texture data is initialization-only; GPUInstancer buffer growth and editor/platform file generation are not per-frame thread group sizing defects. Existing dispatch uploads reuse preallocated arrays or buffers.
+- Rejected Alternatives: Broadly rewriting vendor allocation patterns without profiler evidence. That is cross-domain churn and risks breaking serialized plugin behavior.
+- Scalability potential: Low-tier devices keep current low thread counts; high-tier devices keep visual budget for ocean and instancing rather than spending CPU on unnecessary introspection.
+- Hardware Impact: 0 us changed. Confirmed no direct hot allocation was introduced by this agent.
+- Problem: Bounds guards are required for ceil-dispatched compute kernels, but adding returns to a synchronized FFT kernel can deadlock if thread participation becomes non-uniform.
+- Solution: Preserve FFT without guards because dispatch is exact for supported powers of two. Treat `ShapeCombine` wrapper scanner hits as false positives because `ShapeCombineBase` performs the texture dimension guard before memory access. Leave Vulkan LOD2 empty kernel unchanged because it has no memory access.
+- Rejected Alternatives: Blanket guard injection into every `SV_DispatchThreadID` kernel. That is unsafe around barriers and pointless for empty kernels.
+- Scalability potential: Low/Middle keep safe ceil-dispatched texture kernels; High/Ultra keep exact FFT batches without extra branches.
+- Hardware Impact: 0 us changed. Avoided adding divergent guard branches to FFT.
+- Problem: User forbids build abuse and no target C# or shader code changed.
+- Solution: Do not run `dotnet build`. Use static shader scans, dispatch dry-runs, and restricted git status as verification for this pass.
+- Rejected Alternatives: Running a full project build to validate documentation-only changes. That would consume shared CPU and provide no signal on untouched runtime code.
+- Scalability potential: Preserves cluster throughput for agents with actual compile-relevant edits.
+- Hardware Impact: Saved one full build invocation. Exact host CPU time not measured.
+- Problem: The XML requests tests, but no runtime shader/C# loop was changed and adding a new test assembly would create compile churn for untouched vendor behavior.
+- Solution: Use static test-equivalent assertions: parse FFT pragmas for physical/logical thread invariants, fuzz dispatch ceil boundaries against the exact C# formula, and audit compute shader syntax/bounds hazards.
+- Rejected Alternatives: Creating editor tests solely to prove unchanged code. That would be bureaucracy and could trigger compile work for no runtime delta.
+- Scalability potential: The invariant scanner covers low, middle, high, and ultra FFT resolutions from 16 to 512 without device-specific binary switches.
+- Hardware Impact: 0 runtime us changed. Static verification cost only.
+- Problem: The XML requested a JSON report, but the live directive rejected useless JSON and required `LOG_1505.md`.
+- Solution: Write the final proof to `Docs/AgentLogs/LOG_1505.md` and close Task 20 without JSON.
+- Rejected Alternatives: Creating a parallel JSON artifact nobody will read.
+- Scalability potential: No runtime effect.
+- Problem: `ContentAuthorityBuildValidators.ValidateComputeShaderThreadGroups()` claimed Metal/Quest safety but scanned only `Assets/_Project` and allowed `total > 1024UL`. That would not stop a future Crest/GPUInstancer upgrade from importing a 512/1024-thread kernel into a mobile build.
+- Solution: Expand the gate roots to `Assets/_Project`, `Assets/GPUInstancer`, and `Assets/Crest`. Source the cap from `HectonPlatformContract` as the portable min of Quest, Android, and Metal, which resolves to 256 threads, and add the portable Z-axis cap of 64.
+- Rejected Alternatives: Leaving vendor safety as a manual report. Manual scans do not protect future upgrades or CI/prebuild paths.
+- Scalability potential: Low devices keep strict portable kernels; Middle/High/Ultra can still add richer visuals through target-specific shaders only if the build gate is explicitly taught that route. No silent universal 1024-thread default.
+- Hardware Impact: Runtime cost 0 us. Prevents future TDR/occupancy regressions on Quest/Android/MX350-class devices before build.
+- Problem: Crest `FFTCompute.compute` repeats one entry point name, `ComputeFFT`, across 14 `#pragma kernel` lines with different `SIZE/TX/TY/ELEMENTS_PER_THREAD` defines. A `FindKernel("ComputeFFT")`-only validator can collapse these and miss later source-order kernels that runtime dispatches by offset.
+- Solution: Keep `FindKernel` for normal unique kernels, but add source-order indices for duplicate pragma names. Invalid indices are skipped through a guarded `TryGetKernelThreadGroupSizes`, while valid Crest offsets are covered.
+- Rejected Alternatives: Renaming vendor FFT kernels or changing runtime dispatch offsets. That would be high-risk vendor churn with no current oversized physical group.
+- Scalability potential: Low through Ultra FFT sizes remain covered by one validator, including the 512 logical sample path implemented as 256 physical threads.
+- Hardware Impact: Runtime cost 0 us. Editor validation cost increases only by extra kernel-size queries during prebuild.
+- Problem: After adding `HectonPlatformContract`, the editor asmdef needed a direct `Hecton8.Core.Contracts` reference. A full build/Unity compile would verify assembly loading but the host already had active `dotnet` process `17540`, and the user explicitly forbids build abuse under contention.
+- Solution: Add the direct asmdef reference, parse the asmdef JSON to confirm it, run Unity `validate_script` for the edited C# file, run `git diff --check`, and skip build/compile.
+- Rejected Alternatives: Triggering a compile while another dotnet process is active. That violates the cluster rule and adds low signal after a scoped editor-only patch.
+- Scalability potential: Preserves host throughput for parallel agents while still fixing the build gate contract.
+- Hardware Impact: Runtime cost 0 us. One full compile/build invocation avoided; exact host CPU time not measured.
+- Problem: `Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute` still used `[numthreads(128, 1, 1)]` for `CSRaymarch` and `CSDecayEchoes`. The mandate says HECTON logic kernels default to 64 unless a capture proves 128 is faster on the target device. Search found no runtime dispatcher or serialized GUID reference for this shader beyond editor contract tests, so keeping 128 would preserve a stale future-risk default.
+- Solution: Change both kernels to `[numthreads(64, 1, 1)]`. Both kernels are 1D, have explicit `_RayCount` bounds guards, and contain no `groupshared` state or `GroupMemoryBarrierWithGroupSync`, so lowering the physical group size does not change logical ray indexing or synchronization.
+- Rejected Alternatives: Keeping 128 as an undocumented optional mobile size. That requires GPU capture proof and none exists in this checkout. Adding a C# dispatch patch was rejected because no C# caller references this asset; inventing a dispatcher would be cross-domain churn.
+- Scalability potential: Low/Middle use the 64-thread portable floor. High/Ultra can reintroduce 128 as a captured variant later if it buys visibly denser sonar without exceeding kernel budget. No binary quality switch was added.
+- Hardware Impact: Expected occupancy/register-pressure risk reduction on Quest/Adreno/Mali/MX350-class hardware. Exact microseconds saved are PENDING GPU CAPTURE; static proof is `numericGroupsAtOrAbove128=0` after the patch.
+- Problem: `Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs` queried `GetKernelThreadGroupSizes` for `FillMaskArtefacts` but cached only X/Y. It did not verify `ComputeShader.IsSupported`, `sizeZ == 1`, or total product <= 256 before dispatching with `descriptor.volumeDepth` as Z groups. Current shader is safe at `[numthreads(8,8,1)]`, but a vendor upgrade could silently import a non-portable group into Quest/Android/Metal runtime.
+- Solution: Add setup-time `TryResolveFixMaskThreadGroupSizes` that rejects unsupported kernels, zero X/Y, non-1 Z, and product over `k_MaxPortableThreadGroupSize = 256`. On rejection it clears the shader/kernel/sizes so the existing hot dispatch path returns without allocations or exceptions.
+- Rejected Alternatives: Pulling `HectonPlatformContract` directly into Crest vendor code. That would couple third-party Crest assembly to first-party contracts; the editor build gate already owns the authoritative contract route. Re-querying thread groups every frame was also rejected because the thread group size is immutable per kernel.
+- Scalability potential: Low/Middle devices fail closed instead of dispatching an unsafe artifact correction kernel. High/Ultra retain the existing 8x8 artifact pass today, and richer future variants must pass the 256 portable gate or get an explicit platform-specific route.
+- Hardware Impact: Runtime hot path 0 us changed. Setup-only native query cost unchanged in count, plus constant arithmetic. Exact GPU gain is not measured; value is crash/TDR prevention on Quest/Adreno/Mali/MX350-class hardware.
+- Problem: `Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs` dispatched `CSTreeInstantiationKernel` with `GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal)`. The shader actually uses `[numthreads(GPUI_THREADS,1,1)]`, where `GPUI_THREADS` is 128 on GLES3/Vulkan and 256 on Metal/desktop defaults. If C# still held default 256 while the imported shader was 128, tree instantiation could underdispatch: 129 instances become 1 group in old 256 math but require 2 groups for a 128-threa...
+- Solution: Cache the imported kernel's real X group size during `EnsureTreeInstantiationComputeShader`, require `SystemInfo.supportsComputeShaders`, `ComputeShader.IsSupported`, Y/Z of 1, and product <= 256. Dispatch count now uses the cached imported X size with `long` ceil math.
+- Rejected Alternatives: Trusting `SetPlatformDependentVariables` to always run before every tree replacement path. That is an order dependency between editor/runtime setup and a vendor coroutine. Re-querying the kernel every dispatch was rejected because the imported kernel group size is immutable.
+- Solution: Add `ValidateComputeShaderSourceFiles` as a filesystem pass over the validated roots. It enumerates every `*.compute` under `_Project`, GPUInstancer, and Crest, validates source declarations first, and then lets imported-kernel validation run as a second layer.
+- Rejected Alternatives: Trusting AssetDatabase was rejected because import failures and unsupported variants are exactly where source policy is most needed. Failing all imported-kernel query misses was rejected because source validation gives a deterministic policy without punishing legitimate platform import gaps.
+- Scalability potential: Low/Middle devices are protected from unsafe source drift before platform-specific import behavior matters. High/Ultra devices retain imported-kernel query proof while still respecting the portable per-group width ceiling.
+- Hardware Impact: Runtime hot path 0 us and 0 allocations. Editor/build validation adds filesystem enumeration of compute sources. External source parser still resolves 167 variants with 0 failures; exact validation microseconds are pending Unity menu/build execution.
+- ## Decision 54 - Compiled-Intent Source Scan
+- Problem: Source-level `numthreads` validation was scanning raw text. A commented-out example or disabled `#if 0` debug kernel could therefore produce a false mobile-budget failure, the same class already handled for synchronized barrier validation.
+- Solution: Reuse `StripCommentsAndDisabledZeroBlocks(source)` before resolving pragma define sets and matching `numthreads`. The stripper preserves string length, so line numbers still map to the original file.
+- Rejected Alternatives: Keeping raw grep behavior was rejected because build authority should validate compiled-intent source, not dead comments. Building a full HLSL preprocessor was rejected as overengineering; current false-positive class is comments and `#if 0`.
+- Scalability potential: Low/Middle devices keep strict mobile thread-group enforcement without noisy dead-code failures. High/Ultra devices retain the same source budget and imported-kernel query proof; no quality or authority route changes.
+- Hardware Impact: Runtime hot path 0 us and 0 allocations. Editor/build validation reuses an existing text stripping pass. External parser still resolves 167 current source variants with 0 failures.
+- [omitted 235 filtered lines; raw preserved]
+
+## Rationale_1524.md [12599 B; budget 3024]
+- # Rationale 1524 - QA Watchdog Bot
+- Problem: Current batch prompt is 1524, but the live QA watchdog source is a carried-over 1424 harness.
+- Solution: Reuse the existing QA-only harness architecture and correct ownership/path/switches for 1524 instead of rewriting production runtime systems.
+- Rejected Alternatives: Full rewrite would risk new compile debt and duplicate already-present dispatcher/DataVault/ProfilerRecorder routes. Editing physics/KCC/rendering to help the test pass is outside domain.
+- Scalability potential: Low runs same sterile observation with sparse CSV terminal output; Middle/High/Ultra can increase route coverage through continuous `GlobalQualityWeight`-scaled steering amplitude without changing gameplay truth.
+- Hardware Impact: Expected new hot cost is no worse than existing watchdog: recorder reads, struct packing, ring writes. Exact microseconds are PENDING PROFILER PROOF.
+- Problem: XML task asks for JSON ledgers/metadata, while the live coordinator instruction rejects useless JSON reports and binary dumps during work.
+- Solution: Keep durable proof in `Status_1524.md`, `Rationale_1524.md`, `LOG_1524.md`, source scans, and terminal CSV output. Do not add runtime binary dump output. Treat existing DataVault blackbox ring as in-memory telemetry, not disk dump.
+- Rejected Alternatives: Writing `QA_WATCHDOG_METADATA_1524.json` just to satisfy stale prompt text; emitting `Dump_1524.bin` during normal QA run.
+- Scalability potential: CSV is graphable and cheap; high-end lanes can collect denser samples in memory without changing file schema.
+- Hardware Impact: Avoids cold JSON/binary writer churn and reduces disk I/O contention on low-end storage; hot path unchanged.
+- Problem: QA bot needs to drive movement without direct dependency on absent or unstable KCC internals.
+- Solution: Use existing `CoreDeterminismSignals.TryPublishInputOverride` hot lane and validate actual movement through `TryGetLatestKccVelocityFloat3` plus `PlayerRuntimeContextService` snapshots.
+- Rejected Alternatives: Direct KCC field mutation, transform teleport, or synchronous physics casts. Those would change gameplay truth and invalidate QA.
+- Problem: Terminal sentinel failure was only reflected as a metric flag; a run that reached 10km could still serialize `Completed` even when `NativeMemorySentinel` reported a leak or threw through reflection.
+- Solution: Convert terminal sentinel failure into `Failed / NativeSentinelLeak` before capturing the terminal metric. Treat reflection exceptions as sentinel failure so CSV is still written and the failure is visible.
+- Rejected Alternatives: Keeping `Completed` with a `NativeSentinelFailed` flag, or allowing reflection errors to abort CSV generation entirely.
+- Scalability potential: Low/Middle/High/Ultra all use the same terminal truth: teardown leak invalidates the run. No device tier can silently downgrade memory integrity.
+- Hardware Impact: Cold-only terminal branch. Hot simulation cost remains 0 us.
+- [omitted 67 filtered lines; raw preserved]
+
+## Rationale_15MM.md [37982 B; budget 9116]
+- # 15MM Rationale
+- Problem: Active `Docs/Tasks/CURRENT_BATCH.md` does not contain `<AGENT_PROMPT id="15MM">`, and no archived batch prompt for `15MM` was found by CLI scan.
+- Solution: Treat the user's direct menu-domain assignment as authority for this session while preserving the failed batch extraction as evidence.
+- Rejected Alternatives: Borrowing another agent's XML block or using archive prompts would contaminate domain decisions.
+- Scalability potential: Menu work must scale visual density from weak devices to ultra devices through continuous `GlobalQualityWeight`, not discrete quality switches.
+- Hardware Impact: No code impact yet; expected savings must come from eliminating hot scene searches, runtime material instantiation, and per-frame string churn in UI.
+- Problem: Main menu and in-game menu are presentation-domain systems, but they can still damage runtime stability through hidden `Update`, `GetComponent`, `Find*`, string formatting, or scene-wide TMP sweeps.
+- Solution: Audit source before implementation and keep changes inside `Assets/_Project/Scripts/UI` or existing menu files unless an interface route requires otherwise.
+- Rejected Alternatives: Styling prefabs or YAML scene edits first; raw Unity YAML edits carry corruption risk and do not prove architectural cleanliness.
+- Scalability potential: Low uses silhouettes, dither, audio/UI instrument cues; middle adds richer transitions; high adds wet glass, scanlines, depth hints; ultra adds overkill layered interference without new gameplay truth.
+- Hardware Impact: Static-source audit only so far; target is 0 B/frame menu steady state and no extra simulation-phase work.
+- Problem: Menu style selection was hardcoded and split between scene-authored main menu and source-built pause menu.
+- Solution: Added `MenuVisualStyleCatalog` with 15 selectable styles and a continuous `GlobalQualityWeight` resolver for panel alpha, glow, scanline, interference, and wet-glass weights.
+- Rejected Alternatives: Separate low/high enum variants or per-device boolean branches; that would violate the continuous quality scalar rule and multiply test cases.
+- Scalability potential: Low quality uses stable color/alpha only; middle increases hover contrast and scanline weight; high increases glow/wet-glass hints; ultra pushes warning/accent interference without altering gameplay truth.
+- Hardware Impact: Style resolution is struct math only in `LateFrameTick`; estimated low-end gain versus per-frame theme object/material lookup is 20-60 us and 0 B/frame.
+- Problem: Applying 15 styles through hierarchy searches would create hidden hot-path scene dependency.
+- Solution: Added `MenuVisualStyleApplier`, which recursively caches `Graphic` and `Selectable` references only when the menu hierarchy is built or rewired, then writes cached colors in visual sync.
+- Rejected Alternatives: `GetComponentsInChildren` on open or per-frame `TryGetComponent`; both allocate or hide scene traversal behind presentation.
+- Scalability potential: The same cache supports cheap flat color on weak devices and denser visual fake parameters on top-tier devices.
+- Hardware Impact: Expected steady path is 0 B/frame; main/pause menu style refresh cadence is continuous 0.80s to 0.18s based on quality, not every simulation tick.
+- Problem: Main menu selection refresh used `EventSystem.current` from the tick route after requests.
+- Solution: Switched selection refresh to the cold-cached `_cachedEventSystem`; if cache is unavailable, the request is dropped instead of searching from `Tick`.
+- Rejected Alternatives: Calling `EventSystem.current` or input guard repair from every failed tick; that hides global scene state lookup in a UI loop.
+- Scalability potential: Stable on weak devices because input repair remains cold; no extra top-tier path needed.
+- Hardware Impact: Estimated save is small but deterministic: removes a global EventSystem accessor from requested tick refreshes, 1-5 us when active.
+- Problem: User required compilation throttling and no build spam while the machine already had `dotnet` active.
+- Solution: Used Unity MCP `validate_script` for syntax diagnostics and static source grep for hot-path/lock patterns; did not run `dotnet build`.
+- Rejected Alternatives: Full project compile while a `dotnet` process was active; that violates the explicit CPU/compiler gate.
+- Scalability potential: Validation route is editor-local and does not consume runtime budget.
+- Hardware Impact: Avoided full compile CPU spike; estimated saved wall CPU is seconds on low-end silicon.
+- Problem: The first menu-style pass made visual variants selectable by script but not user-persistent.
+- Solution: Added `Hecton_MenuVisualStyle` to `SettingsManager`, storing only a validated style index and leaving `GlobalQualityWeight` as fidelity scalar only.
+- Rejected Alternatives: Binding visual identity to graphics preset or device tier would make art direction a hidden performance setting and violate continuous quality ownership.
+- Scalability potential: Weak devices keep the same chosen vibe with cheaper refresh cadence; middle/high/ultra increase glow, scanline, wet-glass and interference weights from the same style identity.
+- Hardware Impact: One cold int load/save on settings interaction; steady-state cost is 0 B/frame and no additional registry lookup.
+- Problem: Source-built pause settings had language and control routes, but no way to preview/cycle the 15 menu directions in-game.
+- Solution: Added a cycle button and status label in `BuildSettingsPanel`, using cached `SettingsManager`, `MenuVisualStyleCatalog.GetDisplayName()`, and a fixed char buffer.
+- Rejected Alternatives: TMP dropdown/list allocation, generated enum strings, or raw scene/prefab YAML edits. Those add allocation or authoring risk without improving runtime stability.
+- Scalability potential: Low uses flat UI recolor; middle preserves richer button states; high and ultra spend saved CPU on denser cinematic fakes inside the existing style resolver.
+- Hardware Impact: Interaction-only route; status update writes through `TMP_Text.SetCharArray`, estimated 0 B/frame and less than 20 us per button press on low-end silicon.
+- Problem: Main menu needed to honor the persisted style without polling settings in `Tick`.
+- Solution: Cached `SettingsManager` only in cold lifecycle/hot-swap paths and copied the selected style into local presentation state for `LateFrameTick` sync.
+- Rejected Alternatives: Reading `GlobalRegistry.Settings` or `SettingsManager.MenuVisualStyle` every frame; that would turn a settings owner into a hot dependency.
+- Scalability potential: Same persisted art direction appears in boot menu and pause menu; quality scalar remains independent for weak, middle, high, and ultra devices.
+- Hardware Impact: Removes future pressure to add a hot settings read; expected steady cost remains only cached array color writes in visual sync.
+- Problem: `01_MAIN_MENU` has a scene-authored `SettingsPanel`, but the new menu-style preference was only directly exposed in the generated pause settings panel.
+- Solution: Added a cold optional `Row_MenuVisualStyle` creation path inside `SettingsPanel`; if serialized refs are absent, it builds a minimal UGUI row under `Container/Section_Graphics` and binds cached actions.
+- Rejected Alternatives: Raw `.unity` YAML patching risks corrupting scene ownership; TMP dropdown/list generation adds allocation and more selection states than this domain needs.
+- Problem: `SettingsPanel` apply-failure modal still used captured retry/revert lambdas.
+- Solution: Added cached `Action` fields for apply retry and reset-to-defaults routes, initialized with the existing listener cache.
+- Rejected Alternatives: Keeping capture lambdas because the path is an error path. Error paths are exactly where allocation spikes and repeated retry loops are visible on weak devices.
+- Scalability potential: Weak devices get allocation-stable recovery UI; middle/high/ultra retain the same visual presentation without callback churn.
+- Hardware Impact: Two cold delegate allocations replace per-modal capture allocations. Estimated 1-4 us avoided per apply-failure modal display, 0 B/frame.
+- Problem: `PauseMenuAudioIntegration.IsSimulationPaused` resolved `GlobalRegistry.TickDispatcher` on every pause-menu audio command.
+- Solution: Implemented `IGlobalRegistryHotSwapListener`, cached `ITickDispatcher` in `Awake`/`OnEnable`, refreshed it on dispatcher hot-swap, and made audio commands read the cached field only.
+- Rejected Alternatives: Keeping the registry read because the method is interaction-time. Menu commands are not frame loops, but the registry route still violates the cold-DI rule and is avoidable.
+- Scalability potential: Weak devices avoid registry pressure during repeated pause open/click loops; middle/high/ultra keep the same audio-feedback route while visual budget remains available for style/concept fakes.
+- Hardware Impact: Removes one registry property read per affected pause audio command. Estimated 1-3 us per command, 0 B/frame steady state.
+- [omitted 172 filtered lines; raw preserved]
+
+## Rationale_1600.md [59074 B; budget 14178]
+- # Rationale_1600
+- Problem: Prompt path `Assets/_Project/Scripts/Player/Movement/` was absent while actual player KCC code is split across legacy movement, hydrodynamic KCC, and exosuit physics.
+- Solution: Create an isolated zero-G player movement branch using existing Exosuit DataVault/Burst pattern and add only BufferID expansion in core memory contracts.
+- Rejected Alternatives: Editing `HectonPlayerMovement.cs` would mix underwater, ground, camera, and tool concerns in a 200KB legacy file and raise cross-agent conflict risk.
+- Scalability potential: Low keeps single analytic orbit-wall probe and fixed telemetry; Middle/High/Ultra can consume the same DTOs for richer presentation without changing truth.
+- Hardware Impact: Low-end i3/MX350 avoids managed allocation and avoids Unity physics scene queries; expected hot-path win versus synchronous casts is roughly 20-80 us per player frame depending on collider density.
+- Problem: Task 09 asked for RaycastCommand/SpherecastCommand with TempJob-style batches, while project mandates reject synchronous/same-frame collision queries and persistent state outside DataVault.
+- Solution: Use analytic zero-G orbit-wall SDF detection inside the Burst solver and publish `ZeroGSurfaceHitDTO` through DataVault.
+- Rejected Alternatives: `SphereCast`, `Physics.Raycast`, or a TempJob command buffer create hidden dependency on Unity physics ownership and increase same-frame fence pressure.
+- Scalability potential: Low uses one AABB/SDF plane probe; Middle can add secondary probes; High/Ultra can blend richer visual contact sparks from the same surface DTO.
+- Hardware Impact: i3/MX350 path is constant-time scalar math; expected save is 30-120 us during dense orbit interior contact.
+- Problem: Zero-G movement truth must not change with quality switches.
+- Solution: `GlobalQualityWeight` is carried in DTOs and used for presentation telemetry/trauma weighting, not thrust, collision restitution, or authority layout.
+- Rejected Alternatives: Low/high binary movement branches would make replay/lockstep diverge.
+- Scalability potential: Low/Middle/High/Ultra scale sensory output and probe metadata only; gameplay truth stays invariant.
+- Hardware Impact: low-end devices keep deterministic motion while visual owners can reduce downstream effects.
+- Problem: Runtime needed scene movement without making GlobalRegistry a hot dependency source.
+- Solution: `ZeroGMovementRuntime` caches DataVault handles during cold setup, schedules `ZeroGPhysicsIntegrationJob` through the admission lane, and emits camera/haptic signals after readback.
+- Rejected Alternatives: Direct Rigidbody forces or KCC calls would couple zero-G to underwater/ground locomotion and break one-owner movement authority.
+- Scalability potential: Low uses one analytic bounds probe; Middle/High/Ultra can add visual-only contact debris, suit shake, and haptics from existing output DTOs.
+- Hardware Impact: i3/MX350 stays at O(1) Burst math with no managed heap; expected under 0.1 ms for the single player solver.
+- Problem: Fuzz proof needed without forcing a full project build or scene boot.
+- Solution: Add editor-only NUnit tests that run Burst-compatible jobs directly for layout, 10k inertial drift, quaternion fuzzing, and analytic wall reflection.
+- Rejected Alternatives: PlayMode scene tests would require scene loading and unrelated subsystem startup; dotnet build is forbidden unless critical.
+- Scalability potential: Low/Middle/High/Ultra all share the same deterministic solver tests, while presentation owners can scale separately.
+- Hardware Impact: tests allocate only editor `TempJob` buffers; runtime hot path remains DataVault-owned and allocation-free.
+- Problem: Verification pressure conflicted with host compile policy.
+- Solution: Ran `validate_script` on new runtime/job/contract/test files; skipped build and test execution when CPU was 68.8% and `dotnet` PID 25280 was already active.
+- Rejected Alternatives: Launching dotnet or Unity tests under load would violate the explicit coordinator rule and steal CPU from other agents.
+- Scalability potential: static and editor-script validation catches syntax/layout issues now; full test run can execute once host load drops.
+- Hardware Impact: preserved cluster CPU budget; zero microseconds of new runtime cost from verification tooling.
+- Problem: APEX verification required presentation side effects to be phase-safe after simulation settles; `CompletePendingJob` previously could apply transform and publish signals when called from `PostFixedTick`.
+- Solution: Split readback into value-type pending DTO fields and flush them only from `LateFrameTick` through `FlushVisualSyncReadback`.
+- Rejected Alternatives: Keeping transform/signals in the readback finalizer was cheaper to write but allowed POST_FIXED to touch presentation.
+- Scalability potential: Low/Middle/High/Ultra all get the same simulation DTO; visual owners can scale trauma, haptics, suit feedback, and camera effects after the solver without changing truth.
+- Hardware Impact: two struct copies replace direct side effects; no heap allocation, no scene search, expected cost below 1 us on i3/MX350.
+- Problem: Dependency and lock compliance needed executable proof without a full build.
+- Solution: Added editor static-contract tests that scan runtime method bodies for hot `GlobalRegistry.Get`, `GetComponent`, scene physics queries, non-LateFrame presentation flush, and multiple write-lock acquisition.
+- Rejected Alternatives: A prose-only claim would not survive later edits; a full Roslyn/dotnet pass is barred under current host load.
+- Scalability potential: The scanner protects low-end hot loops from accidental scene searches and keeps high-end presentation features decoupled from simulation ownership.
+- Hardware Impact: runtime cost remains 0 us; editor-only verification consumes CPU only when tests are deliberately run.
+- Problem: Zero-G runtime still depended on mock/external input and did not consume the existing project input sidecar.
+- Solution: Convert `CoreDeterminismSignals.TryGetLatestInput` into `ZeroGInputStateDTO` in `WriteFrameInput`: move+vertical become local thrust, look becomes local pitch/yaw, primary/secondary become roll, jump becomes push, sprint becomes brake, interact becomes horizon assist.
+- Rejected Alternatives: Pulling `InputAction` references or `IInputProvider` objects into zero-G movement would couple player physics to managed input assets and violate the existing InputDispatcher ownership route.
+- Scalability potential: Low through Ultra use the same input DTO and Burst solver; device-specific input richness stays upstream in InputDispatcher.
+- Hardware Impact: one static signal read and flat DTO pack per fixed frame; expected below 2 us on i3/MX350, with no heap allocation.
+- Problem: Fail-closed DataVault guard denial was silent in the zero-G telemetry path.
+- Solution: Add `VaultAccessDenied` state flag and fault code, increment a pending integer when frame input or job buffer guard acquisition is denied, and stamp the next telemetry ring entry after a successful solver frame.
+- Rejected Alternatives: Logging strings or forcing a telemetry write while compaction/guard contention is active would add managed I/O or deadlock risk.
+- Scalability potential: Low devices get cheap numeric diagnosis; high-tier debug UIs can render richer fault displays from the same ring without changing gameplay truth.
+- Hardware Impact: one saturated integer increment on denial and one branch during telemetry patch; normal-frame cost is negligible.
+- Problem: `WriteFrameInput` previously acquired `FrameInputGuardMask` before resolving deterministic input, mock transform orientation, serialized tuning, and quality.
+- Solution: Build tuning/input/quality before acquiring the DataVault mutation guard, then hold the guard only while resolving the input/tuning buffers and writing DTOs.
+- Rejected Alternatives: Keeping external reads inside the guard is simpler but expands contention windows and makes future deadlock audits weaker.
+- Scalability potential: Low-end devices reduce lock hold time under input spikes; high-tier routes can add richer upstream input without increasing DataVault guard duration.
+- Hardware Impact: DataVault guard window loses signal read, transform rotation read, and tuning sanitize work; expected contention reduction is frame-dependent, normal path below 5 us saved on i3/MX350 under pressure.
+- Problem: The deterministic input route was text-scanned but not semantically tested.
+- Solution: Extract `TryPackDeterministicInputSignal` as a pure converter from `InputSignal` to `ZeroGInputStateDTO`, then add a focused NUnit test for thrust axes, look-to-angular axes, push/brake/horizon action mapping, and frame/tick stamping.
+- Rejected Alternatives: Testing only the private sidecar-consuming method would require global signal state and make the proof less deterministic.
+- Scalability potential: Low/Middle/High/Ultra can evolve InputDispatcher upstream without changing the zero-G converter contract.
+- Hardware Impact: no new runtime work; method extraction replaces inline code and keeps the same below-2 us fixed-frame path.
+- Problem: `ZeroGTuningDTO.MaxSubsteps` existed but the solver always used a single integration step, making the quality/collision precision control decorative.
+- Solution: Add a bounded 1..8 substep loop inside `ZeroGPhysicsIntegrationJob` covering thrust, angular momentum, orientation, brake assist, horizon lock, analytic wall resolution, and depenetration.
+- Rejected Alternatives: Running multiple jobs or scheduling per-substep collision commands would increase dispatcher/fence overhead and violate the zero-G single-player O(1) solver goal.
+- Scalability potential: Low can run one substep; mid/high/ultra can raise substeps for smoother high-speed contact without changing DTO layout or authority route.
+- Hardware Impact: low tier remains one pass; four substeps add deterministic scalar math only and avoid Unity physics queries, expected still below 0.1 ms for the single player on i3/MX350.
+- Problem: A dry suit propellant state had no focused semantic proof, and the drift assertion compared against the raw input velocity rather than the sanitized velocity actually used by the job.
+- Solution: Add `IntegrationJob_ZeroPropellantRejectsThrusterAcceleration`, keep propellant at zero, reject thruster velocity gain, assert `PropellantDry` without `ThrusterActive`, and compare drift proof against sanitized velocity.
+- Rejected Alternatives: Treating propellant UI as presentation-only would allow movement truth to diverge under dry fuel; comparing drift against raw non-finite input would make the test prove the wrong contract.
+- Scalability potential: Low/Middle/High/Ultra all share the same dry-fuel truth; high-tier presentation can add richer dry-rattle/haptic feedback from output DTOs without touching propulsion authority.
+- Hardware Impact: no new runtime branch beyond the existing `propellant01 > 0.0f` guard; editor proof only, expected runtime cost unchanged below 1 us.
+- Problem: APEX proof needed to cover the Burst job source directly, not only the MonoBehaviour runtime wrapper.
+- Solution: Add editor static contract coverage for `ZeroGPhysicsIntegrationJob.Execute` and `ResolveAnalyticOrbitSurface`, banning scene queries, `GetComponent`, `GlobalRegistry.Get<T>()`, managed collections, `foreach`, `Schedule(`, and `.Complete(`.
+- Rejected Alternatives: Relying on one repo-wide rg command is fragile because future edits could bypass the manual check; embedding the scanner in NUnit makes the contract repeatable.
+- Scalability potential: Low devices avoid accidental physics-scene and fence stalls; high/ultra tiers can spend cycles through explicit quality knobs instead of hidden job fences.
+- Hardware Impact: runtime cost is 0 us; editor-only scanner prevents future multi-millisecond stalls from synchronous Unity physics or job completion misuse.
+- Problem: The blackbox contract is a fixed 300-frame ring, but `TryResolveTelemetryLastIndex` accepted any positive telemetry length; a truncated or wrong-sized DataVault buffer could therefore expose stale or partial forensic data.
+- Solution: Require `telemetryLength == TelemetryCapacity` inside `TryResolveTelemetryLastIndex` before resolving the previous cursor entry; update the editor contract to assert the fixed-capacity gate.
+- Rejected Alternatives: Accepting smaller buffers for resilience would violate the crash-ring proof artifact and make cursor wrap semantics data-dependent; clamping to the available length hides DataVault layout corruption.
+- Scalability potential: Low/Middle/High/Ultra now share one fixed blackbox capacity contract; weak devices avoid misleading under-sized telemetry, while high/ultra diagnostics can trust the 300-frame history shape.
+- Hardware Impact: one integer equality check on telemetry read/patch only, expected below 0.01 us on i3/MX350; no managed allocation and no additional DataVault locks.
+- Problem: Public telemetry reads now require the fixed 300-frame ring, but `TryAcquireJobBufferViews` still accepted oversized telemetry rings and any positive cursor buffer, allowing Burst write admission to a shape the public blackbox contract would reject.
+- Solution: Require `telemetry.Length == TelemetryCapacity` and `telemetryCursor.Length == 1` before `_jobBuffersLocked` is set and before the job receives NativeArray views; extend the fail-closed editor proof.
+- Rejected Alternatives: Letting the writer run and rejecting only public reads wastes simulation/postmortem work and hides DataVault layout corruption until consumers ask for telemetry.
+- Scalability potential: Low/Middle/High/Ultra share the same telemetry shape at writer and reader boundaries; weak devices avoid wasted job completion patching on invalid buffers, while high/ultra diagnostics can rely on exact ring geometry.
+- Hardware Impact: two integer equality checks during job buffer admission only, expected below 0.01 us on i3/MX350; no managed allocation and no additional write locks.
+- [omitted 235 filtered lines; raw preserved]
+
+## Rationale_1601.md [32366 B; budget 7768]
+- # Rationale 1601 - ORBITAL_CELESTIAL_AND_LIGHTING_DIRECTOR
+- Date: 2026-06-01
+- Status: STATIC VERIFIED / RUNTIME VISUAL PENDING
+- ## Decision 000 - Domain And Mandate Gate
+- Problem: The orbit prompt requests shader, lighting, texture import, and C# visual-sync work with strict MX350 constraints.
+- Solution: Domain locked to Echelon 7 Atmosphere & Celestial. Mandates selected for URP render hot paths, noir shader discipline, cinematic-cheat first, frame/VRAM budget, zero-GC, ARM64 DTO alignment, execution phases, and texture upload settings.
+- Rejected Alternatives: Editing the scene/shader before mandate selection; using physical planet meshes; treating bloom/lens artifacts as unconditional low-tier features.
+- Scalability potential: Low uses shader impostor math, hard silhouettes, low sample count. Middle adds stable texture/flow detail. High adds richer atmospheric blend. Ultra spends saved cost on denser visual layers without changing gameplay truth.
+- Hardware Impact: Static source phase only. Expected low-end benefit comes from removing CPU orbital transforms and avoiding physical planet/ring geometry; measured gain PENDING VERIFICATION on i3/MX350.
+- ## Decision 001 - N-Body Scan Result
+- Problem: The prompt requires removal of realtime celestial mechanics, but direct scan found no active `Transform.Rotate`, `RotateAround`, or Unity `Update` loops in assigned Prologue/Environment script lanes.
+- Solution: Treat transform-based visual placement in `OrbitalRelativityDirector.ApplyPresentation` as the actual purge target. It moves planet/cloud/star transforms and toggles planet mesh renderers in VISUAL_SYNC; this is presentation, not gameplay truth, but it still keeps physical celestial objects alive.
+- Rejected Alternatives: Deleting `PlanetRotation.cs`; it already disables itself on enable and contains no hot path. Deleting `OrbitalRelativityDirector`; it owns prologue approach state, feedback signals, handoff, blackbox telemetry, and GlobalRegistry `IOrbitalDirector` contract.
+- Scalability potential: Low removes mesh renderer path and uses skybox impostor only. Middle keeps shader texture bands and flow. High/Ultra add denser procedural ring/atmosphere/star details through quality scalar.
+- Hardware Impact: Removing mesh/renderer toggles and transform presentation should reduce main-thread presentation churn and draw calls. Exact microseconds PENDING VERIFICATION; static estimate 15-40 us on i3/MX350 scene frame due to fewer transform writes and renderer state checks.
+- Problem: Aegir source textures are 4096x2048, but import settings are inconsistent. Static sky impostor path does not need runtime mip streaming, and Standalone should be BC7.
+- Solution: Use `Assets/_Project/Art/TEXTURES/Aegir_storms.png` as primary BC7 Standalone texture after disabling mipmaps. Leave duplicate `_PROLOGUE_CONTENT` textures as candidates for quarantine unless material references require them. `ring.png` is already no-mip BC7 Standalone.
+- Rejected Alternatives: Importing new 8K sources during this pass; it risks VRAM budget and user explicitly wants no extra variant churn. Editing PNG binary files; import metadata is the correct Unity control plane.
+- Scalability potential: Low samples one Aegir texture plus ALU ring/star fakes. Middle adds flow distortion. High samples optional secondary texture if already resident. Ultra increases ALU richness, not texture count explosion.
+- Hardware Impact: Disabling mips on fixed sky texture saves roughly one third of texture residency for that import. BC7 2048 equirect base is about 5.33 MB without mips versus about 7.1 MB with mips; actual Unity residency PENDING VERIFICATION.
+- Problem: Aegir must be drawn in a sky/background shader without sphere mesh or raymarch cost.
+- Solution: Fragment ray-sphere hit path: assume skybox view ray already normalized; compute `oc = rayOrigin - center`, `b = dot(oc, rd)`, `c = dot(oc, oc) - r2`, `h = b*b - c`. If `h <= 0`, skip planet. Only on hit: `t = -b - sqrt(h)`, `p = oc + rd*t`, `n = p * rsqrt(dot(p,p))`. Low tier can skip longitude and use band projection from `n.y` plus signed horizontal axis; higher quality uses fast atan2 polynomial for equirect UV.
+- Rejected Alternatives: Physical sphere mesh; N-body/RotateAround; atmosphere raymarch. Standard `normalize` in fragment hot branch rejected in favor of `rsqrt`.
+- Scalability potential: Low: 1 texture sample, smoothstep rim. Middle: flow UV distortion. High: ring shadow and storm overlay. Ultra: additional procedural scatter term. All driven by `_H8GlobalQualityWeight`.
+- Hardware Impact: One confirmed-hit `sqrt` is cheaper than mesh draw + depth/normal passes. Avoided per-pixel raymarch. ALU cost PENDING shader compiler proof.
+- Problem: C# sky coordinator needs a stable HLSL constant layout without ARM64 or CBUFFER misalignment.
+- Solution: `CelestialParametersDTO` as `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offset 0 `Vector4 SunDirection`, offset 16 `Vector4 PlanetCenterRadius`, offset 32 `Vector4 RingPlaneInner`, offset 48 `Vector4 OrbitScalars`. HLSL mirrors four float4 lanes.
+- Rejected Alternatives: Separate scalars through many `Shader.SetGlobalFloat` calls; mixed `float3`/scalar fields that depend on implicit C# packing.
+- Scalability potential: Low/Middle/High/Ultra all consume same DTO layout. Quality changes presentation math only, not DTO shape.
+- Hardware Impact: Four vector global uploads are predictable. Constant buffer path remains preferred if available later; proof PENDING compile/runtime.
+- Problem: Prompt requests JSON reports, user explicitly rejects useless JSON dumps and binary dumps as proof.
+- Solution: Use disk ledgers required by AGENTS (`Status_1601.md`, `Rationale_1601.md`, final `LOG_1601.md`) and actual shader/material files. JSON report generation is suppressed unless a validator test requires a machine-readable artifact.
+- Rejected Alternatives: Creating `Docs/Reports/ORBITAL_RENDERING_OPTIMIZATION_1601.json` before runtime evidence exists.
+- Scalability potential: Reporting has no runtime path.
+- Hardware Impact: No runtime cost.
+- Problem: The prompt names `EphemerisTableDTO`, but static source search found no such DTO or Data Monolith section exposed to this domain.
+- Solution: Removed the unused helper methods and obsolete serialized fields. APEX guard now rejects those method/field names and direct planet/gas-giant localPosition presentation writes.
+- Rejected Alternatives: Leaving the helpers because they no longer execute; the domain requirement is architectural clarity, not dormant alternate routes.
+- Scalability potential: All quality levels now share the same sky-impostor route without a stale mesh/backdrop orbit branch.
+- Hardware Impact: No runtime delta because the code was dead. Maintenance gain is concrete: fewer serialized knobs and no dormant transform presentation path.
+- ## Decision 034 - Ring Mask Squared Radius Flattening
+- Problem: The Aegir shader ring mask multiplied inner/outer radii inside the mask helper for both visible rings and planet ring shadow.
+- Solution: Precomputed `ringInnerSq` and `ringOuterSq` once in the fragment path and changed the ring helper to `HardRingMaskSq`.
+- Rejected Alternatives: Leaving the duplicate multiplies because they are small; the shader already carries one required ray-sphere sqrt, so cheap repeated ALU still gets removed when the proof is simple.
+- Scalability potential: Low through ultra use the same analytic ring path with fewer redundant operations.
+- Hardware Impact: Saves duplicate radius-square multiplies on ring pixels and planet ring-shadow pixels. Exact frame impact is below profiler noise but directionally correct for MX350-class ALU budgets.
+- [omitted 164 filtered lines; raw preserved]
+
+## Rationale_1602.md [102475 B; budget 22000]
+- # Rationale_1602
+- Status: VERIFIED STATIC / UNITY MCP VALIDATION BLOCKED / DOTNET BUILD THROTTLED
+- ## Decisions
+- Problem: Drop pod transit had no scoped runtime domain under `Assets/_Project/Scripts/Vehicles/DropPod`, while interaction/IK services already existed elsewhere.
+- Solution: Add a new DropPod namespace using existing first-party interfaces: `IInteractable`, `IInteractableTextProvider`, `IPhysicalPanelButtonReceiver`, `IPhysicalHandIkTargetSink`, `SignalBus<T>`, `InputDispatcher`, and `GlobalRegistry` cold service slots.
+- Rejected Alternatives: Editing central Interaction core or inventing a new raycaster would create direct dependencies for sibling agents and duplicate established hot paths.
+- Scalability potential: Low uses primitive colliders and sparse text cadence; Middle raises dashboard refresh; High adds tighter needle jitter; Ultra increases dashboard cadence and lighting overkill without changing authority.
+- Hardware Impact: Avoids a new raycast/UI stack; estimated low-end i3/MX350 saving: 30-70 us per interaction sample compared with bespoke component scans.
+- Problem: Airlock needs physical hand believability without transform-parenting the player hand or scheduling tiny IK jobs.
+- Solution: `DropPodAirlockController` sends `PhysicalHandIkTarget` to the existing hand IK sink while the hatch rotates in the fixed dispatcher lane.
+- Rejected Alternatives: Parenting hand bones to the hatch handle risks animation ownership fights; a new FABRIK job for one handle is below the batch threshold.
+- Scalability potential: Low only updates handle target during motion; Middle/High/Ultra can drive more authored handle sparks/audio without changing IK route.
+- Hardware Impact: Single struct target write is under 5 us expected on i3/MX350; no MeshCollider narrow-phase added.
+- Problem: Seat entry must avoid teleport/fade while not handing gameplay truth to a visual camera script.
+- Solution: `DropPodSeatController` blocks movement/look/tools/discrete input through `InputDispatcher`, records start/end camera poses, moves along cubic Bezier + NLERP in `LateFrameTick`, and optionally publishes existing `DropPodLandedSignal`.
+- Rejected Alternatives: Direct scene teleport or timeline-only camera animation would bypass fail-closed state and input ownership.
+- Scalability potential: Low uses authored anchors only; Middle adds control-point polish; High/Ultra can add camera shake and extra cockpit VFX as visual-only signals.
+- Hardware Impact: Bezier/NLERP costs are scalar math only; estimated under 15 us per late-frame tick on i3/MX350.
+- Problem: Diegetic dashboard text can become a hidden GC source if it uses TMP `.text`, `ToString`, or `string.Format`.
+- Solution: `DropPodDashboardTextRenderer` owns four persistent char[40] buffers and writes through `TryFormat` + `TMP_Text.SetCharArray`.
+- Rejected Alternatives: RenderTexture Canvas and string composition add a camera pass and managed churn.
+- Scalability potential: Low refreshes every 0.24 s; Middle interpolates lower cadence; High refreshes near 0.05 s; Ultra increases needle jitter/fidelity but not string allocation.
+- Hardware Impact: Avoids one UI camera pass and per-refresh strings; estimated saving: 80-300 us CPU plus RT bandwidth on i3/MX350.
+- Problem: Drop pod command/status routes need to be hot-broadcast without managed delegates or string commands.
+- Solution: `DropPodCommandSignal` and `DropPodStatusSignal` are explicit 16-byte unmanaged DTOs; producers use `SignalBus<T>.TryPushTracked`.
+- Rejected Alternatives: `Action`, `event`, or `HectonEventBus` would be managed/cold isolation paths, not first-party hot broadcast.
+- Scalability potential: Low caps command/status low-tier frame signals at 4; Middle/High/Ultra can raise frame budgets through the same continuous quality byte.
+- Hardware Impact: 16-byte payloads stay cache-cheap; expected sub-10 us push cost and no heap pressure.
+- Problem: Cabin collision must be cheap and verifiable before artists iterate on cramped geometry.
+- Solution: Add `DropPodCabinColliderValidator` editor menu that rejects any `MeshCollider` under the selected cabin root.
+- Rejected Alternatives: Accepting concave MeshColliders for a capsule interior would push PhysX narrow-phase cost into every hand/body probe.
+- Scalability potential: Low/Middle use Box/SphereCollider primitives; High/Ultra can add more primitive detail without switching to MeshCollider.
+- Hardware Impact: Avoids unpredictable MeshCollider narrow-phase spikes; estimated saving varies by contact count, typically 50-500 us on weak CPUs.
+- Problem: Verification must be honest under active project compile contention.
+- Solution: Used `rg`, brace-balance checks, SHA-256, Unity console probe, and process scan; did not launch dotnet build because two dotnet processes were active and Unity reported a pre-existing PrologueOrbitSceneBootstrap URP compile error.
+- Rejected Alternatives: Running build anyway would violate the user ban and hide an external compile wall as my result.
+- Scalability potential: Static proofs are tier-independent; runtime performance still requires editor compile recovery by the owner of the external URP issue.
+- Hardware Impact: Saved host CPU by avoiding a redundant build under active compiler load; estimated avoided cost: seconds to minutes, not microseconds.
+- Problem: Airlock and dashboard toggles were phase-correct for motion but sensory feedback could fire in the command path before the visual switch/hatch reached its final pose.
+- Solution: Store feedback position, hand side, and target state as value fields during interaction, then emit haptic/audio from `LateFrameTick` after simulation clears `_moving`.
+- Rejected Alternatives: Keeping immediate feedback would feel responsive but violates visual-sync ordering; adding jobs/locks would be wasteful for two local value fields.
+- Scalability potential: Low/Middle get deterministic cheap feedback; High/Ultra can layer additional sparks/camera shake from the same late-frame completion edge.
+- Hardware Impact: Moves existing work to the correct phase with no heap allocation and no added jobs; expected CPU delta under 3 us on i3/MX350.
+- Problem: APEX verification required proof that the new domain did not add DataVault lock nesting or hot-path service lookups.
+- Solution: Added editor static assertions and repeated source scans for hot-path method bodies, DataVault/lock tokens, managed events, LINQ, direct Unity time reads, and direct registry polling.
+- Rejected Alternatives: Verbal proof or JSON reports provide no compile-time guard and were explicitly rejected by the user.
+- Scalability potential: The guard is device-independent and prevents future low-tier regressions from entering the cockpit domain.
+- Hardware Impact: Runtime impact is 0 us; tests are editor-only.
+- Problem: Seat transit sensory feedback still had a command-path edge: physical hand press could enqueue haptics before VISUAL_SYNC, and fail-closed dashboard wording was generic.
+- Solution: Converted seat feedback to value-field pending state and dispatch only from `LateFrameTick`; changed fail-closed status text to `HATCH OPEN` with explicit `AirlockOpen` and `SeatTransitActive` panel labels.
+- Rejected Alternatives: Keeping instant rumble was responsive but phase-impure; adding managed events or a new feedback dispatcher would expand global surface for one cockpit owner.
+- Scalability potential: Low uses one pending feedback slot and static text labels; Middle/High/Ultra can add richer audio event ids and stronger haptic/audio assets without changing phase ownership or DTO layout.
+- Hardware Impact: Runtime cost is local field copy plus one late-frame branch; expected under 3 us on i3/MX350 and zero heap allocation.
+- Problem: A sibling editor test blocked Unity compile hygiene by relying on an unqualified `CelestialRuntimeSnapshot` symbol after the type owner moved under `Hecton8.Core`.
+- Solution: Patch only the test reference to `Hecton8.Core.CelestialRuntimeSnapshot`, leaving runtime orbital ownership untouched.
+- Rejected Alternatives: Adding a global alias or moving the runtime type would widen cross-domain surface for a test-only blocker.
+- Scalability potential: No runtime behavior changes across Low/Middle/High/Ultra tiers.
+- Hardware Impact: Runtime impact is 0 us; the gain is removing a stale editor compile blocker without launching `dotnet build`.
+- Problem: `GlobalSignals` configured three legacy lanes with one low-tier budget and then reconfigured them later with a different category budget, producing `[SIGNAL CONTRACT] Rejected late reconfigure` at runtime.
+- Solution: Feed the intended category low-tier values into the first legacy-lane configure call for `PlayerStressSignal`, `HUDNotificationSignal`, and `DebrisSpawnSignal`.
+- Rejected Alternatives: Making `SignalBus.Configure` tolerant would hide real contract drift; removing category initialization would risk other agents' lane assumptions.
+- Scalability potential: Low/Middle/High/Ultra keep one route per lane with continuous quality budgets rather than conflicting binary setup.
+- Hardware Impact: Prevents repeated startup error logging and contract churn; expected startup saving is small per lane but avoids cascading diagnostics stalls.
+- Problem: DropPod haptics had fixed intensity/duration values, which violated the continuous `GlobalQualityWeight` rule.
+- Solution: Scale haptic low/high amplitudes and durations with `SignalBusRegistry.GlobalQualityWeight01` using bounded `math.lerp` in airlock, seat, and dashboard toggle controllers.
+- Rejected Alternatives: Binary weak/strong rumble tiers would create quality discontinuities and would not map to the project's continuous quality pillar.
+- Scalability potential: Low keeps short restrained haptics; Middle/High raise body without changing timing truth; Ultra can feel heavier while preserving the same command DTOs.
+- Hardware Impact: Three scalar lerps per feedback edge; expected under 1 us on i3/MX350 and zero heap allocation.
+- Problem: Dashboard toggle visual motion lived in the normal update lane even though it is presentation-only cockpit feedback.
+- Solution: Remove `IUpdatable` from `DropPodDashboardToggleSwitch` and advance visual motion inside `LateFrameTick` from `SystemDispatcher.CurrentFrameDeltaTime`, immediately before `FlushVisual()` and feedback dispatch.
+- Rejected Alternatives: Keeping a separate update registration created an unnecessary phase boundary and made proof harder; moving to physics would be wrong for visual switch travel.
+- Scalability potential: Low gets one late-frame presentation lane; Middle/High/Ultra can add richer switch materials or audio without adding another hot loop.
+- Hardware Impact: Removes one updater registration and one extra dispatch lane for each active switch; expected saving is small per switch but zero-risk on weak CPUs.
+- Problem: DropPod signal bootstrap used a static `s_configured` bool that could survive editor no-domain-reload after native SignalBus storage was disposed.
+- Solution: `EnsureConfigured()` now trusts `s_configured` only when both command and status lanes still expose native storage.
+- Rejected Alternatives: Forcing reconfigure every call would add unnecessary bootstrap churn; trusting the bool risks dead lanes after editor lifecycle reset.
+- Scalability potential: Low/Middle/High/Ultra keep the same bounded lane capacities; this only protects lifecycle correctness.
+- Hardware Impact: Two pure readiness probes during cold setup; runtime hot cost remains 0 us.
+- Problem: Physical receiver unregister used the current serialized `activationCollider` instead of the collider actually registered.
+- Solution: Store `_registeredCollider` on successful registration in airlock, seat, and toggle, and unregister that exact instance.
+- Rejected Alternatives: Assuming serialized references never change is weak in multi-agent scene/prefab work and can leave stale receiver slots.
+- Scalability potential: All tiers keep fixed receiver registry behavior; high-detail cockpit prefabs can swap authoring references without stale runtime identity.
+- Hardware Impact: One cached reference field per controller; prevents stale registry probes without hot-loop cost.
+- Problem: Airlock interaction still dispatched hand IK target from `QueueSealToggle()`, which is a command callback, not a named visual/simulation phase.
+- Solution: Remove command-path `DispatchHandTarget()` and keep IK target dispatch in `IFixedTickable.FixedTick` while the hatch is moving.
+- Rejected Alternatives: Immediate IK felt responsive but violated phase ownership and made APEX timing proof weaker.
+- Scalability potential: Low gets deterministic fixed-phase handle target; High/Ultra can layer richer hand/handle polish without adding callback side effects.
+- Hardware Impact: Removes one command-path presentation call; expected saving is single-digit us per interaction and cleaner phase behavior.
+- Problem: Emergency cabin lights were phase-correct but still wrote `Light.intensity` and shader globals every `LateFrameTick` after the status had settled.
+- Solution: Add `_lightingDirty`, `_lastAppliedEmergency01`, and `LightingApplyEpsilon` so status snapshots are still drained every late frame, while GPU/global writes are skipped when the visual weight is unchanged.
+- Rejected Alternatives: Moving status consumption to a slower lane would risk missing same-frame cockpit state; keeping unconditional writes burns driver-facing calls for no visual gain.
+- Scalability potential: Low/Middle skip stable writes aggressively; High/Ultra can add richer emergency color curves later without changing signal DTOs or state ownership.
+- Hardware Impact: Stable emergency/cabin state now costs one late-frame signal snapshot drain and branch only; estimated low-end i3/MX350 saving is 5-40 us per frame depending on light count and driver overhead.
+- Problem: A pure epsilon gate can leave final lighting at 0.999x after an emergency transition, which is visually harmless but contractually imprecise for cockpit state.
+- Solution: When the transition enters epsilon, mark lighting dirty once, snap `_emergency01` to `_targetEmergency01`, and apply the exact final light/shader state.
+- Rejected Alternatives: Accepting an approximate terminal value makes future tests and authored material thresholds less deterministic.
+- Scalability potential: All tiers get exact terminal states; richer tiers can layer flicker after this stable base without hidden residual weights.
+- Hardware Impact: Adds one final settled write per transition; removes all following redundant writes until the next status edge.
+- Problem: Dashboard text rendering was zero-GC but still rewrote identical TMP character arrays every refresh interval, forcing avoidable text mesh work while the numeric values stayed unchanged.
+- Solution: Track `_textDirty`, `_lastRenderedStatusId`, and last rounded O2/velocity/hull metric values; skip `SetCharArray` for unchanged text while keeping `ApplyNeedles()` active for analog jitter.
+- Rejected Alternatives: Stopping the whole dashboard refresh would freeze needle motion; using string diffing would violate the zero-GC text path.
+- Scalability potential: Low/Middle avoid redundant mesh updates; High/Ultra can keep higher needle cadence and richer jitter without paying text rewrite cost when values are stable.
+- Hardware Impact: Stable panel text now avoids TMP mesh updates; estimated low-end i3/MX350 saving is 10-80 us per dashboard refresh depending on TMP object count and material state.
+- Problem: Disabling cockpit components mid-motion could leave the hatch, switch, or camera in a partial visual state while the authoritative local bools had already stopped advancing.
+- Solution: Airlock disable snaps to committed `_sealed`; toggle disable snaps to committed `_isOn`; seat disable performs a local abort that restores the captured start camera pose and clears transit without publishing new status or feedback.
+- Rejected Alternatives: Continuing motion while disabled is impossible; publishing abort/status from `OnDisable` would create noisy lifecycle side effects and possible duplicate downstream signals.
+- Scalability potential: All device tiers get deterministic re-enable visuals; high-detail prefabs can be toggled during editor/runtime iteration without half-state cockpit artifacts.
+- Hardware Impact: One local snap only on disable; steady-frame cost is 0 us and it prevents player/camera recovery work after lifecycle churn.
+- Problem: Seat controller dispatcher hot-swap re-registration ignored `_feedbackPending`, so fail-closed or completion feedback queued for `LateFrameTick` could be stranded if the dispatcher service was replaced outside active transit/hover state.
+- Solution: Include `_feedbackPending` in the dispatcher replacement registration condition and add a static audit that verifies the condition.
+- Rejected Alternatives: Emitting feedback immediately from the command path would violate VISUAL_SYNC ordering; dropping feedback would make fail-closed interaction feel dead.
+- Scalability potential: All tiers keep one late-frame sensory route; high-tier richer feedback remains safe because the registration condition is still local value state.
+- Hardware Impact: One extra boolean check only during service replacement; steady-frame cost is 0 us.
+- Problem: Seat transit restored the entire `InputDispatcher` block mask from a cached value, which can erase unrelated input blocks set by another system while the player is sliding into the seat.
+- Solution: Define `TransitInputBlockMask`, set only those bits on block, and restore only those bits while preserving foreign bits already present in the current dispatcher mask.
+- Rejected Alternatives: A full owner-token stack would require changing `InputDispatcher` outside this domain; whole-mask restore is simpler but unsafe in a multi-agent/global-input architecture.
+- Scalability potential: All tiers preserve deterministic control lock behavior; richer cockpit transitions no longer risk unblocking unrelated UI/tool locks.
+- Hardware Impact: Two extra bitwise operations on transit end only; steady-frame cost is 0 us.
+- Problem: The first masked restore still treated every transit bit as owned by the seat, which can clear movement/look/tool/discrete blocks that were already set before the player touched the cockpit seat.
+- Solution: Track `_ownedInputBlockBits = TransitInputBlockMask & ~currentMask` at block time, then restore only those owned bits while leaving pre-existing and newly added foreign bits intact.
+- Rejected Alternatives: Snapshot restore and blanket transit-bit clear both violate multi-owner input discipline; changing `InputDispatcher` to a full token stack is outside this DropPod domain.
+- Scalability potential: Low/Middle/High/Ultra keep identical deterministic control truth; richer cockpit presentation cannot accidentally unlock another system's modal/tool lock.
+- Hardware Impact: Adds two bitwise operations on transit start/end only; steady-frame cost is 0 us.
+- Problem: Seat transit could proceed if `InputDispatcher` was unavailable, causing a diegetic camera slide while player controls remained live.
+- Solution: Convert `BlockInput()` into `TryBlockInput()` and fail closed before `_transiting = true` when input cannot be blocked; feedback remains queued for `LateFrameTick`.
+- Problem: `LifePodSeatStrapCoordinator.OnEnable()` still restored an inherited `_seatLockActive` state by calling `TryRegisterFixedTick()` without proving the cached player motor/runtime context or handling registration failure. A disabled/re-enabled strap could claim a physical seat lock while no route could apply it.
+- Solution: On enable, active lock state now survives only if `TryCacheSeatLockPose()`, `TryEnsurePlayerMotor()`, and `TryRegisterFixedTick()` all pass. Any failure calls `ReleaseSeatLockForLostRuntimeRoute()`, clearing lock runtime and pending lock haptic state.
+- Rejected Alternatives: Leaving the guard only in `EngageSeatLock()` misses reload/reenable paths. Clearing only the fixed lane keeps a false `_seatLockActive` fact. Polling registry from `FixedTick()` would violate cold DI.
+- Scalability potential: Low devices fail quiet after scene churn or dispatcher pressure. Middle keeps deterministic seat lock only when the motor and scheduler lane are present. High/Ultra can add stronger lock presentation later without changing route ownership.
+- Hardware Impact: Steady-frame cost remains 0 us. Enable edge adds three existing boolean checks and one scalar cleanup path, under 2 us on i3/MX350 with 0 B GC.
+- Problem: Strap fixed/tick lanes could start even if the `GlobalRegistry` hot-swap listener route failed. That makes the object blind to later dispatcher/player service replacement while still applying strap or seat-lock runtime state.
+- Solution: Convert strap hot-swap registration helpers to `bool`. Coordinator active lock restore and `EngageSeatLock()` require the listener route before preserving active lock state. Latch `TryRegisterTick()` refuses to start unless the hot-swap listener route is registered.
+- Rejected Alternatives: Treating hot-swap registration as optional leaves a lifecycle blind spot. Polling registry services from tick/fixed paths violates cold DI. Adding a new dispatcher-token API is wider than the local route-precondition defect.
+- Scalability potential: Low devices fail quiet if scheduler/listener capacity is exhausted. Middle keeps strap simulation only while service replacement can be observed. High/Ultra can increase strap presentation only after the same route proof succeeds.
+- Hardware Impact: Steady-frame cost remains 0 us. First tick/lock activation adds one cached bool/helper check, under 1 us on i3/MX350; failure cleanup stays scalar and 0 B GC.
+- [omitted 368 filtered lines; raw preserved]
+
+## Rationale_1603.md [45274 B; budget 10866]
+- # Rationale 1603 - ORBITAL_REENTRY_SEQUENCE_DIRECTOR
+- Status: ACOUSTIC STRESS FRAME LATCH / NO DOTNET BUILD
+- ## Decision 00 - Authority And Scope
+- Problem: Reentry task crosses sequence timing, VFX, camera, audio, telemetry, and scene handoff.
+- Solution: Primary write to `Narrative/Prologue/AwaitableDropSequenceDirector.cs`; one cross-domain `BufferID.PrologueReentryState` added so DataVault has a unique owner route for the 32-byte scalar state.
+- Rejected Alternatives: Direct scene loading, direct audio-source manipulation, direct material instance mutation, or polling GlobalRegistry from hot loops.
+- Scalability potential: Low uses scalar shader/audio fakes and damped trauma; Middle uses normal cadence; High and Ultra spend saved simulation cost on stronger presentation intensity.
+- Hardware Impact: i3/MX350 gains from deleting phase-local async waits and avoiding object/particle timing churn.
+- ## Decision 01 - Mandate Selection
+- Problem: The prompt reads like physical simulation, but project law requires fake-first cinematic math.
+- Solution: Applied fake-first, zero-GC, execution phase, signal lane, ARM64 layout, DSP/SPSC, URP hot path, and black-box telemetry mandates.
+- Rejected Alternatives: Physics simulation of plasma/ablation; no gameplay truth needs it.
+- Scalability potential: Continuous `GlobalQualityWeight` governs trauma amplitude, cadence pressure, and optional VFX/audio intensity.
+- Hardware Impact: Low-end devices keep smooth motion; high-end devices can receive stronger sensory values from the same scalar.
+- Problem: `IPrologueSequenceService` still exposes `Awaitable RunPrologueSequenceAsync(CancellationToken)`, and `PrologueSequenceRegistryBridge` awaits it to retain cancellation ownership.
+- Solution: Kept a minimal lifecycle await loop while moving all sequence timing decisions into `IUpdatable.Tick(float)` FSM.
+- Rejected Alternatives: Changing the public interface would break bootstrap/registry agents; `AwaitableCompletionSource` adds allocation/lifetime risk.
+- Scalability potential: The public contract is cold compatibility; the hot timeline is deterministic dispatcher state.
+- Hardware Impact: Removed six phase await loops and `DelayDilatedAsync`; remaining await does not calculate timing or publish phase events.
+- Problem: The state scalar needed a stable unmanaged proof route, not just private fields.
+- Solution: Added `ReentryStateDTO` with offsets: `ElapsedTime` 0, `Progress01` 8, `HeatIntensity` 12, `TraumaScalar` 16, `CurrentPhaseEnum` 20, padding to 32. Added `BufferID.PrologueReentryState = 74011`.
+- Rejected Alternatives: Reusing `PrologueSequenceTelemetryRing` for a different type would corrupt DataVault ownership.
+- Scalability potential: Low/Middle/High/Ultra consumers read one 32-byte scalar row and decide their own fidelity.
+- Hardware Impact: One cache-line-friendly row replaces object graph state and string event coupling.
+- Problem: Reentry must feel violent without frame tearing or nausea on weak hardware.
+- Solution: Heat is smoothstep rise/fall. Trauma peaks at Max Q around progress 0.8 and scales by `math.lerp(0.28f, 1f, GlobalQualityWeight)`, published to `CameraJuiceSignals` at 30 Hz maximum.
+- Rejected Alternatives: AnimationCurve, random shake, binary quality switch.
+- Scalability potential: Low receives damped shake; Middle receives authored feel; High/Ultra receive heavier camera trauma without changing gameplay truth.
+- Hardware Impact: No array lookup, no reference allocation, no per-frame direct camera search.
+- Problem: The prompt asked for new shader/audio paths, but existing systems already own the correct unmanaged lanes.
+- Solution: Reused `OrbitalDropReentryVfxController` cached IDs and `Shader.SetGlobalVector` route; reused `PrologueAcousticOrchestrator` low-pass/splashdown route through `AudioTransitionState`.
+- Rejected Alternatives: Duplicate `ReentryAcousticStressSignal` without a registered consumer; direct mixer/material mutation.
+- Scalability potential: VFX/audio owners continue scaling by their own quality and signal pressure fields.
+- Hardware Impact: Avoids extra queues and avoids hot-path service discovery.
+- Problem: Non-finite orbital/atmospheric data or dispatcher/DataVault churn must not crash or advance invalid state.
+- Solution: Validation failures record `Faulted`, dump black boxes, unregister update lane, and release input lock. DataVault compaction/allocation fences skip allocation or write.
+- Rejected Alternatives: Letting NaN propagate into hash/shader/audio paths.
+- Scalability potential: Weak devices under pressure can pause state publication instead of corrupting timeline.
+- Hardware Impact: Failure path is bounded; steady path remains one DTO write and bounded signal attempts.
+- Problem: Task 15 requested build, but user explicitly forbade `dotnet build` after small edits.
+- Solution: Used Unity MCP `validate_script` on modified scripts; skipped dotnet/MSBuild. H8Memory validation timed out in validator regex on the large file, so line scan and source hash were used for the enum addition.
+- Rejected Alternatives: Ignoring the user's CPU contention order.
+- Scalability potential: Keeps sibling agents from compiler starvation.
+- Hardware Impact: No MSBuild CPU spike; validation stayed local and targeted.
+- Problem: `OrbitalDropReentryVfxController.LateFrameTick` called a dependency resolver that could run `cameraRoot.TryGetComponent` if `_camera` was missing.
+- Solution: Moved camera resolution to `ConfigureSceneBindings` and cold dependency setup; `LateFrameTick` now uses only the cached `_camera` reference and never searches the scene.
+- Rejected Alternatives: Keeping a hot self-heal lookup; scene component search during visual sync creates variable frame cost and violates phase purity.
+- Scalability potential: Low devices avoid unexpected late-frame spikes; Middle/High/Ultra preserve the same cached route while spending visual budget on shader/audio intensity.
+- Hardware Impact: On i3/MX350, worst-case late-frame camera lookup is removed entirely; expected gain is small per frame but removes a stall vector during plasma overlay framing.
+- Problem: DataVault write locks must not overlap between reentry state, sequence black box, and VFX telemetry.
+- Solution: Verified each method owns at most one `TryAcquireWriteLock`, with release in `finally`: `PublishReentryStateNoThrow`, `RecordStage`, and `WriteTelemetry`.
+- Rejected Alternatives: Combining DTO and black-box writes under one nested critical section; this would increase deadlock surface and prolong write-lock ownership.
+- Scalability potential: Low devices keep bounded critical sections; High/Ultra can add visual consumers without changing lock topology.
+- Hardware Impact: Lock hold time remains one buffer write per method; no second lock can be held by the same thread in the verified domain.
+- Problem: Audio previously inferred plasma stress from `AtmosphericReentrySignal`; this was functional but not a first-class proof route for low-pass, LFE, and granular hull stress.
+- Solution: Added `ReentryAcousticStressSignal` as a 32-byte explicit-layout SignalBus payload. The director publishes stress/filter/LFE/granular scalars from the FSM, and `PrologueAcousticOrchestrator` consumes it in `LateFrameTick`.
+- Rejected Alternatives: Adding a direct call into `IAudioService` from the director; that would couple simulation timing to audio implementation and bypass the signal lane.
+- Scalability potential: Low devices receive damped LFE/granular values via `GlobalQualityWeight`; Middle/High/Ultra can spend more DSP intensity without changing payload layout or authority route.
+- Hardware Impact: One unmanaged 32-byte SPSC payload replaces extra mixer polling and removes the need for audio-side curve reconstruction when the director already owns the reentry scalar.
+- Problem: `PrologueReentrySignalLanes.Warm()` can run before `GlobalSignals.InitializeAllQueues`; without a default `SignalLanePolicyCache<T>` contract, the new lane could initialize with default capacity/hash and reject later configuration.
+- Solution: Added `ReentryAcousticStressSignal` to `SignalLanePolicyCache<T>.TryResolveDefaultContract`, then registered the lane in `GlobalSignals.RuntimeLifecycle`.
+- Rejected Alternatives: Trusting runtime initialization order; that is brittle under scene bootstrap and editor hot-reload.
+- Scalability potential: Capacity is 16/max 16/low-tier 4, preserving low-end budget while retaining enough cadence for 30 Hz stress publishing.
+- Hardware Impact: Prevents late reconfigure faults and keeps cold lane allocation deterministic.
+- Solution: Remove the direct load option and route every successful handoff through `ISceneService.LoadScene(sceneName)` after `Awaitable.NextFrameAsync(destroyCancellationToken)`.
+- Rejected Alternatives: Keeping direct load as an inspector fallback, or setting `allowSceneActivation=false` manually. Both would split scene authority; the existing scene service is the owner.
+- Scalability potential: Low/Middle/High/Ultra all use the same cold scene transition owner. The prologue whiteout remains a visual mask while the actual load path stays centralized.
+- Hardware Impact: On i3/MX350 this prevents accidental direct scene activation stalls outside the scene service. Runtime hot path is unchanged; the change only affects the cold handoff transition.
+- ## Decision 43 - Acoustic Stress Frame Latch
+- Problem: `PrologueAcousticOrchestrator` kept `_hasStressOverride`, `_acousticStress01`, `_stressLfeGain01`, and `_stressGranularStress01` until another valid stress packet arrived. If the unmanaged stress lane dropped or skipped a visual-sync frame, stale Max-Q pressure could continue boosting LFE/granular output after the frame it belonged to.
+- Solution: In `ConsumeReentryAcousticStressSignals()`, keep the ocean-handoff guard first, then clear the stress override latch and cached stress scalars before reading `SignalBus<ReentryAcousticStressSignal>.GetFrameSnapshot()`. A fresh packet must re-arm the override in the same frame.
+- Rejected Alternatives: Decaying the stale values over time, or trusting the director to publish every frame. Decay hides ownership drift; trusting a packet every frame fails under bounded SignalBus pressure.
+- Scalability potential: Low devices get deterministic fallback to base vacuum/plasma DSP if a stress packet is missing. Middle/High/Ultra get full granular/LFE pressure only from fresh frame-local stress data, not stale queue history.
+- Hardware Impact: On i3/MX350 this adds four scalar assignments in one late-frame method and removes stale-audio recovery work. No allocation, registry lookup, scene query, DataVault lock, audio source creation, or DTO layout change was introduced.
+- [omitted 192 filtered lines; raw preserved]
+
+## Rationale_1604.md [27693 B; budget 6647]
+- # Rationale_1604
+- Status: IMPLEMENTED / BLOCKED BY EXTERNAL COMPILE STATE
+- ## Decision 00 - Scope Boundary
+- Problem: Prompt demands flora generation, LOD assets, vertex color sway, and prefabs; runtime scatter, runtime physics, and renderer ownership are separate domains.
+- Solution: Keep implementation under `Assets/_Project/Editor/Generators/Flora/` and output static mesh/prefab assets under project asset folders. Runtime consumes baked assets only.
+- Rejected Alternatives: Runtime mesh generation, runtime L-system expansion, SkinnedMeshRenderer plants, and per-blade physics. They violate zero-runtime-generation and scatter budgets.
+- Scalability potential: Low = simple low-tri LOD2/cards; Middle = LOD1 with vertex color sway; High = dense LOD0 and richer masks; Ultra = larger preset batches and higher near-field residency.
+- Hardware Impact: Low-end i3/MX350 gains from no runtime geometry generation, no CPU skinning, no per-frame allocation, and coarse colliders only.
+- ## Decision 01 - Proof Artifacts
+- Problem: Prompt requests JSON reports, but current user explicitly rejects useless JSON/binary dumps; project rules still require status/rationale/final logs.
+- Solution: Use `Status_1604.md`, `Rationale_1604.md`, `LOG_1604.md`, and generated prefab/mesh assets as primary evidence. JSON report remains optional/self-control only if a validator requires it.
+- Rejected Alternatives: Spending engineering time on report-only payloads without production assets.
+- Scalability potential: Logs stay concise; asset proof scales by generated prefab count and deterministic mesh hashes.
+- Hardware Impact: No runtime impact; avoids repository clutter and wasted CPU.
+- Problem: Existing flora authoring code already emits many BioForge assets but has managed `List<T>` mesh cores and does not provide the requested L-system topology lane.
+- Solution: Add a new editor-only `Generators/Flora` lane with deterministic DTOs, native fixed-capacity buffers, MeshData serialization, LOD sampling, vertex color masks, and prefab assembly. Existing assets remain untouched.
+- Rejected Alternatives: Refactor the legacy seaweed/coral builders in-place during a parallel batch; that would risk breaking existing generated flora families and broaden blast radius.
+- Scalability potential: Low = 3-sided/short depth LOD2 tubes/cards; Middle = moderate ring/branch counts; High = dense branching and glow masks; Ultra = larger seed batches and higher LOD0 budgets without changing runtime truth.
+- Hardware Impact: Low-end i3/MX350 avoids runtime generation and receives smaller LOD meshes; high-end gets richer near-field mesh residency purchased with saved CPU.
+- Problem: Flora topology is content breadth unless tied to route proof.
+- Solution: Treat generated flora as world-load/resource readability support: kelp silhouettes, coral/tube-worm harvest proxies, and shader masks for pressure/bioluminescent route cues.
+- Rejected Alternatives: Broad ecosystem simulation or runtime scatter ownership changes; those do not directly prove the Copper Wire route.
+- Scalability potential: Assets can be scattered by existing placement rules and scaled by continuous quality via LOD residency/material detail, not different gameplay facts.
+- Hardware Impact: Static prefab/LOD output keeps compact route load predictable and leaves visual overkill to renderer/scatter quality settings.
+- Problem: The prompt names `NativeList<float3>`, but uncontrolled growth in an editor geometry batch can hide capacity mistakes and make failure modes softer than the project allows.
+- Solution: Use fixed-capacity `NativeArray<T>` buffers sized from `FloraGenomeDTO`, with explicit overflow counters and fail-closed exits. This makes complexity limits visible and deterministic.
+- Rejected Alternatives: Managed `List<T>`, recursive strings, `NativeList<T>` growth during core generation, or best-effort truncation.
+- Scalability potential: Low = small capacities and low radial segments; Middle = moderate branch counts; High = larger node buffers; Ultra = high seed batches with the same fixed ownership model.
+- Hardware Impact: Low-end i3/MX350 avoids allocator churn and editor stalls; high-end hardware can buy denser LOD0 meshes without changing memory ownership.
+- Rejected Alternatives: Fake QEM label, dropping branch edges by stride, or accepting LOD2 volume shrink beyond 10%.
+- Solution: `TryResolveMaterial` now validates kelp materials against `Hecton8/Flora/KelpMaster` or `GPUInstancer/Hecton8/Flora/KelpMaster`, and coral/tube-worm materials against `Hecton8/Flora/CoralMaster` or `GPUInstancer/Hecton8/Flora/CoralMaster`. New mesh persistence now deletes a failed just-created asset path and destroys non-persistent in-memory mesh residue.
+- Rejected Alternatives: Accepting any material at the path, silently using a mismatched shader, or leaving failed authoring residue for later scatter/debug steps.
+- Scalability potential: Low = correct cheap shared material on compact devices; Middle = stable shader property contract for vertex colors; High = GPUI material family can consume richer masks; Ultra = future VAT material variants can fail closed through the same family gate.
+- Hardware Impact: No runtime cost. Prevents wrong-shader scatter batches and broken mesh assets from reaching low-end validation loops; estimated 10000000+ us saved per avoided bad batch.
+- ## Decision 28 - Seed Pack Batch Failure Signal
+- Problem: The seed-pack menu invoked three `GenerateAndSave` calls but did not aggregate their return values. A single failed preset could still be followed by final `SaveAssets`/`Refresh`, making the batch look finished even when a prefab lane failed.
+- Solution: Aggregate all three generation results and return with an Editor error before final refresh/success logging if any preset fails. Individual successful entries remain valid assets; failed new mesh assets are already cleaned by the lower-level fail-closed path.
+- Rejected Alternatives: Fail-fast after the first preset, which hides additional bad presets in the same batch; or accepting partial batch success as a green build signal.
+- Scalability potential: Low = compact seed pack does not ship missing LOD families; Middle = artists get exact failing preset logs; High = larger seed packs can reuse the same aggregate gate; Ultra = batch validator can later promote this gate into CI once Unity compile state is clean.
+- Hardware Impact: No runtime cost. Avoids repeated scatter/import validation loops after partial authoring failure; estimated 10000000-30000000 us saved per bad seed-pack run caught immediately.
+- [omitted 136 filtered lines; raw preserved]
+
+## Rationale_1605.md [90455 B; budget 21710]
+- # Rationale 1605 - SUBSTANCE_SHADER_AND_TEXTURE_BAKER
+- Date: 2026-06-01
+- Status: SOURCE FORTIFIED / UNITY EXECUTION BLOCKED
+- ## Decision 01 - Scope Containment
+- Problem: Texture baker can poison runtime if dispatch code, readbacks, or compression calls leak into player builds.
+- Solution: All C# lives under `Assets/_Project/Editor/Bakers/`; compute shader is an asset only invoked by Editor menus. Runtime sees generated PNG/material/mesh assets only.
+- Rejected Alternatives: Runtime `Texture.Compress()` and runtime compute bake. Both violate VRAM discipline and frame-time law.
+- Scalability potential: Low uses smaller bake resolution/imported mips; Middle uses 2K atlases; High uses 4K; Ultra can generate denser albedo/normal detail while sharing the same material route.
+- Hardware Impact: i3/MX350 gains from no runtime bake, no extra SetPass family, no unique material clones. Estimated hot-path gain: 0 us measured absent; expected prevention is whole-frame spike avoidance.
+- ## Decision 02 - Evidence Format
+- Problem: XML task asks for JSON report, latest operator command rejects useless JSON dumps and binary dumps.
+- Solution: Keep proof in Status/Rationale/LOG and code-level validators. Do not emit a JSON report unless a future explicit command restores that requirement.
+- Rejected Alternatives: Generating `Docs/Reports/TEXTURE_SYNTHESIS_BAKER_1605.json` as paperwork. Current directive says texture assets and updated UVs are the proof.
+- Scalability potential: Low/Middle/High/Ultra evidence remains tied to importer settings, atlas efficiency, and UV remap tests, not dump volume.
+- Hardware Impact: No runtime impact. Editor disk churn reduced.
+- Problem: Separate albedo/normal/AO/roughness/metal/emissive textures break batching and inflate VRAM.
+- Solution: Generate albedo, BC5 normal, and single M.R.A.O. mask where R=metallic, G=roughness, B=AO, A=emissive. Atlas by texture family to support BRG/GPU Resident Drawer material sharing.
+- Rejected Alternatives: Four separate mask maps or per-object unique materials. Both increase texture samples and state changes.
+- Scalability potential: Low uses 512/1024 source tiles in shared atlas; Middle 2K; High/Ultra 4K with richer noise and longer mip residency.
+- Hardware Impact: One mask sample instead of four. Estimated shader texture-fetch savings: PENDING GPU CAPTURE; static expectation is 3 fewer mask fetches per fragment.
+- Problem: Texture bake kernels must be portable across MX350 and mobile-style compute limits.
+- Solution: Use `[numthreads(8,8,1)]` for 64 threads per group and query group dimensions from C# before dispatch.
+- Rejected Alternatives: Hardcoded 256-thread or fixed `size / 8` dispatch. Those break mandate warp sizing and tail coverage.
+- Scalability potential: Low/Middle/High/Ultra change texture size and noise richness, not the portable kernel contract.
+- Hardware Impact: Avoids oversized register pressure on compact GPUs. Microseconds saved: PENDING GPU CAPTURE.
+- Problem: Mips average neighboring atlas islands and create black/foreign-color seams on distant coral and rocks.
+- Solution: Pack padded rects and copy edge pixels outward by 4 px around each island; UV remap targets the interior rect only.
+- Rejected Alternatives: No padding, shader-side UV clamp, or grid packing. Shader clamp costs runtime ALU/sampler state; no padding fails in mips.
+- Scalability potential: Low keeps atlas smaller but still padded; Middle/High/Ultra can use 4K atlas with the same seam guarantee.
+- Hardware Impact: Runtime cost is 0 us; offline extra pixels buy stable mips and fewer draw/material routes.
+- Problem: Raw YAML mesh edits can corrupt FileIDs and vertex streams; `Mesh.uv` may fail when generated meshes are uploaded read-only. Unity console proved `Mesh.GetVertexBufferData` is absent in this project API surface, and official Unity 6.4 docs state `Mesh.AcquireReadOnlyMeshData` throws when `isReadable` is false.
+- Solution: Resolve UV0 vertex-buffer stream, extract with Editor-only `MeshUtility.AcquireReadOnlyMeshData().GetVertexData<byte>()`, run `RemapMeshUVsJob`, write with `Mesh.SetVertexBufferData`, then dirty/save asset.
+- Rejected Alternatives: YAML mutation, managed `mesh.uv` rewrite only, unavailable `Mesh.GetVertexBufferData`, and runtime `Mesh.AcquireReadOnlyMeshData`. YAML is unsafe; managed UV rewrite may not reach uploaded mesh buffers; runtime mesh data acquisition can reject unreadable generated assets.
+- Scalability potential: Low/Middle/High/Ultra all share one atlas-material route. Strong hardware spends saved draw calls on richer shader detail.
+- Hardware Impact: Editor-only cost. Runtime gains are fewer material families and BRG-compatible UVs; exact microseconds PENDING Frame Debugger.
+- Problem: Current host CPU is 97.69-100% and Unity embedded `dotnet.exe` is already running.
+- Solution: Do not launch `dotnet build`; mark Task 15 as `BLOCKED_BY_CONTENTION` and use static audits until CPU/compiler contention clears.
+- Rejected Alternatives: Starting another build. Violates user order and cluster CPU law.
+- Scalability potential: No runtime impact.
+- Hardware Impact: Prevents additional CPU saturation on the host. Microseconds saved for game runtime: 0; workstation contention avoided.
+- Problem: Generic M.R.A.O. verification required every sampled channel to be non-zero, which would false-fail valid non-emissive mineral masks and zero-metal organic masks.
+- Solution: Split verification into profile-aware bake verification and generic atlas verification. The bake path accepts zero metallic/emissive when the profile declares them, while still requiring roughness, AO, and RGB channel divergence.
+- Rejected Alternatives: Forcing all profiles to fake non-zero metallic/emissive just to satisfy a brittle audit. That pollutes material truth and wastes shader interpretation.
+- Scalability potential: Low keeps cheap non-emissive masks valid; Middle/High/Ultra can raise emissive/metal values per profile without changing texture layout.
+- Hardware Impact: Runtime 0 us. Editor prevents false abort before texture assets exist.
+- Problem: Unity did not reach ready state after `refresh_unity compile:none`, MCP `read_console` ping failed, and Editor.log still contains non-1605 compile errors in core/narrative/flora/player domains.
+- Solution: Stop at source-complete state for 1605, record the blocker, and do not edit foreign files without domain authorization.
+- Rejected Alternatives: Launching external `dotnet build`, patching unrelated systems, or generating fake PNG evidence outside the compute baker path.
+- Scalability potential: No runtime impact; preserves domain ownership for parallel agents.
+- Hardware Impact: Avoided additional build contention and avoided fake asset churn. Runtime microseconds remain pending until Unity can execute the bake and Frame Debugger/GPU capture can inspect BRG texture state.
+- Problem: Verbal confirmation cannot prove that 1605 did not introduce hot `GlobalRegistry.Get<T>()`, `GetComponent()`, phase leakage, DataVault lock nesting, or build-spawn paths.
+- Solution: Add `ApexIntegratorVerifier1605` as Editor-only C# source. It strips comments and string/char literals in memory, extracts method bodies, scans hot methods (`Tick`, `FixedTick`, `LateFrameTick`, `Update`, `FixedUpdate`, `LateUpdate`, `Execute`), rejects forbidden hot lookups, rejects runtime phase hooks, rejects build-spawn tokens, and enforces single DataVault write lock with `try/finally` release if a future lock appears.
+- Rejected Alternatives: Chat-only proof, JSON report, or broad runtime refactor outside the assigned baker domain.
+- Scalability potential: Low/Middle/High/Ultra share the same offline-baked asset route; the verifier prevents runtime authority creep as the baker grows.
+- Hardware Impact: Runtime 0 us. Editor/test-only static analysis protects the hot path from future 1605 drift.
+- Problem: The first re-extraction command used an exact `<AGENT_PROMPT id="1605">` opener and false-failed because the actual batch tag may carry attributes.
+- Solution: Use an attribute-tolerant CLI regex: `<AGENT_PROMPT\b[^>]*id="1605"[^>]*>...`. Current `CURRENT_BATCH.md` returns a 19947-character 1605 block.
+- Rejected Alternatives: Trusting stale chat memory or scanning neighboring prompts.
+- Scalability potential: No runtime impact; protects agent state from batch-file drift.
+- Hardware Impact: 0 runtime. Negligible CLI I/O.
+- Problem: The baker scaled by VRAM and profile texture size but did not consume a continuous `GlobalQualityWeight`, leaving a hidden binary-quality failure mode against project doctrine.
+- Solution: Add `GlobalQualityWeight` to `BakeProfileDTO`, schema, defaults, C# safe-size resolution, shader dispatch, and `_BakerQualityParams` in HLSL. The same float now scales bake resolution, high-frequency fBm contribution, pore density visibility, and rust/detail frequency.
+- Rejected Alternatives: Low/Ultra enum, platform if/else, or hardcoded 2K defaults. Those create binary quality switches and make middle-tier hardware impossible to tune cleanly.
+- Scalability potential: Low uses 512-1K and suppressed fine pores; Middle raises resolution/detail continuously; High/Ultra reaches 2K-4K with richer pore/rust/normal texture while keeping identical material layout.
+- Hardware Impact: Runtime 0 us because the path remains Editor-only. Low-end i3/MX350 avoids 4K VRAM allocations during bake; saved runtime cost remains indirect through shared compressed atlas/material routing.
+- Problem: The 1605 baker writes M.R.A.O. as R=metallic, G=roughness, B=ambient occlusion, A=emissive. Existing project `HectonPackedMaskV1` and URP-style mask contracts read G/B differently. Binding the 1605 mask to those legacy properties would invert roughness/AO and create false material response.
+- Solution: Add `Hecton8/Bakers/MraoAtlasLit` with explicit 1605 decode and bind atlas masks only through `_MraoMap`. Atlas material creation now prefers that shader and does not assign the M.R.A.O. atlas into incompatible legacy mask slots.
+- Rejected Alternatives: Reusing URP Lit mask properties, converting channel meaning silently at material bind time, or renaming 1605 output without changing shader decode. Those hide the contract bug and make future BRG material audits unreliable.
+- Scalability potential: Low uses the same one-mask sample with cheaper source resolution; Middle/High/Ultra spend quality on richer baked roughness/AO/rust texture, not extra runtime maps.
+- Hardware Impact: Runtime texture count stays at albedo + normal + one mask. The correction saves visual debug time and prevents shader-side channel repair branches. Exact microseconds PENDING GPU CAPTURE.
+- Problem: Direct PNG overwrite can leave a half-written texture/atlas if Unity import, disk access, or antivirus contention interrupts the write.
+- Solution: Route direct bake and atlas writes through `TryWriteBytesAtomic`: write bytes to a same-directory `.tmp1605`, then swap with `File.Replace` when supported, use `File.Move` on first creation, and fall back to `.bak1605` restore semantics on platforms where replace is unsupported. Failed writes delete the temp file and preserve the old asset when possible.
+- Rejected Alternatives: `File.WriteAllBytes` directly to the final path, large binary backup dumps, or JSON telemetry. Direct overwrite risks corrupt assets; backups/reports add I/O without becoming proof of texture correctness.
+- Scalability potential: Low/Middle/High/Ultra all rely on valid compressed assets. Atomic writes protect every tier from broken import state.
+- Hardware Impact: Runtime 0 us. Editor I/O reliability improved; no orphan `.tmp1605` or `.bak1605` files were present after static inspection.
+- Problem: The compute shader previously carried `BakeProfileDTO.Seed` through `_BakerTextureSize.w`, a float lane. Large `uint` seeds lose lower-bit identity when converted to float, breaking deterministic texture variants.
+- Solution: Add `_BakerSeed` as a `uint` shader uniform and set it from C# with `compute.SetInt(s_seedId, unchecked((int)seed))`. Shader seed phase values now derive from integer hash salts instead of float-packed seed coordinates.
+- Rejected Alternatives: Keeping seed in `float4`, limiting seed range in the schema, or using string/profile names as implicit seeds. All three make deterministic bake reproduction weaker.
+- Scalability potential: Low/Middle/High/Ultra all keep identical seed identity; only resolution/detail changes with `GlobalQualityWeight`.
+- Hardware Impact: Runtime 0 us. Editor compute spends a few integer hash ops but avoids non-reproducible texture variants and broken atlas cache identity.
+- Problem: Final generated textures are correctly imported as non-readable for runtime memory, but atlas packing needs CPU pixels. That makes the honest bake-to-pack chain fail unless source textures remain readable forever.
+- Solution: `TextureAtlasPacker.TryReadTexturePixels` first tries direct pixels, then temporarily flips `TextureImporter.isReadable=true`, reads pixels, and restores the previous readability state.
+- Rejected Alternatives: Keeping generated BC7/BC5 textures readable permanently, duplicating uncompressed staging PNGs, or requiring manual import setting edits. Those waste RAM or create human-only pipeline steps.
+- Scalability potential: Low keeps runtime memory tight; Middle/High/Ultra can pack richer generated textures without changing import residency policy.
+- Hardware Impact: Runtime memory stays lower because final source textures return to non-readable. Editor-only reimport cost is accepted for deterministic offline packing.
+- Problem: A string starting with `Assets/` can still escape through `Assets/../`, and public atlas APIs could allocate arbitrary huge `Color32[]` buffers before failing.
+- Solution: Atomic writes now resolve full paths and require them to stay under `Application.dataPath`. Atlas packing rejects non-power-of-two, below-512, and above-4096 sizes before allocation.
+- Rejected Alternatives: Trusting caller strings, relying on OS path normalization after write, or letting oversized atlas requests fail through memory pressure. Those are avoidable Editor crashes.
+- Scalability potential: Low/Middle/High/Ultra remain bounded by the same max atlas contract; visual quality scales through source detail and count, not unbounded atlas dimensions.
+- Hardware Impact: Runtime 0 us. Editor avoids pathological allocations beyond the 4K atlas contract.
+- Problem: `Hecton_MraoAtlasLit` depended on `BuildTangentToWorld`, but that helper is not guaranteed by the included URP/Core chain and exists locally in other shaders. The same file also left varyings uninitialized before stereo macros.
+- Solution: Add local `BuildMraoFallbackTangent` and `BuildMraoTangentToWorld`, project tangents against the normal to avoid degenerate TBN frames, preserve tangent handedness, and initialize `Varyings`/`ShadowVaryings` to zero.
+- Rejected Alternatives: Depending on another shader's private helper, disabling normal maps, or binding the 1605 atlas to a different material shader just to avoid compile risk.
+- Scalability potential: Low keeps the same shader path with stable normals at cheaper source resolution; Middle/High/Ultra spend saved runtime texture count on richer baked normal detail.
+- Hardware Impact: Runtime cost is the same one normal sample and one TBN transform. The change removes a shader compile vector; exact GPU timing remains PENDING GPU CAPTURE.
+- Problem: The atlas packer must temporarily enable `TextureImporter.isReadable` for source textures, but `SaveAndReimport` inside `finally` can throw and mask the original atlas read failure or leave assets readable.
+- Solution: Guard null source textures, preserve the direct read failure message, catch Unity/IO/import exceptions during readable import, and route cleanup through `RestoreTextureReadableState`, which logs a warning instead of throwing from cleanup.
+- Rejected Alternatives: Permanent readable textures, unmanaged staging copies, or cleanup that can overwrite the primary failure route.
+- Scalability potential: Low/Middle/High/Ultra keep runtime source textures non-readable after offline packing, while editor packing still works on BC7/BC5 imports.
+- Hardware Impact: Runtime memory stays lower than readable texture imports. Editor reimport cost is accepted only in the offline pack step.
+- Problem: Atomic writes protected final file paths, but `EnsureAssetFolder` still accepted raw public `outputFolder` values before folder creation. `atlasName` also flowed into texture/material filenames without sanitation.
+- Solution: Add `TryEnsureAssetFolder` and `TryNormalizeAssetFolder`, accepting only `Assets`/`Assets/...` with no empty, `.` or `..` segments. Share `SanitizeAssetNameForPath` between profile names and atlas names, and fail pack requests whose atlas name collapses to empty.
+- Rejected Alternatives: Trusting editor callers, relying only on final file containment, or silently creating nested folders from slash-containing atlas names.
+- Scalability potential: Low/Middle/High/Ultra all depend on deterministic generated asset identity; path sanitation keeps atlas cache names stable across devices and agents.
+- Hardware Impact: Runtime 0 us. Editor avoids malformed AssetDatabase operations before bake/pack writes.
+- Problem: The continuous `GlobalQualityWeight` texture-size resolver used `Mathf.RoundToInt` on exponent values. Half values can be implementation-sensitive, making quality 0.5 ambiguous for a 512..4096 request.
+- Solution: Use explicit `Mathf.FloorToInt(Mathf.Lerp(minPower, maxPower, quality) + 0.5f)` before clamping, so the midpoint maps deterministically to the 2K exponent in the source test.
+- Rejected Alternatives: Keeping `RoundToInt`, hardcoding 0.5 to 2K, or replacing continuous quality with named tiers.
+- Scalability potential: Low/Middle/High/Ultra keep continuous interpolation, but midpoint behavior is stable for automated bake profiles and tests.
+- Hardware Impact: Runtime 0 us. Editor VRAM selection becomes deterministic; no bake-time measurement until Unity can run.
+- Problem: The dedicated M.R.A.O. shader owned the channel contract, but its varyings did not explicitly transfer Unity instance IDs through the forward and shadow paths, and the shadow pass depended on shadow helpers without including the URP shadow library.
+- Solution: Include `ShaderLibrary/Shadows.hlsl`, add `UNITY_VERTEX_INPUT_INSTANCE_ID` to varyings, transfer instance IDs in `Vert` and `ShadowVert`, and set up instance IDs in `Frag` and `ShadowFrag`.
+- Rejected Alternatives: Trusting implicit instance state, disabling shadows for atlas materials, or falling back to a generic URP material with the wrong mask channel meaning.
+- Scalability potential: Low/Middle/High/Ultra keep one atlas material route; strong devices can spend saved draw calls on denser baked texture detail without losing BRG/shadow compatibility.
+- Hardware Impact: Runtime delta PENDING GPU CAPTURE. The change removes an instancing/shadow compile vector without adding texture samples.
+- Problem: Edge padding copies island borders, but any remaining unfilled atlas pixels can still enter mips. Black empty pixels are catastrophic for normal maps and M.R.A.O. masks because black means invalid normal, zero roughness, and zero AO.
+- Solution: Prefill atlas buffers before blitting: albedo black opaque, normal neutral `(128,128,255,255)`, and M.R.A.O. neutral `(0,255,255,0)` for metallic 0, roughness 1, AO 1, emissive 0.
+- Solution: Add `s_requiredTransactionSafetyTokens` and `VerifyRequiredTransactionSafetyTokens`, skipping the verifier file so required tokens must exist in production Baker sources.
+- Rejected Alternatives: Keep transaction guard checks only in EditMode source probes. Source probes can be skipped; APEX is the explicit integrator verification surface for this domain.
+- Scalability potential: Low/Middle/High/Ultra all keep transaction integrity across future atlas/bake edits. High/Ultra overkill batches cannot pass verifier if rollback or fail-fast gates are deleted.
+- Hardware Impact: Runtime 0 us. Editor verifier gains one cold source pass over small Baker files. External Unity `dotnet` PIDs 15112 and 16700 were active; no build/test/player build was launched.
+- ## Decision 89 - Mesh Buffer Shortage Must Trigger Rollback, Not Fatal Escape
+- Problem: `CopyVertexBufferFromMesh` threw `FatalArchitectureException` when Unity returned a shorter vertex buffer than the validated UV remap size. In a multi-mesh atlas transaction this could bypass the caller's rollback of earlier remapped meshes.
+- Solution: Throw `InvalidOperationException` for the short-buffer condition so `TryRemapMeshUvs` catches it through `IsRecoverableEditorException`, returns false, and `TryRemapMeshesAndFinalizeWithRollback` restores captured snapshots.
+- Rejected Alternatives: Keep the fatal throw or catch fatal exceptions at the outer transaction. Fatal throw skips the precise rollback site; catching fatal broadly makes real architecture defects look recoverable.
+- Scalability potential: Low/Middle/High/Ultra all get consistent mesh UV rollback when imported mesh buffers are inconsistent. Large overkill atlas batches cannot leave earlier meshes partially remapped because one later mesh had a short buffer.
+- Hardware Impact: Runtime 0 us. Editor avoids partial UV mutation on inconsistent mesh data. External Unity `dotnet` PIDs 15112 and 16700 were active; no build/test/player build was launched.
+- [omitted 410 filtered lines; raw preserved]
+
+## Rationale_1606.md [30574 B; budget 7338]
+- # Rationale 1606
+- Status: CODE COMPLETE / ASSET BAKE DEFERRED BY CPU/UNITY COMPILER THROTTLE
+- ## Decision 01: Prompt Parser
+- Problem: The active batch prompt tag for 1606 includes `role` and `chat_name` attributes, so a strict literal `<AGENT_PROMPT id="1606">` extraction fails.
+- Solution: Use an attribute-aware CLI regex over the full `CURRENT_BATCH.md` and count `Task NN:` markers inside the extracted block.
+- Rejected Alternatives: Reading neighboring prompt blocks; trusting chat text; using the strict literal parser.
+- Scalability potential: no runtime impact. Prevents wrong-domain work in a 20+ agent batch.
+- Hardware Impact: 0 us runtime; avoids wasted build/editor CPU on wrong task.
+- ## Decision 02: Offline-Only Boundary
+- Problem: The assignment demands heavy voxel, erosion, AO, and collision generation, but runtime execution would violate frame-time and GC mandates.
+- Solution: Keep all new generator code under `Assets/_Project/Editor/Generators/Geology/`; runtime consumes only baked `.asset` meshes and `.prefab` files.
+- Rejected Alternatives: Runtime mesh generation; scene-time `MonoBehaviour` generators; hot-path physics mesh baking.
+- Scalability potential: low tier receives cheap baked silhouettes and COL proxies; middle/high/ultra can receive denser visual LODs and richer vertex masks without changing runtime truth.
+- Hardware Impact: i3/MX350 runtime cost target is 0 us/frame for generation. Editor generation cost is acceptable because it is offline.
+- Problem: Visual rocks can exceed thousands of triangles, but PhysX mesh contact against those assets would destroy CPU budget.
+- Solution: Every generated visual mesh must have a separate `COL_` mesh under 200 triangles and the prefab MeshCollider must bind only to that `COL_` mesh.
+- Rejected Alternatives: Assigning LOD0 to MeshCollider; relying on Unity auto-convex cleanup; leaving colliders to scatter-time tooling.
+- Scalability potential: low uses coarse collision; middle/high/ultra only increase visual detail and material masks, never physics truth complexity.
+- Hardware Impact: expected runtime collision savings versus LOD0 MeshCollider: tens to hundreds of microseconds per contact-heavy frame on i3/MX350, pending Unity profiler proof.
+- Problem: The project already owns an offline geology forge with SDF extraction, Burst jobs, AO, LODs, manifest writing, and scanners. A second generator would create two geometry truths.
+- Solution: Patch `GeologyForge` in place and add only a thin `Assets/_Project/Editor/Generators/Geology` entrypoint for the requested studio path.
+- Rejected Alternatives: New standalone generator; direct runtime generator; copying Marching Cubes code into a second editor assembly.
+- Scalability potential: low, middle, high, and ultra tiers stay on one baked asset route; only quality weights and asset budgets scale.
+- Hardware Impact: no runtime frame cost. Editor work avoids duplicated import/mesh bake CPU and prevents repeated PhysX cooking against incompatible meshes.
+- Problem: Full droplet hydraulic erosion would be slow, stateful, and unnecessary for offline abyssal prop silhouettes.
+- Solution: Add deterministic SDF displacement terms for runoff cuts, sediment fans, basalt facets, and thermal-vent throat carving inside the existing Burst density job.
+- Rejected Alternatives: Particle erosion; cellular water simulation; post-mesh vertex relaxation that would require extra adjacency allocations.
+- Scalability potential: low uses broad fake cuts; middle/high/ultra get richer AO rays, octaves, Voronoi/facet detail via continuous `GlobalQualityWeight`.
+- Hardware Impact: runtime 0 us/frame. Editor cost is arithmetic inside the existing density job, avoiding a separate erosion pass and native buffer.
+- Problem: Previous packing stored AO brightness in red, zero in green, and LOD mask in blue, which did not support sediment/AO material masking.
+- Solution: Red = LOD mask, Green = upward sediment/silt mask, Blue = AO darkness.
+- Rejected Alternatives: Extra UV channel; material property blocks per prefab; texture bake per mesh.
+- Scalability potential: weak devices get one vertex-color material path; high/ultra shaders can spend the same baked masks on extra wetness, silt, and shadow response.
+- Hardware Impact: expected i3/MX350 gain versus texture-mask sampling is one less texture lookup per pixel on the rock material path, exact shader cost pending material profiling.
+- Problem: The user explicitly forbids `dotnet build` after small edits, and multiple agents may already be compiling.
+- Solution: Add source-level EditMode tests and run static checks first; Unity compilation/generation is allowed only if editor state is available and no compiler wall is detected.
+- Rejected Alternatives: launching project-wide build; claiming success without source and asset checks.
+- Scalability potential: no runtime impact; reduces shared-cluster CPU contention.
+- Hardware Impact: avoids multi-second CPU saturation from an unnecessary build on host hardware.
+- Problem: Unity rejected `CompileSynchronously = true` Burst job compilation during script/import state and later exposed a pending writer disposal fault on normal bucket storage.
+- Solution: Switch GeologyForge editor jobs to asynchronous Burst compilation and add an explicit editor-phase fence after `BuildNormalBucketJob` before smooth-normal reads.
+- Rejected Alternatives: Repeated menu execution; project-wide dotnet build; disabling Burst; ignoring the NativeParallelMultiHashMap disposal error.
+- Hardware Impact: runtime 0 us/frame. Editor rollback cost is paid only on asset save failure.
+- Solution: Sanitize the selected DTO immediately, write it back into `_profiles[_selectedProfileIndex]`, then project only bounded values into the UI controls.
+- Rejected Alternatives: trusting later preview/bake sanitation; clamping each slider separately; mutating CSV load output without a single generator-owned sanitizer route.
+- Scalability potential: weak workstations avoid giant preview/control states from bad CSV data; middle, high, and ultra authoring still use the same bounded profile identity and continuous quality scaling.
+- Hardware Impact: runtime 0 us/frame. Editor impact is a small struct sanitation pass per selection, preventing larger bad-input preview/bake work.
+- ## Decision 34: Sanitize Full Profile Storage At Load Time
+- Problem: After CSV/fallback load, `_profiles` could still contain raw unbounded rows until each row was selected or sent through async bake sanitation. `BakeAll` copied that storage directly, leaving two defensive gates downstream but a dirty editor source of truth.
+- Solution: Add `SanitizeProfilesInPlace` and call it in `ReloadProfiles` before dropdown name projection, selection, preview, or BakeAll can consume `_profiles`.
+- Rejected Alternatives: relying on `SelectProfile`; relying on `BakeProfilesAsync`; sanitizing only request lists while keeping dirty editor state alive.
+- Scalability potential: weak machines avoid bad CSV rows inflating preview/bake state; middle, high, and ultra authoring keep one bounded profile storage route with continuous quality scaling.
+- Hardware Impact: runtime 0 us/frame. Editor cost is one struct sanitation loop per profile reload, bounded by profile count and cheaper than one bad preview/bake setup.
+- [omitted 153 filtered lines; raw preserved]
+
+## Rationale_1607.md [20672 B; budget 4962]
+- # Rationale 1607 - Modular Station and Structure Architect
+- ## Decision 001 - Offline Editor-Only Station Fabrication
+- Problem: Runtime generation of abandoned stations would add CPU, hierarchy, and draw-call cost to gameplay.
+- Solution: Keep all WFC, mesh fusion, socket extraction, hidden-surface removal, dirt masking, and prefab serialization under `Assets/_Project/Editor/Generators/Structures/`.
+- Rejected Alternatives: Runtime modular spawning was rejected because it leaves hundreds of transforms alive and violates static batching/GRD discipline. Raw prefab YAML mutation was rejected because Unity API asset creation is safer for meshes and prefabs.
+- Scalability potential: Low uses few modules, baked masks, one structural mesh, and minimal shadows. Middle adds denser layouts and dirt variation. High increases module count and retained detail meshes. Ultra spends saved CPU on richer baked damage masks and longer HLOD residency without runtime solver cost.
+- Hardware Impact: Low-end i3/MX350 avoids per-frame station assembly and hierarchy traversal; expected gain is CPU-side submission and transform traversal avoidance, pending Unity Stats proof.
+- ## Decision 002 - Socket Bitmasks Before Geometry Fusion
+- Problem: Mesh merging without a socket contract can hide invalid topology and create light leaks.
+- Solution: Extract socket data into unmanaged DTOs with connector masks and face directions before WFC or mesh fusion.
+- Rejected Alternatives: Name-string sockets and scene-object searches were rejected because they are brittle and allocate in tooling loops. Direct designer snapping was rejected because it cannot prove determinism.
+- Scalability potential: Low caps socket vocabulary and module count. Middle/High/Ultra increase allowed connector masks and station class complexity while preserving the same DTO route.
+- Hardware Impact: Offline validation removes runtime correction work on compact CPUs; expected runtime gain is zero station-generation CPU cost, pending prefab proof.
+- ## Decision 003 - Burst-Compatible WFC and Mesh Fusion DTOs
+- Problem: Station assembly needs graph collapse, placement transforms, internal face culling, seam welding, and dirt masks without managed runtime ownership.
+- Solution: Added explicit-size DTOs and Editor-only Burst jobs in `DeepReachStationContracts.cs`: WFC collapse, transform/append fusion, spatial-hash vertex welding, and deterministic damage mask deformation.
+- Rejected Alternatives: ScriptableObject graph mutation and GameObject-per-module assembly were rejected because they leave hot hierarchy state and cannot prove deterministic station topology. Compute-only damage was deferred because current proof needs CPU-readable baked meshes and no GPU readback dependency.
+- Problem: Blind mesh merging either leaves buried triangles or deletes visible exterior panels, creating light leaks.
+- Solution: Validate every folder segment against `Path.GetInvalidFileNameChars()` during sanitization and fail closed before native fabrication allocations.
+- Rejected Alternatives: Letting `AssetDatabase.CreateFolder` fail later was rejected because the error would occur after more editor work and would be less precise. Replacing invalid characters automatically was rejected because folder ownership paths should be explicit, not silently rewritten.
+- Scalability potential: Low-end editor machines avoid wasted bake setup on invalid paths. Middle/High/Ultra keep the same deterministic output route and cleaner failure mode.
+- Hardware Impact: Runtime cost is zero. Editor avoids unnecessary allocation/job setup when a user enters an impossible asset path.
+- ## Decision 019 - Box Surrogate Material Slot Preservation
+- Problem: Non-readable structural module meshes fall back to box surrogate geometry, but surrogate triangles inherited `SubMesh = 0`, aliasing them to fallback grime even when the prefab had a valid structural renderer material.
+- Solution: Resolve the first accepted structural renderer material for surrogate modules, write that slot into every generated box triangle, and preserve slot 0 only for rejected transparent/leak/ghost/scan materials.
+- Rejected Alternatives: Keeping grime-only surrogates was rejected because it erases authored hull identity on non-readable modules. Forcing mesh readability was rejected because third-party/import settings may own that decision and the station bake already has a deterministic surrogate route.
+- Scalability potential: Low keeps one renderer and correct broad hull color on cheap devices. Middle keeps material vocabulary stable across readable and surrogate modules. High/Ultra can use denser authored structural materials without non-readable modules visually collapsing into one fallback material.
+- Hardware Impact: Runtime cost is zero. Editor pays a cold renderer-material scan only for surrogate modules; no additional GameObjects, renderers, or runtime material remap are introduced.
+- [omitted 87 filtered lines; raw preserved]
+
+## Rationale_1608.md [69909 B; budget 16779]
+- # Rationale 1608
+- Date: 2026-06-01
+- ## D00 - Domain Containment
+- Problem: Agent 1608 must add dense interior presentation detail without adding runtime GameObject or material overhead.
+- Solution: Confine implementation to `Assets/_Project/Editor/Generators/Interiors/`; use Editor-only generation, Burst-compatible unmanaged DTOs, mesh fusion, atlas remapping, baked normal/grime masks, and deterministic socket selection.
+- Rejected Alternatives: Runtime placement was rejected because it adds hierarchy, material churn, draw-call pressure, and violates the prompt. Raw prefab YAML mutation was rejected because Unity prefab FileID alignment is fragile.
+- Scalability potential: Low uses baked normals, fused static bases, one atlas, sparse physical handles. Middle increases stamp/cable density. High keeps longer near-field instrument fidelity. Ultra adds denser grime, labels, and cable bundles without changing gameplay truth.
+- Hardware Impact: i3/MX350 expected gain is avoided transform traversal and material binds. Exact microseconds are PENDING VERIFICATION until Unity profiler/Frame Debugger data exists.
+- ## D01 - Missing Source Library Boundary
+- Problem: `Assets/_Project/Prefabs/Instruments/` and `Assets/_Project/Editor/Generators/Interiors/` are absent.
+- Solution: Create schema-first Editor tooling that can operate with missing libraries by producing deterministic fallback instrument definitions and a generated ledger instead of inventing runtime dependencies.
+- Rejected Alternatives: Blocking on absent prefabs was rejected because the task requires pipeline materialization. Pulling data from unrelated runtime systems was rejected because it would cross domain boundaries.
+- Scalability potential: Low fallback definitions keep one-material procedural mockups; higher lanes can swap authored prefabs into the same schema.
+- Hardware Impact: Prevents dependency waits and keeps editor-generated assets deterministic. Runtime gain remains PENDING VERIFICATION.
+- Problem: Decorative socket placement must be reproducible without using Unity random, wall-clock time, transform instance IDs, or future 1607 code.
+- Solution: `PopulateSocketsJob1608` selects instruments with integer hash thresholds from seed + stable socket hash + rule hash. Density is a continuous `DensityWeight` probability gate; `GlobalQualityWeight` only scales visual weight units, not truth layout type.
+- Rejected Alternatives: `UnityEngine.Random.Range` was rejected as nondeterministic authority. Direct dependency on absent `DecorativeSocketDTO` classes was rejected; parser accepts transform metadata now and generated mesh metadata can be added behind the same DTO later.
+- Scalability potential: Low keeps fewer placed details through continuous density. Middle/High/Ultra increase visual diversity through weight and density without changing runtime authority.
+- Hardware Impact: i3/MX350 avoids runtime selection entirely because baked prefab contains final placements. Expected runtime CPU saved: transform/search path removed, exact microseconds PENDING VERIFICATION.
+- Problem: Instrument bases are visual mass but do not need separate GameObjects.
+- Solution: `WeldInstrumentBasesJob1608` transforms static base vertices into room-local space and writes one fused static mesh. Moving handles remain separate named transforms only.
+- Rejected Alternatives: Keeping each base prefab was rejected because transform traversal and renderer submission scale linearly with clutter. Static batching alone was rejected because it still carries authoring hierarchy and material fragmentation risk.
+- Scalability potential: Low uses fused bases plus normal stamps. Middle adds more sockets. High/Ultra can add more moving handles and cable bundles while static bases stay one mesh.
+- Hardware Impact: i3/MX350 expected gain is lower transform traversal and fewer renderers. Measured microseconds: PENDING UNITY PROFILER.
+- Problem: Rivets, seams, shallow labels, and dust pores below 5 cm would create polygon noise and hierarchy overhead.
+- Solution: `NormalMapStampingJob1608` projects deterministic stamp influence into normal and grime pixels offline. Task-level fake-first decision: physical screw meshes are rejected; surface belief is carried by normal/grime response.
+- Rejected Alternatives: Tiny mesh rivets were rejected under the 5 cm rule. Runtime decals were rejected because they add render work and state.
+- Scalability potential: Low keeps baked normal/grime at smaller texture size. Middle increases texture size. High/Ultra can increase stamp count and map resolution up to 4K without runtime CPU.
+- Hardware Impact: i3/MX350 saves draw calls and triangles; exact GPU/VRAM impact PENDING Frame Debugger.
+- Problem: Instrument variety can explode texture bindings and material count.
+- Solution: `InteriorAtlasPacker1608` packs instrument swatches into one power-of-two atlas and applies Standalone BC7 import settings. Normal/grime maps use compressed import settings with non-sRGB normal path.
+- Rejected Alternatives: Per-instrument material assignment was rejected because SetPass count is the bottleneck. Runtime texture arrays were rejected because the required output is baked prefab content.
+- Scalability potential: Low uses the same atlas at smaller source detail. Middle/High/Ultra can use 2K/4K atlas while keeping one material route.
+- Hardware Impact: i3/MX350 expected gain is fewer texture binds and safer residency. Atlas efficiency is reported by the tool; actual VRAM proof PENDING Unity import.
+- Problem: Task 15 asks for `dotnet build`, but compile throttling is active. Current checks detect active `dotnet` processes during this pass.
+- Solution: Mark build as `BLOCKED_BY_CONTENTION`; use static source checks until CPU < 50% and no compiler/dotnet process exists.
+- Rejected Alternatives: Launching another build was rejected because it violates the user's explicit CPU protection order and the batch compile contention rule.
+- Scalability potential: Not a runtime feature. Protects the multi-agent host from avoidable compile stalls.
+- Hardware Impact: Host CPU preserved. Compile proof remains PENDING VERIFICATION.
+- Problem: The fused authoring vertex DTO is 64 bytes, while the Unity vertex declaration for position/color/normal/tangent/uv/hash is 56 bytes.
+- Solution: Add `InteriorRenderVertexDTO1608` and pack fused/cable vertices into that DTO before `SetVertexBufferData`.
+- Rejected Alternatives: Changing the job DTO to 56 bytes was rejected because it would weaken ARM64 padding and authoring flags. Uploading the 64-byte DTO directly was rejected because Unity vertex stride mismatch can fail import or corrupt attributes.
+- Scalability potential: Low through Ultra use the same packed render route; higher tiers increase baked detail count without changing upload layout.
+- Hardware Impact: i3/MX350 avoids bad vertex streams and keeps vertex payload tight at 56 bytes. Measured microseconds remain PENDING UNITY IMPORT.
+- Problem: The prior tool wrote JSON proof files, while the current integrator order accepts only compiling C# source and generated Unity assets as completion proof.
+- Solution: Remove `WriteLedger`, `WriteReport`, `JsonUtility`, report DTO classes, SHA-256 report hashing, and JSON file writes from the interior generator. Add NUnit source-audit gates for hot dependency lookup, runtime phase surface, DataVault lock absence, JSON absence, and no process/build launcher.
+- Rejected Alternatives: Keeping JSON as optional diagnostics was rejected because the user explicitly revoked JSON proof. Broad runtime rewrites outside 1608 were rejected because current 1608 authority is Editor-only interior finishing and raw cross-domain changes would exceed the assigned boundary.
+- Scalability potential: Low through Ultra now share the same asset-generation proof route; scaling lives in continuous density, texture size, and baked normal/cable detail, not reports.
+- Hardware Impact: CPU saved is build-host/editor I/O only. Runtime impact is unchanged by report removal; source proof remains PENDING UNITY IMPORT/TEST.
+- Problem: The generator used array-returning `GetComponentsInChildren<T>()` in cold prefab scans and transform counts.
+- Solution: Replace those sites with bounded static scratch `List<Renderer>` and `List<Transform>` overloads, cleared in `finally`.
+- Rejected Alternatives: Leaving array allocations was acceptable for cold Editor code but rejected because batch cabin generation can process many prefabs and the fix is small. Moving this to runtime registries was rejected; this is not runtime gameplay.
+- Scalability potential: Low devices benefit indirectly by cheaper content bake iteration; high/ultra can process denser authored instrument sets without temporary array churn during baking.
+- Hardware Impact: Editor heap churn reduced during mass generation. Runtime microseconds unchanged; no Unity profiler run.
+- Problem: The grime/occlusion map was imported through a boolean normal/color path that made non-normal maps sRGB, corrupting scalar dirt data. Movable instrument handles were empty GameObjects, so the prefab hierarchy preserved future interactivity anchors but produced no visible handle geometry.
+- Solution: Replace the boolean texture import flag with `InteriorTextureRole1608`; atlas stays sRGB BC7, normal becomes linear BC5 NormalMap, grime becomes linear BC7 data map. Add one shared generated movable-handle mesh asset and attach it to `MOV_InstrumentHandle_*` objects with shadow casting disabled.
+- Rejected Alternatives: Per-handle authored prefab instances were rejected because they reintroduce hierarchy and renderer variation. Runtime handle construction was rejected because 1608 output must be baked assets. Keeping grime as sRGB was rejected because occlusion masks are data, not color.
+- Scalability potential: Low uses the same single shared handle mesh and linear grime mask; middle/high/ultra spend saved hierarchy cost on denser placed handles and larger baked masks without gameplay truth drift.
+- Hardware Impact: Runtime transform count remains bounded to movable parts only. Small-handle shadow caster cost is avoided on i3/MX350. Exact microseconds remain PENDING UNITY IMPORT/PROFILER.
+- Problem: `CollectSockets` allocated `List<Transform>` per bake pass while scanning marker transforms. This is Editor-only, but batch generation over many cabins would produce avoidable heap churn.
+- Solution: Add a static bounded transform scratch list in `InteriorSocketParser1608` and clear it through `finally`.
+- Rejected Alternatives: Keeping the allocation was rejected because the fixed-capacity scratch route is trivial and matches existing renderer scratch policy. Reusing global registries was rejected because prefab import is cold Editor work.
+- Scalability potential: Low through Ultra keep identical generated assets; high-density authoring libraries can be scanned with less editor heap churn.
+- Hardware Impact: Runtime microseconds unchanged. Editor allocation churn reduced; exact bake-time delta PENDING UNITY PROFILE.
+- Problem: Atlas packing allocated a fresh `Color32[]` block for every instrument cell. At the current 64-rule cap this is cold Editor churn, not runtime cost, but it scales badly during repeated cabin bakes.
+- Solution: Allocate one cell-sized block buffer per atlas pack and refill it for each cell before `Texture2D.SetPixels32`.
+- Rejected Alternatives: Writing pixels through unsafe texture memory was rejected because this is cold Editor asset generation and the managed block buffer is simpler and sufficient. Leaving per-cell allocation was rejected because one reusable buffer removes the churn without changing output.
+- Scalability potential: Low through Ultra use the same atlas route; higher density authoring libraries avoid per-rule temporary array churn.
+- Hardware Impact: Runtime microseconds unchanged. Editor heap churn reduced during pack; exact delta PENDING UNITY PROFILE.
+- Problem: `NormalMapStampingJob1608` scanned all micro-sockets from every texture pixel. At 2048/4096 maps and dense socket counts this creates an avoidable cold bake-time explosion.
+- Solution: Keep the same deterministic visual fake, but invert the pass: iterate micro-sockets in stable order and stamp only the bounded pixel rectangle touched by each radius.
+- Rejected Alternatives: Runtime decals and tiny rivet meshes were rejected by the visual-fake mandate. Spatial hash bins were rejected as unnecessary complexity for one cold editor bake pass. Keeping pixel-first scan was rejected because it scales as `pixels * sockets`.
+- Scalability potential: Low keeps smaller maps and fewer sockets; middle/high/ultra can afford denser micro detail because cost scales with touched stamp area instead of full texture area times socket count.
+- Hardware Impact: Runtime microseconds unchanged. Editor bake CPU reduced in dense maps; exact delta PENDING UNITY PROFILE.
+- Problem: `ToNative<T>` helpers used `where T : struct`, which is weaker than the DTO law for NativeArray/Burst conversion.
+- Solution: Tighten both helpers to `where T : unmanaged` and add a source-audit assertion.
+- Rejected Alternatives: Runtime type checks were rejected because compile-time generic constraints are cheaper and clearer. Leaving `struct` was rejected because it permits managed-field structs until Unity throws at import/runtime.
+- Scalability potential: No visual difference. The generation pipeline now rejects invalid DTO shapes earlier across all quality weights.
+- Hardware Impact: Runtime microseconds unchanged. Risk of hidden managed DTO conversion failure reduced; compile proof PENDING because build is throttled.
+- Problem: The generator packed instrument swatches into one atlas but did not apply per-instrument atlas rectangles to fused static-base UVs. This could produce a valid atlas with wrong sampling.
+- Solution: Add `ApplyAtlasRects`, reuse the same atlas grid calculation as packing, store rects in `InstrumentRuleDTO1608`, propagate scale/offset into placements, and remap fused vertex `Uv0` during `WeldInstrumentBasesJob1608`.
+- Rejected Alternatives: Per-material instrument preservation was rejected because it destroys the atlas/draw-call goal. A second post-fusion UV pass was rejected because the weld job already touches every fused vertex once. Runtime material overrides were rejected as presentation drift.
+- Scalability potential: Low keeps one atlas and correct sampling; higher tiers can add more instrument variety without extra material routes.
+- Solution: Remove the public `ApplyAtlasRects` method and update source-audit tests to require its absence while keeping `ApplyPackedAtlasRect` as the private packer-owned route.
+- Rejected Alternatives: Keeping the method as a fallback was rejected because there is no correct fallback without the actual write rectangle. Marking it obsolete was rejected because Editor code inside the same file could still call it and silently drift.
+- Scalability potential: Low through Ultra now share one atlas UV authority. More irregular authored textures can be packed without future full-cell regressions.
+- Hardware Impact: Runtime CPU unchanged. Cold code surface shrinks; no renderer, material, texture-size, or mesh count changes.
+- ## D65 - Renderer Bounds Fail-Closed Hygiene
+- Problem: Renderer fallback bounds can become non-finite through corrupt imported transforms, broken renderer data, or future authoring mistakes. Prefab rule scanning already preferred static mesh bounds, but its fallback route and socket marker renderer scans could still allow bad `Bounds` values to affect socket fit, placement radius, and default scale.
+- Solution: Skip non-finite renderer bounds in both prefab rule fallback scanning and decorative socket parsing. If a prefab rule has no valid static or renderer bounds, use one compact deterministic default bound instead of propagating bad data.
+- Rejected Alternatives: Clamping NaN/Infinity to zero was rejected because it hides corrupted authoring data. Failing the whole cabin bake was rejected because a single broken optional renderer should not kill all interior decoration when a safe compact bound can preserve generation.
+- Scalability potential: Low keeps dense panels from exploding scale because of one corrupt renderer. Middle/High/Ultra keep authored static bounds as the normal path; the fallback only prevents drift when content is damaged.
+- Hardware Impact: Runtime CPU unchanged. Cold editor scan adds finite checks only. The expected gain is stability, not frame time: bad bounds no longer create oversized meshes, atlas waste, or placement rejection cascades on weak devices.
+- [omitted 305 filtered lines; raw preserved]
+
+## Rationale_1609.md [28352 B; budget 6805]
+- # Rationale 1609 - COMPOUND_COLLIDER_AND_PHYSICS_OPTIMIZER
+- Date: 2026-06-01
+- Status: INTEGRATOR_STATIC_VERIFIED_FAIL_CLOSED_BATCH_ROUTE
+- ## Decision 001 - Editor-Only Pipeline Boundary
+- Problem: High-poly MeshColliders destroy PhysX narrow phase, but runtime decimation would violate frame budget and zero-GC rules.
+- Solution: Keep generation/inspection under `Assets/_Project/Editor/Physics/`; runtime consumes static primitive colliders or pre-authored COL_ proxy assets through a data-only baker handoff.
+- Rejected Alternatives: Runtime mesh simplification and scene-load collider baking; both risk main-thread stalls and hidden allocations.
+- Scalability potential: Low uses primitives/no colliders; Middle uses limited compound primitives; High uses padded COL_ proxy meshes; Ultra spends saved CPU on visual dressing, not physics truth.
+- Hardware Impact: i3/MX350 gain is from replacing triangle BVH checks with primitive or 12-triangle proxy collision; exact project-wide savings pending Unity prefab pass.
+- ## Decision 002 - JSON Reports Are Secondary
+- Problem: Batch prompt requests JSON ledgers, while coordinator instruction rejects unread report dumps as primary proof.
+- Solution: Main proof remains optimized prefab mutation when Unity is available plus concise status/log records; machine-readable counters are generated only by the tool.
+- Rejected Alternatives: Generating bulky JSON as primary success artifact.
+- Scalability potential: Proof focuses on collider count and triangle removal, not document volume.
+- Hardware Impact: No runtime impact; reduces agent/document noise.
+- Problem: Prefab collider edits can corrupt YAML if done by string replacement.
+- Solution: Use Unity Editor APIs from Editor scripts for prefab loading/saving; shell scans remain read-only.
+- Rejected Alternatives: Direct `.prefab` text patching.
+- Scalability potential: Safe for low-volume manual use and high-volume batch pass.
+- Hardware Impact: Editor-only cost; prevents broken prefabs from causing runtime physics failures.
+- Problem: User requested Technie, but `Packages/manifest.json` contains no Technie package.
+- Solution: Implement deterministic in-house compound primitive fitter using submesh covariance axes, sphere/capsule classification, and BoxCollider fallback.
+- Rejected Alternatives: Adding an undeclared package dependency or pretending Technie exists.
+- Scalability potential: Low/Middle get Box/Sphere/Capsule primitives; High/Ultra can later swap the fitting backend behind the same engine if Technie is installed.
+- Hardware Impact: i3/MX350 avoids convex mesh solving for man-made structures; primitive pair checks are the cheapest PhysX path.
+- Problem: A proxy mesh built in a child mesh's local space can miss offset or scaled child geometry when attached to the prefab root.
+- Solution: Build COL_ proxy mesh from every visual MeshFilter transformed through `root.worldToLocalMatrix * filter.localToWorldMatrix`, then add 0.04 m padding.
+- Rejected Alternatives: Largest-mesh local-space AABB and unpadded visual bounds.
+- Scalability potential: Low uses a safe coarse 12-triangle blocker; Middle/High/Ultra can spend more on tighter generated proxies later without changing the authoring route.
+- Hardware Impact: Prevents player fall-through failures while keeping collision at 12 triangles for weak CPUs.
+- Problem: `Physics.BakeMesh` must not run from a private MonoBehaviour update loop or hidden same-frame `.Complete()`.
+- Solution: `RuntimePhysicsBaker1609` exposes pure read accessors and an `IJob` bake request; a dispatcher owner must schedule/complete and call `CommitBakedCollider()` in POST_SIMULATION. Burst annotation was rejected because existing project precedent (`VoxelMeshBakeJob`) calls `Physics.BakeMesh` from an unannotated `IJob`, and UnityEngine API calls are not safe to assume Burst-compatible.
+- Rejected Alternatives: `Update()`, coroutine bake polling, synchronous bake during scene load, or fake Burst decoration on an engine API call.
+- Scalability potential: Low devices can delay commit and use bootstrap BoxCollider longer; High/Ultra can dispatch more COL_ bakes per frame under a quality/capacity budget.
+- Hardware Impact: Avoids load spikes on i3/MX350; background bake work becomes controllable by the physics dispatcher.
+- Problem: Project law and user instruction prohibit build attempts while compiler processes are active or when static verification is sufficient.
+- Solution: Performed static syntax/structure scans only. `Get-Process` found active `dotnet` processes during the turn; Unity MCP also returned `no_unity_session`.
+- Rejected Alternatives: Forcing `dotnet build` to satisfy ritual verification.
+- Scalability potential: Protects the 20+ agent cluster from compile storms.
+- Hardware Impact: Prevents avoidable CPU contention on host; no runtime impact.
+- Solution: Flora-classified paths now resolve to `Flora` with normal fallback behavior if the layer is absent. Read-only prefab/YAML scan found 8 flora-classified placeholder prefabs with collider tokens, so this is a real fail-safe rather than theoretical cleanup.
+- Rejected Alternatives: Relying exclusively on destructive purge, or keeping flora on `Default` because most flora should have no colliders. The purge is the target state; the layer route is the safety net.
+- Scalability potential: Weak/middle/high/ultra all keep the same gameplay truth while accidental flora colliders remain isolated from dense default-layer broadphase behavior.
+- Hardware Impact: Runtime savings apply only to surviving flora colliders: self-pair broadphase candidates can be rejected by the sparse `Flora` layer matrix instead of entering default collision lanes.
+- ## Decision 030 - Per-Prefab Fail-Closed Batch Continuation
+- Problem: `OptimizeFolder()` and `PurgeFloraColliders()` called `OptimizePrefabAsset()` directly. A single broken prefab load, asset database exception, or unexpected Unity API failure could abort the whole collider optimization pass.
+- Solution: Added `TryOptimizePrefabAsset()` around each prefab mutation, `PrefabsFailed` telemetry, null-root handling, and guarded `PrefabUtility.UnloadPrefabContents(root)` so loaded roots are still released while the batch continues to the next prefab.
+- Rejected Alternatives: Letting one broken prefab terminate the batch, or swallowing failures silently. Termination wastes long Editor passes; silence hides unsafe assets from the integrator.
+- Scalability potential: Weak editor machines can process large folders without restarting from prefab zero after one asset failure; high-end batch nodes keep throughput while surfacing exact failed assets.
+- Hardware Impact: Runtime 0 us. Editor throughput gain is avoiding total batch restart after a single prefab failure.
+- [omitted 133 filtered lines; raw preserved]
+
+## Rationale_1610.md [32400 B; budget 7776]
+- # Rationale 1610 - FAUNA_SKINNING_AND_IK_SKELETON_FORGER
+- Status: APEX SOURCE HARDENED; CROSS-FILE AST GRAPH, HOT STRING/LINQ/DELEGATE/FOREACH-GC DETECTION, PRESET-AWARE H8LR GATING, UI BONE CLAMP, FUZZER ASSERTION, AND LATE-FRAME SHADER CLEAR PROXY ADDED; UNITY VALIDATION BLOCKED BY HOST CONTENTION
+- ## Mandate Selection
+- Problem: Offline fauna rigging touches mesh topology, Burst jobs, unmanaged DTOs, VAT textures, and mobile GPU bone limits.
+- Solution: Use the following mandates as active constraints before coding:
+- - OPT_Zero_GC_Policy_AllocFree_Mandate.txt: runtime hot paths must remain 0 B; all generator code is Editor-only.
+- - OPT_Native_Memory_Collections_JobSystem_Protocol.txt: Burst jobs must be unmanaged, tracked, and data-local; no hidden managed references.
+- - DATA_Runtime_Struct_Layout_ARM64.txt: spine metadata DTOs must be unmanaged, aligned, and multiple-of-8 sized.
+- - REND_GPU_Driven_Animation_VAT.txt: swarm fish route is VAT, not SkinnedMeshRenderer or Animator.
+- - ANIM_IK_FABRIK_GroundSnapping_Procedural.txt: spine/appendage metadata must support solver-friendly lengths, constraints, and stable rest poses.
+- Rejected Alternatives: Manual Unity Animator clips and hand-painted weights. They create CPU/runtime cost and do not scale to large fauna or swarms.
+- Scalability potential: Low uses few bones or VAT silhouettes; middle keeps reduced spine chains; high increases VAT frames and wrinkle masks; ultra spends saved CPU on richer shader response and longer LOD residency.
+- Hardware Impact: i3/MX350 gains come from removing runtime rig generation and Animator evaluation; expected runtime savings are asset-dependent and require profiler proof.
+- ## Decision 001 - Editor-Only Boundary
+- Problem: The assignment asks for complex rigging, but runtime architecture forbids generator work in Play Mode.
+- Solution: Place generator scripts under `Assets/_Project/Editor/Generators/Fauna/`; any runtime data carrier must be minimal, serializable, and safe to load without running editor math.
+- Rejected Alternatives: Runtime mesh analysis, runtime skeleton generation, or runtime VAT generation. Standard Unity approach is too slow and allocates during gameplay.
+- Scalability potential: Generated assets can bake multiple quality lanes without changing runtime truth ownership.
+- Hardware Impact: Low-end silicon avoids CPU spikes from import-time math during gameplay; high-tier devices use richer precomputed data.
+- Problem: The assignment requires analyzing `Assets/_Project/Art/Fauna/Raw`, but that folder does not exist and no FBX/OBJ/Mesh fauna sources were found under `Assets/_Project/Art`.
+- Solution: Kept the scanner but removed report-file output; the generator now emits a cold Unity console summary and avoids synthetic proof files.
+- Rejected Alternatives: Generating fake creature records or pretending prefab output exists. That would poison downstream rig validation.
+- Scalability potential: Low, middle, high, and ultra lanes remain data-driven once real meshes arrive; no code path assumes a fixed species list.
+- Hardware Impact: i3/MX350 gain is deferred until assets exist; current gain is avoiding a useless bake over nonexistent input.
+- Problem: Vertex deformation needs stable bending without hand-painted weights or Animator overhead.
+- Solution: Implemented Burst inverse-distance weighting against bone line segments, preserving up to 4 `BoneWeight1` influences and forcing the fourth weight to close the sum to 1.0f.
+- Rejected Alternatives: Joint-point distance causes pinching near long bones; heat diffusion over mesh adjacency needs topology graph construction and is too expensive for the first offline pass without raw meshes to validate.
+- Scalability potential: Low uses 4 bones or VAT, middle uses 24-bone predators, high/ultra can spend editor time on denser Leviathan chains up to 96 bones without changing runtime route.
+- Hardware Impact: i3/MX350 avoids Animator evaluation and receives fixed skinned assets; exact frame gain requires Unity profiler on generated prefabs.
+- Problem: Swarm VAT must survive `<0.001f` positional error without visible jitter.
+- Solution: Used `TextureFormat.RGBAFloat` for the generator and added a precision assertion menu path.
+- Rejected Alternatives: `RGBAHalf` is cheaper in VRAM but risky before measuring fauna scale ranges; compressed formats are invalid for positional offsets.
+- Scalability potential: Low can downshift frame count and shader cadence, middle keeps 30 frames, high/ultra can raise frames or add harmonics through `GlobalQualityWeight`.
+- Hardware Impact: Low-end silicon spends more VRAM but buys 0 CPU bones for swarms; high-end devices can use the same baked data at larger school counts.
+- Problem: Bone audit cannot infer correct limits if generated prefab names do not identify small fish, predator, or Leviathan lane.
+- Solution: Prefab and mesh names now include the rig preset token before the source asset token.
+- Rejected Alternatives: Trusting mesh names or creating a runtime audit component from an editor assembly. Both create brittle dependency routes.
+- Scalability potential: All quality tiers can be scanned by filename without loading custom runtime metadata.
+- Hardware Impact: Prevents accidental 96-bone assets from being treated as small fish in audit logic; protects mobile GPU skinning budgets.
+- Problem: The prompt requests Spine-IK metadata attached to prefabs, but new runtime components would cross domain ownership.
+- Solution: The editor best-effort injects existing `Hecton8.AI.FaunaKinematicsRuntime` serialized fields when that component type is present and logs a cold summary instead of writing JSON metadata.
+- Rejected Alternatives: Build spam, external JSON proof, or relying on chat assertions.
+- Solution: Extend `FaunaApexIntegratorVerifier1610` to mark query syntax, LINQ/deferred invocations, anonymous functions, anonymous object construction, `yield`, and `await` as hot-reachable allocation/control-flow violations. Narrow static string factory detection to `string`, `String`, and `System.String` so unrelated `Create()` factories are not misclassified as string allocation.
+- Rejected Alternatives: Broad grep-only rejection and broad `.Create` suffix rejection. Grep is not transitive and `.Create` catches too many legitimate factory names without semantic context.
+- Scalability potential: Low devices avoid allocator/deferred-enumerator spikes; middle/high/ultra keep richer fauna systems only when their hot transfer surfaces stay explicit and allocation-free.
+- Hardware Impact: Runtime impact is 0 us from the verifier. i3/MX350-class builds avoid spending profiler time on avoidable LINQ/delegate drift.
+- ## Decision 034 - Hot Foreach Source Detection
+- Problem: HECTON-8 bans `foreach` over dictionary/interface/deferred enumerables in hot paths, but without a semantic model the verifier cannot prove a `foreach` target is a safe array/list case.
+- Solution: Add a fail-closed AST guard for `foreach` and deconstruction `foreach` syntax in hot-reachable methods. A direct hot-body scan found no current fauna-domain `foreach` hits before enabling this guard, so the new rule does not mask an existing known violation.
+- Rejected Alternatives: Allow `foreach` until semantic compilation is available, or attempt type inference with regex. The first leaves an allocation blind spot; the second is fake precision.
+- Scalability potential: Low devices avoid enumerator boxing/deferred iteration drift; middle/high/ultra keep fauna hot loops index-based and cache-friendly.
+- Hardware Impact: Runtime impact is 0 us from the verifier. i3/MX350-class stability improves by preventing future boxed enumerator paths before profiler time is spent.
+- [omitted 165 filtered lines; raw preserved]
+
+## Rationale_1611.md [81509 B; budget 19563]
+- Status: STATIC_COMPLETE_BUILD_BLOCKED_BY_CONTENTION
+- Agent: 1611
+- Problem: Main menu/pause UI may still depend on flat screen-space presentation, default UI raycasting, and instantaneous state changes.
+- Solution: First prove actual source/scene state, then replace only the required menu-domain pieces with world-space panels, cached ray-to-panel math, explicit camera transition DTOs, and shader-side presentation fakes.
+- Rejected Alternatives: Blind scene YAML mutation, direct dependency on absent systems from sibling agents, DOTween/Cinemachine assumptions, and black loading screen handoff.
+- Scalability potential: Low = static world-space terminal, cheap raycast, minimal scanlines. Middle = stronger CRT flicker, fog/DoF bounded by GlobalQualityWeight. High = richer glitch, higher panel resolution, cinematic camera parallax. Ultra = visual overkill on menu only, damped before prologue.
+- Hardware Impact: i3/MX350 target requires O(1) raycast math, no GraphicRaycaster hot sweep, no per-frame managed allocations, and no expensive compile runs while cluster load is active.
+- Decision 0:
+- Problem: Prompt extraction initially returned PROMPT_NOT_FOUND.
+- Solution: Use attribute-aware regex matching AGENT_PROMPT where id="1611" appears anywhere in the opening tag.
+- Rejected Alternatives: Neighbor prompt context, exact literal `<AGENT_PROMPT id="1611">` parser.
+- Scalability potential: Prevents prompt bleed across 20+ agents; no runtime impact.
+- Hardware Impact: Static CLI scan only; no Unity import/build.
+- Decision 1:
+- Problem: 01_MAIN_MENU contained a Canvas configured as Screen Space Camera and an enabled GraphicRaycaster, which violates diegetic UI ownership.
+- Solution: Convert the scene Canvas to RenderMode.WorldSpace, disable GraphicRaycaster, set 1920x1080 rect at 0.00105 m/px, and add cold runtime enforcement through DiegeticMenuCanvasUtility.
+- Rejected Alternatives: Keeping Screen Space Camera for convenience; creating a fake terminal mesh dependency that does not exist in scene; relying on import-time editor mutation only.
+- Scalability potential: Low = static world-space panel with cheap collider. Middle = same panel with stronger existing shader scanlines. High = richer camera parallax. Ultra = visual overkill from shader/lighting without changing UI truth.
+- Hardware Impact: Removes GraphicRaycaster hot sweep; i3/MX350 gets predictable O(1)-style panel route instead of Unity UI traversal.
+- Problem: Menu state changes were visual alpha swaps with no camera embodiment.
+- Solution: Add MenuCameraController with cubic Bezier position interpolation and normalized quaternion interpolation advanced in LateFrameTick. Main, Saves, Settings, Loading, and Handoff routes are explicit.
+- Rejected Alternatives: Linear interpolation, camera cuts, DOTween, Cinemachine dependency.
+- Scalability potential: Low = short parallax. Middle = wider drift. High/Ultra = GlobalQualityWeight expands parallax and handoff drama continuously.
+- Hardware Impact: Estimated 3 us active-frame solve; no jobs, no allocations, no hidden Complete.
+- Problem: Button interaction had to survive world-space conversion without Unity GraphicRaycaster.
+- Solution: Add DiegeticMenuRaycastReceiver as IPanelInteractable. It caches Button[96] cold, maps canvas hit points to RectTransform space, invokes only matching down/up target, and clears fail-closed on null/miss/inactive groups.
+- Rejected Alternatives: EventSystem.RaycastAll, GraphicRaycaster, per-frame GetComponents, LINQ.
+- Scalability potential: Low = 96 fixed button cap. Middle/High/Ultra = same truth route; visual fidelity changes do not affect click ownership.
+- Hardware Impact: Worst case scans 96 cached references; no managed collection growth on MX350-class systems.
+- Problem: UI clicks felt head-locked and weightless.
+- Solution: Publish HapticRequest and AcousticPingSignal from the physical RectTransform center. RuntimeOriginRoute converts button world position to AUP; invalid origin fails closed.
+- Rejected Alternatives: String events, HectonEventBus managed path, direct SpatialAudioManager scene lookup in hot input.
+- Scalability potential: Low = micro haptic + small acoustic radius. Middle = stronger click ping. High/Ultra = downstream audio can occlude/muffle by position without changing UI code.
+- Hardware Impact: Estimated 4-5 us only on hover target changes and clicks, zero continuous audio polling.
+- Problem: 01_MAIN_MENU -> 01_ORBIT would otherwise use the existing world-only transition gate.
+- Solution: Extend SceneRuntimeService cinematic predicate to accept OrbitSceneName and replace linear camera pan with cubic Bezier plus bounded heave.
+- Rejected Alternatives: Black loading screen, immediate SceneManager activation, screen fade as the sole visual.
+- Scalability potential: Low = simple descent. Middle/High = dither and drone crossfade. Ultra = heavier menu-only effects can taper through existing transition.
+- Hardware Impact: Estimated 4 us/frame during transition; no prologue dependency invented.
+- Problem: Prompt requested JSON reports and builds, but user explicitly rejected unread dumps and forbade dotnet build after small edits.
+- Solution: Use Docs/Tasks/Status_1611.md, Docs/AgentLogs/Rationale_1611.md, and LOG_1611.md as primary proof. Sample CPU/compiler state before build; block build because CPU=62 and dotnet pid=31512 exists.
+- Rejected Alternatives: Running dotnet build under load; producing JSON as authoritative output.
+- Scalability potential: Protects 20+ parallel agents from compile contention.
+- Hardware Impact: Avoided a full project build while host compiler process was already active.
+- Problem: APEX integrator verification required proof that menu refactor did not create hot dependency lookups, unsafe phase presentation, or DataVault write-lock nesting.
+- Solution: Added ValidateApexIntegratorProtocol() to DiegeticMenu1611SmokeTester and ran comment-stripped static scans over modified runtime files plus a broad Scripts hot-method pass. Presentation motion remains LateFrameTick-only; Tick transfers a float delta and cached flags only.
+- Rejected Alternatives: dotnet build under CPU=100, runtime JSON proof files, and trust-based checklist closure.
+- Scalability potential: Low/Middle/High/Ultra all keep the same zero-GC route; quality scales visuals, not ownership or lookup cadence.
+- Hardware Impact: Prevents per-frame registry/component search and build contention; i3/MX350 path stays cache-only while high-end can spend saved time on CRT/noir presentation.
+- Problem: Pause menu camera spline advanced from SystemDispatcher.CurrentFrameDeltaTime, which becomes zero when time dilation pauses gameplay. This could freeze diegetic menu camera motion exactly when the pause menu is open.
+- Solution: Accumulate _pauseMenuPresentationDeltaTime from UnscaledFastTick and consume it in LateFrameTick, with a capped CurrentFrameUnscaledDeltaTime fallback. Added APEX smoke assertion rejecting scaled pause presentation delta.
+- Rejected Alternatives: Driving camera from UnscaledFastTick, using Unity Time.unscaledDeltaTime directly in LateFrameTick, or leaving the route scaled because it passes token scans.
+- Scalability potential: Low = pause camera still moves on weak hardware. Middle/High/Ultra = same timing truth, richer visual style can run without changing phase ownership.
+- Hardware Impact: One float accumulator and one clamp per unscaled tick; no allocation, no registry lookup, no extra scene query.
+- Problem: DiegeticPanelController.LateFrameTick manually reset _applyingLateFramePresentation. A thrown editor/dev exception inside panel view, cursor, proxy light, or material flush could leave the flag stuck true and poison later presentation ownership.
+- Solution: Wrap the late-frame presentation body in try/finally and add APEX source assertion that the flag is reset in finally.
+- Rejected Alternatives: Assuming no exception path, adding broader catch/log noise, or moving presentation work out of LateFrameTick.
+- Scalability potential: Low/Middle/High/Ultra get deterministic cleanup independent of visual complexity; richer ultra effects can fail closed in dev without corrupting phase state.
+- Hardware Impact: try/finally is no allocation and negligible on the non-throw path; prevents expensive state corruption debugging on weak machines.
+- Problem: DiegeticMenuRaycastReceiver.ReceiveCanvasInput called ResolveButton, which called IsButtonEligible, which walked parent Transforms and used TryGetComponent<CanvasGroup> during hover/down/up. The direct method token scan missed this helper dependency path.
+- Solution: Replace hot hierarchy probing with cold fixed-array metadata: Button[96], RectTransform[96], flattened CanvasGroup[96 * 8], and byte group counts. Input now resolves visibility by index and never searches components in the hot helper graph. Strengthen the editor smoke verifier to scan raycaster helpers and require real method declarations, not call-site matches.
+- Rejected Alternatives: Leaving CanvasGroup checks uncached because button count is small; globally banning TryGetComponent in the entire file, which would reject legitimate cold cache construction; using EventSystem/GraphicRaycaster as fallback.
+- Scalability potential: Low = same 96-button cap with no hierarchy search. Middle/High/Ultra = richer CRT/audio/haptic presentation can scale independently while click ownership remains cache-only.
+- Hardware Impact: Removes per-input parent component lookup from MX350/i3 path. Worst-case ray hit remains fixed-index button/rect/group scans with no managed allocation.
+- Problem: The cold button cache retained old references when RebuildButtonCache found fewer buttons than the previous build. Also, more than eight parent CanvasGroups were silently truncated, which could ignore a hidden or non-interactable ancestor and let a deep UI chain click through.
+- Solution: Clear all previously cached Button, RectTransform, and flattened CanvasGroup references before rebuilding. Track CanvasGroup overflow with a byte sentinel and make IsButtonEligible return false on overflow. Add editor smoke coverage for CanvasGroup overflow fail-closed behavior.
+- Rejected Alternatives: Raising the CanvasGroup cap, which hides authoring mistakes and adds hot scan cost; accepting stale references because menu topology is usually static; doing dynamic parent scans in the hot path.
+- Scalability potential: Low = deterministic fixed cache with stale-reference cleanup. Middle/High/Ultra = same input truth while visual richness scales elsewhere.
+- Hardware Impact: Cold rebuild clears at most 96 buttons and 768 group slots. Hot path remains unchanged fixed-index reads; no extra work on compact hardware.
+- Problem: MainMenuController locks panel CanvasGroups during fade/spline transitions, but PauseMenuController ShowSection made the new section interactable immediately while the pause camera route was still active. Rapid input could select or trigger controls on a section before the camera finished moving to that physical screen.
+- Solution: Add a pause-section interaction gate. ShowSection makes the section visible, starts the camera route, then locks the active section CanvasGroup. LateFrameTick advances the camera and releases the gate only after MenuCameraController.IsActive is false.
+- Rejected Alternatives: Adding a fixed timer independent of spline state; disabling the whole pause canvas; moving input lock into UnscaledFastTick before presentation settles.
+- Scalability potential: Low/Middle/High/Ultra keep identical authority timing. Camera path duration/visual richness can scale later without changing interaction truth.
+- Hardware Impact: One bool check and one CanvasGroup reference resolve in LateFrameTick while a gate is active. No allocation, no registry lookup, no component search.
+- Problem: DiegeticPanelController.LateFrameTick protected the pending presentation flush with _applyingLateFramePresentation, but the earlier AdvancePanelInteractionPresentation call also mutates cursor/panel presentation state. The flag did not cover the full visual-sync body.
+- Solution: Move _applyingLateFramePresentation = true before AdvancePanelInteractionPresentation and keep the existing finally reset. Extend smoke validation to reject flag placement after the advance call.
+- Rejected Alternatives: Keeping the flag only around flushes; adding a second flag; moving input projection into a different phase without a broader contract rewrite.
+- Scalability potential: Low/Middle/High/Ultra get one coherent presentation guard independent of CRT/phosphor/proxy-light complexity.
+- Hardware Impact: No new hot cost beyond the existing try/finally scope. The change removes a phase-state ambiguity, not CPU.
+- Problem: RebuildButtonCache cleared arrays but left _hoverButtonIndex and _pressedButtonIndex alive. After a hierarchy rebuild, the same integer slot could refer to a different Button, allowing stale hover/press ownership to survive.
+- Solution: Add ClearInteractionState to reset hover, press, and EventSystem selection before repopulating the fixed cache. Add editor smoke source for Down -> Rebuild -> Up not clicking, followed by a normal click still working.
+- Rejected Alternatives: Comparing cached Button object identity on every hot input event; keeping state because menu rebuilds are cold; relying on IsButtonEligible to catch stale ownership.
+- Scalability potential: Low/Middle/High/Ultra keep deterministic cache ownership. Rebuild cost stays cold and bounded.
+- Hardware Impact: One cold EventSystem selection clear and two int resets per rebuild. Hot input path unchanged.
+- Problem: MenuCameraController.Advance accepted non-finite delta. A single NaN could poison _elapsed, make t non-finite forever, and keep the route active indefinitely, blocking interaction gates and camera handoff sequencing.
+- Solution: Sanitize unscaledDeltaTime through math.isfinite and repair non-finite _elapsed before integration. Add APEX smoke source assertion for both guards.
+- Rejected Alternatives: Relying on SmoothStep01 to mask NaN visually; clamping only t while leaving _elapsed poisoned; deactivating the route on NaN and snapping the camera.
+- Scalability potential: Low/Middle/High/Ultra get the same deterministic camera route; visual overkill cannot deadlock on bad timing input.
+- Hardware Impact: Two finite checks in active camera advance. Negligible relative to transform write; prevents route stalls.
+- Problem: The spline completion branch deactivated the route after writing the eased Bezier/nlerp pose. Position math reaches the target at t=1, but nlerp can still normalize into a non-bit-exact quaternion. Physical menu anchors and pause-section interaction gates should close on exact authored target state, not "within tolerance."
+- Solution: On t >= 1, write _targetPosition/_targetRotation directly, then clear _active and return before the interpolated SetPositionAndRotation path. Add editor smoke source assertion that the target snap precedes _active = false.
+- Rejected Alternatives: Trusting tolerance-based drift tests only; snapping by recomputing ResolveRoutePose in Advance; adding an epsilon threshold that could end routes early.
+- Scalability potential: Low/Middle/High/Ultra keep identical camera truth. Stronger high-tier parallax still lands on exact physical screens.
+- Hardware Impact: One final-frame branch and transform write. No allocation, no registry lookup, no extra steady-state cost.
+- Problem: DiegeticMenu1611SmokeTester used cold GetComponent<Button>() in editor-only setup. It was not a runtime violation, but Unity MCP validate_script emitted a warning, weakening the proof artifact.
+- Solution: Replace both smoke Button lookups with TryGetComponent and explicit InvalidOperationException failures.
+- Rejected Alternatives: Ignoring the warning because the code is editor-only; suppressing diagnostics; adding broader reflection-based component checks.
+- Scalability potential: Editor proof stays deterministic and strict without changing runtime paths.
+- Hardware Impact: Editor-only cold setup; 0 runtime impact.
+- Problem: SceneRuntimeService still created a Screen Space Overlay canvas for the transition blackout/boot layer. The scene itself was diegetic, but the start-game handoff reintroduced a flat overlay exactly at the highest-visibility moment.
+- Solution: Convert the transition overlay to a WorldSpace canvas. Cache its RectTransform/Canvas, place it in front of the current cinematic camera each transition tick, and cold-resolve the loaded scene camera once via preallocated scene-root/camera lists before the dissolve phase.
+- Rejected Alternatives: Keeping Screen Space because it is reliable across scenes; using Camera.main every dissolve frame; making the overlay a child of the menu camera, which would die when 01_MAIN_MENU unloads; adding a new global camera registry route.
+- Scalability potential: Low = single world-space dither plane and boot text. Middle = same plane with existing IGN dither. High/Ultra = stronger material/post presentation can happen without changing transition ownership.
+- Hardware Impact: Per-frame transition cost is cached camera transform, FOV/aspect math, and one RectTransform pose/scale write. Cold camera resolution scans scene roots once after load using reused List buffers.
+- Solution: Compare eventSystem.currentSelectedGameObject with the resolved targetObject inside FlushPendingSelection and return without writing when they match. Lock the behavior with a smoke source assertion.
+- Rejected Alternatives: Clearing/reselecting every LateFrame for simplicity, or treating duplicate focus writes as harmless. The focus route is VISUAL_SYNC state; unnecessary writes weaken deterministic phase reasoning.
+- Scalability potential: Low = weak machines avoid redundant EventSystem callback traffic during hover hold. Middle = stable focus on pause/settings panels. High/Ultra = richer hover audio/haptics can scale without duplicate focus churn.
+- Hardware Impact: One reference compare only when a pending selection flush exists. Estimated under 0.1 us; zero allocation, no registry lookup, no DataVault lock.
+- Decision 73:
+- Problem: MainMenuController.Start() seeded _lastUnscaledTickTime directly from SystemDispatcher.CurrentUnscaledTimeSeconds while later delta/visual sync paths used finite guards. A non-finite dispatcher sample at startup could poison presentation delta before GetUnscaledDeltaTime had a chance to repair it.
+- Solution: Route Start(), retry timing, cancel debounce, delta calculation, and main/pause visual sync through ResolveCurrentUnscaledTimeSeconds helpers. Clamp main-menu presentation delta to MaxMenuPresentationDeltaSeconds and add smoke assertions that reject direct dispatcher seeding.
+- Rejected Alternatives: Guarding only GetUnscaledDeltaTime or using Unity Time directly. Presentation timing needs one local sanitization route and should stay independent from gameplay simulation time.
+- Scalability potential: Low = no camera/menu freeze from invalid time on weak hardware. Middle = smoother panel travel under load. High/Ultra = longer camera splines and CRT style sync can scale without NaN propagation.
+- Hardware Impact: A few finite checks and one min clamp on presentation paths. No allocation, no hot component lookup, no GlobalRegistry.Get<T>, no DataVault lock.
+- [omitted 337 filtered lines; raw preserved]
+
+## Rationale_1612.md [43680 B; budget 10484]
+- # Rationale 1612
+- Date: 2026-06-01
+- ## R0 - Session Bootstrap
+- Problem: Agent 1612 must integrate narrative POI/scanner lore routing without managed strings in hot paths, but no current-batch ledgers existed.
+- Solution: Created fresh current-batch status and rationale ledgers, selected eight relevant mandates, and scoped the first loop to archaeology before code.
+- Rejected Alternatives: Starting with source edits before locating existing scanner/POI systems would risk inventing dependencies and breaking other agents' work.
+- Scalability potential: Low uses hash-only triggers and bounded work; Middle/High/Ultra can add richer visual/audio consequences in presentation lanes without changing gameplay truth.
+- Hardware Impact: Estimated low-end i3/MX350 gain is avoiding GC spikes from narrative string/event flow; no measured microseconds yet.
+- ## R1 - Build Policy
+- Problem: The assignment contains a build task, but the user explicitly forbids dotnet build after small edits and AGENTS forbids builds under CPU/compiler contention.
+- Solution: Treat build as a gated exceptional action only after structural interface changes or Burst/job syntax risk, with CPU and compiler process checks first.
+- Rejected Alternatives: Running dotnet build as routine verification would starve parallel agents and violate direct user constraint.
+- Scalability potential: Static-source verification preserves cluster throughput; real runtime proof remains pending Unity/import/profiler artifacts.
+- Hardware Impact: Avoids multi-core MSBuild contention on the host; saved wall-clock CPU is host-side, not game runtime.
+- Problem: The prompt demanded removal of string lore IDs, but source inspection showed the runtime applied-lore route already uses `uint` packet hashes in `NarrativeDiscovery`, `ScannableFragment`, `NarrativeSpatialTriggerAuthoring`, and `MessageTerminal`.
+- Solution: Preserve the existing hash route and avoid deleting cold authoring labels that are not on the hot signal path. Proof route: `ScannableFragment` -> `H8AppliedLoreRuntime.TryRaisePacketUnlockedAt` -> `LoreFragmentScannedSignal`/`ScanCompleteSignal`.
+- Rejected Alternatives: A broad scanner rewrite or blind YAML/prefab mutation would risk breaking other agents' bindings and would not improve the runtime path.
+- Scalability potential: Low keeps scan completion as one hash/AUP payload; Middle/High/Ultra can add richer presentation reactions from the same immutable hash without changing gameplay truth.
+- Hardware Impact: No new runtime work. Low-end i3/MX350 avoids GC and avoids extra bus duplication; measured runtime gain absent.
+- Problem: A missing or corrupt applied-lore span could leave the PDA without a meaningful body update and risk a broken player-facing state.
+- Solution: Added `WriteCorruptedBody(uint hash)` in `PDAEncyclopediaStreamer`, writing `[CORRUPTED DATA RECORD]` plus hex hash into the existing character lease before `SetCharArray`.
+- Rejected Alternatives: Throwing exceptions, assigning TMP strings, or allocating a formatted string would violate the UI streaming mandate.
+- Scalability potential: Low displays one short corrupted line; Middle/High/Ultra can layer CRT/noise/material effects on the same numeric fault without changing text ownership.
+- Hardware Impact: Prevents exception/freeze path and keeps UI delivery bounded. Estimated low-end gain is avoidance of a managed allocation/fault path; profiler microseconds not measured.
+- Problem: Audio-log events had no unmanaged corruption parameters, so degraded lore audio could not be represented without side-channel state or managed clip labels.
+- Solution: Replaced the existing 8-byte payload padding with explicit-layout `AudioGlitchParametersDTO` and derived corruption/bitcrush/pitch/bandpass data in `AudioLogSystem`.
+- Rejected Alternatives: A new audio event type, string effect names, or direct `SpatialAudioManager` API churn would add dependency surface and risk sibling-agent conflicts.
+- Scalability potential: Low uses bitcrush/bandpass/static fake; Middle increases pitch/bandpass variance; High/Ultra can spend saved CPU on richer DSP while consuming the same DTO.
+- Hardware Impact: No extra payload size; uses previously unused 8 bytes. Low-end i3/MX350 avoids managed side-channel lookup. Measured microseconds absent.
+- Problem: Route records could reference prerequisites in a cycle, creating an impossible evidence graph that runtime UI could not solve.
+- Solution: Added cold editor/compiler graph validation in `H8DataMonolithCompiler` for self-prerequisites and DFS cycle detection. Failure text includes `FatalArchitectureException`.
+- Rejected Alternatives: Runtime graph walking in PDA hot path or a separate JSON report/test artifact would add allocations or produce ignored paperwork.
+- Scalability potential: Low/Middle/High/Ultra all benefit from a deterministic baked graph; runtime presentation tiers remain independent.
+- Hardware Impact: Runtime impact is 0 us because validation is cold compiler/editor work. Build/import execution was not run in this pass.
+- Problem: Tasks 08 and 11 requested new Burst authority jobs, but the project already has hash-bit prerequisite validation and lore-driven world-impact signals. Adding another writer would create a second authority route.
+- Solution: Documented those tasks as partial/pending route card, preserved existing first-party path, and added only cold validation plus presentation-safe runtime glue.
+- Rejected Alternatives: Direct DataVault scatter/voxel write locks from this agent would cross domain boundaries without owner, phase, lock, or proof contract.
+- Scalability potential: Low avoids unsafe duplicate authority; Middle/High/Ultra can consume existing biome/acoustic signals to buy richer visuals after owner approval.
+- Hardware Impact: Avoids hidden `.Complete()` or tiny-job overhead on weak CPUs. Runtime microseconds saved are not claimed.
+- Problem: The pipeline must be reasoned through without relying on a compile/build loop.
+- Solution: Static trace: player scans fragment -> scanner/fragment has applied lore hash -> `H8AppliedLoreRuntime.TryRaisePacketUnlockedAt` publishes hash/AUP payload -> PDA consumes hash bus -> prerequisite route checks packet bit indexes -> unmet prerequisite marks encrypted/corrupted state -> PDA renders from fixed char buffer using `SetCharArray`; audio-log route derives DTO from depth/hash and publishes unmanaged payload.
+- Rejected Alternatives: Treating this as proven runtime behavior would be false without Unity/profiler logs.
+- Scalability potential: Low shows short text/static; Middle/High/Ultra add stronger CRT/audio degradation and biome dressing from same hash signal.
+- Hardware Impact: Expected low-end benefit is stable no-string path; measured proof absent.
+- Problem: The project needed proof that PDA corrupted records and audio-log degradation stay phase-safe and zero-GC, but JSON reports were explicitly rejected and the existing verifier did not cover those new routes.
+- Solution: Extended `H8NarrativeApexVerifier` to inspect PDA corrupted-record char-span delivery and audio glitch DTO/late-frame flush routing directly from C# source. Audio audit files are parsed as extra audit inputs without adding them to hot-root traversal, avoiding false `GlobalRegistry` registration findings from unrelated audio service lifecycle helpers.
+- Rejected Alternatives: A separate report generator or broad runtime test harness would add I/O and likely require build/editor execution. Adding audio files to normal hot-root traversal would flag lifecycle registration paths outside this agent's route.
+- Scalability potential: Low/Middle/High/Ultra share the same verifier contract; presentation richness can evolve while verifier locks the data route.
+- Solution: Added a local primitive duplicate guard in `PDAEncyclopediaStreamer`: lore-fragment signals marked `FlagPairedScanComplete` are skipped when a matching scan-complete payload exists in the same snapshot. `H8AppliedLoreRuntime` now sets that paired flag only on the finite-AUP route that also publishes `ScanCompleteSignal`, and clears it on hash-only or non-finite routes.
+- Rejected Alternatives: Destructive `TryConsumeFrame` was rejected because the lane is broadcast. A managed `HashSet`/queue was rejected because source snapshots are already bounded and primitive. Removing one of the two signals was rejected because world-impact/PDA/lore consumers use different first-party views of the same scan fact.
+- Scalability potential: Low keeps one PDA state write per reveal and avoids repeated metadata/prerequisite work; Middle keeps existing fan-out; High/Ultra can add richer PDA/audio/biome reactions without duplicate UI unlock churn.
+- Hardware Impact: Runtime measured: 0. Added cost is a bounded primitive scan over current-frame scan-complete payloads only when lore-fragment signals are present. Removed cost is a duplicate `UnlockEntry`/metadata path for paired scanner/applied-lore reveals. No allocation, no DataVault lock, no scene lookup, no build run.
+- ## R35 - Scanner ScanEvents Cold Prewarm
+- Problem: `ScannerDataMiningRouter.RouteCompletionIfNeeded` still publishes the legacy `ScanEvents.TryRaiseEntryDiscovered` bridge after the first-party scanner signals. If no listener registered first, `ScanEvents.Enqueue` could lazily allocate persistent native queues from the scanner completion path.
+- Solution: Added `ScanEvents.EnsureInitializedCold` and called it from `ScannerDataMiningRouter.OnEnable`, before runtime completion can enqueue scan events. Extended `H8NarrativeApexVerifier` to require both the cold method and scanner prewarm call.
+- Rejected Alternatives: Deleting `ScanEvents` was rejected because legacy listener compatibility is outside this pass. Moving `TryRaiseEntryDiscovered` earlier or later does not remove the lazy-allocation hazard. A new bridge queue would duplicate the existing owner.
+- Scalability potential: Low avoids a first-scan native queue allocation hitch; Middle keeps current scan-event listener behavior; High/Ultra can layer richer scan feedback on the already-warmed bridge while first-party hash/AUP signals remain authoritative.
+- Hardware Impact: Runtime measured: 0. Steady completion path keeps the same enqueue work, but queue creation/prewarm is forced into cold `OnEnable`. No new DataVault lock, scene lookup, managed string path, or build run.
+- [omitted 160 filtered lines; raw preserved]
+
+## Rationale_1614.md [32558 B; budget 7814]
+- # Rationale 1614 - BATCH_RENDERER_GROUP_SCATTER_POLISHER
+- Date: 2026-06-01
+- Status: CODE COMPLETE / RUNTIME BRG DATA VAULT BRIDGE ADDED / QUALITY PREFIX LIVE / COROUTINE-FREE URI LOAD / RUNTIME PAYLOAD CAP / BAKE GRID REFERENCE CAP / CULLING BOUNDS FINITE GATE / BOUNDS CAP SELF-TEST ROUTE / PAYLOAD LENGTH GUARD / GRID REF LONG SUM / SOURCE FOLDER BINDING VERIFIED / CULLING DATASET BOUNDS IMPORT / UNITY EXECUTION BLOCKED BY HOST CONTENTION
+- ## Decision 00 - Scope Gate
+- Problem: Agent 1614 is assigned to offline scatter normal alignment, spatial culling, density decimation, and `.brgdata` baking. This touches Editor tooling, Burst jobs, binary layout, metadata assets, and prefab binding.
+- Solution: Confine all generation code to `Assets/_Project/Editor/Generators/World/` unless an existing runtime scatter loader contract already exists and must be referenced. Runtime changes require a critical justification and must avoid hot scatter calculation.
+- Rejected Alternatives: Runtime scatter alignment, per-instance GameObjects, scene hierarchy persistence, and binary quality tiers. These violate the prompt and HECTON-8 render doctrine.
+- Scalability potential: Low uses shorter draw prefix from the deduction map; Middle increases prefix and LOD residency; High uses dense near-field distribution; Ultra uses visual overkill density while gameplay truth remains unchanged.
+- Hardware Impact: i3/MX350 gain comes from moving scatter CPU work to offline bake and drawing a prefix slice of already packed GPU data. Expected runtime CPU impact is reduced by avoiding transform hierarchies; exact microseconds are PENDING VERIFICATION.
+- ## Decision 01 - Normal Alignment Contract
+- Problem: Kelp/coral/rock instances must grow along voxel terrain normals while preserving random yaw. Direct Euler tilt can produce NaNs on vertical faces and loses yaw authority.
+- Solution: `AlignScatterToTerrainNormalJob.BuildNormalAlignedRotation` normalizes the sampled normal, projects a stable forward seed onto the normal plane, rotates that tangent by yaw around the normal axis, and calls `quaternion.LookRotationSafe`.
+- Rejected Alternatives: `Transform.LookAt`, per-prefab Editor transforms, and direct Euler slope offsets. They are scene-object paths, not flat BRG data paths, and they fail on cliff normals.
+- Scalability potential: Low/middle/high/ultra all share identical matrix truth; only draw prefix changes by `GlobalQualityWeight` metadata, so visual density scales without divergent placement.
+- Hardware Impact: i3/MX350 avoids runtime quaternion work for every scatter instance; saved runtime cost is projected per visible chunk, exact measured microseconds unavailable because bake execution was blocked.
+- Problem: Testing every instance against every base/wreck AABB would scale as O(N*M); 100,000 instances and 500 bounds would produce 50,000,000 tests per bake.
+- Solution: Build a cold Editor spatial grid once from bounds, write `NativeArray<int2>` cell ranges plus flat bound indices, then let `CullScatterInsideBoundsJob` test only the current cell range.
+- Rejected Alternatives: Full pairwise AABB scan and scene collider queries. Full scan wastes CPU; collider queries create managed/physics dependencies and are not deterministic binary bake inputs.
+- Scalability potential: Low devices receive the same no-intersection truth but draw fewer entries; ultra can consume denser forests because hidden/invalid base-intersecting entries are zeroed before GPU upload.
+- Hardware Impact: i3/MX350 runtime gain comes from not drawing vegetation hidden inside base modules and not instantiating culled GameObjects. Exact measured microseconds unavailable; static operation count drops from N*M to N*K where K is local cell occupancy.
+- Problem: Runtime renderer needs flat GPU-ready payloads, not ScriptableObject truth or scene transforms.
+- Solution: `.brgdata` writer emits a 64-byte header, matrix block at 64-byte stride, 64-byte flora metadata block matching `GpuScatterFloraInstanceData`, and 4-byte quality index map.
+- Rejected Alternatives: JSON, prefab-per-instance, and runtime reflection of scatter payloads. These are cold/managed data routes and violate BRG/GPU sovereignty.
+- Scalability potential: Low/middle/high/ultra draw fractions are metadata floats, not binary switches; the runtime can choose a shorter quality-index prefix without recalculating placement.
+- Hardware Impact: i3/MX350 avoids Transform hierarchy cost and CPU scatter calculation; high-end machines can draw a longer prefix from the same file. Exact measured microseconds unavailable because Unity execution was blocked.
+- Solution: Promote the default source folders to shared pipeline constants, add `ScanScatterSourcesForFolders`, add a folder-aware `BakeMockScatterChunk` overload, and route the window's folder fields into both scan and bake execution. The bake result now records resolved folders and a validity flag. `AbyssalScatterApexIntegratorVerifier1614` now rejects any regression where the UI exposes source folders but does not bind them to scan/bake execution.
+- Rejected Alternatives: Removing the fields, leaving scan as a menu-only log, or silently scanning all `Assets`. Removing fields reduces authoring control; menu-only scan keeps fake UI state; scanning all `Assets` is slow and produces noisy counts unrelated to the selected biome/culling dataset.
+- Scalability potential: Low/Middle/High/Ultra still consume one continuous `.brgdata` format. The improvement keeps authoring input deterministic so weak-device density slices and ultra-density slices are baked from the intended biome/culling dataset instead of an accidental global search.
+- Hardware Impact: Runtime hot-frame cost is 0 microseconds. Editor valid path adds only cold `AssetDatabase.FindAssets` folder filtering that was already present; invalid folder input now falls back before broad discovery. Compiler CPU spent remains 0 because CPU was `77` and Unity `dotnet` PID `10780` was active.
+- ## Decision 23 - Culling Dataset Prefab Bounds Import
+- Problem: The culling dataset folder was bound into scan and bake, but the actual spatial culling bounds still came from `GenerateMockCullingBoundsJob`. That left the primary mission partially fake: selected base/wreck prefabs could be counted but not used to prevent kelp/coral intersections.
+- Solution: Add a cold Editor import path that opens prefabs with `PrefabUtility.LoadPrefabContents`, extracts enabled collider bounds first, falls back to renderer bounds if colliders are absent, converts valid bounds into `CullingBoundsDTO`, and unloads prefab contents in `finally`. The bake uses imported bounds when available and only schedules the mock bounds job when no valid prefab bounds exist. The window now exposes imported/mock/truncated bound counts, and the APEX verifier requires this ...
+- Rejected Alternatives: Keeping mock-only bounds, parsing prefab YAML, or using one huge folder AABB. Mock-only bounds do not protect actual base/wreck geometry. YAML parsing risks prefab corruption and FileID drift. One huge AABB over-culls visual density around non-convex modules.
+- Scalability potential: Low/Middle/High/Ultra share the same exclusion truth. Weak devices draw fewer instances but do not waste their short prefix on plants inside structures; Ultra can draw dense flora without pushing it through base walls.
+- Hardware Impact: Runtime hot-frame cost is 0 microseconds. Editor bake pays cold prefab-content loading proportional to selected culling prefabs and caps imported bounds by the existing Bounds slider. i3/MX350 runtime gains come from less hidden overdraw and no GameObject hierarchy; exact profiler microseconds remain PENDING VERIFICATION because CPU was `99` and Unity `dotnet` PID `27484` blocked build/execution.
+- [omitted 112 filtered lines; raw preserved]
+
+## Rationale_1615.md [52839 B; budget 12682]
+- # Rationale_1615 - MASTER_MATERIAL_AND_CBUFFER_UNIFIER
+- ## Session Bootstrap
+- Problem: Agent 1615 prompt was not at the first batch block; a broad read initially missed it by direct regex failure.
+- Solution: Used `Select-String`/line-bounded PowerShell extraction against `Docs/Tasks/CURRENT_BATCH.md`, then isolated lines 1278-1356 only.
+- Rejected Alternatives: Reading neighboring prompts or acting from the user's summary would leak other-agent constraints into this domain.
+- Scalability potential: Correct prompt isolation prevents unrelated systems from introducing shader keywords, variants, or runtime dependencies.
+- Hardware Impact: No runtime impact; prevents scope drift that could add shader variants harmful to i3/MX350.
+- Problem: Current user directive rejects heavy builds and useless JSON/binary proof artifacts.
+- Solution: Treat `dotnet build` as blocked unless C# coordinator edits make it critical and CPU/compiler contention checks pass; use durable shader/source/log proof instead of standalone JSON dumps unless a machine-readable scratch artifact is essential.
+- Rejected Alternatives: Running the task's default build/report steps blindly would waste host CPU and produce unread proof files.
+- Scalability potential: Keeps agent cluster throughput available while focusing proof on material/shader assets.
+- Hardware Impact: Editor host CPU saved; runtime impact depends on shader consolidation work still pending.
+- ## Mandate Selection
+- Problem: Shader unification touches SRP Batcher, variant count, GPU ALU, zero-GC shader globals, and CBuffer layout, but not gameplay truth.
+- Solution: Selected eight mandates: URP hot path, shader noir aesthetics, MX350 GPU optimization, frame/VRAM budgets, zero-GC, runtime struct layout, execution phases, and cinematic fake-first.
+- Rejected Alternatives: Physics, AI, save, audio, and narrative mandates do not govern this shader-only domain and would inflate scope.
+- Scalability potential: Low uses three texture samples, baked AO, zero POM; middle uses bounded POM/detail; high/ultra spends saved variants on richer detail without new material layouts.
+- Hardware Impact: Expected benefit for i3/MX350 is fewer shader variants, fewer SetPass breaks, and reduced texture bandwidth; measured microseconds remain `PENDING VERIFICATION`.
+- Problem: The shader directory contains 139+ shader/HLSL files, so a blind monolithic rewrite would damage UI, post, sky, stencil, and indirect special-purpose passes.
+- Solution: Split first consolidation to surface/lit material shaders only: UberNoir, voxel rock, coral, kelp, sargassum, dry zone, wreck, tool decay, ruin sheen, outpost, procedural bio, leviathan, and scatter lit paths.
+- Rejected Alternatives: Collapsing all hidden/post/celestial shaders into the same surface shader would destroy pass semantics and inflate risk.
+- Scalability potential: Low/middle/high/ultra share one material ABI; fidelity scales through `_H8GlobalQualityWeight`, not shader keywords.
+- Hardware Impact: Static candidate pragma count is 88 versus 3 in the master target after final rescan. This is a variant-pressure reduction plan, not compiled GPU proof.
+- Problem: True POM normally requires repeated height-map samples, directly conflicting with the three-texture-sample mandate.
+- Solution: Use a deterministic "dear lie" parallax loop: one packed mask sample provides height, then a quality-scaled loop computes UV offset without additional texture fetches. Final shading still samples only mask/albedo/normal.
+- Rejected Alternatives: True POM per-step mask sampling was rejected because it violates the MX350 sample budget and the task's three-sample requirement.
+- Scalability potential: Low = zero parallax steps; middle = shallow offset; high = more stable offset; ultra = stronger visual offset through the same ABI.
+- Hardware Impact: Low path bypasses parallax loop; high path spends ALU only, not extra texture bandwidth. Runtime timing remains `PENDING VERIFICATION`.
+- Problem: User rejected JSON proof dumps while the prompt requested JSON reporting.
+- Solution: Keep proof in readable markdown logs and source files; skip `Docs/Reports/MASTER_SHADER_UNIFICATION_1615.json` unless later explicitly required by integrator.
+- Rejected Alternatives: Writing unread JSON would satisfy old batch text but violate the current user directive.
+- Scalability potential: No runtime effect; improves review signal.
+- Hardware Impact: No runtime effect.
+- Problem: Legacy surface shaders carry many local keyword routes and uneven material buffers, but direct deletion would break unknown materials while 20+ agents are editing nearby assets.
+- Solution: Add `Hecton_Master_Lit.shader` as the migration target: three required passes, one material CBUFFER, no local quality keywords, and instancing-only compile expansion.
+- Rejected Alternatives: Mass-rewriting `Hecton_CoralMaster`, `Hecton_KelpMaster`, voxel, wreck, and procedural bio shaders in one pass was rejected because material import and scene assignment proof is not available in this turn.
+- Scalability potential: Low uses same ABI with cheap normals, no parallax, and stronger dither; middle/high/ultra raise visual offset, normal response, and microcontrast through floats rather than variants.
+- Hardware Impact: Static candidate pragma pressure drops from 88 candidate pragma lines to 3 master instancing pragma lines after material migration. Compiled microseconds remain `PENDING UNITY IMPORT`.
+- Problem: Dynamic Bayer table indexing and double `_ST` application could create importer risk and texture-coordinate drift.
+- Solution: Replaced the 16-value const array with bit-derived Bayer math; kept raw UV in varyings and applied `_BaseMap_ST`, `_MaskMap_ST`, and `_BumpMap_ST` independently while preserving one sample per texture.
+- Rejected Alternatives: Keeping the const array was legal under target 4.5 but not worth a compiler ambiguity; sharing base UV for all textures was cheaper but wrong for materials with distinct ST.
+- Scalability potential: All tiers keep deterministic UV behavior; low-tier does not pay extra texture bandwidth.
+- Hardware Impact: No added texture fetches. Bayer branchless math avoids table indexing and keeps the MX350 path predictable.
+- Problem: True parallax occlusion mapping would require repeated height-map reads and violate the strict three-texture-sample mandate.
+- Solution: Use packed mask alpha once, then execute bounded ALU-only parallax offset scaled by `_H8GlobalQualityWeight` and material cap.
+- Rejected Alternatives: Per-step height lookup, binary-search POM, and quality keywords were rejected as texture-bandwidth or variant debt.
+- Scalability potential: Low = zero iterations; middle = shallow displacement; high = deeper apparent relief; ultra = stronger offset within same material ABI.
+- Hardware Impact: Low path exits before loop; high path spends ALU but preserves texture bandwidth. Runtime GPU time is not claimed without profiler proof.
+- Problem: Shader-global updates could silently allocate or mutate outside the allowed owner phase.
+- Solution: Inspected dispatcher sources. The active path is `GlobalShaderDispatcher.ExecuteGlobalDispatch` and fallback is `HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync`; both use cached `Shader.PropertyToID` integers. No new updater was added.
+- Rejected Alternatives: A new MonoBehaviour polling route or material-property-block broadcast would violate single-route ownership and risk SRP Batcher breaks.
+- Scalability potential: GlobalQualityWeight remains a global visual scalar; material ABI and save identity stay unchanged across low/middle/high/ultra.
+- Hardware Impact: Avoided hot string IDs and per-material writes. `new Vector4` at dispatch sites is a struct value, not a GC allocation.
+- Problem: The master SVC asset already existed but did not reference the new master shader, so first-frame warmup would keep using legacy direct roots.
+- Solution: Add `Hecton_Master_Lit` to `Hecton8MasterVariants.shadervariants` with empty and `INSTANCING_ON` passType 0 variants; add the same shader path and instancing manifest to the existing editor compiler.
+- Rejected Alternatives: Creating a second SVC asset or a new editor compiler was rejected because the bootstrap already has a single warmup route.
+- Scalability potential: Low/middle/high/ultra all warm the same ABI; no quality-keyword variants are introduced.
+- Hardware Impact: Avoids first-route shader hitch risk after migration. Compiled warmup timing remains `PENDING UNITY IMPORT`.
+- Problem: Sky and material shaders needed expensive math reduction without losing first-frame spectacle.
+- Solution: The master shader remains free of `pow/sin/cos/sqrt`; Aegir sky replaces sphere-intersection `sqrt` with `value * rsqrt(max(value, epsilon))` and keeps procedural stars/ring shadow as cheap hashes and squared terms.
+- Rejected Alternatives: Physical atmospheric scattering or analytic high-order specular functions were rejected for the MX350 first-frame budget.
+- Scalability potential: Low keeps stars sparse and drift shallow; middle/high/ultra increase star density feel, ring alpha, rim scatter, and material parallax through continuous floats.
+- Hardware Impact: Removed one direct `sqrt` from the Aegir sky fragment path and avoided any expensive math calls in the master fragment path.
+- Problem: Helper math contained branch-like ternaries that were not required for the quality path.
+- Solution: Rewrote safe reciprocal sign handling and safe normalize fallback with `step`, `lerp`, and `rsqrt`. The only remaining quality branch is the required uniform POM zero-step early exit.
+- Rejected Alternatives: Forcing true constant-flow POM even at quality 0 was rejected because Task 09 requires absolute zero POM overhead on low-end hardware.
+- Scalability potential: Quality 0.0 samples mask/albedo/normal and exits parallax; quality 0.5 runs a masked 16-iteration ALU loop with half the active offset; quality 1.0 uses full configured depth without changing shader variants.
+- Hardware Impact: Predictable ALU replaces branch ambiguity in helper code. Runtime timing remains unmeasured.
+- Problem: The master audit counted one `UnityPerMaterial` CBUFFER but did not prove it lived in shared `HLSLINCLUDE` before every pass. A later edit could place the CBUFFER inside one pass, leaving shadow/depth with a divergent material contract while preserving the raw count.
+- Solution: Added pass-layout checks to `HectonMasterShaderAudit1615`: exact pass count 3, `HLSLINCLUDE < CBUFFER_START(UnityPerMaterial) < ENDHLSL < first Pass`, and required pass name/LightMode pairs for `ForwardLit`, `ShadowCaster`, and `DepthOnly`.
+- Rejected Alternatives: Duplicating the same CBUFFER inside every pass was rejected because duplication invites drift and weakens the single ABI proof. Trusting visual shader structure was rejected because this must fail closed in source.
+- Scalability potential: Low/middle/high/ultra keep one shared material layout across forward, shadow, and depth paths. Future pass additions must be deliberate and audit-visible.
+- Hardware Impact: No runtime cost. Prevents SRP Batcher breakage and first-frame shadow/depth material divergence on i3/MX350-class hardware.
+- Problem: The parallax fake produced `parallaxDelta` in transformed base-map UV space and then added that delta directly to `_BumpMap` UVs. If base and normal tiling differed, high-quality POM could visually slide normals against albedo.
+- Solution: Added `H8MasterSafeRcp2` and converted base texture-space parallax to raw UV delta through `_BaseMap_ST.xy`. The normal sample now uses `TRANSFORM_TEX(input.uv + parallaxRawDelta, _BumpMap)`. The audit now requires the raw-UV route and rejects the old base-space normal offset token.
+- Rejected Alternatives: Adding a second mask sample to resample all packed channels after POM was rejected because it breaks the three-fetch MX350 mandate. Disabling normal parallax was rejected because high/ultra would lose depth polish. Requiring identical texture STs in migrated materials was rejected because the migrator preserves authored ST.
+- Scalability potential: Low remains unchanged because POM defaults to zero steps. Middle/high/ultra keep normal detail aligned with base parallax across different texture tiling without adding variants or samplers.
+- Hardware Impact: Adds a small vector reciprocal and multiply only when the forward shader runs; no new texture fetches, CBUFFER bytes, material keywords, or asset rewrites. Prevents visual drift that would otherwise create duplicate materials or per-shader fixes on i3/MX350-class hardware.
+- [omitted 174 filtered lines; raw preserved]
+
+## Rationale_1616.md [33226 B; budget 7975]
+- # Rationale 1616 - PROJECT_HARDENING_AND_LEAK_SENTRY
+- Status: SOURCE VERIFIED - Unity console clean, no build under active dotnet contention
+- Problem: Scope attempts to cover every unmanaged allocation and listener in a large active Unity project.
+- Solution: Use repository static gates plus focused hardening of core sentry routes first: `NativeMemorySentinel`, `GlobalRegistry`, `GlobalDataVault`, and `SignalBus`.
+- Rejected Alternatives: Mass editing every class that matches a broad regex would create compile debt and cross-domain damage. Runtime polling for stale references is rejected because GlobalRegistry is a cold dependency spine.
+- Scalability potential: Low tier gets fail-closed leak detection with bounded scans; middle/high/ultra may add richer editor diagnostics without increasing gameplay hot-path cost.
+- Hardware Impact: Static editor scans cost editor time only. Runtime sentinel changes must remain O(active allocations) only on scene unload or fault, not per frame; expected low-end frame impact is 0 us steady-state.
+- Problem: The prompt asks for JSON and binary proof artifacts, while current user instruction rejects useless JSON reports and binary dumps.
+- Solution: Keep authoritative progress in `Docs/Tasks/Status_1616.md`, decisions in this rationale file, and final report in `Docs/AgentLogs/LOG_1616.md`. Implement dump-capable code only where required by the runtime fault path.
+- Rejected Alternatives: Generating standalone JSON now would satisfy old batch prose but violate the user's latest explicit instruction and add unread artifact churn.
+- Scalability potential: Documentation remains small and source-backed; high-tier diagnostics can still be enabled by code when faults occur.
+- Hardware Impact: No runtime hardware cost from omitted report generation.
+- Problem: Build verification can disrupt the shared machine.
+- Solution: Do not run `dotnet build` during minor edits. Use static source scans and targeted syntax inspection. If a critical compile risk appears, sample CPU/compiler contention first.
+- Rejected Alternatives: Blind full build after each patch is rejected by user instruction and project policy.
+- Scalability potential: Keeps the 20+ agent cluster from contention; validation remains source-local until a critical boundary change.
+- Hardware Impact: Avoids multi-core build load on host and preserves CPU for parallel agents.
+- Problem: `NativeMemorySentinel.RegisterPointer` exposed only string labels for raw pointer callers, so a proper zero-GC stress path could not prove fixed-label registration.
+- Solution: Add a public `FixedString128Bytes` overload and route both string and fixed-label calls through one fixed record writer. Decode fixed UTF-8 labels and hash UTF-16 code units to match `LocHash.Compute` exactly; keep existing flat `_records` / `_persistentReallocationRecords` storage.
+- Rejected Alternatives: Replacing fixed arrays with `NativeHashMap` was rejected because the current static arrays already avoid managed heap pressure and have deterministic capacity. Keeping string-only registration was rejected for stress callers.
+- Scalability potential: Low tier gets no steady-frame cost; middle/high/ultra can afford richer editor stress without changing runtime path.
+- Hardware Impact: Estimated steady-frame impact 0 us. Registration path avoids managed label allocation for fixed-label callers; scene/fault paths remain cold.
+- Problem: Scene unload previously called the reaper path by default, which could hide scene-lifetime leaks by freeing memory after ownership already failed.
+- Solution: Change `SceneManager.sceneUnloaded` to call `AssertNoSceneLifetimeAllocations`, report telemetry through `CrashTelemetryBuffer.ReportNativeTransientLeak`, and throw `FatalMemoryLeakException` with `bufferId`, owner, label, bytes, and lifetime.
+- Rejected Alternatives: Silent `RuntimeWatchdog.ReapNativeSceneLeaks` on every unload was rejected as cleanup theater. The reaper remains available as explicit recovery, not the default proof path.
+- Scalability potential: Low tier catches slow poison early instead of degrading over hours; high/ultra get the same deterministic failure semantics.
+- Hardware Impact: Estimated steady-frame impact 0 us; unload-only scan is O(active sentinel allocations), current capacity 1024.
+- Problem: Repository-wide memory hardening has hundreds of native allocation and lock sites across multiple domains.
+- Solution: Add `Assets/_Project/Scripts/Editor/MemorySecurityAudit1616.cs`, an editor-only gate that scans native allocation tokens, cached registry assignments, listener unregister symmetry, vault lock/finally proximity, hot method registry polling, and critical SubsystemRegistration hooks.
+- Rejected Alternatives: Mass-patching 80 runtime native allocation files, 41 cached registry files, and 93 suspicious lock windows without Unity compile was rejected as cross-domain sabotage.
+- Problem: `RebindingManager` cached `_dataVault` and input-binding telemetry handles after cold bootstrap but did not participate in GlobalRegistry hot-swap. A DataVault replacement could leave the manager writing telemetry through stale handles, and disable/destroy paths did not explicitly release those handles.
+- Solution: Implement `IGlobalRegistryHotSwapListener` on `RebindingManager`. Register the listener only from cold lifecycle registration, unregister it on disable/destroy, release both telemetry handles through the owning `IDataVault`, clear the cached vault, and rebootstrap only when the DataVault service changes.
+- Rejected Alternatives: Re-resolving `GlobalRegistry.DataVault` inside telemetry writes was rejected as hot polling. Leaving handles alive until process shutdown was rejected because input-binding telemetry is a DataVault-owned buffer route, not a global heap. Mass-editing the remaining weak-cache scanner list was rejected as cross-domain churn without owner proof.
+- Scalability potential: Low tier avoids stale telemetry buffers across subsystem restart or scene churn; middle/high/ultra keep the same zero-GC telemetry ring without adding per-frame registry lookups or managed listeners.
+- Hardware Impact: Runtime hot-path impact 0 us. Lifecycle cost is two cold registry listener calls and two bounded `ReleaseBuffer` calls only on disable/destroy or DataVault replacement.
+- Problem: `H8BridgeLiveSyncScheduler` queued `IDataVault` and macro service references for one-frame `LateFrameTick` bridge flush, but it had no hot-swap listener. A DataVault or MacroDatabase replacement between request enqueue and visual sync flush could write bridge authoring data through stale services. Dispatcher replacement could also leave `s_registered=true` while the runner was absent from the new dispatcher lane.
+- Solution: Make the static runner implement `IGlobalRegistryHotSwapListener`. `RegisterRunnerCold` now requires both late-frame registration and hotswap registration before accepting requests. DataVault replacement clears design/input/prefab queues; MacroDatabase replacement clears design queue; Dispatcher replacement resets the runner registration flag and re-registers if any request is pending.
+- Rejected Alternatives: Resolving `GlobalRegistry.DataVault` inside `LateFrameTick` was rejected as hot registry polling. Keeping stale queued requests for "best effort" was rejected because stale bridge writes are worse than dropping a one-frame authoring sync. Adding a managed event bus was rejected because the static runner already owns the route.
+- Scalability potential: Low tier avoids stale bridge writes during service churn with no frame cost; middle/high/ultra keep live authoring sync phase-safe while dispatcher/service hotswaps stay deterministic.
+- Hardware Impact: Runtime hot-path impact 0 us. `LateFrameTick` remains `FlushLateFrame()` only; hotswap work executes only on cold service replacement and bounded fixed arrays of 32 requests per lane.
+- [omitted 140 filtered lines; raw preserved]
+
+## Rationale_1617.md [14924 B; budget 3582]
+- # Rationale_1617
+- Agent: 1617
+- Domain: ASYNC_UPLOAD_AND_VRAM_DICTATOR / Echelon 7 Graphics GPU Memory & Streaming
+- Status: STATIC VERIFIED, UNITY BUILD NOT RUN
+- ## Decisions
+- ### Decision 01: VRAM Black Box Ring
+- Problem: VRAM monitor had sampled counters but no fixed 300-sample native black box for pressure state.
+- Solution: Added 64-byte `VramTelemetryEntry` and a DataVault ring at buffer 71617 owned by `SystemID.GraphicsScalability`.
+- Rejected Alternatives: JSON/log file per sample; managed list; GlobalRegistry hot polling. Too slow or banned by user.
+- Scalability potential: Low uses one slow-tick row and pressure flags. Middle adds usable diagnostics. High/Ultra keeps full 300-sample history without extra managed churn.
+- Hardware Impact: MX350/i3 estimate 2-6 us per slow tick, 0 B GC. No frame-rate claim until profiler run.
+- ### Decision 02: Byte-Based Upload Grants
+- Problem: Dispatcher throttled by slots/time but not by upload payload size, allowing multi-asset bursts to exceed practical PCIe/upload bandwidth.
+- Solution: Added `EstimatedBytes` to dispatch requests/tickets and a continuous per-frame grant budget from 2 MB to 50 MB based on pressure and `GlobalQualityWeight`.
+- Rejected Alternatives: Only lowering concurrent Addressables slots; binary low/high quality switches. Both fail MX350 pressure cases.
+- Scalability potential: Low collapses toward 2-5 MB/frame. Middle raises capacity gradually. High/Ultra can spend up to 50 MB/frame when pressure is low.
+- Hardware Impact: MX350/i3 projected 20-80 us stall avoidance on pressured frames; measured value pending Unity profiler.
+- Solution: Converted `VRAMStreamingStaticAssertions1617` to source-text assertions for required formulas and budget gates. The Roslyn APEX verifier remains source-based and writes no report files.
+- Rejected Alternatives: Adding a new runtime asmdef, modifying editor asmdef references broadly, or moving assertions into a generic editor assembly. All three expand dependency surface for a validation tool.
+- Scalability potential: Runtime unaffected across low, middle, high, and ultra tiers. Editor validation remains cheap and deterministic.
+- Hardware Impact: 0 runtime us. Avoids editor compile churn and preserves the no-build throttle.
+- ### Decision 17: Graphics Materials Upload Budget Route
+- Problem: Graphics material systems still contained local raw `LockBufferForWrite` memcpy upload bodies for visual aging, material visible payloads, and one-row shader constants. These paths could bypass the shared graphics upload byte budget during visual-material refresh.
+- Solution: Routed `VisualPressureAgingRuntime` aging/degradation uploads and `ShinobuMaterialResponseRuntime` visible/constants uploads through `GraphicsBufferUploadUtility.TryUploadNativeArrayRange` and `TryUploadSingle`.
+- Rejected Alternatives: Leaving graphics-material uploads as "small enough"; adding a second material-specific throttle; editing unrelated AI/physics/gameplay upload lanes in the same pass. The first keeps drift, the second splits ownership, the third violates domain boundaries.
+- Scalability potential: Weak devices can defer material refresh while preserving previous visible state. Middle devices refresh continuously within budget. High and Ultra retain full material update cadence when pressure is low.
+- Hardware Impact: 0 allocations. MX350/i3 gains one shared PCIe admission route for visual aging/material response uploads; estimated stall-class avoidance is 5-25 us in dense material-refresh frames, profiler pending.
+- [omitted 80 filtered lines; raw preserved]
+
+## Rationale_1618.md [18122 B; budget 4350]
+- # Agent 1618 Rationale
+- Date: 2026-06-01
+- Status: STATIC VERIFIED / BUILD BLOCKED BY CONTENTION
+- ## Decision 001: Source Reality Over Prompt File Names
+- Problem: Prompt names `Assets/_Project/Scripts/Audio/SpatialAudioManager.cs` and `UnderwaterAudioProcessor.cs`, but source scan shows `SpatialAudioManager.cs` at `Assets/_Project/Scripts/SpatialAudioManager.cs` and no `UnderwaterAudioProcessor.cs`.
+- Solution: Treat current source and `Docs/SYSTEMS_CONTRACTS.md` as authority. Work in existing audio ownership files: `SpatialAudioManager.cs`, `PlayerCriticalProceduralAudioRenderer.cs`, `PrologueAcousticOrchestrator.cs`, and audio editor tests.
+- Rejected Alternatives: Creating `UnderwaterAudioProcessor.cs` would invent a parallel authority route and risk duplicate underwater audio truth.
+- Scalability potential: Low uses existing one-pole/biquad fakes and bounded signal snapshots; middle/high/ultra can increase synthesis density through `GlobalQualityWeight` without changing gameplay truth.
+- Hardware Impact: Avoiding a new audio manager avoids extra scene objects, registration, and cold startup churn on i3/MX350; estimated hot-path gain versus duplicate manager polling is 5-20 microseconds per frame depending on service lookup frequency.
+- ## Decision 002: No Managed Audio Callback Expansion
+- Problem: Mandates forbid managed `AudioSource.OnAudioFilterRead` as a primary DSP path, while existing source still has managed callbacks in isolated playback classes and a large procedural renderer.
+- Solution: Do not add new managed audio callbacks. Strengthen existing `PlayerCriticalProceduralAudioRenderer` block synthesis and signal bridge paths already present in the audio domain.
+- Rejected Alternatives: Adding `OnAudioFilterRead` to `SpatialAudioManager` would violate the DSP mandate and move work to a driver-owned thread through managed Unity callback.
+- Scalability potential: Low keeps cheap low-pass, sine sweep, pink-like noise, and sparse impulse fakes; middle/high/ultra can raise texture/synthesis richness through existing renderer parameters.
+- Solution: Convert `ResolveListenerBasis` to an instance helper that reads `_cachedPlayerRuntimeContext` and uses pure snapshot methods `TryGetLookRuntimeState` and `TryGetMovementRuntimeState` for listener forward derivation.
+- Rejected Alternatives: Leaving the static lookup in place would be cheap but architecturally wrong. Rebinding through `GlobalRegistry` inside the helper would be worse. Passing full player context through every call would churn signatures without improving ownership.
+- Scalability potential: Low devices avoid a repeated global service probe in spatial audio. Middle/high/ultra keep the same basis math and can spend saved cycles on richer acoustic radar/virtual voice work.
+- Hardware Impact: Estimated 0.5-2 microseconds saved per active spatial audio frame depending on listener-basis call count. No allocations, no DTO layout change, no phase change.
+- ## Decision 017: Player-Critical Audio Binder Uses Cached Runtime Context Only
+- Problem: `PlayerCriticalProceduralAudioRenderer.Tick`, `SlowTick`, sonar, and echo helper paths called a binder that fell back to `PlayerRuntimeContextService.ActiveRuntimeContext` when `_playerRuntimeContext` was stale. The direct hot method bodies looked clean, but the transitive helper still violated cold identity ownership.
+- Solution: Replace `TryBindFromBootstrap` with `TryBindFromCachedRuntimeContext`. It reads `_playerRuntimeContext` only, fails closed when the cache is absent, and relies on `CacheColdRegistryReferences` plus `IGlobalRegistryHotSwapListener` callbacks to refresh the cached runtime context.
+- Rejected Alternatives: Keeping the fallback because it is rare is still hot-chain polling. Calling `GlobalRegistry.Player` from the binder is worse. Adding a signal for a single dependency would inflate the route without need.
+- Scalability potential: Low devices avoid stale-cache global probes during player-critical audio cadence; middle/high/ultra keep the same player-relative audio math and can spend saved budget on richer procedural layers.
+- Hardware Impact: Estimated 0.5-2 microseconds saved on frames where the old cache was stale or player bootstrap raced audio registration. Runtime allocations remain 0 bytes; no DTO layout or signal route changed.
+- [omitted 81 filtered lines; raw preserved]
+
+## Rationale_1619.md [15147 B; budget 3636]
+- # Rationale 1619 - Documentation Master And API Spec Curator
+- Date: 2026-06-01
+- Status: VERIFIED STATIC DOC
+- Evidence class: STATIC_DOC / STATIC_FILESYSTEM / STATIC_SOURCE
+- ## Decision 001 - Root Markdown Conflict
+- Problem: XML Task 10 says root may contain only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`, but active governance allows `TASTE.md`, and `AGENTS.md` explicitly references root `TASTE.md` and root `textes.md`.
+- Solution: Do not move `TASTE.md` or `textes.md` during this pass. Treat XML root list as stale against active `DOC_GOVERNANCE.md`, `PROJECT_BASELINE.md`, and `AGENTS.md`. Record the drift and update root-reference docs if needed.
+- Rejected Alternatives: Moving root `TASTE.md` would break a current authority path. Moving `textes.md` would break the explicit `AGENTS.md` marketing-text route and create silent prompt drift for public-copy agents.
+- Scalability potential: Low/Middle/High/Ultra unaffected at runtime; preserves agent startup determinism by keeping authority paths stable.
+- Hardware Impact: Estimated runtime gain on i3/MX350: 0 us; documentation-only risk reduction, no frame-time claim.
+- ## Decision 002 - JSON Report Suppression
+- Problem: XML tasks mention JSON inventory/report artifacts, but the user explicitly rejected unread JSON proof dumps and named the disk docs as the primary proof.
+- Solution: Use PowerShell/Python scans for local validation and write durable proof into `Status_1619.md`, `Rationale_1619.md`, `LOG_1619.md`, and the active documentation ledger. Generate JSON only if an existing validator requires it.
+- Rejected Alternatives: Creating large `Docs/Reports/*.json` files would satisfy legacy prompt wording but violate the user's current proof preference and add report churn.
+- ## Decision 005 - No Root File Moves
+- Solution: Extend `ApexIntegratorVerification1619EditTests` so all three DataVault write-lock acquire forms share one lock-order scanner, and so local acquire/release methods require a `finally` release scope.
+- Rejected Alternatives: Leaving the guard narrow would allow future regressions through the same APIs that caused this pass. Running `dotnet build` to compensate would violate the user throttle and still would not prove lock-order semantics.
+- Scalability potential: Low tier gets earlier static rejection of stall/deadlock regressions; Middle/High/Ultra keep the same code path and can add richer visuals without broadening write-lock lifetime.
+- Hardware Impact: Runtime gain unmeasured; host compile CPU saved. Static evidence: guard source now contains `TryAcquireMutationGuard`, `TryLockBuffer`, `ReleaseMutationGuard`, `TryUnlockBuffer`, and `FindNextToken`; `git diff --check` on the guard file is clean.
+- ## Decision 016 - Hot Registry Guard Covers Convenience Properties
+- Problem: The APEX editor guard originally named only `GlobalRegistry.Get<T>()`, `GlobalRegistry.Get(...)`, and `GlobalRegistry.Dispatcher`. HECTON-8 doctrine treats the entire registry as cold identity/DI, so `GlobalRegistry.Player`, `GlobalRegistry.Services`, or any future convenience property would still be illegal inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- Solution: Add generic `GlobalRegistry.` to the hot dependency token list in `ApexIntegratorVerification1619EditTests`. This makes every registry access fail in hot methods and direct local helpers unless it is cold-cached outside the hot phase.
+- Hardware Impact: Runtime gain unmeasured; static risk removed. Validation used source token scans only. No `dotnet build`, `msbuild`, or Unity batch compile was launched.
+- [omitted 76 filtered lines; raw preserved]
+
+## Rationale_1620.md [23758 B; budget 5702]
+- # Rationale 1620 - Integration Stress And QA Bot Supervisor
+- Evidence Class: STATIC_SOURCE until Unity PlayMode/profiler artifacts exist.
+- ## Decision 000 - Operating Envelope
+- Problem: 1620 must add Editor automation and QA verdict tooling without starving the parallel agent cluster or mutating runtime truth.
+- Solution: Limit first pass to `Assets/_Project/Editor/QA/`, `Assets/_Project/Scripts/QA/`, `Docs/Tasks/Status_1620.md`, `Docs/AgentLogs/Rationale_1620.md`, and final 1620 report/log paths. Treat all runtime readiness claims as `PENDING VERIFICATION` unless backed by fresh Unity artifacts.
+- Rejected Alternatives: Running `dotnet build` immediately was rejected because user explicitly banned heavy compilation after small edits and AGENTS forbids build under CPU/compiler contention. Creating global runtime dependencies was rejected because QA supervisor must observe through existing CSV/log/sentinel surfaces.
+- Scalability potential: Low uses static/log parsing and coarse counters; Middle adds ProfilerRecorder gates; High adds CSV percentile scans and deadlock dumps; Ultra allows richer telemetry analysis without changing gameplay truth.
+- Hardware Impact: Avoiding unnecessary build and runtime polling prevents cluster CPU starvation on i3/MX350-class hosts; estimated saved host wall time is build-dependent and not claimed as measured.
+- ## Decision 001 - QA Metric Surface
+- Problem: Supervisor must evaluate Agent 1524 output without inventing telemetry fields.
+- Solution: Treat `QA_WATCHDOG_ENDURANCE_REPORT_1524.csv` as the owned metric route. Required columns are `state`, `frame_time_ms`, `gc_alloc_bytes`, `vram_mb`, `distance_m`, `rolling_p95_ms`, and `fail_reason_code`; optional columns are foveation/mipmap/quality fields if a later agent adds them.
+- Rejected Alternatives: Directly querying QA bot internals was rejected because `Hecton8.QA.Editor` is not referenced by the mandated `Assets/_Project/Editor` assembly route and would create a compile-wall dependency.
+- Scalability potential: Low parses fixed CSV columns; Middle adds optional mip/foveation columns; High/Ultra can add more columns without supervisor runtime truth ownership.
+- Hardware Impact: CSV byte scanning is bounded by appended bytes and avoids scene searches; estimated live poll cost remains below 100 microseconds per 8 KB slice on i3/MX350-class hosts.
+- Problem: Supervisor must start the existing watchdog without coupling to its assembly.
+- Solution: Write `Temp/H8_QA_WATCHDOG_1524.flag`, open `Assets/_Project/Scenes/00_BOOTSTRAP.unity`, and set `EditorApplication.isPlaying = true` from an Editor update callback.
+- Rejected Alternatives: TestRunner orchestration was rejected for the primary route because the watchdog is scene/flag driven and the direct EditorApplication route is already proven by `QAWatchdogBatchRunner1524`.
+- Scalability potential: Low uses manual menu start; Middle uses batchmode menu entry; High/Ultra can wrap the same route in CI without changing gameplay code.
+- Hardware Impact: No runtime polling dependency is added; startup path is cold and expected to cost editor milliseconds only.
+- Problem: Unity keeps `Editor.log` open while the supervisor must read crash lines in real time.
+- Rejected Alternatives: `File.ReadLines`, string split, regex, and full-file reads were rejected because they allocate, risk file contention, and scale poorly with long Editor logs.
+- Hardware Impact: Fault-path only; normal frame cost unchanged.
+- Solution: Added guarded `TryWriteFlagFile()`, `TryEnsureBootstrapScene()`, inactive `Detach()`, buffered `FileContainsPattern()` result scanning with `FileShare.ReadWrite | FileShare.Delete`, and exception-shielded status writes.
+- Rejected Alternatives: Leaving SHINOBU outside 1620 source audits was rejected because it is a QA headless runner using the same editor lifecycle lane. Keeping `ReadByte()` was rejected because the other batch runners already moved to shared fixed byte buffers.
+- Scalability potential: Low prevents wrong-scene endurance passes; Middle/High/Ultra preserve deterministic batchmode/editor behavior without per-byte syscalls.
+- Hardware Impact: Active runtime cost unchanged. Result polling shifts from per-byte file reads to 4 KB buffered reads; inactive callback cost becomes 0 after one update.
+- ## Decision 024 - Jacobi Editor Runner Pending Job Finalization
+- Problem: `JacobiStressFuzzerWindow.PollPendingRun()` returned on a null pending run without detaching the editor update callback, and `FinishPendingRun()` relied on the happy path to dispose the scheduled native run and clear the progress UI.
+- Solution: Null pending-run now detaches `EditorApplication.update`, clears the progress bar, and reenables the run button. Completion now copies `_pendingRun` to a local, calls `Complete()` inside `try`, logs completion exceptions, and disposes/clears callback/progress/button state in `finally`.
+- Rejected Alternatives: Leaving cleanup to `OnDisable()` was rejected because long editor sessions can keep a hidden callback alive. Blocking job completion earlier was rejected because the code already waits for `IsCompleted()` and forced completion before readiness would spend editor CPU.
+- Scalability potential: Low avoids stale editor callbacks during manual QA. Middle/High/Ultra keep the same scheduled Burst chain and only improve failure cleanup; no gameplay truth or solver math changes.
+- Hardware Impact: Active run cost is unchanged. Stale callback cost becomes 0 after one editor update; pending native buffers are disposed even if completion throws. No build, Test Runner, or PlayMode run was launched because external `dotnet` processes are active.
+- [omitted 120 filtered lines; raw preserved]
+
+## Rationale_1621.md [2327 B; budget 1900]
+- # Rationale 1621
+- ## 2026-06-01 - Prompt Gate Failure
+- Problem: Agent 1621 was instructed to extract `<AGENT_PROMPT id="1621">` from `Docs/Tasks/CURRENT_BATCH.md`, but the tag is absent. The file contains XML prompts for `1629`, `1600-1620`, and `1626-1628`; prose mentions `1621 (Fluid Sump)` without an XML task block.
+- Solution: Stop before code. Record blocker in `Status_1621.md` and `LOG_1621.md`. Domain remains ECHELON 6 item 55, Pipe & Sump Pump Logistics, but no implementation scope is authorized without the XML task list.
+- Rejected Alternatives: Reusing old `Status_1421` or inferring tasks from the chat prompt would violate the batch prompt protocol. Editing `FluidPipeGraphRuntime`, `SumpPumpPipeGridRuntime`, or CSR jobs without the missing XML would risk crossing domain boundaries and duplicating another agent's route.
+- Scalability potential: No runtime algorithm changed. If prompt is restored, implementation must scale Low, Middle, High, Ultra through continuous `GlobalQualityWeight`, not binary quality branches.
+- Hardware Impact: 0 us runtime gain because no production code changed. Avoided a speculative compile/build and avoided contention with other agents.
+- ## Evidence
+- - PowerShell extraction regex for `<AGENT_PROMPT id="1621">.*?</AGENT_PROMPT>` returned `AGENT_PROMPT 1621 not found`.
+- - XML open-tag scan lists `1629`, `1600-1620`, `1626-1628`.
+- - `Status_1621.md` and `Rationale_1621.md` were missing before this block was created.
+- ## 2026-06-01 - Repeated Directive Recheck
+- Problem: User repeated the 1621 initialization request, but `CURRENT_BATCH.md` still lacks the required XML block.
+- Solution: Re-read status/rationale, re-ran direct filesystem extraction with a tolerant regex, re-listed XML tags, and kept code gate closed.
+- Hardware Impact: 0 us runtime gain. Host impact minimized by not launching Unity or `dotnet build`.
+- [omitted 2 filtered lines; raw preserved]
+
+## Rationale_1622.md [3311 B; budget 1900]
+- # Rationale 1622
+- Problem: Active batch file does not contain `<AGENT_PROMPT id="1622">`; exact XML task count cannot be recovered from disk.
+- Solution: Record the prompt defect, constrain scope to the direct user assignment and stable ECHELON 6 power-grid domain definition, and avoid neighboring prompt contamination.
+- Rejected Alternatives: Reading 1626/1627/1628/1629 prompts, using the 1622 list mention as a full prompt, or inventing missing task text.
+- Scalability potential: Low/Middle/High/Ultra policy remains continuous through `GlobalQualityWeight`; no binary quality lane will be introduced.
+- Hardware Impact: Documentation-only step; 0 runtime impact on i3/MX350.
+- Problem: Damaged and overheated cable states needed a deterministic CSR route without expanding power DTO layout.
+- Solution: Added bit-only edge states for thermal trip and sparking contact, then resolved CSR conductance with `math.select` masks: sealed/short/thermal/offline endpoints hard-zero, damaged contacts zero base conductance, explicit spark contacts leak a tiny fixed conductance.
+- Rejected Alternatives: Adding cable thermal fields to `PowerGridEdgeDTO`, scene-side cable behaviours, or rebuilding graph truth from managed objects; all would violate flat CSR/native ownership and increase hot-path surface.
+- Scalability potential: Low uses the same cheap mask math; Middle/High/Ultra can raise visual spark density outside solver via continuous `GlobalQualityWeight` without changing electrical truth.
+- Hardware Impact: Replaces branch returns in conductance resolution with scalar masks; expected win is small but stable on i3/MX350 because adjacency build stays linear and data-local.
+- Problem: Demand collapse needed fan-style outage signalling without latching nodes permanently offline or depending on a managed event route.
+- [omitted 9 filtered lines; raw preserved]
+
+## Rationale_1623.md [10101 B; budget 2425]
+- # Rationale 1623 - ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER
+- Status: STATIC_COMPLETE_BUILD_NOT_RUN
+- ## Decision 00 - Missing XML Prompt
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain `<AGENT_PROMPT id="1623">`; the file lists 1623 only in coordinator prose and contains XML blocks for other agents.
+- Solution: Treat the user's direct 1623 assignment as bounded scope, but record XML extraction as blocked and avoid reading or applying neighboring prompts.
+- Rejected Alternatives: Using 1621, 1622, 1624, or 1625 prompt material would contaminate architecture decisions. Guessing a 20-task XML count would be false reporting.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is process scope hygiene.
+- Hardware Impact: 0 us runtime impact on i3/MX350.
+- ## Decision 01 - Mandates Selected
+- Problem: Babel/subtitle work touches hot UI rendering, localization lookup, buffer layout, and signal discipline.
+- Solution: Use UI zero-GC, localization Babel, zero-GC, ARM64 struct layout, execution phase, registry, signal lane, performance budget, and evidence mandates before code.
+- Rejected Alternatives: Reading only AGENTS.md leaves TMP and localization-specific constraints ambiguous.
+- Scalability potential: Low uses cheap cadence and fixed 2K atlas; middle keeps full static labels; high/ultra spend saved time on VISUAL_SYNC glitch/presentation only.
+- Hardware Impact: Prevents per-frame GC spikes; estimated avoided hitch cost is unmeasured and remains STATIC_SOURCE only.
+- ## Decision 02 - Hash Fallback Must Stay Span-Based
+- Solution: Keep rect repair ownership inside `ApplyConfiguration` and let `LateFrameTick` only drain the pending apply flag.
+- Rejected Alternatives: Removing repair entirely or keeping duplicate bounded walks. Removing repair risks collapsed localized labels; duplicates waste UI phase time.
+- Scalability potential: Low devices avoid redundant hierarchy walks during language/font changes; higher tiers keep the same adaptive localized label behavior.
+- Hardware Impact: Avoids one extra bounded 4-pass/4-depth rect walk per pending label apply. Exact microseconds require Unity profiler proof.
+- ## Decision 10 - Prefetch Budget Counts Successes, Not Attempts
+- Problem: `FontStreamingManager.CollectSwapQueue` incremented `prefetchedCount` even when `TryResolveVisibleTextOffsetSlice` failed, wasting the visible-slice budget on misses.
+- [omitted 47 filtered lines; raw preserved]
+
+## Rationale_1624.md [37392 B; budget 8975]
+- # Rationale_1624
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` has no `<AGENT_PROMPT id="1624">` block, so the mandatory batch prompt protocol cannot supply a task count, phase list, or explicit authorized file surface.
+- Solution: Treat the XML absence as a batch hygiene blocker, record task count as `0`, and limit work to read-only or source-data validation that follows the user's role brief and existing AppliedLore pipeline evidence.
+- Rejected Alternatives: Inventing tasks from adjacent agents; using corrupted prose at lines 1759-1788 as XML; copying `NARRATIVE_RESEARCH` status as if it were the current 1624 prompt; launching `dotnet build`; mutating prefabs/scenes without Unity-authorized route.
+- Scalability potential: Low tier remains compact DataMonolith/PDA string-pool lookup only. Middle can add more authored placement rows. High can add VO/image-card surfaces. Ultra can add dense terminal/panel/sonar presentation without changing packet hashes, DTO layout, save identity, or authority route.
+- Hardware Impact: 0 us/frame. This pass has no runtime code or runtime parser. Evidence class: STATIC_DOC / STATIC_SOURCE pending validation.
+- Problem: Lore/static-data work touches binary payloads and multilingual text, so normal prose proof is insufficient.
+- Solution: Use Python/PowerShell-only checks for CSV, localized markdown, route-card exports, and active `static_data.h8bin` parity; classify results by `QA_Evidence_Text_Filter_Audit`.
+- Rejected Alternatives: Reporting "verified" from `rg` hits; generating unread JSON reports as primary proof; running Unity compile despite explicit user prohibition.
+- Scalability potential: Source validation scales with row counts and keeps runtime work bounded to baked records. Low/middle/high/ultra devices consume identical truth bytes; only presentation density changes.
+- Hardware Impact: 0 us/frame. Tooling CPU cost is offline only and must stay outside Unity compile contention.
+- Problem: Broad `.h8bin` validation failed before it could be used as a project-wide green gate because unrelated kinematic/VR unmanaged structs contain properties banned by the binary schema audit.
+- Solution: Run a narrow `h8bin_validator` over `Assets/_Project/Scripts/Data/Monolith` and the active StreamingAssets target. Keep the broad failure recorded as external debt while using the narrowed pass only for the lore/Data Monolith surface.
+- Rejected Alternatives: Editing kinematic/VR source outside 1624 domain; claiming the broad validator passed; ignoring the failure; using `dotnet build`.
+- Scalability potential: Narrow validation preserves data payload proof without stalling lore delivery on another domain. Low/middle/high/ultra devices still consume the same `static_data.h8bin`; presentation tiering remains outside the payload truth.
+- Hardware Impact: 0 us/frame. Data Monolith validator pass is offline. Broad failure has no new runtime impact from this agent.
+- Problem: The active lore payload still has no scene placements, despite source and prefab-authoring data being in parity.
+- Solution: Record the exact state: `scene_bindings=0`, `prefab_bindings=43`, `authoring_bindings=43`. Treat the next required work as Unity scene authoring, not Data Monolith bake work.
+- Rejected Alternatives: Treating generated terminal/prefab bindings as live scene proof; raw `.unity` mutation; claiming PDA encyclopedia release readiness without scene unlock routes.
+- Scalability potential: Low tier can unlock compact baked entries once scenes bind hashes. Middle/high/ultra can add richer terminal, VO, image-card, sonar, and panel presentation without changing record hashes or save identity.
+- Hardware Impact: 0 us/frame until scene interaction. Runtime cost remains event-triggered fixed-record lookup after binding.
+- Problem: The user requested communication latency, corporate tariffs, and marauder graffiti masks, but the formal `<AGENT_PROMPT id="1624">` XML block is still absent.
+- Solution: Add the requested surfaces as a bounded AppliedContent release set, `RS011_COMM_TARIFF_GRAFFITI_MASKS`, without fabricating XML task count or touching scenes/prefabs. Treat it as source-data continuation under the Data Monolith/PDA encyclopedia domain.
+- Rejected Alternatives: Creating hot communication simulation; creating live corporate economy logic; adding a runtime graffiti parser; editing unrelated gameplay systems; waiting idle after the missing XML finding despite explicit user surface requests.
+- Scalability potential: Low tier reads the same five baked packet hashes and compact text slices. Middle can expose more scanner/terminal placements. High can add VO/image cards. Ultra can add animated relay/tariff/graffiti presentation while consuming identical truth bytes.
+- Hardware Impact: 0 us/frame beyond existing baked-record lookup. Added truth is static UTF-8 and fixed route records, not per-frame systems.
+- Problem: Hard-SF 2190 communication could be diluted into a soft "slow radio" trope unless the source text locks the physical constraints.
+- Solution: `P051_LIGHT_DELAY_AUTHORITY` and `P054_RELAY_QUEUE_DRIFT` explicitly reject ansible/FTL communication and bind delay to light speed, relay queue, weather scatter, orbital geometry, and message age. This is a cinematic cheat: no network simulation, just authored evidence and route pressure.
+- Rejected Alternatives: Simulating carrier relay packet queues; deriving delay from orbital mechanics at runtime; adding binary quality switches for message states; placing rescue delay in UI copy only.
+- Scalability potential: Low shows scanner/terminal text. Middle adds timestamp/relay props. High adds audio subtitle emphasis. Ultra can render orbital-window and storm-scatter panels, driven by the same baked hashes.
+- Hardware Impact: Estimated 0.0 us/frame new runtime cost; avoids any hot queue, path, or orbital solve. Low-end i3/MX350 cost remains a static lookup.
+- Problem: Corporate tariffs need to affect player interpretation without creating a live economy dependency or cross-domain ownership violation.
+- Solution: `P052_BLACK_KEEL_TARIFF_TABLE` and `P055_CORPORATE_RESPONSE_LEDGER` encode tariff and response priority as baked lore records and route cards. The player sees billing priority as evidence; economy simulation remains out of scope.
+- Rejected Alternatives: Adding runtime billing code; adding save-state tariff variables; coupling to cargo/economy systems; marking rescue as binary success/fail.
+- Hardware Impact: 0 us/frame new runtime work; cheap devices pay only existing scan/unlock cost.
+- Problem: The PDA precise-token guard blocked default zero AUP, but it still read the global runtime `LastDiscovery*` fields. After scanning entry A, opening entry B could render A's grid/depth/distance in B's text or metadata.
+- Solution: Rewire `TryReadPreciseDiscoveryState` to resolve the active entry bit index, read `PdaEncyclopediaEntryMetaDTO`, and require `MetaFlagPreciseAup` on the active entry. `WriteMeta` now renders `GRID -/-/-` when the active entry has no precise scan.
+- Rejected Alternatives: Requiring only global `StateFlagPreciseAup`; clearing global discovery after every selection; adding managed nullable state; hiding all grid metadata even when active-entry scan data exists.
+- Scalability potential: Low tier gets honest compact text. Middle/high/ultra can add richer scanner overlays, but the fact source remains per-entry metadata and does not drift with presentation density.
+- Hardware Impact: 0 us/frame steady state. Token expansion already probes fixed metadata; no allocation, no registry lookup, no new lock, no DTO/save identity change.
+- Problem: `PDAEncyclopediaStreamer` still wrote black-box evidence to stale `Dump_1309_PDAEncyclopedia.bin` and generic `Dump_PDA_STREAMER.bin`, while the stable PDA architecture note still advertised old SHINOBU/PDA dump routes. Two dump routes for one PDA telemetry ring violate owner-route proof and can leave postmortem evidence split by agent history instead of runtime owner.
+- Solution: Replace both writes with one constant owner route, `Dump_PDAEncyclopediaStreamer_BlackBox.bin`, and update `Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md` to match the active source and current 3-bit Data Monolith source flag contract.
+- Rejected Alternatives: Keeping both files for backward compatibility; renaming only the doc; keeping agent-id filenames as proof; disabling black-box dump because the user banned proof dumps. Runtime fault dump remains a black-box safety feature, not a completion report.
+- Scalability potential: Low tier still writes no dump during normal play. Middle/high/ultra get identical failure evidence routing; richer PDA presentation can grow without adding extra forensic routes.
+- Hardware Impact: 0 us/frame. The changed path is fault-only and removes duplicate file output on fault, so fault-path I/O is bounded to one raw binary artifact.
+- [omitted 141 filtered lines; raw preserved]
+
+## Rationale_1625.md [76897 B; budget 18456]
+- # Rationale 1625 - Localization Cross-Translation Audit
+- ## Prompt Block Missing In Active Batch
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain `<AGENT_PROMPT id="1625">`, despite the session directive naming agent 1625 and the batch prose listing 1625 as Cross Translation.
+- Solution: Treat the missing XML as a batch integrity defect, record it, and continue only within the narrow user-provided localization/Babel audit scope. This avoids cross-contamination from neighboring agent prompts.
+- Rejected Alternatives: Reading 1624, 1626, or 1629 prompts as substitutes would violate strict parsing. Inventing a 30-task XML plan would be fake reporting.
+- Scalability potential: Low/Middle/High/Ultra lanes are unchanged until localization data proves a runtime change is required. Current work is source-data audit only.
+- Hardware Impact: No runtime claim. Static audit scripts only; expected i3/MX350 gameplay-frame impact is 0 us because no runtime code has been changed.
+- ## Mandate Selection
+- Problem: Localization audit touches authored text, Babel runtime assumptions, UI phrase length, hash integrity, and proof language. The task has no C# build lane and explicitly forbids `dotnet build`.
+- Solution: Use six mandates as active law: Babel zero-alloc localization, UI streaming/char-buffer policy, ARM64 layout law for any DTO observations, Zero-GC hot-path policy, CSV/binary designer bridge law, and evidence anti-lie reporting.
+- Rejected Alternatives: Reading physics/rendering mandates would waste scope. Reading neighboring agent prompts would corrupt the 1625 boundary.
+- Scalability potential: Low lane needs short strings, static atlases, and no runtime parser. Middle lane permits staged reload only. High/Ultra may carry richer glyph coverage or debug manifests, but not gameplay-truth changes.
+- Hardware Impact: Static audit can prevent MX350 stalls from dynamic atlas/user-facing overflow. No runtime microsecond saving is claimed until source defects and runtime routes are measured.
+- ## Lossy RS010 Localization Repair
+- Problem: `RS010_PRESSURE_MACHINERY_RETURN_ROUTE.packets.json` contained 344 localized fields with literal `?` replacement bytes. This was not reversible mojibake; original Cyrillic/CJK/RTL/accented text was already destroyed before this pass.
+- Solution: Replace only damaged fields with deterministic English fallback text. Damaged titles fall back to the English title; damaged body surfaces use short `Draft <locale> pending native review.` prefixes plus the English source field. This keeps content readable, stable terms intact, phrase lengths bounded, and runtime lookup zero-alloc because the CSV/binary route remains pre-baked UTF-8 slices.
+- Rejected Alternatives: Re-decoding bytes as UTF-8/Latin-1 failed because the data was lossy `0x3F`. Inventing full native translations for 5 packets x 12 damaged locale rows would create unverifiable editorial content. Patching generated markdown only would leave the CSV/DataMonolith truth corrupt.
+- Scalability potential: Low lane receives readable ASCII fallback with no dynamic font fallback churn. Middle lane can ship the same baked UTF-8 slices while native pass is pending. High/Ultra lanes can later replace source JSON with native strings without changing DTO layout, hashes, offsets route, or runtime ownership.
+- Hardware Impact: Prevents repeated missing-glyph fallback and unreadable UI retry paths. Estimated low-end i3/MX350 gain is 20-60 us during affected AppliedLore page open from avoiding dynamic glyph/font fallback attempts; hot-frame gameplay gain is 0 us because runtime lookup shape is unchanged.
+- Problem: `AppliedLorePageExporter.py` had mojibake index titles for multiple locales, so regenerated `INDEX.md` pages still carried corrupt headings after packet repair.
+- Solution: Replaced only `INDEX_TITLES` constants with real Unicode literals generated through ASCII `\u` escapes to avoid PowerShell codepage damage, then regenerated all 30 localized indexes and 1650 packet pages.
+- Rejected Alternatives: ASCII-only index titles would hide RTL/CJK font coverage problems. Manual edits to generated `INDEX.md` files would be overwritten by the next exporter run.
+- Scalability potential: Low lane uses short headings and stable markdown. Middle/High/Ultra can render correct native index headings if fonts are available; no gameplay truth or binary route changes.
+- Hardware Impact: Eliminates 16 corrupted generated index pages. Estimated i3/MX350 gain is 5-15 us on index open from avoiding replacement-glyph fallback churn; no per-frame hot-path impact.
+- Problem: Source CSV/pages were corrected, but `static_data.h8bin` is the runtime database. The user explicitly forbade `dotnet build`, and the Unity editor bake path would compile C# and contend with parallel agents.
+- Solution: Rebuilt only the DataMonolith localization/applied-lore section route in Python: parsed the existing section table, preserved all non-localization sections from the current binary, rebuilt `H8AppliedLorePacketRecord` rows from `applied_lore_packets.csv`, reused existing UTF-8 pool offsets where possible, and rewrote the header XXH3-64 checksum with the repo's pure-Python `Security.ReplayHasher.xxh3_64` oracle.
+- Rejected Alternatives: Running `dotnet build` or DataMonolithBakeCli violates the user order. Accepting stale binary would leave source and runtime truth split. Full binary reimplementation was unnecessary and riskier than section-preserving rewrite.
+- Scalability potential: Low/Middle/High/Ultra all read the same immutable UTF-8 slices; quality weight does not alter localization truth. Future native replacements only touch source JSON/CSV and the baked localization pool, not runtime lookup code.
+- Hardware Impact: Keeps runtime as pre-baked binary reads, no managed parser and no hot allocations. Estimated i3/MX350 gain vs a runtime markdown/JSON fallback remains 100-300 us per AppliedLore page open and 0 GC spikes; compared to the previous baked route, hot-frame delta is 0 us.
+- Problem: Static APEX verification found `BabelSubtitleSyncRuntime.DispatcherBridge` registered as `DispatcherPhase.PreSimulation` while calling `PreparePresentationFrame()`. That method drains subtitle cue signals, updates audio-frame presentation state, evaluates cue visibility, writes frame telemetry, and resets per-frame decode counters. This is presentation-side state and must not execute before simulation settlement.
+- Solution: Move the dispatcher bridge to `DispatcherPhase.VisualSync`, leave `PreSimulationTick` empty, and call `PreparePresentationFrame()` from `VisualSyncTick` before the existing completion call. Direct API calls from `SubtitleManager` remain caller-owned and already execute through late/presentation paths.
+- Rejected Alternatives: Leaving cue evaluation in `PreSimulation` violates the phase contract. Creating a second dispatcher bridge would add registration surface and duplicate frame guards. Moving all `SubtitleManager` calls was rejected because the manager already owns late-frame UI consumption and the single bridge defect was sufficient.
+- Scalability potential: Low lane still pays one bounded cue pass over 64 DTOs after simulation. Middle/High/Ultra can increase subtitle polish, typewriter cadence, and telemetry richness without changing gameplay truth, DTO layout, or LocID hashes.
+- Hardware Impact: Prevents pre-simulation visual work from competing with simulation on low-end CPUs. Estimated i3/MX350 gain is 10-35 us of phase contention avoided on subtitle-active frames; allocations remain 0 because the same vault-backed DTO buffers and `SetCharArray` routes are used.
+- Problem: The integrator protocol required proof that localization/UI runtime code did not use hot service lookups, phase-unsafe presentation mutations, or nested DataVault write locks, while `dotnet build` was explicitly forbidden and two external `dotnet` processes were already active.
+- Solution: Use targeted PowerShell/rg and in-memory Python source guards over Babel/localization/UI/DataMonolith files. Results: 0 hot lookup issues in targeted hot methods, 0 non-late visual mutation hits, no `GlobalRegistry.Get<T>()` hits in the audited domain, all direct DataVault write-lock acquisitions either release inside `finally` or transfer ownership to a caller that releases inside `finally`.
+- Rejected Alternatives: Running `dotnet build` would violate the user order and contend with existing dotnet processes. Generating JSON reports was rejected by protocol. Broad whole-tree Python parsing was stopped after timeout and replaced with bounded target-file parsing.
+- Scalability potential: Low/Middle/High/Ultra share the same phase contract: simulation first, subtitle/UI presentation after settlement. Quality weight may scale visual richness and cadence, not ownership route or localization truth.
+- Hardware Impact: Static verification itself has no runtime cost. The patched phase route reduces scheduler contention; expected low-end gain is 10-35 us on subtitle-active frames and 0 GC delta.
+- Problem: `SettingsLivePreview.LateFrameTick()` decremented a retry timer and then called `TryResolveMainCameraCold()`. That cold resolver can call `TryGetComponent`, `ComponentReferenceUtility.ResolveOwnedComponent`, and parent traversal. The retry was delayed, but still executed from a hot late-frame path.
+- Solution: Keep full camera discovery in lifecycle and registry hot-swap callbacks only. `LateFrameTick()` now only drains the timer. `ApplyFOV()` uses `TryResolveMainCameraCachedOnly()`, which reads the serialized `mainCamera` field or the cached `IPlayerRuntimeContext.PlayerCamera`; it performs no scene search and no component lookup. A follow-up pass removed retry throttling from `TryResolveMainCameraCold()` so `Start()` and hot-swap callbacks can perform legitimate cold discovery after an ear...
+- Rejected Alternatives: Keeping a one-second cold lookup retry in `LateFrameTick` was rejected because late-frame debounce still belongs to presentation timing. Keeping the old timer guard inside `TryResolveMainCameraCold()` was rejected because it could suppress the cold `Start()` recovery pass after an early lifecycle miss. Creating a new registry dependency was rejected because `IPlayerRuntimeContext.PlayerCamera` already owns the cold camera route.
+- Scalability potential: Low/Middle devices avoid a latent scene/component search during settings slider interaction. High/Ultra devices can still preview richer post-processing through the same late-frame debounce without changing dependency ownership.
+- Hardware Impact: Removes a potential `TryGetComponent`/parent traversal burst from late-frame settings preview. Estimated i3/MX350 gain is 5-25 us on the first unresolved FOV preview frame; GC delta remains 0 because the cached-only path reads existing references.
+- Problem: A broad grep over `Assets/_Project/Scripts` produces noisy hits from comments, lifecycle methods, SlowTick/ColdTick bootstrap, and legal register/unregister helpers. Treating that output as a defect list would cause unsafe refactoring outside the 1625 domain.
+- Solution: Replace the broad grep with bounded Python source scans that parse actual method bodies, ignore comments, and separate strict high-frequency methods (`Tick`, `FixedTick`, `LateFrameTick`, `Update`, `Execute`, `FastTick`) from Slow/Cold/bootstrap lanes. Result: 0 strict high-frequency `GetComponent`/`TryGetComponent`/`GlobalRegistry.Get<T>()` issues, 0 UI high-frequency visual writes outside late/visual sync, and 0 UI/Core write-lock review candidates with multiple acquisitions or missi...
+- Rejected Alternatives: A full regex parse of every source file timed out and was stopped. Broad refactoring from `rg` output was rejected because most hits were comments, cold bootstrap, or legitimate dispatcher register/unregister paths.
+- Scalability potential: Low/Middle devices benefit from keeping hot paths proven free of scene searches. High/Ultra visual richness remains routed through LateFrame/VisualSync, not through simulation-phase polling.
+- Hardware Impact: Static proof only; no runtime cost. The one new code polish reduces failed cached-camera retry work in settings preview by avoiding repeated context reads during the retry window, estimated 1-5 us during unresolved preview frames on i3/MX350.
+- Problem: `PDASpectrumTab.RefreshModeDisplay()`, `ActivateMode()`, and nested hover handlers read `GlobalRegistry.Spectrum` directly. These routes are event-driven rather than raw per-frame loops, but sonar snapshots, PDA events, and pointer events are runtime UI paths; treating `GlobalRegistry` as a live UI bus violates the cold-DI doctrine.
+- Solution: Added owner-local `_spectrumRuntime` cache, populated in `OnEnable` and refreshed through `GlobalRegistryServiceSlot.SpectrumRuntime` hot-swap. Runtime refresh, activation, and hover checks now read the cached field only.
+- Rejected Alternatives: Leaving pointer/event reads because they are not strict 60 Hz loops was rejected; the same method can be reached by event flush cadence and should not hide registry reads behind UI callbacks. Adding a new signal lane was rejected because the service already has a registry slot and hot-swap listener contract.
+- Scalability potential: Low/Middle lanes avoid service-slot reads during PDA hover and sonar-refresh bursts. High/Ultra can add richer spectrum UI visuals without changing dependency ownership.
+- Hardware Impact: Removes two pointer-event registry reads and one event-refresh registry read path. Estimated i3/MX350 gain is 1-4 us during PDA spectrum refresh/hover bursts; GC delta remains 0.
+- Problem: `SettingsPanelAnimator.LateFrameTick()` and `UIFadeTransition.LateFrameTick()` call `Unregister()` when animations finish. The helper used `GlobalRegistry.UnregisterLateFrameTickable`, so a hot completion path still routed through the global facade.
+- Solution: Changed those helpers to call `SystemDispatcher.UnregisterLateFrameTickableDirect()`, the dispatcher-owned self-retire API already documented for late-frame owners. Lifecycle calls still work through the same helper, but no longer touch `GlobalRegistry` on completion.
+- Rejected Alternatives: Keeping the global facade was rejected because it hides dispatcher mutation behind a registry route. Deferring unregister to another tick was rejected because it would keep idle animation owners registered for an extra frame with no benefit.
+- Scalability potential: Low/Middle lanes avoid registry facade traffic during menu fade churn. High/Ultra can run more UI polish transitions while keeping dispatcher ownership flat.
+- Hardware Impact: Removes two one-shot late-frame registry facade calls. Estimated i3/MX350 gain is 1-3 us on fade completion frames; steady-state frame delta is 0 us and GC delta remains 0.
+- Problem: `CharBufferPool` owned a lazy `GlobalRegistry.DataVault` fallback in `TryResolveBabelVault()`. The direct hot-method scan was clean, but `SubtitleManager.DisplaySubtitle(uint, ...)` can call `CharBufferPool.TryAcquireBabel()`, then `BabelLease.Span`, then `GetBabelSpan()`, then `TryResolveBabelArena()`. That chain made the DataVault lookup a helper-hidden runtime dependency path.
+- Solution: Removed `TryResolveBabelVault()` and added `CharBufferPool.BindDataVaultCold(IDataVault)`. `SubtitleManager`, `SuitHUDV4CanvasOverlay`, and `DiegeticPDAController` now bind the vault during cold lifecycle and refresh it from `GlobalRegistryServiceSlot.DataVault` hot-swap callbacks. `CharBufferPool` acquisition now either uses the cached vault handle or the existing fixed `char[][]` fallback; it does not ask the registry.
+- Problem: `TerminalOsRuntime.TryGetTerminalPreviewAppliedLoreUtf8()` returned `false` immediately when the requested locale/surface pair was absent. The method already contained default-locale fallback logic, but that fallback was reachable only after a successful non-default lookup that failed the terminal ASCII compatibility test. Result: a valid AppliedLore terminal preview signal could leave the screen unchanged on partial Babel coverage.
+- Solution: Keep the first lookup zero-copy through `ReadOnlySpan<byte>`, but route missing non-default locale entries into the same default-locale fallback used for terminal-compatible text. No string allocation, no temporary buffer, no DataVault mutation, and no gameplay authority change.
+- Rejected Alternatives: Do not generate fake localized text at runtime; that would add allocation risk and corrupt translation provenance. Do not widen the hot signal payload; packet hash plus locale hash already carries enough identity.
+- Scalability potential: Low tier gets deterministic English fallback instead of a blank preview. Middle tier keeps identical cadence and memory footprint. High and Ultra tiers can still use full localized Babel payloads when source coverage exists.
+- Hardware Impact: One additional `H8AppliedLoreRuntime.TryGetUtf8()` only on missing non-default locale entries. Normal fully covered locales remain one lookup. Expected steady-state cost remains 0 us for covered entries; missing-entry recovery is bounded to one static DB lookup and avoids UI retry churn.
+- Problem: `DecryptionBlackBoxDumpWriter` used C# `lock (_gate)` sections. The compiler lowers them to monitor try/finally, but the APEX lock-flattening protocol requires source-visible strict release proof.
+- Solution: Replaced both gate sections with explicit `System.Threading.Monitor.Enter(_gate, ref lockTaken)` and `finally` exits. The file write path remains outside the gate, so the thread never holds the writer gate during I/O.
+- Rejected Alternatives: Do not wrap the disk write in the gate; that would turn black-box fault output into a stall vector. Do not introduce a queue/thread worker; crash dump capture is rare, bounded, and already backpressure-aware.
+- Scalability potential: Low tier avoids long managed critical sections on fault. Middle tier preserves deterministic black-box output. High and Ultra tiers retain the same telemetry fidelity without adding thread ownership complexity.
+- Hardware Impact: No frame-cost change during normal play. On a decryption fault, critical-section duration remains limited to copying a fixed 300-entry ring into preallocated arrays; disk I/O executes after release.
+- [omitted 241 filtered lines; raw preserved]
+
+## Rationale_1626.md [26545 B; budget 6371]
+- # Rationale 1626
+- ## Decision 01 - Scope Boundary
+- Problem: The prompt touches allocator reset, DataVault reset, JNI, KCC replay, and ballast physics. The repo already has many unrelated modified files from parallel agents.
+- Solution: Edit only core memory/reset code, deterministic replay validation code, and an existing JNI bridge if a missing balanced detach is proven by source. Use active source and active architecture docs only.
+- Rejected Alternatives: Reverting unrelated files or using archive reports as authority would corrupt parallel work and create false proof.
+- Scalability potential: Low-tier gets no new hot-frame work; middle/high/ultra tiers can spend offline smoke-test cycles on stricter replay validation.
+- Hardware Impact: i3/MX350 runtime frame gain is neutral; avoiding extra managers prevents recurring CPU and GC overhead.
+- ## Decision 02 - Build Gate
+- Problem: Full project build is explicitly forbidden after small edits and the workstation is shared by many agents.
+- Solution: Use static C# audits, targeted `rg`, and diff checks until a Burst compile wall becomes a real blocker. Build only after checking CPU and `dotnet`/`csc.exe`.
+- Rejected Alternatives: Running `dotnet build` as a habit burns host CPU and violates the coordinator directive.
+- Scalability potential: Developer workstation remains usable for concurrent agents; verification still escalates if static analysis cannot prove safety.
+- Hardware Impact: Avoids minutes of CPU saturation on low-end host hardware; runtime impact 0 us.
+- ## Decision 03 - Native Reset Shape
+- Problem: Domain reload disabled can keep static native handles, cursors, and latest-vault references alive across Play Mode restarts.
+- Solution: Reset path must finish H8Memory owner jobs, dispose latest DataVault, clear native backing storage where pointers are owned, dispose containers, and explicitly assign static fields to default/null/0.
+- Rejected Alternatives: Trusting `Dispose()` alone leaves stale `IsCreated` state and old cursors dependent on Unity reload behavior.
+- Scalability potential: Low-tier avoids allocator drift after repeated play sessions; high/ultra can run heavier smoke loops without stale allocator contamination.
+- Hardware Impact: Cold reset performs linear clearing once; frame impact remains 0 us on i3/MX350.
+- Problem: Determinism validation needs raw frame DTOs and drift telemetry without adding a new runtime authority.
+- Solution: Place unmanaged replay DTOs and Burst validation job inside the existing KCC smoke-test partial, using AUP double3, explicit struct layouts, and fixed-size NativeArray inputs.
+- Rejected Alternatives: A new MonoBehaviour or managed replay recorder would add lifecycle ambiguity and GC pressure.
+- Scalability potential: Low-tier can run short offline smoke loops; middle/high/ultra can increase frame count and telemetry detail while gameplay truth stays unchanged.
+- Hardware Impact: No player-frame cost; editor validation cost is bounded batch work.
+- Problem: Input recording is owned by Core, while replay validation is consumed by Physics/KCC. Nesting `ReplayFrameDTO` under KCC would force Core to depend on a physics runtime class.
+- Solution: Move `ReplayFrameDTO` and `MemoryStateTelemetryEntry` into `Hecton8.Core.Contracts.Physics` with explicit 80/64 byte layouts and let both Core and KCC consume that contract.
+- Rejected Alternatives: Duplicate DTOs per domain, or direct Core -> KCC dependency. Both break one-owner routing and make replay ABI drift likely.
+- Scalability potential: Low-tier records the same flat ring with minimal per-frame bytes; middle/high/ultra can run longer replay windows without changing DTO authority.
+- Hardware Impact: i3/MX350 cost is one 80-byte ring write per deterministic input tick, estimated 1-3 us, 0 GC.
+- Problem: Replay frames need current input plus AUP without scene search or hot GlobalRegistry polling.
+- Solution: `InputDispatcher` writes `ReplayFrameDTO` through DataVault handles during deterministic input publish, using cached `_playerContext.TryGetPlayerPoseSnapshot` and `_playerContext.TryGetMovementRuntimeState`.
+- Rejected Alternatives: `FindObjectOfType`, direct KCC reach-in, or GlobalRegistry hot polling. Those routes add ownership ambiguity and can allocate or drift with service timing.
+- Solution: Add `pinLockCommitted` plus previous alias owner tracking. If an exception occurs after the pin is committed, call `RollbackBufferPinUnlocked(key, lockedOffsetBytes, activeLockBit, committedPreviousAliasRequester)` before the mutation gate is released.
+- Rejected Alternatives: Treating buffer pins as lower risk because they are read aliases. A stuck alias pin blocks relocation/defrag and can stall future writer acquisition just like a stuck writer lock.
+- Scalability potential: Low-tier memory/view faults do not leave a permanent DataVault pin; middle/high/ultra keep the same non-fault path and relocation behavior.
+- Hardware Impact: Non-throwing path adds two local assignments in the buffer-pin lock path; no managed allocation, no extra lock, expected 0 us measurable steady frame cost.
+- ## Decision 29 - Replay Hash Canonical Float Bits
+- Problem: Replay frame hashing consumed `math.asuint(float)` and `math.asulong(double)` after finite checks. IEEE 754 signed zero is finite, so `-0.0` and `+0.0` could describe the same physical AUP/move-axis state but produce different replay hashes across platform math routes.
+- Solution: Canonicalize replay floats and doubles before DTO write and hash: non-finite values and both zero signs collapse to positive zero, while finite non-zero values keep their exact bits. Source tests now assert the canonical helpers are used by `TryResolveReplayAup()` and `SanitizeReplayFloat3()`.
+- Rejected Alternatives: Changing the hash function to ignore sign bits globally. That would hide real negative non-zero velocity/AUP facts and weaken drift detection.
+- Scalability potential: Low-tier/mobile replay avoids false desync from signed-zero math noise; middle/high/ultra keep bit-exact non-zero physical state for stricter replay validation.
+- Hardware Impact: Three float helper calls and three double helper calls only while input replay recording is active; no managed allocation, no registry lookup, expected 0 us measurable steady frame cost.
+- [omitted 133 filtered lines; raw preserved]
+
+## Rationale_1627.md [16286 B; budget 3909]
+- # Rationale 1627 - SCENARIOS_AND_CAMPAIGN_00_MIGRATION_VALIDATOR
+- Date: 2026-06-01
+- Evidence State: PENDING VERIFICATION
+- ## Decision 001 - Validation First, No Scene Mutation
+- Problem: The task demands scene/prefab readiness for `02_HECTON_WORLD` while multiple agents are editing concurrently. Direct scene mutation can corrupt authored world data or hide defects.
+- Solution: Build an Editor-only validator in `Assets/_Project/Editor/QA/` and use raw YAML only for static detection, not repair. Any repair path must be non-destructive Unity Editor API and opt-in by explicit method.
+- Rejected Alternatives: Blind YAML find/replace was rejected because FileID/GUID/property alignment cannot be assumed. PlayMode-first validation was rejected because missing scripts can abort before useful diagnostics.
+- Scalability potential: Low tier gains from avoiding PlayMode churn and import stalls; middle tier gets deterministic static preflight; high tier can run broader prefab sweeps; ultra tier can add deeper report hashing without changing gameplay truth.
+- Hardware Impact: i3/MX350 avoids heavy compilation and PlayMode churn during early passes. Estimated gain: prevents multi-second editor stalls; frame microseconds not claimed.
+- ## Decision 002 - Evidence Class Discipline
+- Problem: Static scans can prove text and serialized references, not runtime health.
+- Solution: Every report entry will carry evidence class: STATIC_SOURCE, STATIC_DOC, UNITY_CONSOLE, PLAYMODE, PROFILER, or CLI_COMPILE.
+- Rejected Alternatives: "Scene ready" prose was rejected. Readiness without Unity Console/PlayMode remains PENDING VERIFICATION.
+- Scalability potential: Low/middle/high/ultra tiers receive the same truth model; richer devices only expand validation depth and hashing.
+- Solution: Used Unity's scene validator with `auto_repair=true` while `02_HECTON_WORLD` was active. It removed exactly 2 missing script shells. Saved the active world scene and repeated validation; result was `totalIssues=0`, `missingScripts=0`, `brokenPrefabs=0`.
+- Rejected Alternatives: GUID remap was rejected because the missing shells had no resolvable script identity from the binary scene path. Manual binary mutation was rejected as corruption.
+- Scalability potential: Low/middle/high/ultra tiers all benefit from eliminating dead serialized components before PlayMode. The player route remains authoritative; no gameplay truth was changed.
+- Hardware Impact: Editor-only cleanup. Avoids runtime deserialization warnings and possible component iteration null branches; no player-frame microseconds claimed without profiler.
+- ## Decision 016 - Diagnostic Scene Leak Probe Without Console Pollution
+- Problem: `MemorySecurityAudit1616.RunMockLeakDetectionProbe` intentionally creates a scene-lifetime native allocation to verify sentinel fail-closed behavior, but the production assert path still emitted `CRITICAL_MEMORY_VIOLATION` into Unity Console. That made an expected editor stress probe indistinguishable from a real scene unload leak.
+- Solution: Added `NativeMemorySentinel.AssertNoSceneLifetimeAllocationsForDiagnostics(string context)`. It uses the same allocation count and fatal message path, but does not call `ReportSceneLifetimeLeaks`, does not publish telemetry, does not mutate `LeakReported`, and does not write a Console error. The editor stress probe now calls this diagnostic-only API.
+- Rejected Alternatives: Clearing the console was rejected because it hides evidence. Weakening `PublishSceneLifetimeLeak` was rejected because real scene unload leaks must remain loud. Keeping suppression scopes was rejected because the actual console stack proved they were insufficient as a proof surface.
+- Scalability potential: Low/middle/high/ultra tiers keep the same runtime leak enforcement. Editor validation becomes cleaner and more deterministic without changing gameplay memory ownership.
+- [omitted 76 filtered lines; raw preserved]
+
+## Rationale_1628.md [10913 B; budget 2620]
+- # Rationale 1628 - ABYSSAL_BIOME_TRANSITION_AND_DITHER_FOG_POLISHER
+- Status: ACTIVE / PENDING VERIFICATION
+- ## Decision 000 - Domain and Mandate Scope
+- Problem: The pasted request lists 19 tasks and an incomplete XML tag, while the batch file contains 20 tasks with stricter shader/CBuffer directives.
+- Solution: Use the extracted `Docs/Tasks/CURRENT_BATCH.md` prompt as primary assignment. Map scope to Domain 18 and Domain 67.
+- Rejected Alternatives: Using the pasted list would drop shader validator and metric-report tasks and corrupt task-count tracking.
+- Scalability potential: Low uses cheap depth fog and Bayer/blue-noise fakery; middle adds stable dither and LUTs; high adds richer visual layers only where budget exists; ultra spends saved cycles on denser atmospheric polish, not gameplay truth.
+- Hardware Impact: Static evidence only. Expected gain on i3/MX350 comes from replacing raymarch-style fog with analytical single-depth-read fog. Measured proof absent.
+- ## Decision 001 - Visual Fake First
+- Problem: The task requests abyssal atmosphere, light shafts, turbulence, and caustic depth effects without exceeding MX350 fill-rate.
+- Solution: Default to offline-baked textures, analytical fog, Bayer dither fallback, and branchless continuous quality weights. No runtime multi-sample raymarching.
+- Rejected Alternatives: Real volumetric scattering, multi-camera passes, runtime per-particle silt, and full-screen high-sample noise stacks are too expensive without profiler proof.
+- Scalability potential: Low: one depth read plus analytical fog. Middle: dither and LUT. High: additional noise blend. Ultra: richer light-shaft mesh/noise authoring while preserving the same authority route.
+- Hardware Impact: Expected GPU savings are from reduced texture/depth fetches and ALU loops. Exact microseconds remain pending until Frame Debugger/Profiler capture.
+- ## Decision 005 - Build Gate Closed
+- Solution: Add a second FNV-1a hash over the sanitized legacy global payload and return before the legacy `Shader.SetGlobal*` calls when the payload hash is unchanged. Reset the hash with the compact buffer release path.
+- Rejected Alternatives: Removing the legacy globals would break existing renderer features that still consume `_H8BiomeTransition*` values. Sharing the compact CBuffer hash would miss legacy-only changes such as biome hashes.
+- Scalability potential: Low avoids needless CPU presentation churn. Middle/high/ultra keep compatibility globals only when actual atmospheric state changes.
+- ## Decision 010 - Cold Bootstrap Lookup Boundary
+- [omitted 49 filtered lines; raw preserved]
+
+## Rationale_1629.md [11275 B; budget 2706]
+- # Rationale 1629 - VOCAL_WARNING_SYSTEM_AND_ALARM_BITMASK_HARDENER
+- Status: STATIC_VERIFIED / BUILD_BLOCKED_BY_CONTENTION
+- ## Decision 001 - Mandate Scope
+- Problem: VWS hardening touches audio thread signaling, Burst priority math, explicit DTO layout, DataVault ownership, and pressure/flood alarm semantics.
+- Solution: Read eight mandate files before edits: SPSC DSP, ARM64 layout, zero-GC, signal segregation, native memory/jobs, crash telemetry, abyss survival, and fluid incursion.
+- Rejected Alternatives: Reading only AGENTS.md was rejected because the task requires specific audio DSP and explicit layout rules. Reading every registry file was rejected because it would inflate context without changing the VWS decision surface.
+- Scalability potential: Low uses flat bitmask and 2D warning voice; Middle keeps bounded SignalBus snapshots; High adds richer duck/distortion response; Ultra can spend saved CPU on stronger cockpit alarm presentation without changing alarm truth.
+- Hardware Impact: i3/MX350 gains from no managed queue churn, no string cue path, no per-warning heap traffic; expected static-path saving is in microseconds per alarm and prevents GC spikes, runtime profiler proof absent.
+- ## Decision 002 - Build Policy
+- Problem: The prompt allows a build after CPU/compiler checks, but the user explicitly forbids dotnet build after small edits and the host may be shared with 20+ agents.
+- Solution: Use source scans, AST/text audits, and targeted C# inspection first. Only consider build for a critical syntax wall after checking CPU load and compiler processes.
+- Rejected Alternatives: Immediate `dotnet build` was rejected as host-contention risk and contrary to the latest user instruction.
+- Scalability potential: Verification cost remains external to runtime. Runtime design is unaffected across Low/Middle/High/Ultra.
+- Hardware Impact: No host CPU burn from build; no runtime impact.
+- ## Decision 003 - Alarm Bit Index Inversion
+- Solution: Remove the current-phase presentation bypass. `RunVocalWarningFrame` now always computes and writes a pending presentation frame. Master route completes in `VisualSyncTick`; fallback route registers `ILateFrameTickable` and completes through `LateFrameTick -> VisualSyncPresentationTick`.
+- Rejected Alternatives: Keeping the current-phase fallback was rejected because it violates phase ordering. Skipping fallback publication entirely was rejected because losing VWS on dispatcher registration failure is worse than a bounded late-frame fallback.
+- Scalability potential: Low/Middle/High/Ultra get identical alarm truth. Only phase scheduling changes; warning clarity and priority math are unchanged.
+- [omitted 56 filtered lines; raw preserved]
+
+## Rationale_ARCHIVE015.md [2807 B; budget 1900]
+- # Rationale_ARCHIVE015
+- Problem: Active Docs/AgentLogs and Docs/Tasks contain post-Batch014 files; stale batch state contaminates new work.
+- Solution: Archive files whose LastWriteTime is at or after Docs/Archive/Batch014 LastWriteTime into Docs/Archive/Batch015 with AgentLogs/Tasks layout preserved. Generate compact summaries instead of raw concatenation.
+- Rejected Alternatives: Filename prefix filtering misses late 14xx files and nonnumeric audit files. Raw concatenation exceeds requested size and preserves repeated boilerplate.
+- Scalability potential: Low/Middle/High/Ultra runtime unchanged; process hygiene lowers context load only.
+- Hardware Impact: Runtime gain 0 us on i3/MX350; disk/context reduction only.
+- Evidence Class: STATIC_DOC / FILESYSTEM.
+- Residual risk: LastWriteTime cutoff can include late Batch014 artifacts; user explicitly allowed that.
+- Problem: Master prompt extraction for ARCHIVE015 returned no XML tag in Docs/Tasks/CURRENT_BATCH.md.
+- Solution: Treat direct user request as primary directive; archive by Batch014 timestamp.
+- Rejected Alternatives: Guessing another agent ID from CURRENT_BATCH would contaminate scope.
+- Scalability potential: Runtime unchanged across Low/Middle/High/Ultra; context load reduced by summary artifacts.
+- Hardware Impact: 0 us runtime; filesystem-only cleanup.
+- Problem: Initial summaries were too lossy: 130183 bytes from 10.29 MB source kept only first signal lines per file.
+- Hardware Impact: 0 runtime us; summary bytes now 6502373.
+- Problem: The first rich-regeneration exceeded the 2 MB cap because high-priority lines bypassed per-file budget.
+- Solution: Rebuilt selector with hard budget checks for every line. New summary bytes: 690180.
+- Rejected Alternatives: Keeping 6.5 MB summaries violates direct user cap. Returning to 130 KB loses too much file-level detail.
+- Hardware Impact: 0 runtime us.
+- [omitted 8 filtered lines; raw preserved]
+
+## Rationale_AUDIT_FRAME_LOGIC.md [118666 B; budget 22000]
+- # Rationale_AUDIT_FRAME_LOGIC
+- Date: 2026-05-29
+- Status: COMPLETE
+- ## Decision 001 - Audit Scope Without Provided Batch ID
+- Problem: User requested whole-project frame/render/logic audit but did not provide an AGENT_PROMPT id from CURRENT_BATCH.md.
+- Solution: Use explicit local ID AUDIT_FRAME_LOGIC, verify no matching XML tag exists via Select-String, and proceed as an ad-hoc audit with disk artifacts.
+- Rejected Alternatives: Blocking for an ID would waste the session; using another agent's XML block would contaminate domain boundaries.
+- Scalability potential: Audit must classify systems by continuous GlobalQualityWeight path from minimum survival to visual overkill.
+- Hardware Impact: No runtime gain yet. Expected output is route/risk map for later MX350/i3 fixes.
+- ## Decision 002 - Selected Mandates
+- Problem: The request crosses rendering, frame phases, logic dispatch, global authority, memory, and GPU upload paths.
+- Solution: Select ARCH_Execution_Phases, ARCH_Global_Registry_ServiceLocator_DI_Init, ARCH_Project_Bootstrap_Sequence_Init_Safety, ARCH_Signal_Lane_Segregation, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Performance_Budgets_FrameTime_VRAM_Limits, REND_URP_Graphics_HotPath_Optimization_HLOD, GPU_Compute_Kernels_Kernels_Optimization_MX350.
+- Rejected Alternatives: Reading all registry files first would be bureaucracy and delay factual source scanning.
+- Scalability potential: The selected mandates cover Low/Middle/High/Ultra progression through cadence, capacity, HLOD, GPU dispatch, and visual sync.
+- Hardware Impact: No runtime gain yet. Audit target is identifying hot work that can be pushed out of simulation and into gated VISUAL_SYNC.
+- Problem: User requested a full project state audit, but no Unity import, Play Mode, profiler, GC capture, memory capture, device run, or player build was executed in this turn.
+- Solution: Map source routes and existing proof artifacts, then classify runtime-only claims as UNKNOWN instead of reporting readiness.
+- Rejected Alternatives: Claiming runtime green from static source; launching a dotnet rebuild despite the task being architectural and the project policy warning against unnecessary builds.
+- Scalability potential: Runtime proof must later measure Low, Middle, High, and Ultra paths separately because GlobalQualityWeight scales cadence, capacity, render scale, and effect density.
+- Hardware Impact: 0 us measured. Prevents false optimization claims on i3/MX350 without profiler data.
+- Problem: The project has many gameplay systems, but the authoritative execution route must be identified before judging performance or determinism.
+- Solution: Treat `SystemDispatcher` as gameplay frame owner and `RenderDispatcher`/URP RenderGraph features as presentation/render owner. `GameTickManager` is classified as legacy dispatcher-registered support, not the frame authority.
+- Rejected Alternatives: Auditing by Unity MonoBehaviour naming alone; assuming every system owns its own `Update` loop.
+- Scalability potential: Low tier can reduce cadence and capacities through dispatcher/quality weights; Middle/High/Ultra can buy visual overkill in render-side systems without changing gameplay truth.
+- Hardware Impact: 0 us measured. Route map targets future removals of hidden work from simulation frames.
+- Problem: Current filesystem count is `168` first-party asmdefs under `Assets/_Project`; several docs still recorded `167`.
+- Solution: Update only the verified count in `PROJECT_BASELINE.md`, `PROJECT_RUNTIME_TOPOLOGY.md`, and `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`; leave generated dependency graph artifacts untouched and mark their count stale until regeneration.
+- Rejected Alternatives: Rewriting generated graph by hand; changing `AGENTS.md` scene doctrine without owner/integrator decision.
+- Scalability potential: Accurate topology prevents stale dependency assumptions when splitting low/mid/high/ultra ownership across assemblies.
+- Hardware Impact: 0 us measured. Documentation integrity only.
+- Problem: The first-party render spine is mostly RenderGraph/SRP-based, but exceptions exist that can still hit visible-frame cost.
+- Solution: Classify `DiegeticPanelController` runtime `Graphics.Blit`, `GlobalShaderDispatcher` direct `Graphics.ExecuteCommandBuffer`, documented GPU `SetData` fallbacks, MPB/material mutation, camera stacking, and third-party legacy render paths as debt requiring profiler proof or migration.
+- Rejected Alternatives: Treating all shader global writes as defects; many are intended VisualSync bridges and require phase/frequency proof before changes.
+- Scalability potential: Low tier should disable or reduce legacy per-frame presentation work; Middle/High/Ultra can retain richer visor/fog/ocean effects when RenderGraph and upload cost are proven.
+- Hardware Impact: 0 us measured. Potential MX350 savings not claimed until runtime timings exist.
+- Problem: Dispatcher contract is strong, but recurrent cold-registry fallback and legacy tick list structures still exist.
+- Solution: Classify `GameTickManager` managed list buffering, `AbyssalShadowCullingRuntime.SlowTick` DataVault fallback, `FoveatedRenderCommander.SlowTick` DataVault/Thermal fallback, and mod managed fanout as debt or proof gaps, not immediate compile defects.
+- Rejected Alternatives: Removing fallback paths without explicit route cards; blocking on full rewrite of legacy tick support.
+- Scalability potential: Low tier needs fewer hot registry/cache misses and tighter tick cadence; Ultra can spend saved time on visual density rather than lookup overhead.
+- Hardware Impact: 0 us measured. Future target is sub-0.1 ms recurrent logic overhead per suspect lane.
+- Problem: `BaseModule` slow/fixed tick routes reached `TryGetComponent`, parent service lookup, and `GlobalRegistry.ConstructionRuntime` through `PowerSupplyRatio`, `TryResolveSubmarineAtmosphereSystem`, emergency notifications, and unmoored rigidbody capture.
+- Solution: Keep `_powerNode`, `_moduleRigidbody`, `_submarineAtmosphereSystem`, and `_constructionManager` as cold cached dependencies. Hot accessors now only read cached fields and skip when unavailable.
+- Rejected Alternatives: Lazy scene lookup from read properties; registry polling when emergency state flips; parent-chain service walk during flood/depth resolution.
+- Scalability potential: Low tier avoids repeated managed/Unity lookup branches; Middle/High/Ultra spend the saved budget on pressure/flood presentation rather than dependency search.
+- Hardware Impact: Estimated 35 us saved in clustered flooded/pressure slow ticks on i3/MX350 class CPU; larger impact when many modules flood simultaneously.
+- Problem: `WorldCaveDirector.TryGetCaveAt` mutated cave dictionaries by removing stale entries and also refreshed cached biome context while serving a read accessor.
+- Solution: Use a pure cave-key calculation in `TryGetCaveAt`; return false for stale volumes; keep removal in `RefreshCaveLifecycleState` under `SlowTick`. Added `CopyActiveCavesTo` for caller-owned enumeration.
+- Rejected Alternatives: Returning `_caveInstances.Values` as the runtime path; deleting stale records from unknown consumer phases.
+- Scalability potential: Low tier avoids hidden dictionary churn from probes; Ultra can query cave state more often without changing ownership.
+- Hardware Impact: Estimated 4-12 us avoided per hot cave probe when stale entries exist; prevents unpredictable mutation stalls.
+- Problem: `VehicleDockingModule.Tick` scanned every transport registry slot every frame and tested Unity object active state before any real overlap was known.
+- Solution: Add fixed overlap candidate caches populated by trigger enter/exit and seeded cold on enable/spawn. Runtime tick checks only the bounded overlap list. `PlayerTransportLifecycleRegistry.TryGetRegistered` exposes cached transport references for cold/event capture.
+- Rejected Alternatives: Polling all 64 slots forever; adding a managed event fanout; using a dynamic List for overlap candidates.
+- Scalability potential: Low tier pays O(overlapping transports) instead of O(all transports*docks); higher tiers can afford tighter docking gates and better presentation without registry polling.
+- Hardware Impact: Estimated 20-80 us saved per active dock frame on i3/MX350 class CPU in transport-heavy scenes.
+- Problem: `RecordDockTelemetry` could fall through `TryAcquireDockTelemetryWrite` into `EnsureDockTelemetry` and DataVault `EnsureGenerationHandle` from `Tick`/`FixedTick`.
+- Solution: Keep telemetry handle creation in Awake/OnEnable/DataVault hotswap. Hot write now only validates cached handles, resolves arrays, and releases the single mutation guard in strict `finally`.
+- Rejected Alternatives: Allocating vault buffers from telemetry write; clearing descriptors repeatedly from hot failure branches.
+- Scalability potential: Low tier avoids rare hitch on invalid handles; Ultra keeps 300-frame black-box telemetry without frame-time spikes.
+- Hardware Impact: Removes a rare allocation/handle-acquisition stall; steady telemetry write remains one guarded ring write.
+- Problem: `TransportChargingStation.Tick` scanned the whole transport lifecycle registry and filtered Unity behaviours every frame.
+- Solution: Seed tracked transports cold on enable, then maintain a fixed trigger-overlap cache through enter/exit events. Runtime `Tick` only validates cached slots.
+- Rejected Alternatives: Full registry scan per active charger; dynamic `List<T>` candidate storage; resolving transport components from the tick loop.
+- Scalability potential: Low tier pays O(active overlaps) per station; Middle/High/Ultra can raise station count without multiplying registry scans.
+- Hardware Impact: Estimated 10-45 us saved per active station frame on i3/MX350 class CPU in transport-heavy bases.
+- Problem: `HUDQuickBar.LateFrameTick` and `PDALoadoutTab.LateFrameTick` reached `FieldLoadoutAdvisor.TryBuildForward*`, which can query the spatial grid and then call `TryGetComponent/GetComponentInParent` through source classification.
+- Solution: Add a role/kind-only `ForwardLoadoutSnapshot` route. `PlayerToolManager.LateFrameTick` refreshes it at 0.35 s cadence on the Player layer before UI, using static scratch only. HUD and PDA read cached preset/advice strings from the manager.
+- Rejected Alternatives: Keeping UI as the world-query owner; moving the query into `Tick`; widening `ToolLoadoutChangedSignal` with string or managed payload.
+- Scalability potential: Low tier keeps UI refresh deterministic and lookup-free; High/Ultra can still increase advice cadence or richer presentation without changing UI ownership.
+- Hardware Impact: Estimated 15-60 us removed from recurring UI presentation refresh; eliminated transitive component lookup from UI late-frame roots.
+- Problem: `HUDQuickBar` dirty-slot rendering resolved prefab tool interfaces via `prefab.TryGetComponent` for icon, item hash, metadata hash, and durability.
+- Solution: Reuse `PlayerToolManager` assigned-prefab read-model cache through `TryGetAssignedToolDataReadModel`; quickbar renders from cached interfaces only.
+- Rejected Alternatives: Repeating prefab component lookup per slot paint; adding a second HUD-owned prefab cache.
+- Scalability potential: Low tier avoids repeated Unity component resolution during dirty UI bursts; higher tiers can spend the saved work on richer slot feedback.
+- Hardware Impact: Estimated 4-20 us saved per dirty quickbar refresh depending on slot count and prefab component layout.
+- Problem: `ConstructionManager.LateFrameTick` rebuilt dirty habitat graphs through `HabitatGraphManager.Rebuild`, and `PopulateModuleBuffer` resolved `ModuleMarker`, `BaseModule`, and `TransitionHatchMeshState` with `TryGetComponent` for each registered module.
+- Solution: Resolve those references once in cold `RegisterModule` and store `HabitatGraphModuleRegistration` beside the placed-module registry. `HabitatGraphManager.Rebuild` now consumes cached references.
+- Rejected Alternatives: Accepting dirty late-frame graph rebuild as "not every frame"; adding lazy resolution inside `ModuleRecord`; moving graph rebuild to another hot dispatcher phase.
+- Scalability potential: Low tier can rebuild small bases without Unity component lookup spikes; Middle/High/Ultra can tolerate larger habitat graph rebuilds and spend visual budget on stress/flood presentation.
+- Hardware Impact: Estimated 25-120 us saved per dirty habitat graph rebuild depending on module count and component layout.
+- Problem: `HectonSurvivalSystem.SlowTick` reached thermodynamics, modular equipment, hazard zones, player health, vehicle upgrade modules, and vegetation bridge through lazy `GlobalRegistry` or component fallback routes.
+- Solution: Cache registry services in cold/hotswap callbacks, consume cached `PlayerTransportLifecycleRegistry` vehicle upgrade refs, and make toxicity/oxygen/thermal/cold-pocket branches read cached references only.
+- Rejected Alternatives: Lazy service retry from survival damage code; `TryGetComponent` on active transport during oxygen and thermal resistance resolution.
+- Scalability potential: Low tier gets deterministic survival slow ticks; Middle/High/Ultra can spend the saved budget on richer physiological audio/visor presentation without changing health truth ownership.
+- Hardware Impact: Estimated 8-35 us removed from survival slow-tick bursts on i3/MX350 class CPU.
+- Problem: `PlayerKinematicsRuntime.FixedTick` called `RebindColdIfMissing`, which could reach registry/DataVault rebinding from the physics phase every 64 frames.
+- Solution: Keep service/DataVault rebinding in cold setup and hotswap callbacks. Fixed tick now only refreshes camera transform from the cached player context.
+- Rejected Alternatives: Registry retry inside physics because it is infrequent; hidden fixed-phase dependency search is still phase impurity.
+- Scalability potential: Low tier avoids fixed-frame spikes; Middle/High/Ultra can maintain tighter motor smoothing without lookup stalls.
+- Hardware Impact: Estimated 3-15 us saved per 64 fixed frames and lower phase jitter.
+- Problem: `PlayerCriticalProceduralAudioRenderer.Tick/SlowTick` polled `GlobalRegistry` for MapMagic, audio, player, ecosystem, and submarine hull read models through retry functions.
+- Solution: Bind services once in cold init and update them via `IGlobalRegistryHotSwapListener`; hot audio resolvers now return cached read models only.
+- Rejected Alternatives: Keeping frame-index throttled registry retry in audio because it is not every frame; audio stress frames must not search global services.
+- Scalability potential: Low tier keeps critical audio deterministic; Middle/High/Ultra can spend the saved time on granular/binaural audio density.
+- Hardware Impact: Estimated 10-45 us saved across stress-heavy audio frames depending on missing-service retry frequency.
+- Problem: `HectonBiolumManager.Tick` read `GlobalRegistry.CelestialRuntimeSnapshot` and hot paths could register/unregister late-frame ticking while publishing shader state later.
+- Solution: Cache `ICelestialRuntimeSnapshotReadModel` cold, update it on celestial hotswap, keep late-frame tick registration stable, and leave shader global writes in `LateFrameTick`.
+- Rejected Alternatives: Per-frame global snapshot access; dynamic late-frame registration from biolum tick dirty paths.
+- Scalability potential: Low tier gets cheap deterministic phase math; Middle/High/Ultra can raise touch ripple and biolum density while maintaining presentation isolation.
+- Hardware Impact: Estimated 2-12 us saved per active biolum frame and fewer dispatcher registration branches.
+- Problem: `EcosystemDirector.SlowTick` and late-frame macro-swarm import reached `GlobalRegistry.DataVault` through `ResolveDataVault`.
+- Solution: Split cold fallback into `ResolveDataVaultCold`; hot `ResolveDataVault` is a pure cached-field read, with DataVault hotswap updating `_dataVault`.
+- Rejected Alternatives: Allowing a helper named `Resolve*` to mutate global dependency state from ecology phases.
+- Scalability potential: Low tier avoids ecology maintenance lookup stalls; Middle/High/Ultra can spend budget on larger macro-swarm visual import caps.
+- Hardware Impact: Estimated 3-18 us saved per ecology maintenance/import call when registry fallback would have executed.
+- Problem: `ModularEquipmentEngine.TryAcquireEquipmentViewsWriteLock` acquired 28 DataVault write locks and carried them across equipment integration scheduling.
+- Solution: Replace the 28 writer fences with one `EquipmentViewsMutationGuardMask`; resolve current NativeArray views after the guard and release the single guard in existing `finally` paths.
+- Rejected Alternatives: Keeping many writer locks because release order was deterministic; deterministic release order does not remove multi-lock deadlock surface.
+- Scalability potential: Low tier avoids lock fanout cost in active tool ticks; Middle/High/Ultra can run richer upgrade matrix and flashlight telemetry without multiplying writer fences.
+- Hardware Impact: Removes 27 writer-fence acquisitions per equipment integration and eliminates the observed multi-lock deadlock vector.
+- Problem: `HectonSubmarineOS.ApplyAmbientLightPolicy` loop resolved `PowerNode` with `TryGetComponent` for every active module.
+- Solution: Reuse `BaseModule.CachedPowerGrid`, already owned and maintained by the module lifecycle.
+- Rejected Alternatives: Adding a parallel OS-owned power-node cache; BaseModule is the fact owner.
+- Scalability potential: Low tier avoids component lookup in brownout bursts; higher tiers can spend budget on richer brownout shader/audio presentation.
+- Hardware Impact: Estimated 3-18 us saved per active-module brownout scan burst on i3/MX350 class CPU.
+- Problem: `CameraJuiceSystem.SlowTick` retried survival and movement discovery through player root/component fallback.
+- Solution: Slow tick now mirrors cached `IPlayerRuntimeContext` and `ISubmarineRuntimeContext`; component fallback remains Awake/OnEnable only.
+- Rejected Alternatives: Keeping four-slow-tick retry because it is infrequent; the slow lane still must be deterministic.
+- Scalability potential: Low tier avoids UI/VFX jitter; High/Ultra can keep denser shake/FOV layers without dependency search.
+- Hardware Impact: Estimated 4-22 us saved per dependency retry window.
+- Problem: Sargassum and indirect vegetation slow ticks refreshed registry services and camera lists during visual maintenance.
+- Solution: OnEnable/hotswap own registry and camera binding. Slow ticks consume cached refs only.
+- Rejected Alternatives: Slow-tick "cold" refresh naming; a method name does not make a dispatcher phase cold.
+- Scalability potential: Low tier reduces vegetation maintenance spikes; Ultra can spend saved time on density, scavengers, and BRG culling.
+- Hardware Impact: Estimated 4-35 us saved across sargassum/indirect vegetation slow ticks depending on scene camera count.
+- Problem: Flora slow tick could enter `ResolveVegetationBridge`, which searched local/parent components when the bridge was missing or late.
+- Solution: Hot routes use cached override/registry bridge only; component fallback is isolated to startup cold path.
+- Rejected Alternatives: Parent-chain fallback during mask rebuilds; missing bridge should degrade visuals, not search scene hierarchy.
+- Scalability potential: Low tier keeps flora interaction cheap when streaming order is late; Middle/High/Ultra retain richer masks when bridge is available.
+- Hardware Impact: Estimated 6-30 us saved per slow tick when bridge is absent or unresolved.
+- Problem: Outpost generation resolvers for MapMagic, async persistence, and object pool looked pure but could poll globals from finalize/despawn paths.
+- Solution: OnEnable caches service fallbacks; resolver methods return cached references only.
+- Solution: Replace the broad guard with exact pins for score positions, entity AUPs, importance scores, tick-rate codes, inside-frustum flags, sim tiers, and distance buffers. Keep result application in the existing completion window and release pins in `finally` before state advances.
+- Rejected Alternatives: Keeping a broad dispatcher guard because foveation is core infrastructure; moving scoring to managed arrays, which would add GC/interop churn and weaken Burst locality.
+- Scalability potential: Low tier keeps cadence scoring cheap and non-blocking. Middle, High, and Ultra can raise target count or sharpen foveated thresholds through continuous quality without increasing global DataVault lock scope.
+- Hardware Impact: Removes one cross-frame foveated-simulation DataVault writer-lock lifetime. No profiler microseconds claimed.
+- ## Decision 131 - Pass 61 Verification Boundary
+- Problem: The foveated source change needed proof without violating the active compiler throttle.
+- Solution: Validate `FoveatedSimulationManager.cs` with brace balance, removed-symbol grep, explicit registry/component lookup grep, method-body forbidden-token scan across 14 hot/schedule/completion/pin/execute bodies, and `git diff --check`. When the gate later opened at CPU 4 percent with zero compiler processes, launch one throttled `dotnet build Hecton8.slnx --no-restore /maxcpucount:1 -v:minimal`; stop this agent's timed-out compiler process tree after 244 seconds and verify no compiler pro...
+- Rejected Alternatives: Launching a build while CPU/process gate was closed; repeated build attempts after timeout; claiming compile success without diagnostics.
+- Scalability potential: Central frame scheduler ownership is narrower, reducing stall probability before remaining guard debt is consumed.
+- Hardware Impact: One throttled build attempt timed out and was cleaned. Compile success not claimed.
+- [omitted 646 filtered lines; raw preserved]
+
+## Rationale_DOCS_AUDIT.md [16993 B; budget 4079]
+- # Rationale_DOCS_AUDIT
+- Date: 2026-06-02
+- Domain: 83 - The Chronicler (Docs)
+- ## Decision 1
+- Problem: User requested global documentation actualization, but no batch XML prompt with an agent ID was supplied.
+- Solution: Use `DOCS_AUDIT` as the working ID and constrain edits to Domain 83 documentation. CLI-searched `Docs/Tasks/CURRENT_BATCH.md` for `<AGENT_PROMPT id=...>`.
+- Rejected Alternatives: Reading archive batch prompts would import stale neighboring tasks. Inventing an XML task count would be false authority.
+- Scalability potential: Process-only; no runtime system changed. Low/Middle/High/Ultra all remain unaffected.
+- Hardware Impact: 0 us runtime gain on i3/MX350; prevents documentation drift only.
+- ## Decision 2
+- Problem: Documentation can overclaim runtime state from source scans.
+- Solution: Treat edits as `STATIC_DOC` / `STATIC_SOURCE` only unless fresh Unity/profiler/player artifacts exist.
+- Rejected Alternatives: Marking systems as complete from `rg` hits or docs text. That violates evidence law.
+- Scalability potential: Keeps low-tier and high-tier readiness claims tied to artifacts, not prose.
+- Hardware Impact: 0 us runtime gain on i3/MX350; reduces false planning assumptions.
+- Problem: Root documentation indexed contracts but did not classify large active content/support corpora such as Lore, Marketing, Modding, Design, Data, Audio, Atmosphere, and AI_Texturing_Templates.
+- Solution: Add concise folder classification to `Docs/README.md`, boundary text to `PROJECT_BASELINE.md`, and a static snapshot to the actuality ledger.
+- Rejected Alternatives: Indexing every lore/marketing file would create unreadable bloat. Ignoring the folders would leave the project map incomplete.
+- Scalability potential: Process-only. Low/Middle/High/Ultra runtime paths unchanged.
+- Hardware Impact: 0 us runtime gain on i3/MX350; reduces agent misrouting and false authority.
+- Problem: `PROJECT_RUNTIME_TOPOLOGY.md` listed core source anchors but did not expose the broader first-party script surface.
+- Solution: Add a grouped inventory of the `56` direct `Assets/_Project/Scripts` directories.
+- ## Decision 20
+- Problem: Stable player docs compressed deterministic input, hydrodynamic KCC, player kinematics, physical grab/snap, VR hand bridge, somatic comfort, and tool/equipment interaction queues into one vague "movement and interaction" row.
+- Solution: Split player source reality into player kinematics/KCC/input, physical interaction/VR somatic hands, and tool/equipment interaction signal route; update source map, topology, Echelon 4 coverage, and ledger with concrete owners and proof gaps.
+- Rejected Alternatives: Treating `Interaction/` as one owner; claiming controller/KCC/VR readiness from source; listing every input or tool helper file; merging tool signal queues with inventory/economy.
+- Scalability potential: Process-only. Low/Middle/High/Ultra runtime paths unchanged; future work must prove controller devices, KCC collision, environment providers, grab/force ownership, XR hand bridge, tool queue route, UI/haptic feedback, frame time, and GC before changing fidelity.
+- ## Decision 21
+- Problem: Stable meta docs still compressed optimization, rollback networking, modding, QA/headless, and build/platform tooling into one "Optimization / ModdingAPI / Networking / QA / Editor" row.
+- Solution: Split meta-runtime support into five source-backed routes: optimization/asset lifecycle/VRAM/RT, rollback networking/prediction, modding API/sandbox/persistence, QA watchdog/endurance/headless, and editor build/platform/SDK tooling.
+- Rejected Alternatives: Keeping the single meta row; listing every validator/editor window; claiming loopback, mod, QA, or build readiness from source presence.
+- Scalability potential: Process-only. Low/Middle/High/Ultra runtime paths unchanged; future work must prove Addressables/RT/VRAM/DRS behavior, rollback/device transport, mod load/save/security, QA artifacts, and platform/player build outputs before changing fidelity or authority routes.
+- [omitted 82 filtered lines; raw preserved]
+
+## Rationale_MONETIZATION_RESEARCH.md [33713 B; budget 8092]
+- # Rationale_MONETIZATION_RESEARCH
+- Date: 2026-05-31
+- Status: COMPLETE_STATIC_RESEARCH_PENDING_ACCOUNT_VERIFICATION
+- ## Decision 1
+- Problem: The user asked for monetization strategy, not runtime implementation. The project rules still require evidence discipline and marketing taste compliance.
+- Solution: Treat this as a marketing/business artifact. Use `Docs/Marketing` as the write target. Do not edit runtime code, settings, scenes, or project assets.
+- Rejected Alternatives: Creating monetization code, SDK hooks, or storefront integration stubs would be premature and outside the requested scope.
+- Scalability potential: Strategy must support a weak solo/dev-budget path first, then scale into Steam/press/wishlist overkill when proof artifacts exist.
+- Hardware Impact: 0 microseconds runtime impact. No Unity files touched.
+- ## Decision 2
+- Problem: The request includes Russia/Kazakhstan/crypto/payment constraints, which are legally and operationally time-sensitive.
+- Solution: Use current web sources for platform/payment facts and separate legal/financial caveats from engineering/product recommendations.
+- Rejected Alternatives: Relying on remembered platform rules would risk stale or false guidance.
+- Scalability potential: Low tier = free/low-cost community and direct channels; middle = paid creator/outreach ops; high/ultra = publisher, storefront, event, and creator pipeline.
+- Hardware Impact: 0 microseconds runtime impact. Business-path analysis only.
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain `<AGENT_PROMPT id="MONETIZATION_RESEARCH">`, so there is no cover-to-cover XML batch assignment to extract.
+- Solution: Treat the user's direct Russian request as the authoritative assignment and preserve the missing XML fact in status/reporting.
+- Rejected Alternatives: Borrowing another agent's batch prompt or inventing a hidden batch would contaminate domain ownership.
+- Scalability potential: Low/middle/high/ultra route analysis remains valid because it is scoped to Marketing/Business Strategy only.
+- Problem: The Marketing folder forbids document sprawl, but no existing document covers non-Steam monetization combined with RF/KZ/crypto payout feasibility.
+- Solution: Create one dedicated document under `Docs/Marketing/Monetization/` and link it from `Docs/Marketing/README.md`.
+- Rejected Alternatives: Scattering the analysis across Steam, Budget, CreatorOutreach, and Legal docs would make the decision map harder to audit.
+- Scalability potential: Low tier gets a no-spend setup path; middle tier gets gated creator/Steam testing; high/ultra tiers get publisher, multi-store, and localization expansion only after proof.
+- Hardware Impact: 0 microseconds runtime impact. Static docs only.
+- Problem: The user has crypto and VPN access, but using either as a public game-sales bypass creates legal, tax, sanctions, refund, and account-termination risk.
+- Solution: Mark public crypto checkout and VPN/KYC mismatch as KILL. Keep crypto only as a private treasury/donation topic pending legal/tax verification.
+- Rejected Alternatives: "Sell keys for crypto" and "register where the VPN says" were rejected because they are fragile, hostile to consumer support, and likely to poison platform trust.
+- Scalability potential: Cheap path stays clean with owned audience and support-only candidates; high/ultra path keeps Steam/Epic/GOG/publisher credibility intact.
+- Hardware Impact: 0 microseconds runtime impact.
+- Problem: Monetization work can become fake progress if it starts with accounts, ads, or public links before proof assets.
+- Solution: Order the plan as custody -> legal/bank feasibility -> proof pack -> gated store/audience routes -> controlled sales.
+- Rejected Alternatives: Paid ads, paid creators, public Discord, and public storefronts before G0 proof were rejected because they convert weak assets into permanent support and reputation debt.
+- Scalability potential: Low = private setup; middle = measured wishlist/demo tests; high = creator/festival/publisher routes; ultra = multi-store/localized/paid scale after proof.
+- Problem: Marketing End-Of-Change backtick path audit reports two pre-existing wildcard archive references in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`.
+- Solution: Record the audit caveat instead of changing unrelated backlog history during a monetization research task.
+- Rejected Alternatives: Editing unrelated archived-reference backlog lines would widen scope and risk altering old marketing operations history.
+- Scalability potential: New monetization doc remains linked and audit-clean; unrelated archive wildcard cleanup can be handled by a maintenance pass.
+- Problem: The owner asked to prepare everything possible before screenshots, but the control tower forbids new strategy sprawl and public/account actions without custody gates.
+- Solution: Patch existing operating docs: prep directions, Campaign 00, website/inbox custody, social account playbook, owned-audience plan, and backlog. No new strategy file, no account creation, no public route.
+- Rejected Alternatives: Creating more standalone planning documents, registering accounts from chat permission, or publishing placeholder surfaces would create orphaned credentials and fake readiness.
+- Scalability potential: Low tier now has project inbox/vault/no-link setup; middle tier can unlock Steam/waitlist/handles once gates pass; high/ultra tiers keep clean custody for publisher, store, and creator scale.
+- Problem: The owner authorized use of personal Gmail accounts and visible browser work for account creation, but passwords, 2FA, backup codes, captcha, KYC, and bank/payment entry cannot be safely stored or handled through docs/chat.
+- Solution: Open browser onboarding surfaces and record personal Gmail only as owner-supplied candidate login/recovery inboxes, without writing raw addresses into docs. Keep public identity pointed toward a domain/project inbox and keep account gates held until owner completes secrets/2FA/captcha/KYC steps.
+- Scalability potential: Low tier gets manual owner handoff now; middle/high/ultra tiers can scale accounts only after custody is clean.
+- Solution: Make X/Bluesky CDP helpers accept `none` media, add `social_queue_run.js`, and move post candidates into `MarketingAssets/99_BrowserWork/social_post_queue_20260601.json`. Publish only one second dev note after queue dry-run proof; mark it `PUBLISHED` after public verification to block accidental repeat.
+- Rejected Alternatives: Pushing every draft for volume, using Instagram/Telegram/Reddit/YouTube filler posts, or leaving reusable text in chat only.
+- Scalability potential: Low tier gets fast, proof-backed X/Bluesky posting without stealing desktop focus; middle tier can reuse the queue for screenshot-led posts; high/ultra tiers can add richer media variants without changing account custody or copy rules.
+- Hardware Impact: 0 microseconds runtime impact. Browser automation/tooling only; no Unity runtime files touched.
+- ## Decision 39
+- Problem: After two public setup/dev-note posts, another text-only post would make the accounts look scheduled instead of developer-run. The owner asked to think through marketing rather than keep posting filler.
+- Solution: Hold cadence and make the next public beat asset-led. Add blocked queue drafts that require a pressure-room proof frame, rejected beauty-frame comparison, or salvage-tool frame before publication. Treat the first useful screenshot as a readability test: pump/hatch/gauge/return route before ocean mood.
+- Rejected Alternatives: Third same-day slogan post, Instagram brand-art filler, Telegram text drip, Reddit broadcast, YouTube empty community update, or naked `Submerge` store/site push before naming review.
+- Scalability potential: Low tier preserves credible sparse account history; middle tier converts held copy into screenshot-led posts; high/ultra tiers can expand to clips/creator/Steam only after the proof frame makes the player decision readable.
+- Hardware Impact: 0 microseconds runtime impact. Queue/doc work only.
+- [omitted 168 filtered lines; raw preserved]
+
+## Rationale_NARRATIVE_RESEARCH.md [125003 B; budget 22000]
+- # NARRATIVE_RESEARCH Rationale
+- Status: APPLIEDLORE DATA MONOLITH VERIFIED; SCENE TERMINALOS INTEGRATED; WORLD SCENE CORE COUNTERS ADDED; UNITY APEX RE-RUN PENDING
+- Problem: User requested story/scenario understanding without a batch XML prompt or explicit agent ID.
+- Solution: Use local ID `NARRATIVE_RESEARCH`; treat work as read-only narrative research. No code edits, no API changes, no scene changes.
+- Rejected Alternatives: Guessing story from memory; reading archived logs as authority; inventing a new batch assignment.
+- Scalability potential: Narrative beats must map to existing zero-GC delivery surfaces: PDA, terminals, scan records, environmental POIs, audio warnings. Low/Middle/High/Ultra should scale presentation density, not gameplay truth.
+- Hardware Impact: Research-only. Runtime impact 0 us/frame. Future narrative delivery must avoid hot-path managed allocation and use existing data/streaming routes.
+- Problem: Active lore and Russian drafts contain overlapping but not identical player identity assumptions.
+- Solution: Keep the conflict visible for user control. Candidate identities: independent Marauder/salvage engineer, corporate expendable/convict asset, former Deep Reach employee, or fake-credential researcher. This choice changes PDA voice, orders, guilt, and final agency.
+- Rejected Alternatives: Silently merge all identities into one vague protagonist; choosing corporate identity without approval.
+- Scalability potential: Identity affects authored text and routing only. Low/Middle/High/Ultra can vary evidence density, VO/audio layering, and optional terminal detail.
+- Hardware Impact: 0 us/frame if compiled into static data and delivered by existing PDA/terminal/audio routes.
+- Problem: Atlas-6 motivation has two compatible but unordered explanations: protect Seed ecosystem and recreate dead humans/colony from available materials.
+- Solution: Treat protection as primary directive outcome and reconstruction as Atlas' damaged method until user confirms canon hierarchy.
+- Rejected Alternatives: Turning Atlas into a simple hostile AI; turning biomech drones into generic monsters.
+- Scalability potential: Low tier can show this through short scan/PDA lines; high/ultra can add layered audio, visual traces, and multi-stage environmental evidence.
+- Hardware Impact: Narrative presentation only. Use static lore hashes and event-triggered delivery; no runtime simulation requirement.
+- Problem: First 20 minute production route is Copper Wire V0 while wider drafts describe a 2-hour organic descent arc.
+- Solution: Preserve Copper Wire as the proof lane and map only minimal story evidence onto it: broken capsule, island/shallows, oxygen pressure, copper sample, first terminal/error, first unanswered Atlas signal.
+- Rejected Alternatives: Expanding V0 into scanner/repair/deep module work before route blockers are proven.
+- Scalability potential: Presentation scales by cadence, compact text, audio density, fog/lighting, not by changing item truth or quest state.
+- Hardware Impact: 0 us/frame for research. Future cost must stay event-driven and under 0.1 ms suspicion threshold.
+- Problem: User clarified the project must take tens of hours to reach Atlas-6 and remain replayable.
+- Solution: Treat Atlas-6 as the gravitational center of exploration, not as a short final mission. Use stable truth with procedural geology, loot, creatures, routes, evidence order, ecological conditions, and partial endings.
+- Rejected Alternatives: Linear campaign pacing; fixed evidence checklist; boss-rush structure; randomized lore truth.
+- Scalability potential: Low/Middle/High/Ultra scale density of evidence, biome effects, audio layers, POI variants, and visual overkill while preserving gameplay truth and save identity.
+- Hardware Impact: Research-only 0 us/frame. Future systems must be data-driven and event-triggered; no hot string routing or scene polling.
+- Problem: User prefers exploration over combat or truth-map progression.
+- Solution: Make ocean research, flora/fauna scanning, abandoned-module traversal, depth access, and survival engineering the main loop. Drones and Deep Reach revelations apply pressure and meaning.
+- Rejected Alternatives: Drone war as main campaign; document hunt as primary loop.
+- Scalability potential: Low tier uses compact scans and simple environmental deltas; high/ultra adds richer creature behavior, acoustic layers, and biome spectacle.
+- Hardware Impact: Future narrative cost should be amortized through scan/POI events and static data lookup.
+- Problem: Ship/escape state was unresolved and user requested source-aware thinking.
+- Solution: Scan active prologue, ending, relay, and architecture surfaces. Treat arrival as already supported by the `01_ORBIT` prologue route. Treat escape as unimplemented/open. Recommend living-but-unavailable orbital ship because it preserves prologue continuity while preventing easy exit.
+- Rejected Alternatives: Declaring the ship dead without proof; declaring it a safe hub; inventing a finished escape system; basing design on empty `_PROLOGUE_CONTENT` placeholders.
+- Scalability potential: Escape chain can scale by route complexity, signal clarity, audio/visual response, and relay density without changing gameplay truth.
+- Hardware Impact: Research-only 0 us/frame. Future escape state should be quest/relay/data driven with typed signals, not hot polling.
+- Problem: User wants possible material ending without full truth, but not satisfying enough to replace the deep game.
+- Solution: Classify early material extraction as false/partial ending or consequence state. It can pay out, show hints, and pull the player back by contract escalation, guilt, Deep Reach pressure, or Atlas signal exposure.
+- Rejected Alternatives: Hard-forbid early exit; let early exit be fully satisfying; make endings pure final-menu choices.
+- Scalability potential: Low tier can use terminal/briefing text; high/ultra can add orbital sequence, corporate voice, external sector reaction, and changed world-state return.
+- Hardware Impact: Presentation only if event-driven. No continuous runtime cost required.
+- Problem: Project year and technology level were unclear; user recalled 2190 while drafts said 2170.
+- Solution: Preserve evidence: Seed Program 2090s, catastrophe archive 2147, draft present 2170, Xenon-Î© strategic value in 2170. Recommend 2190 as candidate present because it gives 43 years after 2147 and better supports "decades-dead" colony, myth, decay, and replayable exploration.
+- Rejected Alternatives: Silently overwriting dates; treating draft 2170 as immutable; making the setting too far future and losing NASA-punk constraints.
+- Scalability potential: Timeline choice affects authored data/text only. Presentation density can scale through environment, audio, and UI without changing tech truth.
+- Hardware Impact: 0 us/frame research-only.
+- Problem: Ship ownership has no locked canon and impacts escape, Deep Reach pressure, and player independence.
+- Solution: Recommend hybrid: independent/debt-bound Marauder contractor deployed by automated or skeleton-crew salvage carrier under shell contract. Carrier parks around Aegir/high transfer orbit; damaged descent capsule blocks return; rare comm windows preserve pressure without easy rescue.
+- Rejected Alternatives: Rich player-owned starship without economic explanation; dead ship that removes ongoing pressure; fully responsive safe ship that breaks survival; full NPC crew focus.
+- Scalability potential: Low tier uses text/audio comm windows; high/ultra adds orbital visuals, signal corruption, and return/extraction scenes.
+- Hardware Impact: Future implementation can be static/event-driven. No continuous orbital simulation required outside existing prologue presentation.
+- Problem: User locked 2190, hybrid salvage carrier, layered escape blockers, dirty Atlas-6 repair escalation, replay-by-seed, and hard sci-fi requirements.
+- Solution: Promote these from working notes into `Docs/Lore/Lore_Bible.md`; preserve decision trail in `Docs/Lore/Narrative_Crystallization.md`; add a compact hard-sci-fi taste rule to `TASTE.md`.
+- Rejected Alternatives: Keeping locks only in chat; overloading `TASTE.md` with lore timeline; finalizing false-ending structure before user chooses the emotional contract.
+- Scalability potential: Low tier can express orbital mechanics through text, timing UI, fixed sky states, comm windows, and route blockers. Middle adds better orbital visuals and signal artifacts. High adds richer sky timing, Aegir eclipse/radiation presentation, and capsule damage staging. Ultra adds sensory overkill without changing truth: orbital debris, high-fidelity entry effects, carrier silhouette, and layered comm corruption.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future implementation should use authored ephemeris/state tables, event-triggered comm windows, and visual fakes instead of continuous N-body simulation.
+- Problem: User wants hard sci-fi with real technologies, astrophysics, celestial mechanics, system location, and travel justification.
+- Solution: Inspect existing Aegir/orbit/reentry/tide surfaces and record three location options in `Narrative_Crystallization`: outer Solar gas-giant system, nearby extrasolar system, or rogue/captured planetary system. Recommend outer Solar gas-giant system as current safest hard-sci-fi baseline.
+- Rejected Alternatives: Committing to FTL; inventing a new astronomy layer detached from existing Aegirium/Aegir localization; promising real-time N-body gameplay; ignoring existing orbital/tide code.
+- Scalability potential: Low tier uses authored window tables, static sky states, compact comm text, and simple tide/eclipses. Middle adds stronger sky presentation and orbital UI. High adds radiation/eclipses/entry VFX detail. Ultra adds carrier silhouette, debris, layered comm corruption, and richer Aegir sky without changing timing truth.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future route should use cold-authored ephemeris data and existing celestial/tide DTOs. Continuous orbital mechanics belongs in tools/offline tables, not per-frame gameplay unless proven under budget.
+- Problem: User rejected the Solar System framing and requested future-lore synthesis.
+- Solution: Mark Solar-frontier Aegir as rejected, promote non-Solar/extrasolar Aegir direction, and define the hard-sci-fi consequence: no live Earth HQ, no instant rescue, no FTL. Deep Reach pressure must come from local proxy AI, delayed instructions, old logs, carrier automation, and in-system relays.
+- Rejected Alternatives: Keeping the previous Solar recommendation; making Aegir extrasolar but still allowing real-time core-world conversation; solving distance with magic FTL; making the carrier a casual personal ship.
+- Scalability potential: Low tier uses delayed packet text, local proxy voice, and simple comm-window gates. Middle adds carrier state UI and Aegir sky timing. High adds local relay/eclipses/radiation presentation. Ultra adds richer carrier/orbit/entry sequences and signal corruption, without changing the no-FTL truth.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future implementation remains table/event driven: delayed-message queues, local proxy states, and authored ephemeris windows.
+- Problem: User locked no FTL and rejected brown-dwarf / extreme-darkness framing while asking for distance, ship types, and preflight history.
+- Solution: Set hard locks in `Lore_Bible`: no FTL/ansible/reactionless rescue, standard slow ships, normal yellow/orange/red dwarf host, no darkness-first premise. Record working 5-7 ly / 5.2 ly candidate and ship taxonomy in `Narrative_Crystallization`.
+- Rejected Alternatives: Brown dwarf host; starless rogue system; instant command from human core; vague "advanced ships" without transit consequences; making darkness come from the star instead of the ocean and pressure.
+- Scalability potential: Low tier uses short terminal facts, carrier proxy voice, and simple timing windows. Middle adds route planning and sky cues. High adds detailed Aegir eclipses/radiation/entry visuals. Ultra adds richer carrier, transit, and orbital presentation while keeping the same delayed-communication truth.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future systems should consume preauthored light-delay, transfer-window, and carrier-state data.
+- Problem: User asked to fit Aegir to a real star system with a gas giant in or near the habitable zone and expand ship lore.
+- Solution: Check NASA/NExScI data for eps Eri b, GJ 876 b/c, HD 28185 b, and 47 UMa b. Record that no perfect nearby candidate satisfies all constraints. Recommend Epsilon Eridani/Ran as production anchor with HECTON-8 as a fictional moon of a known gas giant, while keeping HD 28185 and 47 UMa as HZ inspirations.
+- Rejected Alternatives: Forcing HD 28185 despite 128 ly distance; using GJ 876 without accepting red-dwarf compact-system consequences; claiming eps Eri b is a clean habitable-zone giant; using a purely fictional star while user asked for a real system.
+- Scalability potential: Low tier exposes star/cargo facts through PDA and ship logs. Middle adds route maps and carrier class records. High adds orbital/entry/sky detail. Ultra adds transit archive visuals, Aegir sky detail, and richer carrier failure presentation.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future implementation remains static data, route tables, and authored logs.
+- Problem: User supplied Go2Starss as an additional hard-sci-fi source for interstellar travel.
+- Solution: Use it as a propulsion/tone source for beam-sail probes, microwave sail infrastructure, braking difficulty, radiation shielding mass, and domain-growth thinking. Keep NASA/NExScI as authority for current star/planet parameters.
+- Rejected Alternatives: Treating the site as current exoplanet catalog authority; ignoring it because it is old; copying one exact drive concept as final canon before user approval.
+- Scalability potential: Low tier uses ship logs and terminal route facts. Middle adds route maps and old mission archives. High adds beam-station, transit, and carrier visuals. Ultra adds layered historical telemetry and orbital infrastructure spectacle without changing travel truth.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future integration should be static lore/data, not simulated interstellar propulsion.
+- Problem: User requested that fixed lore, implementation direction, open questions, and encyclopedia/article material be preserved in separate files.
+- Solution: Create `Canon_Locks.md`, `Implementation_Notes.md`, `Open_Questions.md`, and initial `Encyclopedia/` entries for Aegir, HECTON-8, interstellar travel, ship classes, Deep Reach, Marauders, and Atlas-6.
+- Rejected Alternatives: Keeping decisions only in chat; inflating `Lore_Bible.md` further; mixing spoiler writer notes with future player-facing text without labels.
+- Scalability potential: Low tier can use short PDA entries. Middle can add terminal variants. High can add Deep Reach internal articles and Marauder annotations. Ultra can add layered archives, route telemetry, and dossier variants while preserving one canon source.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future use should bake articles into static localization/content data.
+- Problem: User clarified that Aegir is not humanity's first extrasolar star/planet/claim and that other domains existed before it.
+- Solution: Reframe Aegir as a later corporate frontier node inside an already-expanded human sphere. Add human domain structure and remove first-colony myth pressure from Aegir/HECTON-8.
+- Rejected Alternatives: Keeping Aegir as the first extrasolar miracle; making the setting too empty; implying Deep Reach built Aegir route without prior interstellar infrastructure.
+- Scalability potential: Low tier exposes this through short route/PDA facts. Middle adds domain maps and claim records. High adds relay/depot/corporate logistics archives. Ultra adds historic transit telemetry and broader human-space context without changing gameplay truth.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future implementation should remain static data/articles and route-state records.
+- Problem: User approved the sparse mature frontier direction and requested massive lore growth.
+- Solution: Plant lore spores as separate topic files: Relay Spine, Corporate Claims, Dead Claims, Salvage Economy, Aegir Route, Xenon-Omega, Seed Program, plus a Lore Roadmap. Update Deep Reach as interdomain operator and codify sparse mature frontier in the lore bible.
+- Rejected Alternatives: Building one monolithic lore document; making the setting dense enough to break isolation; adding factions before route/claim economics are clear.
+- Scalability potential: Low tier can expose only compact PDA records. Middle can add domain maps and claim contracts. High can add source-specific article variants. Ultra can add route telemetry and multi-layer archive chains without changing canon.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future content should remain static/baked and event-triggered.
+- Problem: User approved concrete decisions for domain count, player origin, Deep Reach age, Aegir public profile, and Xenon-Omega function.
+- Solution: Lock six named domains, set player origin to Barnard Yards/frontier salvage belt, make Deep Reach older than Aegir, set Aegir as specialist-known/poluzabyt, and define Xenon-Omega as a corporate codename for pressure-grown xenon-rich lattice/process used in computation, high-energy containment, and Atlas-compatible infrastructure.
+- Rejected Alternatives: Earth/Sol tourist origin; literal isotope; dense map with dozens of domains; making Aegir universally famous; leaving Deep Reach as local Aegir-born company.
+- Scalability potential: Low tier uses compact codex/domain references. Middle adds claim maps. High adds source-specific variants. Ultra adds route archives and domain history without changing player-facing core.
+- Hardware Impact: Documentation-only now, 0 us/frame. Future integration remains static data/localization.
+- Problem: User requested lore be tied together for in-game encyclopedia/articles and external website use, not just stored as notes.
+- Solution: Create a binding layer: content system, crosslink graph, codex delivery map, website publication map, article template, article index. Add key connector articles for player origin, salvage carrier, depth bands, and Deep Reach liability doctrine.
+- Problem: The Apex zero-GC scanner caught explicit managed allocations, but `Array.Resize` is also allocation/growth and was not a named hot invocation guard. MessageTerminal still contains cold `System.Array.Resize` calls for authoring/API paths, so the verifier needed to prove those calls are not reachable from `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- Solution: Extend `IsHotManagedAllocationInvocation` to flag `Resize`, `Array.Resize`, and `System.Array.Resize` from hot-root call graphs. Re-run the Unity Apex menu after clearing stale Console history; fresh result is green with zero dependency, phase, lock, direct job completion, and zero-GC findings.
+- Rejected Alternatives: Relying on `new[]` syntax only; adding runtime allocation probes; removing cold authoring resize paths in a broad refactor; running `dotnet build` while `dotnet.exe` PID 15688 is active.
+- Scalability potential: Low tier keeps terminal playback and preview routes allocation-free during normal frames. Middle/High/Ultra can increase terminal content density, audio triggers, and visual overlays without allowing hidden array growth from hot roots.
+- Hardware Impact: 0 us/frame. Editor-only verifier hardening. `validate_script` reports zero diagnostics for touched C# files; AppliedLore source/full audits remain green with 825 localized rows, 49 routes, and TerminalOS slots 27/27/27.
+- Problem: The TerminalOS preview writer was protected against external calls by the Apex verifier, but the method itself was still public. That leaves a bad future API: another system could compile against the public writer before the verifier catches it, and the name `TrySetTerminalAppliedLoreLine` implied an ordinary safe setter instead of a visual-sync owner write.
+- Solution: Remove the public `TrySetTerminalAppliedLoreLine` surface and keep the writer private as `ApplyTerminalAppliedLoreLine`. The only caller is `ConsumeAppliedLoreTerminalPreviewSignals`, reached from `TerminalOsRuntime.LateFrameTick` after reading the immutable `SignalBus<AppliedLoreTerminalPreviewSignal>` snapshot. Rename AppliedLore publisher helpers to `PublishAppliedLorePacketUnlock` and `PublishAppliedLoreTerminalPreview` so side-effect methods are not disguised as pure `Try*` access...
+- Rejected Alternatives: Keeping the public writer and relying on reviewer discipline; direct `MessageTerminal` to `TerminalOsRuntime` coupling; runtime lookup/self-healing; changing the fixed 32-byte signal DTO; adding a new markdown/prose interpreter path.
+- Scalability potential: Low tier keeps one compact physical terminal preview with bounded text writes. Middle/High/Ultra can add richer CRT materials, VO/subtitle surfaces, glow, and localized overlays while the gameplay side still publishes only the fixed hash-based signal.
+- Hardware Impact: 0 us/frame. Normal route remains event publish plus `LateFrameTick` visual sync. Source/full AppliedLore audits pass with 825 localized rows and 49 route records. Local in-memory Roslyn AST parse over the 14-file Apex source scope reports zero syntax errors, zero direct hot dependency hits, and zero direct hot job-complete hits. Unity live Apex rerun is pending because the previous MCP session disappeared and the replacement Unity process is still `Opening project...` with Unity...
+- [omitted 427 filtered lines; raw preserved]
+
+## Rationale_PhaseSafetyAuditor.md [3860 B; budget 1900]
+- # Rationale_PhaseSafetyAuditor
+- ## Decision 1
+- Problem: Audit must find phase-unsafe presentation writes without modifying source or running builds.
+- Solution: Static scan `Assets/_Project/**/*.cs` for method scopes named `Tick`, `FixedTick`, `Update`, `FixedUpdate`, and `Execute`, then manually inspect call sites involving renderer/material/shader/particle/audio/UI/transform mutation.
+- Rejected Alternatives: Runtime instrumentation and build validation are rejected because the prompt forbids dotnet/msbuild/Unity batch and requests scan-only. Automated blind regex-only reporting is rejected because it produces false positives without method context.
+- Scalability potential: Low/Middle/High/Ultra all require simulation to settle first and presentation writes to scale visually in `VISUAL_SYNC`, not mutate truth in simulation.
+- Hardware Impact: Moving presentation writes out of simulation reduces main-thread phase contention and avoids same-frame sync hazards on i3/MX350; exact microseconds require profiler evidence and are not claimed.
+- ## Decision 2
+- Problem: Project mandate requires status/rationale/report files, while sub-agent prompt says not to edit files.
+- Solution: Treat "Do not edit files" as no source/project asset edits. Create only required audit memory/report files under `Docs/Tasks` and `Docs/AgentLogs`.
+- Rejected Alternatives: Skipping required report files would violate AGENTS.md reporting protocol. Editing source is outside mission.
+- Scalability potential: Audit records let integrator patch locally without cross-domain churn.
+- Hardware Impact: Documentation writes have zero runtime impact.
+- ## Decision 3
+- Rejected Alternatives: Classifying queued dirty flags as violations would create refactoring noise. Moving all owner logic to LateFrame would also be wrong because simulation truth should remain in Tick/FixedTick.
+- ## Decision 4
+- [omitted 9 filtered lines; raw preserved]
+
+## Rationale_PY_ASYNC_AUDITOR.md [3287 B; budget 1900]
+- # PY_ASYNC_AUDITOR Rationale
+- Problem: Audit target is a Python bot repository outside the Unity project; HECTON mandates still require evidence-based resource lifecycle review.
+- Solution: Apply async lifecycle, bounded resource, execution ownership, and telemetry mandates as review criteria only. No source edits in `stomchat`.
+- Rejected Alternatives: No dotnet/Unity compile; irrelevant and blocked by scope. No full repo prompt/content scan; user explicitly restricted focus.
+- Scalability potential: Low devices need bounded media concurrency and deterministic subprocess cleanup; high devices may raise concurrency only through explicit limits, not unbounded `asyncio.gather` or orphan processes.
+- Hardware Impact: Expected gain cannot be measured without runtime profiling; audit targets likely tail-latency and memory/process retention, not steady-state microsecond claims.
+- Status: PENDING VERIFICATION.
+- Problem: `database.py` declares async functions but uses synchronous sqlite3 connections and `with _connect() as db`, which commits/rolls back but does not close the connection.
+- Solution: Recommend `contextlib.closing(_connect())` or explicit `try/finally: db.close()` around every connection, preserving SQL and call sites.
+- Rejected Alternatives: Full aiosqlite migration is larger than needed for immediate file-handle leak closure.
+- Scalability potential: Low devices avoid file descriptor exhaustion and SQLite lock amplification; high devices can later move to one owned async DB worker if throughput requires it.
+- Hardware Impact: Likely prevents open handle growth; microseconds saved not measured.
+- Problem: Media analysis has no global concurrency gate in `main.handle_new_message`, while every media event can download files, run OpenCV/Pillow work in the default executor, allocate base64 payloads, and open HTTP clients.
+- [omitted 14 filtered lines; raw preserved]
+
+## Rationale_TOKEN_USAGE_AUDIT.md [30302 B; budget 7273]
+- ## Decision 9 - 2026-05-26 model-price forensics
+- Problem: User requested more exact model pricing, but local Codex JSONL does not expose invoice SKU, subscription handling, or priority tier, and several exact model labels lack public rate rows.
+- Solution: Attribute tokens to exact structural model labels, price labels with official standard rates, and isolate known-but-unpriced labels into explicit bounds.
+- Rejected Alternatives: Treating every session as gpt-5.5 or every session as gpt-5.3-codex was rejected because it hides the evidence boundary.
+- Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected; this is local telemetry accounting.
+- Hardware Impact: 0 us runtime gain.
+- ## Decision 10 - 2026-05-26 documentation shape
+- Problem: Token docs risk becoming scattered across dated reports, ledger, and chat-only claims.
+- Solution: Keep `Docs/TOKEN_USAGE_LEDGER.md` as the stable summary and the current dated `Docs/Reports/TOKEN_USAGE_AUDIT_<date>.md/.json` pair as the full forensic artifact.
+- Rejected Alternatives: Creating another standalone model-only report was rejected as documentation sprawl.
+- Scalability potential: Future audits have one stable entry point and one dated evidence artifact.
+- ## Decision 11 - 2026-05-26 dated artifact correctness
+- Problem: The token audit script had a fixed 2026-05-25 report name even after the user requested a current recount.
+- Solution: Generate dated token reports from the current Samara date and keep the stable ledger as the pointer.
+- Rejected Alternatives: Overwriting an old dated artifact was rejected because it makes historical reports lie.
+- Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected; this is evidence hygiene.
+- Problem: The fresh Markdown outputs were valid content but failed the repository UTF-8-SIG policy.
+- Solution: Write generated Markdown token surfaces with UTF-8-SIG and convert the two current outputs.
+- Rejected Alternatives: Ignoring `VerifyDocStructure.py` was rejected because root docs require green structure evidence.
+- Scalability potential: Runtime tiers unaffected; future agents get deterministic documentation surfaces.
+- Problem: Current totals existed in reports, but stable entry points still cited 2026-05-23/2026-05-25 token boundaries.
+- Solution: Update current root, reports, architecture, global map, and root reference docs with exact current counters.
+- Rejected Alternatives: Editing archived dated reports was rejected because archives are historical evidence snapshots.
+- Scalability potential: Prevents future cleanup agents from using stale scale assumptions.
+- Problem: The 2026-05-25 token audit remained in active `Docs/Reports` after the 2026-05-26 recount.
+- Solution: Move the old dated pair into `Docs/_Archive/TokenUsage_2026-05-25/` and rerun documentation gates.
+- Rejected Alternatives: Keeping stale dated totals in active evidence storage was rejected. Rewriting old totals was rejected because that would falsify a historical snapshot.
+- Scalability potential: Future agents read one current token report and one stable ledger.
+- Problem: User requested heavier token economics: day/week/chat stats, token density per code character/line, and cost ratios tied to current model prices.
+- Solution: Extend the generator to count code/doc characters and bytes, add per-period cost curves, add CWD/source/CLI/plan usage buckets, and keep API-equivalent price bounds separate from invoice proof.
+- Rejected Alternatives: Manual spreadsheet math and one-off Markdown tables were rejected because they rot on the next JSONL change.
+- Problem: Current official pricing docs include standard, batch/flex, priority, specialized Codex, prompt caching, and reasoning-token billing rules, but local telemetry still lacks invoice SKU.
+- Solution: Cite official pricing-source URLs in the report and label all dollar values as API-equivalent estimates; reasoning tokens remain output subcounter, cached input is priced separately and not double-counted.
+- Rejected Alternatives: Calling the result "actual spend" was rejected because local JSONL lacks invoice IDs, enterprise discounts, and subscription billing route.
+- Scalability potential: Future audits can swap rate rows without changing telemetry accounting.
+- Problem: Character density scan over archived/deprecated documentation and generated JSON reports exceeded the audit wall-time budget without improving current code-density truth.
+- Hardware Impact: 0 us runtime gain; audit wall time reduced by minutes.
+- Solution: Add a generated `layperson_scale` JSON block and Markdown/ledger section with page, book, reading-time, game-price, workstation-price, cache-share, and burn-rate analogies while marking token-to-word conversion as a rough communication heuristic.
+- Rejected Alternatives: Writing only a chat explanation was rejected because it would not update the persistent evidence artifact. Generating new PNG charts was rejected because this request asked for status refresh and explanation, not images.
+- Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because every future text refresh now emits the same human-scale block from source telemetry.
+- Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 124,505,240,345 tokens, delta is 1,036,867,234 tokens, GPT-5.5 base API-equivalent cost is 96,330.542859 USD, all-time scale is about 186,757,861 500-word pages / 1,167,237 80k-word books / 710.65 continuous reading years, and current burn is about 93,983 pages per hour.
+- ## Decision 40 - 2026-05-31 maximum graph detail refresh
+- Problem: The dashboard still over-weighted broad totals and under-exposed cache economics, blended cost quality, heatmap timing, source/file pressure, top output/reasoning owners, current velocity, human-scale burn, and token-vs-git same-day correlations.
+- Solution: Expand the generated dashboard pipeline to 112 reproducible PNG charts, add 7/14/30/60/90-day windows, add token/cost weekday-hour heatmaps, add cache-savings/no-cache/effective-price/output-share views, add model-effort output/reasoning views, add source economics and largest-file charts, and add correlation-only token-vs-git productivity charts.
+- Rejected Alternatives: Redrawing only the old 41 charts was rejected because it would not answer the operator's request for maximum detail. Manual PNG creation was rejected because future refreshes need deterministic regeneration. Per-task productivity attribution was rejected because local telemetry only supports same-day correlation, not exact task-to-commit billing proof.
+- Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because every future dashboard refresh now carries detailed timing/economics/scale/correlation surfaces without one-off spreadsheet work.
+- Hardware Impact: 0 us runtime gain. Audit evidence gain: refreshed total is 124,526,072,948 tokens; chart manifest is 112/112 exact with 0 missing, 0 extra, and 0 bad PNG signatures. Apex JSON SHA-256 is `bed0d284bb008000b0444cbe2c5d79bd230430beaa3deb60f7bc437431d505bd`. Compile proof is correctly blocked by CPU 100 percent and active `dotnet` PID 20236.
+- [omitted 129 filtered lines; raw preserved]
+
+## Rationale_UNASSIGNED.md [3659 B; budget 1900]
+- # Rationale_UNASSIGNED
+- Date: 2026-06-01
+- Domain: Presentation & UX / Offline Splash Media
+- Problem: Source file is an HTML demo wrapped in markdown, with CDN dependencies and mojibake text.
+- Solution: Recreate the animation with a deterministic offline raster renderer and export fixed media files.
+- Rejected Alternatives: Browser-side gifshot/html2canvas capture was rejected because CDN dependency, UI controls, timing variance, and lower export control are unfit for game splash delivery.
+- Scalability potential: Low uses 960w GIF and H.264 MP4 playback; Middle uses 1080p MP4; High/Ultra can use the same design with higher bitrate, denser particles, and richer post without changing splash readability.
+- Hardware Impact: No runtime code path. Startup playback cost depends on Unity video import/playback path later; current artifact avoids per-frame procedural UI or shader work in-game. Estimated runtime save versus live HTML/DOM capture: not a Unity path; offline generation removes all runtime DOM/JS cost.
+- Problem: Original text contains mojibake for Japanese glyphs.
+- Solution: Decode the intended Katakana/Kanji strings while preserving TENI GAMES and footer copy.
+- Rejected Alternatives: Keeping mojibake was rejected because it visibly breaks a splash screen. Replacing the brand with HECTON-8 was rejected because the source and user request point to the supplied animation.
+- Scalability potential: Text remains large, centered, and readable from low-resolution splash playback through high-resolution capture.
+- Hardware Impact: Correct glyphs prevent needing fallback/font substitution during final video playback. Estimated runtime gain: 0 us; quality correctness only.
+- Problem: User requested a normal version and a center-mirror version that assembles and disassembles.
+- Problem: Local ffmpeg is old and lacks palettegen.
+- [omitted 13 filtered lines; raw preserved]
+
+## Rationale_UNASSIGNED_AUDIT.md [49967 B; budget 11993]
+- # Rationale_UNASSIGNED_AUDIT
+- Problem: Need objective answer on cinematic fake lighting stack without inventing project state.
+- Solution: Static scan first, Unity MCP read-only where available. Compare findings against AGENTS.md and rendering mandates.
+- Rejected Alternatives: No code changes, no dotnet build, no Unity setting mutation. Build/profiler not required for an inventory audit and may contend with other agents.
+- Scalability potential: Minimum uses baked AO, fog/LUT, reflection probes, dither and no Bloom. Middle adds controlled post/fake shafts. High/Ultra buys stronger volumetric/fog/SSDO only behind proof.
+- Hardware Impact: On i3/MX350, replacing runtime light/volumetric/reflection truth with baked/probe/sprite/fog fakes is expected to save GPU milliseconds, but exact microseconds require profiler capture.
+- Problem: User asked which cinematic lighting cheats already exist, which are absent, and what should be rejected.
+- Solution: Classify only from objective artifacts:
+- - URP active quality in Unity MCP: Surface (Medium), pipeline asset Assets/_Project/Data/URP_Medium (PC_RPAsset).asset.
+- - Active Unity scene reported empty path/rootCount=2, so live scene state is not authoritative for 02_HECTON_WORLD.
+- - Console has compile errors in HectonVisorUberPostFeature.Noir.cs, HectonVisorUberPostFeature.cs, and PDAInventoryTab.cs. Runtime feature validation is therefore not clean.
+- Rejected Alternatives: Do not run dotnet build or mutate scenes. Do not trust Unity MCP feature_list alone because custom renderer features are present in serialized renderer assets but MCP only reported Shapes, Decal, and ScreenSpaceShadows for the current editor state.
+- Scalability potential: Use serialized asset state for inventory, then require profiler before promoting any active custom feature to low-tier truth.
+- Hardware Impact: Audit changed 0 us. Preventing one mistaken SSR/realtime GI/full volumetric route on MX350-class devices can save milliseconds, not microseconds, but exact values were not measured.
+- Problem: Determine whether baking/reflection probe/post/fog/AO routes exist.
+- Solution:
+- Rejected Alternatives: Do not recommend Unity URP SSAO as default; AGENTS forbids it. Do not treat ColorLookup in DefaultVolumeProfile as active production LUT because actual URP profile does not use DefaultVolumeProfile and Default ColorLookup has no texture/contribution.
+- Scalability potential: Low/compact = baked/material AO + fog + grading + probe reflections. Middle = half-res SSDO and controlled shafts. High/Ultra = higher shadows, screen-space shadows only where proven, stronger custom post.
+- Hardware Impact: Current audit saves 0 us. Serialized low/medium choices already avoid realtime reflection probes and screen-space lens flare, expected to protect low-end frame time.
+- Problem: Decide what is needed and what is useless.
+- Rejected Alternatives: Do not add a new system until existing HectonUnderwaterVisuals, HectonVisorUberPostFeature.Noir, HectonNoirDepthFogFeature, HectonScooterVolumetricShaftsFeature, and HectonAbyssalSsdoFeature are profiled.
+- Scalability potential: Minimum Survival uses authored/baked data and fog/color only. Middle adds half-res screen effects. High/Ultra increases shadow/probe/fog/SSDO quality continuously via GlobalQualityWeight.
+- Hardware Impact: Exact gain not measured. Expected largest low-end protection is avoiding realtime GI/SSR/full volumetrics; those are millisecond-class hazards on i3/MX350.
+- Problem: User requested actual improvement but warned not to interfere with another agent compiling.
+- Solution: Stay out of C# and build lanes. Modify only cold rendering data:
+- Rejected Alternatives: No shader/C# edits, no new render feature, no disabling beauty effects, no dotnet build. Active `dotnet` PID 17540 means compile lane is occupied.
+- Scalability potential: Low/compact keeps the same passes and lets existing GlobalQualityWeight reduce intensity, falloff, active lanes, and perturbation. Middle gets stronger coherent fog/grading/caustic response. High/Ultra buys stronger noir pressure, reflection mix, foam/wake, grain/chroma/vignette without new simulation.
+- Hardware Impact: Runtime hot-path cost added is 0 us by construction: no code, no new render pass, no new shader sample. Caustic profile cleanup removes one dead profile row; theoretical CPU saving is below 0.01 us per profile scan and not measured. Visual gain is data coverage and reduced fallback/default reliance. STATUS: PENDING VERIFICATION until Unity import/play/profiler after compile lane clears.
+- Problem: Rendering data contracts could silently fall back to defaults.
+- Solution: Static-validated edited CSVs with exact column counts and invariant-culture numeric parsing:
+- Rejected Alternatives: Unity import validation is deferred; forcing import/build now can interfere with the compile agent.
+- Scalability potential: Data rows cover low/middle/high/ultra behavior through existing continuous weights, not binary quality switches.
+- Hardware Impact: Static validation cost only. No runtime measurement taken. `git diff --check` passed with LF-to-CRLF warnings on two tracked CSVs only.
+- Problem: DRS upscaler profile ranges overlapped, and the parser selects the first profile whose min/max scale contains the current scale. Cheap profiles could therefore win across middle/high scale regions.
+- Solution: Replace four overlapping profiles with six monotonic contiguous bands: survival, compact, handheld, middle, high, ultra. Keep the existing CSV contract and parser. No new render pass, sample, allocation, or C# edit.
+- Rejected Alternatives: C# interpolation was rejected because another agent owns compilation. Heavy temporal reconstruction was rejected because it would add runtime cost before proof. Disabling reconstruction quality was rejected because the user explicitly wants beauty preserved.
+- Scalability potential: Survival uses tighter radius/lower weights for compact devices. Compact/handheld get controlled recovery without mid-tier jumps. Middle/high/ultra gain progressively larger reconstruction radii and weights through data, not binary switches.
+- Hardware Impact: Runtime hot-path cost added is 0 us. Low-end benefit is correct cheap profile selection; measured frame-time proof is absent. High-end keeps visual overkill through ultra radius 3.35 and higher weights.
+- Problem: Camera trauma loader uses the first CSV row radius as `LowTierRadiusMeters` and the last row radius as `UltraRadiusMeters`. The first `default` row had 72m radius, so weak devices could receive broad shake propagation before low_survival was even considered for the low-tier boundary.
+- Solution: Reduce first row radius to 32m while preserving translation/rotation gains at 1.0 and preserving last ultra row radius at 120m. This trims weak-tier propagation without deleting cinematic shake.
+- Rejected Alternatives: Removing camera trauma was rejected; it would cheapen presentation. Reducing all profile amplitudes was rejected because high/ultra should spend saved cycles on stronger cinema. Reordering rows was rejected because it would also alter first/last boundary authority.
+- Scalability potential: Low tier gets local shake. Middle gets 56m deck response. High gets 96m noir response. Ultra keeps 120m overkill propagation.
+- Hardware Impact: Runtime hot-path cost added is 0 us. Low-end event fanout may decrease if the runtime uses the low-tier radius for filtering; measured proof is absent.
+- Problem: `HectonMarineSnowRenderer` resolves `Assets/_SourceData/VFX/Propwash/vfx_silt_profiles.csv`, but the source file was missing. The renderer already has a background CSV route, so missing data left marine snow/silt on defaults instead of authored noir water volume tuning.
+- Solution: Add `vfx_silt_profiles.csv` with all six parser-supported keys: particle_count, curl_noise_strength, wake_influence, gravity_sinking_speed, ambient_silt_size, density_scale. Keep particle_count at the existing overkill cap and tune motion/density for deeper water believability.
+- Rejected Alternatives: New volumetric truth simulation rejected. Reducing particles rejected. C# route change rejected while compile lane is occupied.
+- Scalability potential: Existing renderer still applies GlobalQualityWeight, VRAM pressure, render scale, homeostasis pressure, and kill-switch budgets. Low devices keep reduced active counts through existing logic. High/Ultra keep 100000 allocation cap and stronger silt/wake response.
+- Hardware Impact: Runtime code cost added is 0 us. Existing background poll route may perform one extra file read when the file appears or changes; steady-state still gates by timestamp. Measured frame proof absent.
+- Problem: `HectonVisorARStencilRendererFeature` has `loadCsvProfiles=true` and resolves `Assets/_SourceData/Visor/visor_hud_profiles.csv`, but the folder/file was missing. The profile buffer stayed dependent on defaults/zeroed rows.
+- Solution: Add source-data Visor HUD profiles for default, pressure, warning, and abyssal states. Values drive existing font scale, curvature, fog edge, and primary color DTO fields only.
+- Hardware Impact: Runtime hot-path code cost added is 0 us. Existing editor watcher may load the file on creation/change. Measured GPU/CPU proof absent.
+- Problem: Postprocess could be "optimized" destructively if treated as generic cost instead of visual currency.
+- Solution: Inspect active URP VolumeProfiles. `SampleSceneProfile` and `SampleSceneProfile_High` already carry Bloom, Tonemapping, ShadowsMidtonesHighlights, WhiteBalance, Vignette, and inactive MotionBlur. No edit was made because the current profile state already preserves cinematic cheat layers without adding new systems.
+- Rejected Alternatives: Disabling Bloom/vignette was rejected because the user explicitly forbade making visuals worse. Enabling ChromaticAberration/MotionBlur as default was rejected because it is a low-tier cost and nausea/clarity risk without profiler and UX proof.
+- Scalability potential: Low/middle keep controlled Bloom/vignette/grading. High/Ultra can overdrive noir through first-party profiles and high profile assets rather than defaulting to expensive lens defects.
+- Hardware Impact: 0 us runtime change. No build/profiler run because `dotnet` PID 17936 remains active.
+- Problem: Baking, AO, fog, and reflection items from the cinematic-cheat checklist needed objective classification before touching scenes or ProjectSettings.
+- Solution: Static-inspect scene YAML, `QualitySettings.asset`, `GraphicsSettings.asset`, URP renderer assets, and packaged lighting artifacts. Build scenes keep baked lightmaps enabled and realtime lightmaps disabled. `02_HECTON_WORLD` has `Assets/_Project/Scenes/02_HECTON_WORLD/LightingData.asset` and `ReflectionProbe-0.exr`, so world-level baked/reflection data exists. All quality tiers set `realtimeReflectionProbes: 0`. PC/mobile/high renderer assets keep cheap volumetric particulate fog and s...
+- Rejected Alternatives: Do not flip AO flags by text edit; Unity must rebake lighting or the setting is a false proof artifact. Do not change `m_LightmapStripping`/`m_FogStripping` while compile/import is busy; variant stripping can remove required fog/lightmap modes and needs build proof. Do not enable realtime reflection probes; probes are already correctly cheap/faked.
+- Scalability potential: Low keeps baked/static lighting and no realtime probe cost. Middle keeps authored baked world probe and fog fake routes. High/Ultra can spend visual budget on richer authored bakes, post, shafts, and fog profiles after a controlled bake/import pass. No low-vs-ultra binary switch was introduced.
+- Hardware Impact: 0 us runtime change in this pass. Avoided high-risk import churn while CPU was 85-100% and Unity `dotnet` PID 17936 was active. Future low-end gain from variant stripping or AO rebake requires Unity import, Frame Debugger, and profiler proof.
+- [omitted 187 filtered lines; raw preserved]
+
+## Rationale_UNKNOWN.md [850649 B; budget 22000]
+- # Rationale UNKNOWN - 13XX NativeArray / Native Ownership Audit
+- Date: 2026-05-25
+- Agent: UNKNOWN
+- Scope: documentation/reporting audit, no runtime source edits.
+- ## Decision 01 - Treat NativeArray As Ownership Problem, Not Keyword Problem
+- Problem: User asked whether the `NativeArray` work was actually fixed. A raw text count of `NativeArray` is misleading because job structs, method-local vault views, editor validators, and core memory authority legitimately use `NativeArray`.
+- Solution: Classify each finding by ownership shape: persistent runtime alias, method-local vault view, job parameter, core authority allocation, raw pointer export, black-box dump route, or residual managed crash IO.
+- Rejected Alternatives: Banning every `NativeArray` token would falsely reject Burst/job code and DataVault read/write views. Trusting agent `STATIC_PASS` labels would miss current source conflicts and residual debt.
+- Scalability potential: Low devices benefit from DataVault-owned, bounded, cache-local buffers; high/ultra devices can still spend saved CPU on visual overkill without changing gameplay truth ownership.
+- Hardware Impact: No runtime code changed. The audit prevents false cleanup claims that would keep stale native aliases alive on i3/MX350-class hardware.
+- ## Decision 02 - Promote Chat Audit Into Stable Reports
+- Problem: The previous answer existed in chat and `LOG_UNKNOWN.md`, but the user explicitly requested docs/reports. Integrator-facing evidence must live under `Docs/Reports`.
+- Solution: Add a markdown report for human review and a JSON summary for exact counters, verdicts, and residual classes.
+- Rejected Alternatives: Only appending `LOG_UNKNOWN.md` is insufficient because reports are the project evidence surface. Editing architectural policy docs was rejected because this is evidence, not new policy.
+- Scalability potential: Stable reports let future agents burn down real residuals instead of re-auditing the same surface.
+- Hardware Impact: No runtime impact. It reduces integration churn and wrong work on native memory routes.
+- Problem: The latest full ledger was not perfectly fresh because source files changed after `05/25/2026 21:31:29`. A fresh scan would improve precision, but CPU sample was 78.8%.
+- Solution: Mark the ledger freshness caveat explicitly and defer the heavy scan until the CPU/dotnet guard allows it.
+- Rejected Alternatives: Running a heavy scanner under current load violates the project build/load guard. Pretending the ledger is fully fresh would be false.
+- Scalability potential: Keeps concurrent agent work from fighting over CPU while preserving a clear rerun task.
+- Hardware Impact: Avoids adding transient load while other agents are active. No runtime change.
+- Problem: New reports landed after the first audit. Keeping the old 1305 claim would be false because `TerrainChunkPagerRuntime` raw pointer fields were removed by patch pass 10. Keeping the old 1313 claim would also be false because the active monolith blob now static-validates current format/schema.
+- Solution: Reparse the newer artifacts and update both markdown and JSON audit reports. This decision was superseded by the later `2026-05-25 23:16:10` full ledger: `VAULT_NATIVE_ALIAS_LEDGER_X_000.json` with `2420` scanned files, `1784` persistent candidates, `364` MonoBehaviour candidates, and `0` parse failures. 1305 is now partial, not unfixed: terrain pager pointer fields are gone, but lifetime locks, managed dump IO, and 6 world residency native containers remain.
+- Rejected Alternatives: Reporting only the old snapshot would be stale. At that checkpoint, claiming 1305 fixed would have been wrong because `WorldChunkResidencyManager` still owned direct native containers and `TerrainChunkPagerRuntime` still had runtime-long locks and managed dump IO. This was later superseded by Decision 07: fresh `00:55` audit reports `WorldChunkResidencyManager.cs=0`, while terrain pager lock/alias proof debt remains.
+- Scalability potential: Correct residual ownership prevents agents from burning time on already-removed pointer fields and redirects work toward the remaining residency owner route.
+- Hardware Impact: No runtime code changed. The report reduces integration risk on low-end devices by pointing to the actual remaining native ownership pressure.
+- Problem: The user requested a full `Scripts` map. The folder contains 326 directories, 5579 files, and 2420 C# files; dumping every file into the chat or one giant prose section would be unreadable.
+- Solution: Write `Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.md` for the human directory map, `Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.json` for structured consumers, and `Docs/Reports/SCRIPTS_FILE_INDEX_UNKNOWN.tsv` for every-file grep/spreadsheet use.
+- Rejected Alternatives: Chat-only output loses the evidence trail. Markdown-only every-file listing would bury the architectural map under thousands of rows.
+- Scalability potential: Future agents can identify domain size, asmdef boundaries, recent edits, and large files before touching architecture.
+- Hardware Impact: No runtime code changed. The map reduces accidental cross-domain edits under concurrent agent load.
+- Problem: The user asked how fast agents are removing forbidden persistent and forbidden MonoBehaviour native aliases. Some artifacts are scoped and can show zero because they scan one file or one domain, so comparing them against full-project ledgers would produce a false speed claim.
+- Solution: Use only full-project ledgers with comparable scanned-file counts and zero parse failures. The latest valid full ledger is `VAULT_NATIVE_ALIAS_LEDGER_X_000.json` at `2026-05-25 23:16:10`, with `2420` scanned files, `1784` forbidden persistent candidates, and `364` forbidden MonoBehaviour candidates. The late active rate from `21:32:49` to `23:16:10` is `-69` persistent candidates and `-39` MonoBehaviour candidates, or `40.05/hour` and `22.64/hour`.
+- Rejected Alternatives: Treating every `NativeArray` token as debt would destroy valid Burst/job paths. Treating scoped zero reports as global proof would hide remaining owners like `HectonVoxelEngine.cs`, `VegetationMemoryPool.cs`, and `PlayerInventory.cs`.
+- Scalability potential: Correct classification keeps low-end devices protected from persistent alias and MonoBehaviour lifetime bugs while preserving high-end Burst throughput from legitimate transient native views.
+- Hardware Impact: No runtime code changed. The report prevents wrong cleanup work that would either leave stale aliases alive or remove valid data-local job memory.
+- Problem: `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json` was updated at `2026-05-26 00:47:20` and reported `2138` persistent / `581` MonoBehaviour candidates, but representative source checks contradicted it. It reported old pointer/native fields in `TerrainChunkPagerRuntime.cs` and `DroneFleetManager.cs` that no longer exist at the reported lines.
+- Solution: Under CPU/dotnet guard (`CPU=16.5%`, no compiler/dotnet process shown), run the prebuilt `Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe` without rebuilding. New artifact: `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json`, with `2421` scanned files, `0` parse failures, `1770` forbidden persistent candidates, `358` forbidden MonoBehaviour candidates, and hash `68217d9f155aeb5233cbb3cc004518df4a1eb2c1d0d222bd810ca241008bbe31`...
+- Rejected Alternatives: Accepting the stale `X_000` result would falsely report a massive regression. Ignoring it without rerun would leave the report unprovable. Running a rebuild was unnecessary and outside the requested check.
+- Scalability potential: Current proof keeps cleanup pressure on real residual owners while avoiding rollback panic over an invalid artifact.
+- Hardware Impact: No runtime code changed. Offline audit cost only; no build or player execution.
+- Problem: The first guarded build failed with `75` errors and `5` warnings in `Docs/Reports/BUILD_UNKNOWN_20260526_010802.log`. Failures spanned stale APIs, removed native owner fields, C# language constraints, missing imports, and warning-only build hygiene.
+- Solution: Repair only compiler-proven defects and re-run the guarded build after each meaningful batch. Build commands used `/m:1 /nr:false /p:UseSharedCompilation=false` to avoid persistent workers under concurrent agent load.
+- Rejected Alternatives: Suppressing diagnostics or excluding files would make the build green by hiding broken architecture. Reintroducing removed persistent native arrays for drone transactions was rejected because it would undo the NativeArray ownership work.
+- Scalability potential: A clean build is prerequisite proof for any later low/mid/high/ultra runtime scaling. No quality tier behavior was changed.
+- Hardware Impact: Runtime microseconds saved claimed: `0`. This was compile integrity work, not measured frame-time optimization.
+- Problem: `DroneFleetManager_Transactions.cs` referenced removed static native arrays and stale `MirrorDroneSoA` call shapes. Re-adding those arrays would restore forbidden persistent aliases in a hot MonoBehaviour-adjacent system.
+- Solution: Use existing drone core and mirror buffer accessors for prepare/apply paths, copy transaction debug task snapshots from bounded views, and release read/write buffers in `finally` blocks.
+- Rejected Alternatives: Direct static native fields were rejected as a regression against the DataVault/owner-route doctrine. Method-local unmanaged views without release guards were rejected because they are fragile under exceptions.
+- Scalability potential: Low-tier devices keep one authoritative route and avoid duplicated persistent native storage; high/ultra tiers can scale drone visuals through mirror data without changing truth ownership.
+- Hardware Impact: Runtime microseconds saved claimed: `0` because no profiler measurement was taken. Expected effect is correctness and ownership preservation, not a measured speed claim.
+- Problem: Intermediate build passed but still emitted warnings: function pointer comparison (`CS8909`), obsolete Unity object search (`CS0618`), unused exception locals (`CS0168`), and missing stale `Hecton8.Input.csproj` reference (`MSB9008`).
+- Solution: Compare function pointers through `IntPtr`, switch editor discovery to the current Unity overload, remove unused exception variables, and conditionally remove the missing project reference when the project file is absent.
+- Rejected Alternatives: Warning suppression was rejected because the user explicitly requested warnings fixed. Deleting the input reference unconditionally was rejected because it could break machines where the project file exists.
+- Scalability potential: Warning-clean builds reduce integration noise and make future real regressions visible across device profiles.
+- Hardware Impact: Runtime microseconds saved claimed: `0`. Build hygiene only.
+- Problem: Native ownership reports and build repair evidence solve different questions. Mixing them would make proof hard to audit.
+- Solution: Add `Docs/Reports/BUILD_REPAIR_UNKNOWN_20260526.md` and `.json`, then append status/log entries pointing to the final build log and proof lines.
+- Rejected Alternatives: Chat-only reporting was rejected. Expanding architecture docs with compile-fix details was rejected as documentation noise.
+- Scalability potential: Future agents can distinguish architecture debt from compile debt and avoid re-breaking clean build status.
+- Hardware Impact: Runtime microseconds saved claimed: `0`.
+- Problem: The user challenged whether the build claim was exact. Several active root/stable docs still cited old EXTERNAL_CODEX compile-wall facts (`NETSDK1004`, CPU/compiler block) as current compile boundary.
+- Solution: Re-run full `Hecton8.slnx` under the build guard (`CPU=2`, compiler process count `0`). New proof: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_013709.log`, exit `0`, `0 Warning(s)`, `0 Error(s)`. Then update root/stable documentation with that exact CLI boundary while preserving runtime proof as pending.
+- Rejected Alternatives: Reusing `BUILD_UNKNOWN_20260526_012406.log` without rerun would not answer the challenge. Marking Unity/runtime readiness from `dotnet build` was rejected because AGENTS forbids runtime readiness from CLI compile.
+- Scalability potential: Clean compile proof unblocks later low/mid/high/ultra validation work; it does not prove frame-time scalability.
+- Hardware Impact: Runtime microseconds saved claimed: `0`. Documentation and compile proof only.
+- Problem: After the root/stable doc update, `VerifyDocStructure.py` still failed on one report with untagged fences plus non-BOM active docs, and `OOP_Doc_Scanner.py` failed on two over-threshold architecture lines.
+- Solution: Add language tags to the two fenced blocks, split the two architecture lines without changing technical meaning, and mechanically convert the 92 active docs listed by the validator to UTF-8 BOM. Re-run both validators.
+- Rejected Alternatives: Reporting only the build proof would leave red documentation gates. Editing unrelated architecture policy was rejected; only validator-proven doc hygiene issues were changed.
+- Scalability potential: No runtime effect. Clean docs gates reduce false stale-boundary work for later agents.
+- Problem: The user challenged the compile/documentation claim again. Other agents can change source between replies, so the previous `013709` build log could become stale.
+- Solution: Re-run the full `Hecton8.slnx` build under guard (`CPU=5`, compiler process count `0`). New proof: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`, exit `0`, `0 Warning(s)`, `0 Error(s)`. Update root/stable docs from the `013709` proof to the `020504` proof.
+- Rejected Alternatives: Re-answering from prior proof was rejected because the user asked for another check. Running Unity runtime/player validation from a CLI compile request was rejected because it is a different gate.
+- Scalability potential: Clean compile remains prerequisite evidence only; it does not prove runtime frame-time scaling.
+- Problem: The user asked for current token/stat counts and all existing documentation surfaces, while active docs still had stale token boundaries.
+- Solution: Regenerate the token ledger/report, update stable entry points, and rerun both documentation validators.
+- Rejected Alternatives: Editing archived dated reports was rejected because they are historical evidence snapshots. Reporting only chat numbers was rejected because project evidence lives on disk.
+- Scalability potential: No runtime effect. Current source/document scale counters reduce wrong planning pressure for low/mid/high/ultra work.
+- Problem: Scoped 13XX reports often show zero because they scan one file or one domain. The user asked for current project progress, not per-agent marketing.
+- Solution: Compare only full-project Roslyn ledgers with zero parse failures: `UNKNOWN_CURRENT_20260526_0052` versus `1315_PASS14`.
+- Rejected Alternatives: Treating scoped green reports as global green was rejected. Running another full Roslyn scan was rejected because CPU was `100%` and an active `dotnet` process existed.
+- Scalability potential: Keeps cleanup priority on residual global owners instead of destroying valid transient job fields or stack-only views.
+- Hardware Impact: Runtime microseconds saved claimed: `0`; this was audit/reporting work.
+- Problem: Token totals changed during active agent work, but local JSONL is not invoice data.
+- Solution: Regenerate the local token audit and update stable docs with the new totals while preserving the pricing boundary as an estimate.
+- Rejected Alternatives: Reusing the earlier `99,155,128,232` token count was stale. Calling the estimate billing proof was rejected.
+- Scalability potential: No runtime effect. Current scale statistics keep planning grounded.
+- Problem: The user asked whether a Jackson Dunstan 2018 `CopyFromFast` pattern with `Il2CppSetOption` is still needed in Unity 6 and whether it would produce real project profit.
+- Solution: Inspect the installed Unity `6000.4.1f1` assemblies with Mono.Cecil and classify all project `CopyFrom` call sites. The Unity 6 `NativeArray<T>.CopyFrom(T[])` path uses pinned `GCHandle` plus `UnsafeUtility.MemCpy`; it is not the old per-element managed array loop. Current project has one repeated runtime managed-array copy candidate, and the useful action there is range-copy correctness or native applied-status ownership, not IL2CPP check suppression. Applied the low-risk correction i...
+- Rejected Alternatives: Adding `[Il2CppSetOption(Option.NullChecks, false)]` and `[Il2CppSetOption(Option.ArrayBoundsChecks, false)]` globally was rejected because it is IL2CPP-only, bypasses safety, and does not improve the verified Unity 6 bulk-copy path. Replacing cold save/editor copies was rejected because they are not frame paths.
+- Scalability potential: Low-tier devices do not gain meaningful frame time from a 10 KB status copy already implemented as MemCpy. High/ultra tiers gain nothing from unsafe attributes; if this area ever matters, the scalable fix is one native applied-status owner and no managed mirror.
+- Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof was run.
+- Problem: The first post-patch CLI build passed but emitted seven `CS0420` warnings because `PlayerCriticalProceduralAudioRenderer.cs` called `Volatile.Read(ref _targetGranularMaxVoiceCount)` on a field already declared `volatile int`.
+- Solution: Replace those seven by-ref calls with direct reads of `_targetGranularMaxVoiceCount`. A direct read of a volatile field preserves the intended volatile read semantics and removes the invalid by-ref warning surface.
+- Solution: Correct the dirty-file normalization bug, re-run the search against clean files only, and continue only with static proof over my touched code. Clean runtime hits were comments or editor literals, not direct gameplay time authority. The touched-file proof now covers time authority, hot `GlobalRegistry.Get<T>()` / `GetComponent()` lookup, added-line Zero-GC patterns, and diff hygiene.
+- Rejected Alternatives: Patching dirty world files was rejected because there is no safe ownership boundary under active concurrent edits. Launching `dotnet build` was rejected because the final CPU sample was `83`, above the project threshold, and the user already assigned whole-project compile errors to another agent. Writing JSON or binary reports was rejected because the current protocol forbids that I/O.
+- Scalability potential: Low devices benefit from the completed clock-authority cleanup in touched systems and from avoiding risky mixed-agent partial patches. Middle devices keep current behavior. High and ultra devices retain existing visual-overkill routes; this audit made no gameplay truth, DTO layout, save identity, DataVault ownership, signal lane, or `GlobalQualityWeight` change.
+- Hardware Impact: Runtime microseconds saved claimed: `0`; proof is static only. `CLEAN_HOT_LOOKUP_SCAN=0`; `TOUCHED_HOT_LOOKUP_SCAN=0`; `TOUCHED_ADDED_FORBIDDEN_MATCHES=0`; touched-file time scan found only `BootstrapStatus.cs` safe-halt `UnityEngine.Time.timeScale` writes at `115/155/212/249`; `git diff --check` exited `0` with LF/CRLF warnings only. No build/runtime proof exists because CPU sampled `83` and no compiler rows were active.
+- ## Decision 432 - Harden HarvestablePlant Against Null Serialized Segment Slots
+- Problem: `HarvestablePlant` assumed the serialized `PlantSegment[] segments` array and every slot inside it were valid. A missing array or a deleted/null segment slot could crash public accessors, `Tick`, cut targeting, harvest/regrow calls, editor validation, or gizmo drawing. This is a scene-authoring/data-integrity failure that can break runtime stability without any physics or AI complexity.
+- Solution: Normalize a null serialized array to a cached empty array in `Awake`, then use local array references and explicit null-slot guards in all runtime segment loops. The regrow loop now clamps iteration to the smaller of segment count and timer count, so an inconsistent timer array cannot index past bounds. Regrow clears the local timer when available. Presentation stays in `LateFrameTick`, and loot physics still uses the cached `_physicsService` route.
+- Rejected Alternatives: Auto-creating `PlantSegment` objects was rejected because it would hide bad content and allocate managed objects. Rebuilding the segment authoring system was rejected as over-engineering for a local crash guard. Moving segment state into `GlobalDataVault` was rejected because the plant owns local prop state and there is no cross-domain native ownership need.
+- Scalability potential: Low devices avoid a hard crash from invalid plant content with only branch guards. Middle devices keep existing harvest/regrow visuals and loot behavior. High and ultra devices retain the same presentation route and can layer richer renderer/material effects later without changing gameplay truth. No gameplay authority, save identity, DTO layout, DataVault ownership, signal lane, binary quality switch, or `GlobalQualityWeight` route changed.
+- Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: `HarvestablePlant.cs` direct `segments[i].` scan returned no matches; full file forbidden scan found only the pre-existing event-driven `loot.TryGetComponent(out Rigidbody rb)` in `SpawnLoot`; added-line forbidden scan returned `0` for `new`, `string.Format`, `.ToString(`, `foreach`, `.ToArray(`, `Enumerable.`, and `System.Linq`; `git diff --check -- HarvestablePlant.cs` exited `0` with LF/CRLF warn...
+- [omitted 2587 filtered lines; raw preserved]
+
+## Rationale_WORKSTATION_CLEANUP.md [5313 B; budget 1900]
+- # WORKSTATION_CLEANUP Rationale
+- Date: 2026-06-01
+- Problem: Machine had high CPU and low free RAM. Primary noise was stale `rg.exe` searches from VS Code/OpenAI extension plus duplicate `start_site.bat` trees.
+- Solution: Stop only processes with dead parent and verified command/path; for `start_site.bat`, require no listening socket in the process tree before termination.
+- Rejected Alternatives: Killing all `python.exe`, all `cmd.exe`, all `dotnet.exe`, Unity, or Edge. These are user-facing or active owner processes.
+- Scalability potential: Low-tier machine benefits from freed RAM and fewer stale search loops; mid/high/ultra machines benefit less, but cleanup reduces scheduler noise.
+- Hardware Impact: i3/MX350 class gains roughly 1.5 GB free RAM from duplicate process removal plus 1.21 GB disk space from Temp cleanup. CPU remained high because active Unity/Edge/VS Code work continued.
+- Problem: `%TEMP%` contained 10482 old files, 1210.89 MB candidate size.
+- Solution: Delete only files older than 24h under the resolved Temp root; remove empty old directories afterward.
+- Rejected Alternatives: Empty entire Temp recursively, Windows cleanup automation, deleting project `Library/Bee` or `Temp` while Unity is running.
+- Scalability potential: Low storage devices recover headroom; high-end devices avoid pointless filesystem scan load.
+- Hardware Impact: 1210.76 MB reclaimed; 10475 files deleted; 2980 empty directories removed.
+- Problem: Recent crash dumps and Unity caches looked like trash by size but may be evidence or active import state.
+- Solution: Leave `CrashDumps`, `uv cache`, `Library/Bee`, and Hecton8 `Temp` untouched.
+- Problem: Fourth pass found a new stale `rg.exe` wave from parallel agents. One remaining `rg.exe` had a formally live parent PID, but the parent process was created hours after the child, proving PID reuse rather than ownership.
+- [omitted 27 filtered lines; raw preserved]

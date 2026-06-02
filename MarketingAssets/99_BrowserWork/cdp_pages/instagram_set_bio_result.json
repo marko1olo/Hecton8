@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-05-31T17:33:37.706Z",
+  "bio": "Building Submerge. Pressure, machinery, salvage, black water.",
+  "setResult": {
+    "ok": true,
+    "value": "Building Submerge. Pressure, machinery, salvage, black water.",
+    "textareaCount": 1
+  },
+  "clickResult": {
+    "ok": true,
+    "disabled": false,
+    "text": "Submit",
+    "x": 686.3041076660156,
+    "y": 473.64783096313477,
+    "rect": [
+      471.3702087402344,
+      443.6538391113281,
+      901.2380065917969,
+      503.6418228149414
+    ]
+  },
+  "confirm": {
+    "url": "https://www.instagram.com/accounts/edit/",
+    "title": "Instagram",
+    "bodyText": "Settings\nAccounts Center\nManage your connected experiences and account settings across Meta technologies.\nPersonal details\nPassword and security\nAd preferences, including subscription for no ads\nSee more in Accounts Center\nHow you use Instagram\nEdit profile\nNotifications\nWho can see your content\nAccount privacy\nClose Friends\nBlocked\nStory and location\nHow others can interact with you\nMessages and story replies\nTags and mentions\nComments\nSharing and reuse\nRestricted accounts\nHidden Words\nWhat you see\nMuted accounts\nContent preferences\nLike and share counts\nCreator subscriptions\nYour app and media\nArchiving and downloading\nAccessibility\nLanguage\nWebsite permissions\nFamily Center\nSupervision for Teen Accounts\nFor professionals\nAccount type and tools\nMeta Verified\nMore info and support\nHelp\nPrivacy Center\nAccount Status\nEdit profile\nteni_games\nTeni Games\nChange photo\nWebsite\nEditing your links is only available on mobile. Visit the Instagram app and edit your profile to change the websites in your bio.\nBio\n61 / 150\nGender\nPrefer not to say\nThis won’t be part of your public profile.\nShow account suggestions on profiles\nShow account suggestions on profiles\nChoose whether people can see s",
+    "bioValue": "Building Submerge. Pressure, machinery, salvage, black water."
+  },
+  "screenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\instagram_edit_after_bio.png"
+}

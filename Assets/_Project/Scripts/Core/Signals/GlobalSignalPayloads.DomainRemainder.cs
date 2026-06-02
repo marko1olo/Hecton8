@@ -1185,18 +1185,42 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(62)] private ushort _padTail0;
     }
 
-    /// <summary>Lore-fragment scan commit signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>Lore-fragment scan commit signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct LoreFragmentScannedSignal : ISignal
     {
-        [FieldOffset(0)] public uint Hash;
-        [FieldOffset(4)] public uint Frame;
-        [FieldOffset(8)] public uint SourceId;
-        [FieldOffset(12)] public byte Flags;
-        [FieldOffset(13)] private byte _padTail0;
-        [FieldOffset(14)] private ushort _padTail1;
-        [FieldOffset(16)] private ulong _padTail2;
-        [FieldOffset(24)] private ulong _padTail3;
+        public const byte FlagPairedScanComplete = 1 << 0;
+        public const byte FlagHasAup = 1 << 1;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public uint Hash;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint SourceId;
+        [FieldOffset(60)] public byte Flags;
+        [FieldOffset(61)] private byte _padTail0;
+        [FieldOffset(62)] private ushort _padTail1;
+    }
+
+    /// <summary>AppliedLore terminal preview request consumed by TerminalOS in VISUAL_SYNC. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct AppliedLoreTerminalPreviewSignal : ISignal
+    {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x41545056u; // ATPV
+        public const byte FlagHasTerminalHash = 1 << 0;
+
+        [FieldOffset(0)] public uint PacketHash;
+        [FieldOffset(4)] public uint LocaleHash;
+        [FieldOffset(8)] public uint TerminalHash;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public int TerminalIndex;
+        [FieldOffset(20)] public uint SourceHash;
+        [FieldOffset(24)] public byte Surface;
+        [FieldOffset(25)] public byte Flags;
+        [FieldOffset(26)] private ushort _padTail0;
+        [FieldOffset(28)] private uint _padTail1;
     }
 
     /// <summary>Blueprint unlock signal for crafting and PDA consumers. Size: 32 bytes.</summary>
@@ -1295,7 +1319,10 @@ namespace Hecton8.Core.Contracts.Signals
         public const int LowTierFrameSignals = 32;
         public const uint LaneHash = 1213288304u; // FNV32("ToolAcousticSignal")
         public const byte StateLaserLoop = 1;
+        public const byte StateDataGhost = 7;
         public const byte FlagLooping = 1 << 0;
+        public const byte FlagNarrativeGhost = 1 << 1;
+        public const byte FlagCorrupted = 1 << 2;
 
         [FieldOffset(0)] public uint ToolHash;
         [FieldOffset(4)] public uint TargetHash;
@@ -1390,6 +1417,34 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public ushort Sequence;
         [FieldOffset(62)] public byte Flags;
         [FieldOffset(63)] public byte Phase;
+    }
+
+    /// <summary>Orbital prologue acoustic stress packet. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ReentryAcousticStressSignal : ISignal
+    {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0xA6505E31u; // FNV32("ReentryAcousticStressSignal")
+        public const byte PhaseSpace = 1;
+        public const byte PhasePlasma = 2;
+        public const byte PhaseWhiteout = 3;
+        public const byte PhaseSplashdown = 4;
+        public const byte FlagAuthoritativeFilter = 1 << 0;
+        public const byte FlagSplashdown = 1 << 1;
+        public const byte FlagNonFiniteGuard = 1 << 2;
+
+        [FieldOffset(0)] public float Stress01;
+        [FieldOffset(4)] public float Heat01;
+        [FieldOffset(8)] public float UniverseVelocityMetersPerSecond;
+        [FieldOffset(12)] public float LowPassCutoffHz;
+        [FieldOffset(16)] public float LfeGain01;
+        [FieldOffset(20)] public float GranularStress01;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public ushort Sequence;
+        [FieldOffset(30)] public byte Flags;
+        [FieldOffset(31)] public byte Phase;
     }
 
     /// <summary>Orbital prologue whiteout completion packet. Size: 64 bytes.</summary>

@@ -23,7 +23,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/LifePod Seat Strap Coordinator")]
-    public sealed class LifePodSeatStrapCoordinator : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener
+    public sealed class LifePodSeatStrapCoordinator : MonoBehaviour, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const byte HapticPriorityCritical = ToolHapticsRuntime.PriorityCritical;
         private const byte LeftMotorMask = 0x01;
@@ -83,6 +83,7 @@ namespace Hecton8.Interaction
         private bool _rightLatched;
         private bool _seatLockActive;
         private bool _registeredFixedTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _fixedTickDormant;
         private Transform _leftIkAnchor;
@@ -101,6 +102,17 @@ namespace Hecton8.Interaction
         private float _resolvedLockHapticDurationSeconds;
         private float _resolvedLockHapticFrequencyHz;
         private bool _seatLockPoseCached;
+        private bool _pendingLatchHaptic;
+        private bool _pendingLockHaptic;
+        private byte _pendingLatchMotorMask;
+        private float _pendingLatchLowFrequency;
+        private float _pendingLatchHighFrequency;
+        private float _pendingLatchDurationSeconds;
+        private float _pendingLatchFrequencyHz;
+        private float _pendingLockLowFrequency;
+        private float _pendingLockHighFrequency;
+        private float _pendingLockDurationSeconds;
+        private float _pendingLockFrequencyHz;
 
         /// <summary>
         /// True after the left strap has completed its latch hold.
@@ -141,9 +153,17 @@ namespace Hecton8.Interaction
         {
             CacheScalarConfig();
             RefreshColdRegistryReferences();
-            TryRegisterHotSwapListener();
-            if (_seatLockActive && TryCacheSeatLockPose())
-                TryRegisterFixedTick();
+            bool hotSwapReady = TryRegisterHotSwapListener();
+            if (!_seatLockActive)
+                return;
+
+            if (!hotSwapReady ||
+                !TryCacheSeatLockPose() ||
+                !TryEnsurePlayerMotor() ||
+                !TryRegisterFixedTick())
+            {
+                ReleaseSeatLockForLostRuntimeRoute();
+            }
         }
 
         private void OnDisable()
@@ -151,6 +171,16 @@ namespace Hecton8.Interaction
             ReleaseSeatLock();
             InvalidatePlayerCache();
             TryUnregisterFixedTick();
+            TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseSeatLock();
+            InvalidatePlayerCache();
+            TryUnregisterFixedTick();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
         }
 
@@ -202,6 +232,8 @@ namespace Hecton8.Interaction
         {
             _seatLockActive = false;
             TryUnregisterFixedTick();
+            ClearPendingHaptics();
+            TryUnregisterLateFrame();
         }
 
         /// <summary>
@@ -292,25 +324,40 @@ namespace Hecton8.Interaction
                 _playerMotor.SetSeatLockLinearVelocity(Vector3.zero);
         }
 
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_pendingLatchHaptic && !_pendingLockHaptic)
+            {
+                TryUnregisterLateFrame();
+                return;
+            }
+
+            DispatchPendingHaptics();
+
+            if (!_pendingLatchHaptic && !_pendingLockHaptic)
+                TryUnregisterLateFrame();
+        }
+
         private void EngageSeatLock()
         {
             if (!TryCacheSeatLockPose())
                 return;
 
-            _seatLockActive = true;
-            TryEnsurePlayerMotor();
-            TryRegisterFixedTick();
+            if (!TryEnsurePlayerMotor())
+                return;
 
-            if (hapticsEnabled)
+            if (!TryRegisterHotSwapListener())
+                return;
+
+            _seatLockActive = true;
+            if (!TryRegisterFixedTick())
             {
-                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                    _resolvedLockLowFrequency,
-                    _resolvedLockHighFrequency,
-                    _resolvedLockHapticDurationSeconds,
-                    _resolvedLockHapticFrequencyHz,
-                    HapticPriorityCritical,
-                    LeftMotorMask | RightMotorMask);
+                ReleaseSeatLockForLostRuntimeRoute();
+                return;
             }
+
+            QueueLockHaptic();
         }
 
         private bool TryEnsurePlayerMotor()
@@ -387,23 +434,105 @@ namespace Hecton8.Interaction
             if (!hapticsEnabled)
                 return;
 
-            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                _resolvedLatchLowFrequency,
-                _resolvedLatchHighFrequency,
-                _resolvedLatchHapticDurationSeconds,
-                _resolvedLatchHapticFrequencyHz,
-                HapticPriorityCritical,
-                ResolveMotorMask(handSide, strapSide));
+            _pendingLatchLowFrequency = _resolvedLatchLowFrequency;
+            _pendingLatchHighFrequency = _resolvedLatchHighFrequency;
+            _pendingLatchDurationSeconds = _resolvedLatchHapticDurationSeconds;
+            _pendingLatchFrequencyHz = _resolvedLatchHapticFrequencyHz;
+            _pendingLatchMotorMask = ResolveMotorMask(handSide, strapSide);
+            _pendingLatchHaptic = true;
+
+            if (!TryRegisterLateFrame())
+                ClearPendingHaptics();
         }
 
-        private void TryRegisterFixedTick()
+        private void QueueLockHaptic()
         {
-            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!hapticsEnabled)
                 return;
+
+            _pendingLockLowFrequency = _resolvedLockLowFrequency;
+            _pendingLockHighFrequency = _resolvedLockHighFrequency;
+            _pendingLockDurationSeconds = _resolvedLockHapticDurationSeconds;
+            _pendingLockFrequencyHz = _resolvedLockHapticFrequencyHz;
+            _pendingLockHaptic = true;
+
+            if (!TryRegisterLateFrame())
+                ClearPendingHaptics();
+        }
+
+        private void DispatchPendingHaptics()
+        {
+            if (_pendingLatchHaptic)
+            {
+                float lowFrequency = _pendingLatchLowFrequency;
+                float highFrequency = _pendingLatchHighFrequency;
+                float durationSeconds = _pendingLatchDurationSeconds;
+                float frequencyHz = _pendingLatchFrequencyHz;
+                byte motorMask = _pendingLatchMotorMask;
+                _pendingLatchHaptic = false;
+
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                    lowFrequency,
+                    highFrequency,
+                    durationSeconds,
+                    frequencyHz,
+                    HapticPriorityCritical,
+                    motorMask);
+            }
+
+            if (_pendingLockHaptic)
+            {
+                float lowFrequency = _pendingLockLowFrequency;
+                float highFrequency = _pendingLockHighFrequency;
+                float durationSeconds = _pendingLockDurationSeconds;
+                float frequencyHz = _pendingLockFrequencyHz;
+                _pendingLockHaptic = false;
+
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                    lowFrequency,
+                    highFrequency,
+                    durationSeconds,
+                    frequencyHz,
+                    HapticPriorityCritical,
+                    LeftMotorMask | RightMotorMask);
+            }
+        }
+
+        private void ClearPendingHaptics()
+        {
+            _pendingLatchHaptic = false;
+            _pendingLatchMotorMask = 0;
+            _pendingLatchLowFrequency = 0f;
+            _pendingLatchHighFrequency = 0f;
+            _pendingLatchDurationSeconds = 0f;
+            _pendingLatchFrequencyHz = 0f;
+            ClearPendingLockHaptic();
+        }
+
+        private void ClearPendingLockHaptic()
+        {
+            _pendingLockHaptic = false;
+            _pendingLockLowFrequency = 0f;
+            _pendingLockHighFrequency = 0f;
+            _pendingLockDurationSeconds = 0f;
+            _pendingLockFrequencyHz = 0f;
+        }
+
+        private bool TryRegisterFixedTick()
+        {
+            if (_registeredFixedTick)
+                return true;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
 
             _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
             if (_registeredFixedTick)
+            {
                 _fixedTickDormant = false;
+                return true;
+            }
+
+            return false;
         }
 
         private void TryUnregisterFixedTick()
@@ -416,10 +545,37 @@ namespace Hecton8.Interaction
             _fixedTickDormant = false;
         }
 
+        private bool TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame)
+                return true;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            return _registeredLateFrame;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
+        }
+
         private void RefreshColdRegistryReferences()
         {
             _playerMotor = GlobalRegistry.PlayerSeatLockMotor;
             _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void ReleaseSeatLockForLostRuntimeRoute()
+        {
+            _seatLockActive = false;
+            ClearPendingLockHaptic();
+            TryUnregisterFixedTick();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -431,24 +587,43 @@ namespace Hecton8.Interaction
             {
                 case GlobalRegistryServiceSlot.PlayerMotor:
                     _playerMotor = currentService as IPlayerSeatLockMotorSink;
+                    if (_seatLockActive && !TryEnsurePlayerMotor())
+                        ReleaseSeatLockForLostRuntimeRoute();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (_seatLockActive && !TryEnsurePlayerMotor())
+                        ReleaseSeatLockForLostRuntimeRoute();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredFixedTick = false;
-                    if (currentService != null && _seatLockActive)
-                        TryRegisterFixedTick();
+                    bool shouldRestoreFixedTick = _seatLockActive;
+                    TryUnregisterFixedTick();
+                    TryUnregisterLateFrame();
+                    if (shouldRestoreFixedTick &&
+                        (currentService == null || !isActiveAndEnabled || !TryRegisterFixedTick()))
+                    {
+                        ReleaseSeatLockForLostRuntimeRoute();
+                    }
+
+                    bool shouldRestoreLateFrame = _pendingLatchHaptic || _pendingLockHaptic;
+                    if (shouldRestoreLateFrame &&
+                        (currentService == null || !isActiveAndEnabled || !TryRegisterLateFrame()))
+                    {
+                        ClearPendingHaptics();
+                    }
                     break;
             }
         }
 
-        private void TryRegisterHotSwapListener()
+        private bool TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwapListener || !Application.isPlaying)
-                return;
+            if (_registeredHotSwapListener)
+                return true;
+            if (!Application.isPlaying)
+                return false;
 
             _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+            return _registeredHotSwapListener;
         }
 
         private void TryUnregisterHotSwapListener()

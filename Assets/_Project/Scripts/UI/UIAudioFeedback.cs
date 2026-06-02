@@ -17,9 +17,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/UI Audio Feedback")]
     public sealed class UIAudioFeedback : MonoBehaviour, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== BUTTON SOUNDS ===")]
         [SerializeField, Tooltip("Primary actions: New Game, Resume, Save")]
@@ -68,9 +68,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Log audio playback events")]
         private bool debugLog = false;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private IAudioService _audioManager;
         private float _lastSliderTickTime;
@@ -98,9 +98,9 @@ namespace Hecton8.UI
             s_activeRuntime = null;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -159,9 +159,9 @@ namespace Hecton8.UI
             _audioManager = null;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public static void PlayPanelOpen()
         {
@@ -320,9 +320,9 @@ namespace Hecton8.UI
             _controlsRegistered = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // REGISTRATION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void RegisterAllButtons()
         {
@@ -487,7 +487,7 @@ namespace Hecton8.UI
                     return entry;
             }
 
-            // COLD ALLOC: EventTrigger.Entry[1] — shared pointer-enter hover callback entry — owner: UIAudioFeedback
+            // COLD ALLOC: EventTrigger.Entry[1] - shared pointer-enter hover callback entry - owner: UIAudioFeedback
             EventTrigger.Entry newEntry = new EventTrigger.Entry
             {
                 eventID = EventTriggerType.PointerEnter
@@ -529,9 +529,9 @@ namespace Hecton8.UI
             return source.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // CALLBACKS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnPrimaryButtonClicked()
         {
@@ -594,9 +594,9 @@ namespace Hecton8.UI
                 PlaySound(clip, volume);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // AUDIO PLAYBACK
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void PlaySound(AudioClip clip, float vol)
         {
@@ -619,9 +619,9 @@ namespace Hecton8.UI
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // TYPES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private enum ButtonType
         {

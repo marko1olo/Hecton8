@@ -1,0 +1,30 @@
+---
+packet_id: P044_MEDICAL_LOCK_DELAY
+article_id: hecton8.medical_lock_delay
+locale: zh_CN
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 医疗锁延迟
+
+医疗锁让Deep Reach的谎言实体化。隔离语言保护了流程与资产，把人留在封门外。
+
+## Scanner
+
+医疗锁仍有无菌库存，但门因隔离与责任标记失败关闭。
+
+## Terminal
+
+医疗锁状态：氧气、镇静剂、压力绷带可用。因污染复核和资产保全授权等待，入口拒绝。
+
+## Audio
+
+本可以救人的房间在等许可。
+
+## Field Note
+
+补给活了下来。访问没有。
+
+<!-- In-Game Wiki; generated from P044_MEDICAL_LOCK_DELAY/zh_CN. -->

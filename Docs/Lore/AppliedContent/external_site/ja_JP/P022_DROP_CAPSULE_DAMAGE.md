@@ -1,0 +1,30 @@
+---
+packet_id: P022_DROP_CAPSULE_DAMAGE
+article_id: arrival.drop_capsule_damage
+locale: ja_JP
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 投下カプセル損傷
+
+投下カプセル損傷は、降下は成功し生存系は残り、上昇系だけが死んだことを示す。
+
+## Scanner
+
+座席は生存。上昇経路は破壊。カプセルは避難所で、帰還船ではない。
+
+## Terminal
+
+再突入ブラックボックス: シュート焼損、バラスト穿孔、通信マスト剪断、上昇シール破損。軌道帰還には外部建造連鎖が必要。
+
+## Audio
+
+カプセルは上がれない。船扱いをやめろ。
+
+## Field Note
+
+最初の牢は機械だ。
+
+<!-- External Site; generated from P022_DROP_CAPSULE_DAMAGE/ja_JP. -->

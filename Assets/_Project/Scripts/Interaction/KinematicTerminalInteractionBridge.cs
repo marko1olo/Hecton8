@@ -129,11 +129,16 @@ namespace Hecton8.Interaction
         private const float LowTierTerminalTickIntervalSeconds = 0.2f;
         private const float MinimumReachMeters = 0.25f;
         private const float MaximumReachMeters = 2f;
+        private const float MinimumSurfaceOffsetMeters = 0.001f;
+        private const float MaximumSurfaceOffsetMeters = 0.08f;
+        private const float DefaultSurfaceOffsetMeters = 0.025f;
         private const float MinimumSnapDurationSeconds = 0.033333335f;
         private const float MaximumSnapDurationSeconds = 0.35f;
+        private const float DefaultSnapDurationSeconds = 0.12f;
         private const byte TerminalHapticPriority = 1;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = 0b0011;
         [Header("Panel")]
         [SerializeField] private DiegeticPanelController panel;
         [SerializeField] private MonoBehaviour panelReceiver;
@@ -186,7 +191,8 @@ namespace Hecton8.Interaction
             ResolveInterfaces();
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            TryRegister();
+            if (!TryRegister())
+                ClearRuntimeStateForLostDispatcherRoute();
         }
 
         private void OnDisable()
@@ -195,12 +201,25 @@ namespace Hecton8.Interaction
             TryUnregister();
             TryUnregisterHotSwapListener();
             _pressedLastTick = false;
+            _pendingPressHaptic = false;
+            _pendingPressHapticMotorMask = 0;
+            _tickAccumulator = 0f;
+        }
+
+        private void OnDestroy()
+        {
+            ClearHandTarget();
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+            _pressedLastTick = false;
+            _pendingPressHaptic = false;
+            _pendingPressHapticMotorMask = 0;
             _tickAccumulator = 0f;
         }
 
         public void Tick(float deltaTime)
         {
-            float safeDeltaTime = math.clamp(deltaTime, 0f, MaximumTickIntervalSeconds);
+            float safeDeltaTime = math.clamp(math.isfinite(deltaTime) ? deltaTime : 0f, 0f, MaximumTickIntervalSeconds);
             _tickAccumulator += safeDeltaTime;
             float interval = ResolveTickInterval();
             if (_tickAccumulator < interval)
@@ -218,8 +237,13 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            float reach = math.clamp(maxInteractionDistance, MinimumReachMeters, MaximumReachMeters);
+            float reach = ResolveReachMeters(maxInteractionDistance);
             if (!panel.TryProjectRayToCanvas(origin, direction, reach, out float2 canvasPosition, out Vector3 worldHitPosition))
+            {
+                HandleProjectionLost();
+                return;
+            }
+            if (!IsFinite(canvasPosition) || !IsFinite(worldHitPosition))
             {
                 HandleProjectionLost();
                 return;
@@ -244,10 +268,18 @@ namespace Hecton8.Interaction
                 snapCanvasPosition = resolvedSnapCanvasPosition;
             }
 
-            if (panel.TryProjectCanvasPointToWorld(snapCanvasPosition, handSurfaceOffsetMeters, out Vector3 snapWorldPosition))
+            if (IsFinite(snapCanvasPosition) &&
+                panel.TryProjectCanvasPointToWorld(
+                    snapCanvasPosition,
+                    ResolveSurfaceOffsetMeters(handSurfaceOffsetMeters),
+                    out Vector3 snapWorldPosition))
+            {
                 DispatchHandIkTarget(snapWorldPosition, panelRotation);
+            }
             else
+            {
                 ClearHandTarget();
+            }
 
             if (dispatchPanelInputEvents && _panelReceiver != null && panelEventType != DiegeticPanelInputEventType.None)
             {
@@ -257,7 +289,7 @@ namespace Hecton8.Interaction
                     CanvasHitPoint = canvasPosition,
                     AnalogDelta = analogDelta,
                     EventType = panelEventType,
-                    Timestamp = (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                    Timestamp = ResolveSafeTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds)
                 };
                 _panelReceiver.ReceiveCanvasInput(in inputEvent);
             }
@@ -274,14 +306,16 @@ namespace Hecton8.Interaction
             if (!_pendingPressHaptic)
                 return;
 
+            byte motorMask = _pendingPressHapticMotorMask;
             _pendingPressHaptic = false;
+            _pendingPressHapticMotorMask = 0;
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 0.04f,
                 0.22f,
                 0.05f,
                 54f,
                 TerminalHapticPriority,
-                _pendingPressHapticMotorMask);
+                motorMask);
         }
 
         private TerminalActionFlags ResolveTerminalActionFlags(out float2 analogDelta)
@@ -292,7 +326,7 @@ namespace Hecton8.Interaction
             {
                 PlayerInputState state = _input.GetState();
                 pressed = state.HasAction(PlayerInputAction.Interact) || state.HasAction(PlayerInputAction.PrimaryFire);
-                analogDelta = new float2(state.ScrollDelta.x, state.ScrollDelta.y);
+                analogDelta = ResolveFiniteAnalogDelta(new float2(state.ScrollDelta.x, state.ScrollDelta.y));
             }
 
             TerminalActionFlags flags = TerminalActionFlags.Hover;
@@ -335,10 +369,10 @@ namespace Hecton8.Interaction
 
             PhysicalHandIkTarget target = new PhysicalHandIkTarget(
                 _sourceId,
-                handSide,
+                ResolveIkHandSide(handSide),
                 worldPosition,
                 worldRotation,
-                math.clamp(snapHoldSeconds, MinimumSnapDurationSeconds, MaximumSnapDurationSeconds),
+                ResolveSnapHoldSeconds(snapHoldSeconds),
                 1f);
 
             if (_handIkTargetSink != null)
@@ -358,7 +392,7 @@ namespace Hecton8.Interaction
                     PanelId = panelId,
                     CanvasHitPoint = float2.zero,
                     EventType = DiegeticPanelInputEventType.Up,
-                    Timestamp = (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                    Timestamp = ResolveSafeTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds)
                 };
                 _panelReceiver.ReceiveCanvasInput(in inputEvent);
             }
@@ -423,8 +457,7 @@ namespace Hecton8.Interaction
                 MinimumTickIntervalSeconds,
                 MaximumTickIntervalSeconds);
 
-            float quality = SignalBusRegistry.GlobalQualityWeight01;
-            quality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            float quality = SanitizeUnit01(SignalBusRegistry.GlobalQualityWeight01);
             float qualityCurve = math.smoothstep(0f, 1f, quality);
             float tierFloor = math.lerp(LowTierTerminalTickIntervalSeconds, MinimumTickIntervalSeconds, qualityCurve);
             return math.max(configuredInterval, tierFloor);
@@ -432,18 +465,71 @@ namespace Hecton8.Interaction
 
         private static byte ResolveMotorMask(PhysicalHandSide side)
         {
-            return side == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+            if (side == PhysicalHandSide.Left)
+                return LeftMotorMask;
+            if (side == PhysicalHandSide.Right)
+                return RightMotorMask;
+            return BothMotorMask;
         }
 
-        private void TryRegister()
+        private static PhysicalHandSide ResolveIkHandSide(PhysicalHandSide side)
         {
-            if ((_registered && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
+            if (side == PhysicalHandSide.Left || side == PhysicalHandSide.Right)
+                return side;
+
+            return PhysicalHandSide.Right;
+        }
+
+        private static float ResolveReachMeters(float meters)
+        {
+            return math.isfinite(meters) ? math.clamp(meters, MinimumReachMeters, MaximumReachMeters) : MinimumReachMeters;
+        }
+
+        private static float ResolveSurfaceOffsetMeters(float meters)
+        {
+            return math.isfinite(meters) ? math.clamp(meters, MinimumSurfaceOffsetMeters, MaximumSurfaceOffsetMeters) : DefaultSurfaceOffsetMeters;
+        }
+
+        private static float ResolveSnapHoldSeconds(float seconds)
+        {
+            return math.isfinite(seconds) ? math.clamp(seconds, MinimumSnapDurationSeconds, MaximumSnapDurationSeconds) : DefaultSnapDurationSeconds;
+        }
+
+        private static float2 ResolveFiniteAnalogDelta(float2 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float2.zero;
+        }
+
+        private static float ResolveSafeTimestamp(double timestampSeconds)
+        {
+            if (double.IsNaN(timestampSeconds) || double.IsInfinity(timestampSeconds) || timestampSeconds < 0d)
+                return 0f;
+
+            return timestampSeconds >= float.MaxValue ? float.MaxValue : (float)timestampSeconds;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        private bool TryRegister()
+        {
+            if (_registered && _registeredLateFrame)
+                return _registered && _registeredLateFrame;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
 
             if (!_registered)
                 _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (_registered && _registeredLateFrame)
+                return true;
+
+            TryUnregister();
+            return false;
         }
 
         private void TryUnregister()
@@ -481,12 +567,20 @@ namespace Hecton8.Interaction
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
-                    if (currentService != null)
-                        TryRegister();
+                    TryUnregister();
+                    if (currentService == null || !TryRegister())
+                        ClearRuntimeStateForLostDispatcherRoute();
                     break;
             }
+        }
+
+        private void ClearRuntimeStateForLostDispatcherRoute()
+        {
+            ClearHandTarget();
+            _pressedLastTick = false;
+            _pendingPressHaptic = false;
+            _pendingPressHapticMotorMask = 0;
+            _tickAccumulator = 0f;
         }
 
         private void TryRegisterHotSwapListener()
@@ -510,6 +604,11 @@ namespace Hecton8.Interaction
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        private static bool IsFinite(float2 value)
+        {
+            return math.all(math.isfinite(value));
         }
 
         private static bool IsFinite(Quaternion value)

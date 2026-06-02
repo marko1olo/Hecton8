@@ -1,16 +1,16 @@
 // ============================================================================
-// HECTON-8 — SurvivalHUDController.cs
+// HECTON-8 - SurvivalHUDController.cs
 // HUD bars for survival stats (O2, Health, Hunger, Thirst).
 //
 // ARCHITECTURE:
-//   • ILateFrameTickable for VISUAL_SYNC updates (no Update)
-//   • Zero GC: reads directly from HectonSurvivalSystem
-//   • UI Image fill patterns for bars
+//   - ILateFrameTickable for VISUAL_SYNC updates (no Update)
+//   - Zero GC: reads directly from HectonSurvivalSystem
+//   - UI Image fill patterns for bars
 //
 // FEATURES:
-//   • Displays O2, Health, Hunger, Thirst as fill bars
-//   • Color changes at critical levels
-//   • Flash effect when critical
+//   - Displays O2, Health, Hunger, Thirst as fill bars
+//   - Color changes at critical levels
+//   - Flash effect when critical
 // ============================================================================
 
 namespace Hecton8.UI
@@ -28,11 +28,11 @@ namespace Hecton8.UI
     /// </summary>
     public class SurvivalHUDController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Bar References ─────────────────────────────")]
+        [Header("-- Bar References -----------------------------")]
         [Tooltip("Oxygen bar fill image.")]
         [SerializeField] private Image oxygenBar;
 
@@ -45,7 +45,7 @@ namespace Hecton8.UI
         [Tooltip("Thirst bar fill image.")]
         [SerializeField] private Image thirstBar;
 
-        [Header("── Colors ──────────────────────────────────────")]
+        [Header("-- Colors --------------------------------------")]
         [Tooltip("Normal bar color.")]
         [SerializeField] private Color normalColor = new Color(0.2f, 0.8f, 1f);
 
@@ -55,36 +55,36 @@ namespace Hecton8.UI
         [Tooltip("Critical color (below 15%).")]
         [SerializeField] private Color criticalColor = new Color(1f, 0.2f, 0.2f);
 
-        [Header("── Oxygen Specific ────────────────────────────")]
+        [Header("-- Oxygen Specific ----------------------------")]
         [SerializeField] private Color oxygenNormalColor = new Color(0f, 0.8f, 1f);
         [SerializeField] private Color oxygenWarningColor = new Color(0f, 0.5f, 1f);
         [SerializeField] private Color oxygenCriticalColor = new Color(1f, 0.2f, 0.2f);
 
-        [Header("── Health Specific ────────────────────────────")]
+        [Header("-- Health Specific ----------------------------")]
         [SerializeField] private Color healthNormalColor = new Color(0.2f, 0.9f, 0.2f);
         [SerializeField] private Color healthWarningColor = new Color(1f, 0.7f, 0f);
         [SerializeField] private Color healthCriticalColor = new Color(1f, 0.2f, 0.2f);
 
-        [Header("── Hunger Specific ────────────────────────────")]
+        [Header("-- Hunger Specific ----------------------------")]
         [SerializeField] private Color hungerNormalColor = new Color(0.9f, 0.6f, 0.2f);
         [SerializeField] private Color hungerWarningColor = new Color(1f, 0.5f, 0f);
         [SerializeField] private Color hungerCriticalColor = new Color(1f, 0.2f, 0f);
 
-        [Header("── Thirst Specific ────────────────────────────")]
+        [Header("-- Thirst Specific ----------------------------")]
         [SerializeField] private Color thirstNormalColor = new Color(0.2f, 0.6f, 0.9f);
         [SerializeField] private Color thirstWarningColor = new Color(0.5f, 0.5f, 1f);
         [SerializeField] private Color thirstCriticalColor = new Color(0.8f, 0.2f, 0.8f);
 
-        [Header("── Flash Settings ─────────────────────────────")]
+        [Header("-- Flash Settings -----------------------------")]
         [Tooltip("Enable flashing when critical.")]
         [SerializeField] private bool enableFlash = true;
 
         [Tooltip("Flash speed (cycles per second).")]
         [SerializeField, Range(0.5f, 5f)] private float flashSpeed = 2f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private HectonSurvivalSystem _survivalSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -108,9 +108,9 @@ namespace Hecton8.UI
         private const float InvTwoPi = 0.15915494309f;
         private const int SurvivalResolveRetryFrames = 30;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
@@ -132,9 +132,9 @@ namespace Hecton8.UI
             UnregisterFromTick();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ILateFrameTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -195,9 +195,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void UpdateBar(Image bar, float normalized, Color normal, Color warning, Color critical, float flashValue)
         {
@@ -337,10 +337,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -348,7 +345,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
     }

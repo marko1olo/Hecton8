@@ -1,0 +1,30 @@
+---
+packet_id: P026_SIX_DOMAIN_LEDGER
+article_id: humanity.six_domain_ledger
+locale: zh_CN
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 六域账本
+
+六域账本把HECTON-8放进成熟的星际经济，同时避免把设定变成拥挤的太空歌剧。
+
+## Scanner
+
+账本列出六个主要人类节点：Sol、Centauri、Barnard、Tau Ceti、Luyten、Aegir。
+
+## Terminal
+
+Domain register：Sol Core法律、Centauri合法性、Barnard船厂、Tau Ceti公共仲裁、Luyten中继托管、Aegir企业claim。
+
+## Audio
+
+账本上有六个名字。没有一个能及时到达这间房。
+
+## Field Note
+
+文明在场。距离仍然获胜。
+
+<!-- External Site; generated from P026_SIX_DOMAIN_LEDGER/zh_CN. -->

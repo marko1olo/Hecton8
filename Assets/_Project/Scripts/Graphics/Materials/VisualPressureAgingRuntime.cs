@@ -305,6 +305,28 @@ namespace Hecton8.Graphics.Materials
                 active.Shutdown();
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorShutdownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActive;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.quitting -= ShutdownActive;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActive;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.quitting += ShutdownActive;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActive();
+            }
+        }
+#endif
+
         public static bool ValidateLayout()
         {
             bool sizeValid = UnsafeUtility.SizeOf<VisualAgingParamsDTO>() == 64 &&
@@ -1611,17 +1633,8 @@ namespace Hecton8.Graphics.Materials
             if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<VisualAgingParamsDTO>())
                 return false;
 
-            NativeArray<VisualAgingParamsDTO> mapped = destination.LockBufferForWrite<VisualAgingParamsDTO>(0, safeCount);
-            try
-            {
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>());
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<VisualAgingParamsDTO>(safeCount);
-            }
+            if (!GraphicsBufferUploadUtility.TryUploadNativeArrayRange(destination, source, 0, 0, safeCount))
+                return false;
 
             uploadedCount = safeCount;
             return true;
@@ -1637,17 +1650,8 @@ namespace Hecton8.Graphics.Materials
             if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<InstanceDegradationDTO>())
                 return false;
 
-            NativeArray<InstanceDegradationDTO> mapped = destination.LockBufferForWrite<InstanceDegradationDTO>(0, safeCount);
-            try
-            {
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<InstanceDegradationDTO>());
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<InstanceDegradationDTO>(safeCount);
-            }
+            if (!GraphicsBufferUploadUtility.TryUploadNativeArrayRange(destination, source, 0, 0, safeCount))
+                return false;
 
             uploadedCount = safeCount;
             return true;

@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.UI;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -8,14 +9,26 @@ namespace Hecton8.Input
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30988)]
-    public sealed class AccessibilitySettings : MonoBehaviour, IDispatcherSystem, IServiceShutdown
+    public sealed class AccessibilitySettings : MonoBehaviour, IDispatcherSystem, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         public const uint SystemHash = 0x41313332u;
+        public const float DefaultTextScale = 1f;
+        public const float MinimumTextScale = 0.78f;
+        public const float MaximumTextScale = 1.35f;
+        public const float DefaultUiMotionScale = 1f;
+        public const float MinimumUiMotionScale = 0f;
+        public const float MaximumUiMotionScale = 1f;
 
         [Header("Color Filter")]
         [SerializeField] private AccessibilityColorFilterMode colorFilterMode = AccessibilityColorFilterMode.Off;
         [SerializeField, Range(0f, 1f)] private float filterStrength01 = 1f;
         [SerializeField, Range(0f, 1f)] private float globalQualityWeight = 1f;
+
+        [Header("Text Scale")]
+        [SerializeField, Range(MinimumTextScale, MaximumTextScale)] private float textScale = DefaultTextScale;
+
+        [Header("Motion Comfort")]
+        [SerializeField, Range(MinimumUiMotionScale, MaximumUiMotionScale)] private float uiMotionScale = DefaultUiMotionScale;
 
         private static readonly int AccessibilityCBufferId = Shader.PropertyToID("HectonAccessibilityConfig");
         private static readonly int AccessibilityParamsId = Shader.PropertyToID("_HectonAccessibilityParams");
@@ -27,11 +40,16 @@ namespace Hecton8.Input
         private AccessibilityConfigDTO _lastUploadedConfig;
         private int _writeBufferIndex;
         private bool _registered;
+        private bool _registeredHotSwap;
         private bool _dirty = true;
         private bool _uploaded;
         private bool _duplicateInstance;
         private bool _serviceShutdownComplete;
         private bool _supportsConstantBuffers;
+        private bool _textScaleDirty = true;
+        private float _lastPublishedTextScale = -1f;
+        private bool _uiMotionScaleDirty = true;
+        private float _lastPublishedUiMotionScale = -1f;
 
         internal static AccessibilitySettings ActiveRuntimeInstance { get; private set; }
 
@@ -60,7 +78,10 @@ namespace Hecton8.Input
             CacheGraphicsCapabilitiesCold();
             TryColdBootstrapBuffers();
             RebuildConfig();
-            _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
+            _textScaleDirty = true;
+            _uiMotionScaleDirty = true;
+            TryRegisterHotSwapListener();
+            TryRegisterDispatcherSystem();
         }
 
         private void OnDisable()
@@ -75,6 +96,16 @@ namespace Hecton8.Input
 
         private void OnValidate()
         {
+            float safeTextScale = SanitizeTextScale(textScale);
+            if (math.abs(textScale - safeTextScale) > 0.0001f)
+                textScale = safeTextScale;
+
+            float safeUiMotionScale = SanitizeUiMotionScale(uiMotionScale);
+            if (math.abs(uiMotionScale - safeUiMotionScale) > 0.0001f)
+                uiMotionScale = safeUiMotionScale;
+
+            _textScaleDirty = true;
+            _uiMotionScaleDirty = true;
             RebuildConfig();
         }
 
@@ -84,6 +115,7 @@ namespace Hecton8.Input
                 return;
 
             _serviceShutdownComplete = true;
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(this);
@@ -99,19 +131,64 @@ namespace Hecton8.Input
             _activeConfigBuffer = null;
             _uploaded = false;
             _writeBufferIndex = 0;
+            _textScaleDirty = true;
+            _lastPublishedTextScale = -1f;
+            _uiMotionScaleDirty = true;
+            _lastPublishedUiMotionScale = -1f;
+            UIScreenShake.SetGlobalMotionScale(DefaultUiMotionScale);
         }
 
         public void SetColorFilter(AccessibilityColorFilterMode mode, float strength01, float qualityWeight01)
         {
             colorFilterMode = mode;
-            filterStrength01 = Mathf.Clamp01(strength01);
-            globalQualityWeight = Mathf.Clamp01(qualityWeight01);
+            filterStrength01 = Sanitize01(strength01);
+            globalQualityWeight = Sanitize01(qualityWeight01);
             RebuildConfig();
+        }
+
+        /// <summary>
+        /// Queues a continuous text scale update for diegetic UI and PDA presentation.
+        /// </summary>
+        public void SetTextScale(float scale)
+        {
+            float safeScale = SanitizeTextScale(scale);
+            if (math.abs(textScale - safeScale) <= 0.0001f)
+                return;
+
+            textScale = safeScale;
+            _textScaleDirty = true;
+        }
+
+        /// <summary>
+        /// Queues a continuous motion comfort update for UI-only presentation effects.
+        /// </summary>
+        public void SetUiMotionScale(float scale)
+        {
+            float safeScale = SanitizeUiMotionScale(scale);
+            if (math.abs(uiMotionScale - safeScale) <= 0.0001f)
+                return;
+
+            uiMotionScale = safeScale;
+            _uiMotionScaleDirty = true;
         }
 
         public AccessibilityConfigDTO ReadCurrentConfig()
         {
             return _currentConfig;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService != null)
+                TryRegisterDispatcherSystem();
+            else
+                _registered = false;
         }
 
         public void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -130,7 +207,11 @@ namespace Hecton8.Input
         public void VisualSyncTick(in DispatcherTimingDTO timing)
         {
             if (!_dirty && _uploaded && ConfigEquals(in _currentConfig, in _lastUploadedConfig))
+            {
+                PublishTextScaleIfNeededVisualSync();
+                PublishUiMotionScaleIfNeededVisualSync();
                 return;
+            }
 
             Vector4 fallback = new Vector4(
                 _currentConfig.ColorMode,
@@ -144,6 +225,8 @@ namespace Hecton8.Input
                 _lastUploadedConfig = _currentConfig;
                 _uploaded = true;
                 _dirty = false;
+                PublishTextScaleIfNeededVisualSync();
+                PublishUiMotionScaleIfNeededVisualSync();
                 return;
             }
 
@@ -167,12 +250,28 @@ namespace Hecton8.Input
             _lastUploadedConfig = _currentConfig;
             _uploaded = true;
             _dirty = false;
+            PublishTextScaleIfNeededVisualSync();
+            PublishUiMotionScaleIfNeededVisualSync();
         }
 
         private void RebuildConfig()
         {
-            float strength = Mathf.Clamp01(filterStrength01);
-            float quality = Mathf.Clamp01(globalQualityWeight);
+            float strength = Sanitize01(filterStrength01);
+            float quality = Sanitize01(globalQualityWeight);
+            float safeTextScale = SanitizeTextScale(textScale);
+            float safeUiMotionScale = SanitizeUiMotionScale(uiMotionScale);
+            if (math.abs(textScale - safeTextScale) > 0.0001f)
+            {
+                textScale = safeTextScale;
+                _textScaleDirty = true;
+            }
+
+            if (math.abs(uiMotionScale - safeUiMotionScale) > 0.0001f)
+            {
+                uiMotionScale = safeUiMotionScale;
+                _uiMotionScaleDirty = true;
+            }
+
             uint mode = (uint)colorFilterMode;
             uint flags = (uint)AccessibilityConfigFlags.ContinuousQualityWeight;
             if (mode != 0u && strength > 0.0001f)
@@ -188,6 +287,42 @@ namespace Hecton8.Input
                 _currentConfig = next;
                 _dirty = true;
             }
+        }
+
+        private void PublishTextScaleIfNeededVisualSync()
+        {
+            float safeScale = SanitizeTextScale(textScale);
+            if (math.abs(textScale - safeScale) > 0.0001f)
+            {
+                textScale = safeScale;
+                _textScaleDirty = true;
+            }
+
+            if (!_textScaleDirty && math.abs(_lastPublishedTextScale - safeScale) <= 0.0001f)
+                return;
+
+            if (!FontStreamingManager.RequestAccessibilityTextScale(safeScale))
+                return;
+
+            _lastPublishedTextScale = safeScale;
+            _textScaleDirty = false;
+        }
+
+        private void PublishUiMotionScaleIfNeededVisualSync()
+        {
+            float safeScale = SanitizeUiMotionScale(uiMotionScale);
+            if (math.abs(uiMotionScale - safeScale) > 0.0001f)
+            {
+                uiMotionScale = safeScale;
+                _uiMotionScaleDirty = true;
+            }
+
+            if (!_uiMotionScaleDirty && math.abs(_lastPublishedUiMotionScale - safeScale) <= 0.0001f)
+                return;
+
+            UIScreenShake.SetGlobalMotionScale(safeScale);
+            _lastPublishedUiMotionScale = safeScale;
+            _uiMotionScaleDirty = false;
         }
 
         private void TryColdBootstrapBuffers()
@@ -246,6 +381,31 @@ namespace Hecton8.Input
                    _configBufferB.IsValid();
         }
 
+        private void TryRegisterDispatcherSystem()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private GraphicsBuffer ResolveNextBuffer()
         {
             _writeBufferIndex ^= 1;
@@ -299,6 +459,27 @@ namespace Hecton8.Input
                    a.Flags == b.Flags &&
                    math.abs(a.FilterStrength01 - b.FilterStrength01) <= 0.000001f &&
                    math.abs(a.GlobalQualityWeight - b.GlobalQualityWeight) <= 0.000001f;
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeTextScale(float scale)
+        {
+            if (!math.isfinite(scale) || scale <= 0f)
+                return DefaultTextScale;
+
+            return math.clamp(scale, MinimumTextScale, MaximumTextScale);
+        }
+
+        private static float SanitizeUiMotionScale(float scale)
+        {
+            if (!math.isfinite(scale))
+                return DefaultUiMotionScale;
+
+            return math.clamp(scale, MinimumUiMotionScale, MaximumUiMotionScale);
         }
     }
 }

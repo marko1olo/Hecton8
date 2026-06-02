@@ -24,6 +24,7 @@ namespace Hecton8.Prologue.Space
         [SerializeField] private uint minWhiteoutFramesBeforeWorldLoad = 2u;
 
         private ISceneService _sceneService;
+        private IOrbitalDirector _orbitalDirector;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _handoffQueued;
@@ -43,6 +44,7 @@ namespace Hecton8.Prologue.Space
         private void OnEnable()
         {
             _sceneService = GlobalRegistry.Scene;
+            _orbitalDirector = GlobalRegistry.OrbitalDirector;
             TryRegisterHotSwapListener();
             TryRegisterLateFrame();
         }
@@ -52,6 +54,7 @@ namespace Hecton8.Prologue.Space
             TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             _sceneService = null;
+            _orbitalDirector = null;
             _handoffQueued = false;
             _loadRequested = false;
             _missingSceneServiceReported = false;
@@ -91,7 +94,11 @@ namespace Hecton8.Prologue.Space
                 _sceneService = currentService as ISceneService;
                 if (isActiveAndEnabled)
                     TryLoadWorldIfReady(SystemDispatcher.CurrentFrameId);
+                return;
             }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OrbitalDirectorRuntime)
+                _orbitalDirector = currentService as IOrbitalDirector;
         }
 
         private void ConsumePrologueCompleteSignals(uint frame)
@@ -104,15 +111,16 @@ namespace Hecton8.Prologue.Space
             for (int i = 0; i < signals.Length; i++)
             {
                 PrologueCompleteSignal signal = signals[i];
-                if (!IsOceanHandoff(in signal))
+                if (!IsOceanHandoff(in signal) &&
+                    !IsStandaloneOrbitalWhiteout(in signal))
                     continue;
 
-                _handoffQueued = true;
-                _handoffFrame = frame;
-                _missingSceneServiceReported = false;
-                _sceneLoadBlockedReported = false;
+                QueueWorldHandoff(frame);
                 return;
             }
+
+            if (TryResolveStandaloneOrbitalWhiteout())
+                QueueWorldHandoff(frame);
         }
 
         private void TryLoadWorldIfReady(uint frame)
@@ -138,8 +146,7 @@ namespace Hecton8.Prologue.Space
 
             _loadRequested = true;
             TryUnregisterLateFrame();
-            RefreshGameStartContextHandoff();
-            sceneService.LoadScene(string.IsNullOrEmpty(targetWorldSceneName) ? DefaultWorldSceneName : targetWorldSceneName);
+            _ = LoadWorldOnNextFrameAsync();
         }
 
         private void TryRegisterLateFrame()
@@ -147,7 +154,7 @@ namespace Hecton8.Prologue.Space
             if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (GlobalRegistry.TickDispatcher == null)
             {
                 PublishOnce(ref _missingDispatcherReported, MissingDispatcherHash);
                 return;
@@ -192,6 +199,38 @@ namespace Hecton8.Prologue.Space
                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
         }
 
+        private static bool IsStandaloneOrbitalWhiteout(in PrologueCompleteSignal signal)
+        {
+            return signal.Phase == PrologueCompleteSignal.PhaseWhiteout &&
+                   signal.SourceHash == PrologueSignalSourceHashes.OrbitalRelativityDirector &&
+                   signal.Sequence != 0 &&
+                   math.isfinite(signal.WhiteoutHoldSeconds) &&
+                   signal.WhiteoutHoldSeconds >= 0f &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
+        }
+
+        private bool TryResolveStandaloneOrbitalWhiteout()
+        {
+            IOrbitalDirector orbital = _orbitalDirector;
+            return orbital != null &&
+                   orbital.TryGetSnapshot(out OrbitalDirectorSnapshot snapshot) &&
+                   math.isfinite(snapshot.CloudWhiteout01) &&
+                   math.isfinite(snapshot.PlanetDistanceMeters) &&
+                   snapshot.CloudWhiteout01 >= 0.98f &&
+                   snapshot.PlanetDistanceMeters <= 1f;
+        }
+
+        private void QueueWorldHandoff(uint frame)
+        {
+            if (_handoffQueued)
+                return;
+
+            _handoffQueued = true;
+            _handoffFrame = frame;
+            _missingSceneServiceReported = false;
+            _sceneLoadBlockedReported = false;
+        }
+
         private static void RefreshGameStartContextHandoff()
         {
             if (GameStartContextHolder.TryGetCurrentOrRestore(out GameStartContext context) &&
@@ -199,6 +238,35 @@ namespace Hecton8.Prologue.Space
             {
                 GameStartContextHolder.SetCurrent(context);
             }
+        }
+
+        private async Awaitable LoadWorldOnNextFrameAsync()
+        {
+            await Awaitable.NextFrameAsync(destroyCancellationToken);
+            if (!Application.isPlaying || !isActiveAndEnabled)
+            {
+                _loadRequested = false;
+                return;
+            }
+
+            RefreshGameStartContextHandoff();
+            string sceneName = string.IsNullOrEmpty(targetWorldSceneName) ? DefaultWorldSceneName : targetWorldSceneName;
+            ISceneService sceneService = _sceneService;
+            if (sceneService == null)
+            {
+                _loadRequested = false;
+                PublishOnce(ref _missingSceneServiceReported, MissingSceneServiceHash);
+                return;
+            }
+
+            if (!sceneService.CanLoadScene)
+            {
+                _loadRequested = false;
+                PublishOnce(ref _sceneLoadBlockedReported, SceneLoadBlockedHash);
+                return;
+            }
+
+            sceneService.LoadScene(sceneName);
         }
 
         private static void PublishOnce(ref bool reported, uint warningHash)

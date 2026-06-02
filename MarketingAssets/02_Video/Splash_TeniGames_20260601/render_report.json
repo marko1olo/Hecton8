@@ -1,0 +1,31 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "duration_sec": 5.0,
+  "font_title": "C:/Windows/Fonts/Poppins-Bold.ttf",
+  "font_jp": "C:/Windows/Fonts/YuGothB.ttc",
+  "font_mono": "C:/Windows/Fonts/CascadiaMono.ttf",
+  "ffmpeg": "C:\\Users\\danat\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\ffmpeg.EXE",
+  "outputs": {
+    "normal": {
+      "mp4": "C:\\hades\\Hecton8\\MarketingAssets\\02_Video\\Splash_TeniGames_20260601\\tenigames_splash_normal_1080p.mp4",
+      "mp4_mb": 8.81,
+      "gif": "C:\\hades\\Hecton8\\MarketingAssets\\02_Video\\Splash_TeniGames_20260601\\tenigames_splash_normal_960w.gif",
+      "gif_mb": 17.07
+    },
+    "mirror": {
+      "mp4": "C:\\hades\\Hecton8\\MarketingAssets\\02_Video\\Splash_TeniGames_20260601\\tenigames_splash_mirror_1080p.mp4",
+      "mp4_mb": 10.12,
+      "gif": "C:\\hades\\Hecton8\\MarketingAssets\\02_Video\\Splash_TeniGames_20260601\\tenigames_splash_mirror_960w.gif",
+      "gif_mb": 17.42
+    }
+  },
+  "comparison": "C:\\hades\\Hecton8\\MarketingAssets\\02_Video\\Splash_TeniGames_20260601\\tenigames_splash_comparison_contact_sheet.png",
+  "comparison_mb": 0.8,
+  "notes": [
+    "offline deterministic raster render",
+    "no Unity runtime code generated",
+    "GIF exports are intentionally 960w/10fps for practical preview size"
+  ]
+}

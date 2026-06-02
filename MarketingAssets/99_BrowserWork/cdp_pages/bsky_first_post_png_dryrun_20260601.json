@@ -1,0 +1,371 @@
+{
+  "generated_at": "2026-05-31T20:17:01.313Z",
+  "platform": "bluesky",
+  "mode": "dryrun",
+  "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+  "mediaPath": "C:\\hades\\Hecton8\\MarketingAssets\\00_Brand\\PlatformExports\\bluesky_profile_1000.png",
+  "readyState": {
+    "url": "https://bsky.app/",
+    "title": "Discover — Bluesky",
+    "textareas": [
+      {
+        "i": 0,
+        "text": "Teni Games is the name. Submerge is the game.\n\nPressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.\n\nThis is profile art, not gameplay.",
+        "role": null,
+        "aria": null,
+        "rect": {
+          "x": 474.0625,
+          "y": 108.5096206665039,
+          "w": 491.09375,
+          "h": 131.97116088867188,
+          "cx": 719.609375,
+          "cy": 174.49520111083984
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "i": 0,
+        "text": "What's up?",
+        "disabled": false,
+        "rect": {
+          "x": 394.30767822265625,
+          "y": 91.97115325927734,
+          "w": 600,
+          "h": 65.98558044433594,
+          "cx": 694.3076782226562,
+          "cy": 124.96394348144531
+        }
+      },
+      {
+        "i": 1,
+        "text": "Add image",
+        "disabled": false,
+        "rect": {
+          "x": 955.3173217773438,
+          "y": 111.97115325927734,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 967.3125143051147,
+          "cy": 123.96634578704834
+        }
+      },
+      {
+        "i": 2,
+        "text": "",
+        "disabled": false,
+        "rect": {
+          "x": 464.295654296875,
+          "y": 218.68991088867188,
+          "w": 382.4278869628906,
+          "h": 515.0120239257812,
+          "cx": 655.5095977783203,
+          "cy": 476.1959228515625
+        }
+      },
+      {
+        "i": 3,
+        "text": "333",
+        "disabled": false,
+        "rect": {
+          "x": 458.2980651855469,
+          "y": 739.6875,
+          "w": 56.262020111083984,
+          "h": 27.992788314819336,
+          "cx": 486.42907524108887,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 4,
+        "text": "4K",
+        "disabled": false,
+        "rect": {
+          "x": 566.9639282226562,
+          "y": 739.6875,
+          "w": 49.25481033325195,
+          "h": 27.992788314819336,
+          "cx": 591.5913333892822,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 5,
+        "text": "12K",
+        "disabled": false,
+        "rect": {
+          "x": 675.6298217773438,
+          "y": 739.6875,
+          "w": 54.11057662963867,
+          "h": 27.992788314819336,
+          "cx": 702.6851100921631,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 6,
+        "text": "Add to saved posts",
+        "disabled": false,
+        "rect": {
+          "x": 879.34375,
+          "y": 739.6875,
+          "w": 27.992788314819336,
+          "h": 27.992788314819336,
+          "cx": 893.3401441574097,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 7,
+        "text": "Open share menu",
+        "disabled": false,
+        "rect": {
+          "x": 915.329345703125,
+          "y": 739.6875,
+          "w": 27.992788314819336,
+          "h": 27.992788314819336,
+          "cx": 929.3257398605347,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 8,
+        "text": "Open post options menu",
+        "disabled": false,
+        "rect": {
+          "x": 951.3148803710938,
+          "y": 739.6875,
+          "w": 27.992788314819336,
+          "h": 27.992788314819336,
+          "cx": 965.3112745285034,
+          "cy": 753.6838941574097
+        }
+      },
+      {
+        "i": 9,
+        "text": "Teni Games\n‪@teni-games.bsky.social‬",
+        "disabled": false,
+        "rect": {
+          "x": 170.30526733398438,
+          "y": 15.997596740722656,
+          "w": 208.0048065185547,
+          "h": 47.99279022216797,
+          "cx": 274.3076705932617,
+          "cy": 39.99399185180664
+        }
+      },
+      {
+        "i": 10,
+        "text": "New post",
+        "disabled": false,
+        "rect": {
+          "x": 182.3004608154297,
+          "y": 523.8101196289062,
+          "w": 137.59616088867188,
+          "h": 43.990386962890625,
+          "cx": 251.09854125976562,
+          "cy": 545.8053131103516
+        }
+      },
+      {
+        "i": 11,
+        "text": "Trending options",
+        "disabled": false,
+        "rect": {
+          "x": 1286.53125,
+          "y": 242.7163543701172,
+          "w": 25,
+          "h": 25,
+          "cx": 1299.03125,
+          "cy": 255.2163543701172
+        }
+      },
+      {
+        "i": 12,
+        "text": "Cancel",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 58.762020111083984,
+          "w": 63.605770111083984,
+          "h": 35.98557662963867,
+          "cx": 442.8726177215576,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 13,
+        "text": "Drafts",
+        "disabled": false,
+        "rect": {
+          "x": 858.8221435546875,
+          "y": 58.762020111083984,
+          "w": 67.09134674072266,
+          "h": 35.98557662963867,
+          "cx": 892.3678169250488,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 14,
+        "text": "Post",
+        "disabled": false,
+        "rect": {
+          "x": 933.8942260742188,
+          "y": 58.762020111083984,
+          "w": 59.65144348144531,
+          "h": 35.98557662963867,
+          "cx": 963.7199478149414,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 15,
+        "text": "ALT",
+        "disabled": false,
+        "rect": {
+          "x": 427.06732177734375,
+          "y": 279.4711608886719,
+          "w": 55.3125,
+          "h": 17.980770111083984,
+          "cx": 454.72357177734375,
+          "cy": 288.46154594421387
+        }
+      },
+      {
+        "i": 16,
+        "text": "Edit image",
+        "disabled": false,
+        "rect": {
+          "x": 605.108154296875,
+          "y": 279.4711608886719,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 617.103346824646,
+          "cy": 291.46635341644287
+        }
+      },
+      {
+        "i": 17,
+        "text": "Remove image",
+        "disabled": false,
+        "rect": {
+          "x": 637.0913696289062,
+          "y": 279.4711608886719,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 649.0865621566772,
+          "cy": 291.46635341644287
+        }
+      },
+      {
+        "i": 18,
+        "text": "Add alt text",
+        "disabled": false,
+        "rect": {
+          "x": 423.0649108886719,
+          "y": 301.4783630371094,
+          "w": 242.0192413330078,
+          "h": 216.00961303710938,
+          "cx": 544.0745315551758,
+          "cy": 409.48316955566406
+        }
+      },
+      {
+        "i": 19,
+        "text": "Anyone can interact",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 605.7451782226562,
+          "w": 182.4038543701172,
+          "h": 32.980770111083984,
+          "cx": 502.2716598510742,
+          "cy": 622.2355632781982
+        }
+      },
+      {
+        "i": 20,
+        "text": "Labels",
+        "disabled": false,
+        "rect": {
+          "x": 601.4663696289062,
+          "y": 605.7451782226562,
+          "w": 97.99279022216797,
+          "h": 32.980770111083984,
+          "cx": 650.4627647399902,
+          "cy": 622.2355632781982
+        }
+      },
+      {
+        "i": 21,
+        "text": "Add media to post",
+        "disabled": false,
+        "rect": {
+          "x": 410.0721130371094,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 430.060094833374,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 22,
+        "text": "Select GIF",
+        "disabled": true,
+        "rect": {
+          "x": 450.048095703125,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 470.03607749938965,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 23,
+        "text": "Open emoji picker",
+        "disabled": false,
+        "rect": {
+          "x": 490.0240478515625,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 510.01202964782715,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 24,
+        "text": "Add another post to thread",
+        "disabled": false,
+        "rect": {
+          "x": 802.3677978515625,
+          "y": 651.4783935546875,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 822.3557796478271,
+          "cy": 671.4663753509521
+        }
+      },
+      {
+        "i": 25,
+        "text": "English",
+        "disabled": false,
+        "rect": {
+          "x": 842.34375,
+          "y": 654.9759521484375,
+          "w": 74.20673370361328,
+          "h": 32.980770111083984,
+          "cx": 879.4471168518066,
+          "cy": 671.4663372039795
+        }
+      }
+    ],
+    "body": "Discover\nFollowing\nVideo\nWhat's up?\n‪Alberduh is free to be dumb‬\n ‪@alberduhfreedumb.bsky.social‬\n· 1d\nWe have to stop data centres from being built.\n333\n4K\n12K\n‪Lizzer58‬\n ‪@lizpazera.bsky.social‬\n· 9h\nMy friend died of cancer. I told him I would take his dog after he died. This is Pepper. She gets along with my two dogs and two cats. She is family now.\n668\n657\n14K\n‪wyotitania‬\n ‪@wyotitania.bsky.social‬\n· 1d\nButchart Gardens near Victoria, BC. \nA very proper, gorgeous garden grown on a former limestone quarry. \n\n#BlueSkyArtShow #Growth\nALT\n209\n662\n5.3K\n‪Jenn‬\n ‪@geekgalgroks.bsky.social‬\n· 20h\nI'm guessing if I'm at a cat cafe and a kitty climbs up a cat tower to head butt me and then flips over for pets and chin scratches, I've been chosen?\n\nCause I filled out an application for that orange weirdo.\n215\n204\n4.5K\n‪Marko Silberhand‬\n ‪@markosilberhand.bsky.social‬\n· 6h\n.\nBook Recommendations . . .  ?!\n\nI love this !\n\n#BookSky  💙  📚\n.\n105\n580\n3.4K\n‪Sredni Eel‬\n ‪@srednieel.bsky.social‬\n· 1d\nHere’s a gosling. I think I’ll call him Ryan. He’s a Canadian.\nALT\n141\n502\n6.4K\n‪Kat Abughazaleh‬\n ‪@katmabu.bsky.social‬\n· 4h\nInterrupting our collective doomscrolling to ask the public what the best global culinary creation is.\n\nBy that, I mean what is your favorite type of dish that was somehow made by every society in some form? Mine is the dumpling.\n451\n279\n1.3K\n‪alexvonwitzleben.bsky.social‬\n ‪@alexvonwitzleben.bsky.social‬\n· 1d\n#Scotland is establishing itself as a premier global leader in #renewableenergy as its powerful wind turbines now generate enough clean electricity to potentially supply more than twice the nation’s entire current demand. www.enerdynamics.com/Energy-Curre... #ActOnClimate #ClimateActionNow\n235\n1.9K\n7K\n‪4fuxake‬\n ‪@blueheartedly1.bsky.social‬\n· 1d\nIt's crazy how we have both the World Cup and America 250 this year, and almost no one cares about them because this regime has wholly sucked the joy out of even momentous national events.\n673\n3.3K\n16K\n‪Scott‬\n ‪@scottwilks.bsky.social‬\n· 5h\nNew headliner announced for the Freedom 250 concert\nALT\n135\n632\n2.8K\n‪🍁🇨🇦Team Canada Forever🇨🇦🍁‬\n ‪@teamcanadaforever.bsky.social‬\n· 17h\nLake Louise is a Piece of Heaven, Canada 2026 🇨🇦\n92\n337\n2.8K\n‪not-argh.bsky.social‬\n ‪@not-argh.bsky.social‬\n· 17h\nAlmost died on this hike but it was worth it in the end\n22\n47\n685\n‪Luca‬\n ‪@lucagalletti.bsky.social‬\n· 17h\nGreat day for a bath 💦\n\nIG: birds_perfection\n92\n668\n4.7K\n‪Forbes‬\n ‪@forbes.com‬\n· 3h\nA24 said its 20-year-old director is the youngest ever to top the box office.\n‘Backrooms’ Sets A24 Record With $81 Million Opening Weekend—Beating Out ‘Obsession’ And ‘Mandalorian’\nA24 said its 20-year-old director is the youngest ever to top the box office.\nwww.forbes.com\n17\n62\n430\n‪El Howieson‬\n ‪@elhowieson.bsky.social‬\n· 6h\n👇🏽👇🏽👇🏽\n56\n1.3K\n4.2K\n‪Writers Write‬\n ‪@writers-write.bsky.social‬\n· 8h\nvia \n@forreadingaddicts.bsky.social\n #booksky\n23\n163\n355\n‪firstname lastname‬\n ‪@jc-roper.bsky.social‬\n· 3h\nThere’s one real answer to this and it’s cheese\n‪Kat Abughazaleh‬\n ‪@katmabu.bsky.social‬\n· 4h\nInterrupting our collective doomscrolling to ask the public what the best global culinary creation is.\n\nBy that, I mean what is your favorite type of dish that was somehow made by every society in some form? Mine is the dumpling.\n43\n16\n425\n‪Jane Fonda Climate PAC (JanePAC)‬\n ‪@janeclimatepac.bsky.social‬\n· 1h\nHey, Los Angeles 📣📣 TONIGHT'S THE NIGHT! Join us on at Fonda Theatre for Stand Up for Climate & Democracy with \n@janefonda.com\n \n\n@iamwandasykes.bsky.social\n \n@chelseahandler.bsky.social\n \n@pattonoswalt.bsky.social\n \n@tiffanyhaddish.bsky.social\n \n\nJust a few tickets remaining — JanePAC.com/comedyshow\n11\n143\n398\n‪Angry‬\n ‪@angrystaffer.bsky.social‬\n· 3h\n“Everything costs more and that’s a good thing” is a CRAZY economic message from the White House\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 4h\nHassett: \"People are spending more on gas, but they're also spending more on everything else -- n"
+  },
+  "beforeScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_first_post_png_dryrun_20260601_dryrun.png",
+  "afterScreenshot": null,
+  "clickResult": null
+}

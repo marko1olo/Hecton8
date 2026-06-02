@@ -3,15 +3,27 @@ from __future__ import annotations
 
 import argparse
 
-from H8VerifyCore import require_aligned
+from H8VerifyCore import verify_h8bd_manifest
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--hash-audit", action="store_true")
-    parser.parse_args()
-    size = require_aligned("Assets/_Project/Data/Localization/Babel_Dictionary.h8bin")
-    print(f"VERIFY BABEL OK: records=32672 sources=45 bytes={size} alignment=16 endian=little hashCollisions=0")
+    args = parser.parse_args()
+    evidence = verify_h8bd_manifest(hash_audit=args.hash_audit)
+    header = evidence["header"]
+    manifest = evidence["manifest"]
+    print(
+        "VERIFY BABEL OK: "
+        f"records={header['entryCount']} "
+        f"sources={evidence['sourceCount']} "
+        f"bytes={evidence['size']} "
+        f"languages={evidence['languageCount']} "
+        f"payload={header['payloadBytes']} "
+        f"word_count={header['wordCount']} "
+        f"constants={manifest.get('constantsCount')} "
+        "alignment=16 endian=little hashCollisions=0"
+    )
     return 0
 
 

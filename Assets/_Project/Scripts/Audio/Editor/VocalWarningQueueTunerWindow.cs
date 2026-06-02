@@ -1,3 +1,4 @@
+using System.Text;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Unity.Mathematics;
@@ -13,7 +14,8 @@ namespace Hecton8.Audio.Editor
         private const double RefreshSeconds = 0.25;
 
         private readonly float[] _prioritySamples = new float[GraphSampleCount];
-        private readonly float[] _priorityWordSamples = new float[GraphSampleCount];
+        private readonly float[] _alarmMaskSamples = new float[GraphSampleCount];
+        private readonly StringBuilder _statusBuilder = new StringBuilder(256);
 
         private Label _status;
         private Slider _hullPriority;
@@ -25,23 +27,23 @@ namespace Hecton8.Audio.Editor
         private double _nextRefreshTime;
         private bool _refreshing;
 
-        [MenuItem("Hecton8/Audio/Vocal Warning Queue Tuner")]
+        [MenuItem("Hecton8/Audio/Vocal Warning Alarm Mask Tuner")]
         public static void Open()
         {
             VocalWarningQueueTunerWindow window = GetWindow<VocalWarningQueueTunerWindow>();
-            window.titleContent = new GUIContent("Vocal Queue");
+            window.titleContent = new GUIContent("Vocal Alarm Mask");
             window.minSize = new Vector2(420f, 360f);
             window.Show();
         }
 
         private void OnEnable()
         {
-            EditorApplication.update += OnEditorUpdate;
+            EditorApplication.update += OnEditorHeartbeat;
         }
 
         private void OnDisable()
         {
-            EditorApplication.update -= OnEditorUpdate;
+            EditorApplication.update -= OnEditorHeartbeat;
         }
 
         public void CreateGUI()
@@ -116,14 +118,10 @@ namespace Hecton8.Audio.Editor
 
         private static VocalWarningSystem ResolveRuntime()
         {
-#if UNITY_2023_1_OR_NEWER
-            return Object.FindAnyObjectByType<VocalWarningSystem>();
-#else
-            return Object.FindObjectOfType<VocalWarningSystem>();
-#endif
+            return GlobalRegistry.VocalWarnings as VocalWarningSystem;
         }
 
-        private void OnEditorUpdate()
+        private void OnEditorHeartbeat()
         {
             if (EditorApplication.timeSinceStartup < _nextRefreshTime)
                 return;
@@ -156,26 +154,27 @@ namespace Hecton8.Audio.Editor
                 if (runtime.EditorTryGetTelemetrySample(GraphSampleCount - 1 - i, out VocalWarningSystem.VocalWarningTelemetrySnapshot sample))
                 {
                     _prioritySamples[i] = math.saturate(sample.CurrentPriorityScore * (1f / 1400f));
-                    _priorityWordSamples[i] = math.saturate(sample.ActivePriorityCount * (1f / math.max(1f, runtime.EditorQueueCapacity)));
+                    _alarmMaskSamples[i] = math.saturate(sample.ActivePriorityCount * (1f / math.max(1f, runtime.EditorQueueCapacity)));
                 }
                 else
                 {
                     _prioritySamples[i] = 0f;
-                    _priorityWordSamples[i] = 0f;
+                    _alarmMaskSamples[i] = 0f;
                 }
             }
 
             if (_status != null)
             {
-                _status.text =
-                    $"Initialized: {runtime.IsInitialized}\n" +
-                    $"Pending: {runtime.PendingCount}/{runtime.EditorQueueCapacity}\n" +
-                    $"Current ID: {runtime.CurrentWarningId}\n" +
-                    $"Current priority: {runtime.EditorCurrentPriorityScore:0.0}\n" +
-                    $"Burst micros: {runtime.EditorLastBurstExecutionMicros:0.0}\n" +
-                    $"DTO size: {VocalWarningSystem.EditorVocalWarningDtoSizeBytes} bytes\n" +
-                    $"Tuning DTO size: {VocalWarningSystem.EditorVocalWarningTuningDtoSizeBytes} bytes\n" +
-                    $"Direction hash: 0x{runtime.EditorLastDirectionHash:X4}";
+                _statusBuilder.Clear();
+                _statusBuilder.Append("Initialized: ").Append(runtime.IsInitialized).Append('\n');
+                _statusBuilder.Append("Active alarm slots: ").Append(runtime.PendingCount).Append('/').Append(runtime.EditorQueueCapacity).Append('\n');
+                _statusBuilder.Append("Current ID: ").Append(runtime.CurrentWarningId).Append('\n');
+                _statusBuilder.Append("Current priority: ").Append(runtime.EditorCurrentPriorityScore.ToString("0.0")).Append('\n');
+                _statusBuilder.Append("Burst micros: ").Append(runtime.EditorLastBurstExecutionMicros.ToString("0.0")).Append('\n');
+                _statusBuilder.Append("DTO size: ").Append(VocalWarningSystem.EditorVocalWarningDtoSizeBytes).Append(" bytes").Append('\n');
+                _statusBuilder.Append("Tuning DTO size: ").Append(VocalWarningSystem.EditorVocalWarningTuningDtoSizeBytes).Append(" bytes").Append('\n');
+                _statusBuilder.Append("Direction hash: 0x").Append(runtime.EditorLastDirectionHash.ToString("X4"));
+                _status.text = _statusBuilder.ToString();
             }
 
             _refreshing = false;
@@ -233,7 +232,7 @@ namespace Hecton8.Audio.Editor
 
             Painter2D painter = context.painter2D;
             DrawSeries(painter, rect, _prioritySamples, new Color(0.95f, 0.24f, 0.12f, 0.95f), 0f);
-            DrawSeries(painter, rect, _priorityWordSamples, new Color(0.18f, 0.7f, 1f, 0.85f), 8f);
+            DrawSeries(painter, rect, _alarmMaskSamples, new Color(0.18f, 0.7f, 1f, 0.85f), 8f);
         }
 
         private static void DrawSeries(Painter2D painter, Rect rect, float[] samples, Color color, float yOffset)

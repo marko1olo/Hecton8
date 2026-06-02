@@ -1,0 +1,30 @@
+---
+packet_id: P003_BARNARD_MARK
+article_id: player.barnard_mark
+locale: en_US
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Barnard Mark
+
+The Barnard Mark turns salvage into motive. It connects the player to HECTON-8 through labor, tools, and names instead of exposition.
+
+## Scanner
+
+Barnard Yards stamp. Not Deep Reach issue. Somebody brought home equipment to the bottom of this moon.
+
+## Terminal
+
+PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED.
+
+## Audio
+
+That mark is Barnard. Same cut pattern. Same cheap alloy. Whoever carried this down here knew the same shops you did.
+
+## Field Note
+
+You can ignore a dead corporation. Harder to ignore a wrench from your own yard.
+
+<!-- External Site; generated from P003_BARNARD_MARK/en_US. -->

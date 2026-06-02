@@ -88,7 +88,13 @@ namespace Hecton8.QA.Headless.Editor
         private void PollPendingRun()
         {
             if (_pendingRun == null)
+            {
+                EditorApplication.update -= PollPendingRun;
+                EditorUtility.ClearProgressBar();
+                if (_runButton != null)
+                    _runButton.SetEnabled(true);
                 return;
+            }
 
             EditorUtility.DisplayProgressBar("Jacobi Power Fuzzer", "Waiting for scheduled Burst jobs", _pendingRun.ReadProgress01());
             if (!_pendingRun.IsCompleted())
@@ -102,16 +108,41 @@ namespace Hecton8.QA.Headless.Editor
             if (_pendingRun == null)
                 return;
 
-            _pendingRun.Complete(out PowerJacobiStressFuzzerResult result);
-            _pendingRun.Dispose();
-            _pendingRun = null;
-            EditorApplication.update -= PollPendingRun;
-            EditorUtility.ClearProgressBar();
+            PowerJacobiStressFuzzer.ScheduledRun run = _pendingRun;
+            PowerJacobiStressFuzzerResult result = default;
+            bool completed = false;
+            try
+            {
+                run.Complete(out result);
+                completed = true;
+            }
+            catch (Exception exception)
+            {
+                result.FailureFlags = PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption;
+                result.FirstFailureNodeHash = 1u;
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                run.Dispose();
+                if (ReferenceEquals(_pendingRun, run))
+                    _pendingRun = null;
+                EditorApplication.update -= PollPendingRun;
+                EditorUtility.ClearProgressBar();
+                if (_runButton != null)
+                    _runButton.SetEnabled(true);
+            }
+
+            if (!completed)
+            {
+                PowerJacobiStressFuzzerState.LastResult = result;
+                PowerJacobiStressFuzzerState.HasFailure = true;
+                PowerJacobiStressFuzzerState.LastFailureNodeHash = result.FirstFailureNodeHash;
+            }
+
             Refresh(result);
             _graphElement?.MarkDirtyRepaint();
             SceneView.RepaintAll();
-            if (_runButton != null)
-                _runButton.SetEnabled(true);
         }
 
         private void DisposePendingRun()

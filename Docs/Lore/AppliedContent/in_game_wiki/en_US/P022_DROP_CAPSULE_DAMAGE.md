@@ -1,0 +1,30 @@
+---
+packet_id: P022_DROP_CAPSULE_DAMAGE
+article_id: arrival.drop_capsule_damage
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Drop Capsule Damage
+
+The player reaches HECTON-8 by drop capsule. The crash leaves enough systems alive for shelter, power and logs, but destroys the ascent route. Early escape becomes an engineering chain, not a button.
+
+## Scanner
+
+Launch seat intact. Ascent path destroyed. This capsule is shelter, not a return vehicle.
+
+## Terminal
+
+Reentry blackbox: chute burn, ballast puncture, comm mast shear, ascent seal ruined. Orbit return requires external build chain.
+
+## Audio
+
+Capsule cannot climb. Stop treating it like a ship.
+
+## Field Note
+
+The first prison is mechanical.
+
+<!-- In-Game Wiki; generated from P022_DROP_CAPSULE_DAMAGE/en_US. -->

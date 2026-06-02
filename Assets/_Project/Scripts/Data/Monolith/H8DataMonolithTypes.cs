@@ -30,7 +30,7 @@ namespace Hecton8.Data
         public const int HeaderSizeBytes = 64;
 
         /// <summary>Fixed schema hash for the 1313 Data Monolith layout contract.</summary>
-        public const uint SchemaHash = 0x33313331u;
+        public const uint SchemaHash = 0x33313332u;
 
         /// <summary>Header/directory flag: blob payload is little-endian.</summary>
         public const uint BlobFlagLittleEndian = 1u;
@@ -61,6 +61,18 @@ namespace Hecton8.Data
 
         /// <summary>Physics scalar record size.</summary>
         public const int PhysicsConstantsRecordSize = 64;
+
+        /// <summary>Applied lore packet record size.</summary>
+        public const int AppliedLorePacketRecordSize = 128;
+
+        /// <summary>Applied lore route-card record size.</summary>
+        public const int AppliedLoreRouteRecordSize = 128;
+
+        /// <summary>Maximum packet hashes stored directly in one applied-lore route record.</summary>
+        public const int AppliedLoreRoutePacketCapacity = 8;
+
+        /// <summary>Maximum prerequisite packet hashes stored directly in one applied-lore route record.</summary>
+        public const int AppliedLoreRoutePrerequisiteCapacity = 4;
 
         /// <summary>Data Monolith telemetry ring entry size.</summary>
         public const int TelemetryEntrySize = 64;
@@ -99,7 +111,23 @@ namespace Hecton8.Data
         LocalizationUtf8 = 23u,
         SectorPageDirectory = 24u,
         Economy = 25u,
-        PhysicsConstants = 26u
+        PhysicsConstants = 26u,
+        AppliedLorePackets = 27u,
+        AppliedLoreRoutes = 28u
+    }
+
+    /// <summary>
+    /// Text surfaces exported from authoring packets into the runtime UTF-8 pool.
+    /// </summary>
+    public enum H8AppliedLoreSurface : byte
+    {
+        Title = 0,
+        Scanner = 1,
+        Terminal = 2,
+        Audio = 3,
+        InGameWiki = 4,
+        ExternalSite = 5,
+        FieldNote = 6
     }
 
     /// <summary>
@@ -591,6 +619,88 @@ namespace Hecton8.Data
         [FieldOffset(60)] public uint Reserved1;
     }
 
+    /// <summary>
+    /// Localized applied-lore packet. Sorted by PacketHash, then LocaleHash at bake time.
+    /// Text fields are bounded slices into the Data Monolith UTF-8 localization pool.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.AppliedLorePacketRecordSize)]
+    public struct H8AppliedLorePacketRecord
+    {
+        [FieldOffset(0)] public uint PacketHash;
+        [FieldOffset(4)] public uint LocaleHash;
+        [FieldOffset(8)] public uint ArticleHash;
+        [FieldOffset(12)] public uint UnlockHash;
+        [FieldOffset(16)] public uint SurfaceMask;
+        [FieldOffset(20)] public uint ReleaseSetHash;
+        [FieldOffset(24)] public uint TitleUtf8Offset;
+        [FieldOffset(28)] public uint ScannerUtf8Offset;
+        [FieldOffset(32)] public uint TerminalUtf8Offset;
+        [FieldOffset(36)] public uint AudioUtf8Offset;
+        [FieldOffset(40)] public uint WikiUtf8Offset;
+        [FieldOffset(44)] public uint SiteUtf8Offset;
+        [FieldOffset(48)] public uint FieldNoteUtf8Offset;
+        [FieldOffset(52)] public uint TitleUtf8ByteLength;
+        [FieldOffset(56)] public uint ScannerUtf8ByteLength;
+        [FieldOffset(60)] public uint TerminalUtf8ByteLength;
+        [FieldOffset(64)] public uint AudioUtf8ByteLength;
+        [FieldOffset(68)] public uint WikiUtf8ByteLength;
+        [FieldOffset(72)] public uint SiteUtf8ByteLength;
+        [FieldOffset(76)] public uint FieldNoteUtf8ByteLength;
+        [FieldOffset(80)] public uint PoiTagHash0;
+        [FieldOffset(84)] public uint PoiTagHash1;
+        [FieldOffset(88)] public uint BiomeTagHash0;
+        [FieldOffset(92)] public uint BiomeTagHash1;
+        [FieldOffset(96)] public uint Flags;
+        [FieldOffset(100)] public uint RecordIndex;
+        [FieldOffset(104)] public uint Reserved0;
+        [FieldOffset(108)] public uint Reserved1;
+        [FieldOffset(112)] public uint Reserved2;
+        [FieldOffset(116)] public uint Reserved3;
+        [FieldOffset(120)] public uint Reserved4;
+        [FieldOffset(124)] public uint Reserved5;
+    }
+
+    /// <summary>
+    /// Baked gameplay route card for applied-lore packets. Sorted by RouteCardHash at bake time.
+    /// Packet and prerequisite hashes are fixed inline arrays to keep lookup allocation-free.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.AppliedLoreRouteRecordSize)]
+    public struct H8AppliedLoreRouteRecord
+    {
+        [FieldOffset(0)] public uint RouteCardHash;
+        [FieldOffset(4)] public uint PhaseHash;
+        [FieldOffset(8)] public float DepthMinMeters;
+        [FieldOffset(12)] public float DepthMaxMeters;
+        [FieldOffset(16)] public uint PrimarySurfaceMask;
+        [FieldOffset(20)] public uint EndingPressureHash;
+        [FieldOffset(24)] public uint PacketCount;
+        [FieldOffset(28)] public uint RequiredPacketCount;
+        [FieldOffset(32)] public uint PacketHash0;
+        [FieldOffset(36)] public uint PacketHash1;
+        [FieldOffset(40)] public uint PacketHash2;
+        [FieldOffset(44)] public uint PacketHash3;
+        [FieldOffset(48)] public uint PacketHash4;
+        [FieldOffset(52)] public uint PacketHash5;
+        [FieldOffset(56)] public uint PacketHash6;
+        [FieldOffset(60)] public uint PacketHash7;
+        [FieldOffset(64)] public uint RequiredPacketHash0;
+        [FieldOffset(68)] public uint RequiredPacketHash1;
+        [FieldOffset(72)] public uint RequiredPacketHash2;
+        [FieldOffset(76)] public uint RequiredPacketHash3;
+        [FieldOffset(80)] public uint Flags;
+        [FieldOffset(84)] public uint RecordIndex;
+        [FieldOffset(88)] public uint Reserved0;
+        [FieldOffset(92)] public uint Reserved1;
+        [FieldOffset(96)] public uint Reserved2;
+        [FieldOffset(100)] public uint Reserved3;
+        [FieldOffset(104)] public uint Reserved4;
+        [FieldOffset(108)] public uint Reserved5;
+        [FieldOffset(112)] public uint Reserved6;
+        [FieldOffset(116)] public uint Reserved7;
+        [FieldOffset(120)] public uint Reserved8;
+        [FieldOffset(124)] public uint Reserved9;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.TelemetryEntrySize)]
     public struct H8DataMonolithTelemetryEntry
     {
@@ -666,6 +776,8 @@ namespace Hecton8.Data
                 case H8DataSectionId.SectorPageDirectory: return (uint)UnsafeUtility.SizeOf<H8SectorPageRecord>();
                 case H8DataSectionId.Economy: return H8DataLayoutConstants.EconomyRecordSize;
                 case H8DataSectionId.PhysicsConstants: return H8DataLayoutConstants.PhysicsConstantsRecordSize;
+                case H8DataSectionId.AppliedLorePackets: return H8DataLayoutConstants.AppliedLorePacketRecordSize;
+                case H8DataSectionId.AppliedLoreRoutes: return H8DataLayoutConstants.AppliedLoreRouteRecordSize;
                 default: return 0u;
             }
         }
@@ -704,6 +816,8 @@ namespace Hecton8.Data
                    IsRecordAligned(UnsafeUtility.SizeOf<H8SectorPageRecord>()) &&
                    UnsafeUtility.SizeOf<H8EconomyRecord>() == H8DataLayoutConstants.EconomyRecordSize &&
                    UnsafeUtility.SizeOf<H8PhysicsConstantsRecord>() == H8DataLayoutConstants.PhysicsConstantsRecordSize &&
+                   UnsafeUtility.SizeOf<H8AppliedLorePacketRecord>() == H8DataLayoutConstants.AppliedLorePacketRecordSize &&
+                   UnsafeUtility.SizeOf<H8AppliedLoreRouteRecord>() == H8DataLayoutConstants.AppliedLoreRouteRecordSize &&
                    UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize &&
                    IsRecordAligned(UnsafeUtility.SizeOf<H8StaticLocalizationReference>()) &&
                    UnsafeUtility.SizeOf<H8StaticLocalizationCursor>() == 8;

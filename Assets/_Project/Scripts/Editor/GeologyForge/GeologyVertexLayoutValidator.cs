@@ -9,6 +9,7 @@ namespace Hecton8.Editor.GeologyForge
     internal static class GeologyVertexLayoutValidator
     {
         private const int RawVertexStrideBytes = 64;
+        private const int SeedDtoStrideBytes = 64;
         private const int BakeTelemetryStrideBytes = 64;
         private const int DumpHeaderStrideBytes = 32;
         private const int MeshManifestHeaderStrideBytes = 64;
@@ -42,6 +43,10 @@ namespace Hecton8.Editor.GeologyForge
             if (rawSize != RawVertexStrideBytes)
                 throw new InvalidOperationException($"GeologyRawVertex stride mismatch. Expected {RawVertexStrideBytes}, got {rawSize}.");
 
+            int seedDtoSize = UnsafeUtility.SizeOf<GeologySeedDTO>();
+            if (seedDtoSize != SeedDtoStrideBytes)
+                throw new InvalidOperationException($"GeologySeedDTO stride mismatch. Expected {SeedDtoStrideBytes}, got {seedDtoSize}.");
+
             int telemetrySize = UnsafeUtility.SizeOf<GeologyBakeTelemetryEntry>();
             if (telemetrySize != BakeTelemetryStrideBytes)
                 throw new InvalidOperationException($"GeologyBakeTelemetryEntry stride mismatch. Expected {BakeTelemetryStrideBytes}, got {telemetrySize}.");
@@ -69,6 +74,17 @@ namespace Hecton8.Editor.GeologyForge
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.AmbientOcclusion), 48);
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.Flags), 52);
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex._pad0), 56);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.SectorAup), 0);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.Seed), 24);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.RadiusMeters), 28);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.HeightScale), 32);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.Frequency), 36);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.NoiseAmplitude), 40);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.RidgedWeight), 44);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.VoronoiWeight), 48);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.IsoLevel), 52);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.GlobalQualityWeight), 56);
+            ValidateOffset<GeologySeedDTO>(nameof(GeologySeedDTO.ProfileHash), 60);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.SectorAup), 0);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.Seed), 24);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.Stage), 28);

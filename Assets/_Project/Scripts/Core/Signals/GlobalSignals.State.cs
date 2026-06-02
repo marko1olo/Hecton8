@@ -177,6 +177,7 @@ namespace Hecton8.Core
         private const int StorageDebtSignalCapacity = 32;
         private const int StreamingTurbulenceSignalCapacity = 32;
         private const int AtmosphericReentrySignalCapacity = 32;
+        private const int ReentryAcousticStressSignalCapacity = 16;
         private const int PrologueCompleteSignalCapacity = 8;
         private const int ManualOverridePulledSignalCapacity = 8;
         private const int CullingOverloadSignalCapacity = 16;

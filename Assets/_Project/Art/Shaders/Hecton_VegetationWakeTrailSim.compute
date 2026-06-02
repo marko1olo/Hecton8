@@ -23,25 +23,26 @@ float _HectonWakeTrailCurlStrength;
 float _HectonWakeTrailSimulationTime;
 float4 _HectonWakeTrailTexelSize;
 static const int HectonWakeTrailStampCommandCapacity = 4;
+static const float HectonFiniteFloatMax = 3.402823466e+38;
 
 bool HectonFinite1(float value)
 {
-    return isfinite(value);
+    return abs(value) <= HectonFiniteFloatMax;
 }
 
 bool HectonFinite2(float2 value)
 {
-    return all(isfinite(value));
+    return all(abs(value) <= HectonFiniteFloatMax);
 }
 
 bool HectonFinite3(float3 value)
 {
-    return all(isfinite(value));
+    return all(abs(value) <= HectonFiniteFloatMax);
 }
 
 bool HectonFinite4(float4 value)
 {
-    return all(isfinite(value));
+    return all(abs(value) <= HectonFiniteFloatMax);
 }
 
 float HectonFiniteOr(float value, float fallbackValue)

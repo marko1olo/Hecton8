@@ -85,6 +85,8 @@ namespace Hecton8.Core
         private const int MaxPersistentReallocationRecords = 128;
         private const int PersistentReallocationThreshold = 3;
         private const float PersistentReallocationWindowSeconds = 60f;
+        private const uint StableHashFnvOffset = LocHash.FnvOffsetBasis;
+        private const uint StableHashFnvPrime = LocHash.FnvPrime;
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
         private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
@@ -104,7 +106,7 @@ namespace Hecton8.Core
         private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
         private static readonly uint _persistentFragmentationRiskHash = unchecked((uint)LocHash.Compute(PersistentFragmentationRiskPrefix));
 
-        [StructLayout(LayoutKind.Explicit, Size = 304)]
+        [StructLayout(LayoutKind.Explicit, Size = 312)]
         private struct NativeAllocationRecord
         {
             [FieldOffset(0)] internal IntPtr Pointer;
@@ -119,8 +121,9 @@ namespace Hecton8.Core
             [FieldOffset(292)] public NativeAllocationLifetime Lifetime;
             [FieldOffset(293)] private byte _leakReported;
             [FieldOffset(294)] private ushort _pad0;
-            [FieldOffset(296)] private uint _pad1;
-            [FieldOffset(300)] private uint _pad2;
+            [FieldOffset(296)] public int SceneIdentityHash;
+            [FieldOffset(300)] public int SceneBuildIndex;
+            [FieldOffset(304)] private ulong _pad1;
 
             public bool LeakReported
             {
@@ -155,6 +158,8 @@ namespace Hecton8.Core
         private static readonly NativeAllocationRecord[] _records = new NativeAllocationRecord[MaxTrackedAllocations];
         // COLD ALLOC: PersistentReallocationRecord[128] - persistent native allocation resize telemetry window - owner: NativeMemorySentinel
         private static readonly PersistentReallocationRecord[] _persistentReallocationRecords = new PersistentReallocationRecord[MaxPersistentReallocationRecords];
+        // COLD ALLOC: NativeAllocationRecord[1024] - scene leak telemetry snapshot outside mutation gate - owner: NativeMemorySentinel
+        private static readonly NativeAllocationRecord[] _sceneLeakReportScratch = new NativeAllocationRecord[MaxTrackedAllocations];
         private static int _count;
         private static int _persistentReallocationRecordCount;
         private static int _nextId = 1;
@@ -164,6 +169,8 @@ namespace Hecton8.Core
         private static int _activeTempJobAllocationCount;
         private static int _telemetryPublishInProgress;
         private static int _mutationGate;
+        private static int _sceneLeakReportGate;
+        private static int _diagnosticSceneLeakLogSuppressions;
         private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         private static bool _sceneHooksRegistered;
 
@@ -240,6 +247,7 @@ namespace Hecton8.Core
         public static void ResetForSubsystemReload()
         {
             Interlocked.Exchange(ref _mutationGate, 0);
+            Interlocked.Exchange(ref _sceneLeakReportGate, 0);
             int activeBeforeReset = Volatile.Read(ref _count);
             if (activeBeforeReset > 0)
                 throw new FatalMemoryLeakException(BuildFatalLeakMessage("SubsystemRegistration", activeBeforeReset));
@@ -251,6 +259,8 @@ namespace Hecton8.Core
                     _records[i] = default;
                 for (int i = 0; i < _persistentReallocationRecordCount; i++)
                     _persistentReallocationRecords[i] = default;
+                for (int i = 0; i < MaxTrackedAllocations; i++)
+                    _sceneLeakReportScratch[i] = default;
 
                 _count = 0;
                 _persistentReallocationRecordCount = 0;
@@ -260,6 +270,8 @@ namespace Hecton8.Core
                 _activeTempAllocationCount = 0;
                 _activeTempJobAllocationCount = 0;
                 _telemetryPublishInProgress = 0;
+                _sceneLeakReportGate = 0;
+                _diagnosticSceneLeakLogSuppressions = 0;
                 _mainThreadId = Thread.CurrentThread.ManagedThreadId;
                 _sceneHooksRegistered = false;
                 SceneManager.sceneUnloaded -= HandleSceneUnloaded;
@@ -516,6 +528,49 @@ namespace Hecton8.Core
             return RegisterPointer(pointer, bytes, owner, label, lifetime, true);
         }
 
+        /// <summary>
+        /// Registers a raw persistent native pointer against an explicit scene context.
+        /// Use this from additive scene owners instead of relying on the active scene.
+        /// </summary>
+        public static int RegisterPointer(
+            void* pointer,
+            long bytes,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime,
+            Scene scene)
+        {
+            return RegisterPointer(pointer, bytes, owner, label, lifetime, true, scene);
+        }
+
+        /// <summary>
+        /// Registers a raw persistent native pointer using caller-owned fixed labels.
+        /// Use this overload when the allocation owner already stores non-managed labels.
+        /// </summary>
+        public static int RegisterPointer(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime)
+        {
+            return RegisterPointerFixed(pointer, bytes, in owner, in label, lifetime, true);
+        }
+
+        /// <summary>
+        /// Registers a raw persistent native pointer using fixed labels and an explicit scene context.
+        /// </summary>
+        public static int RegisterPointer(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime,
+            Scene scene)
+        {
+            return RegisterPointerFixed(pointer, bytes, in owner, in label, lifetime, true, scene);
+        }
+
         private static int RegisterPointer(
             void* pointer,
             long bytes,
@@ -527,11 +582,166 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return 0;
 
-            IntPtr pointerValue = (IntPtr)pointer;
             uint ownerHash = ComputeStableHash(owner);
             uint labelHash = ComputeStableHash(label);
             FixedString128Bytes ownerFixed = ToFixedString128(owner);
             FixedString128Bytes labelFixed = ToFixedString128(label);
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash,
+                lifetime,
+                coalescePointerlessOwnerLabel);
+        }
+
+        private static int RegisterPointer(
+            void* pointer,
+            long bytes,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel,
+            Scene scene)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash,
+                lifetime,
+                coalescePointerlessOwnerLabel,
+                scene);
+        }
+
+        private static int RegisterPointerFixed(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                lifetime,
+                coalescePointerlessOwnerLabel);
+        }
+
+        private static int RegisterPointerFixed(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel,
+            Scene scene)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                lifetime,
+                coalescePointerlessOwnerLabel,
+                scene);
+        }
+
+        private static int RegisterPointerFixed(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes ownerFixed,
+            in FixedString128Bytes labelFixed,
+            uint ownerHash,
+            uint labelHash,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            ResolveRegistrationSceneIdentity(lifetime, out int currentSceneIdentityHash, out int currentSceneBuildIndex);
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash,
+                lifetime,
+                coalescePointerlessOwnerLabel,
+                currentSceneIdentityHash,
+                currentSceneBuildIndex);
+        }
+
+        private static int RegisterPointerFixed(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes ownerFixed,
+            in FixedString128Bytes labelFixed,
+            uint ownerHash,
+            uint labelHash,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel,
+            Scene scene)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            ResolveRegistrationSceneIdentity(lifetime, scene, out int currentSceneIdentityHash, out int currentSceneBuildIndex);
+            return RegisterPointerFixed(
+                pointer,
+                bytes,
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash,
+                lifetime,
+                coalescePointerlessOwnerLabel,
+                currentSceneIdentityHash,
+                currentSceneBuildIndex);
+        }
+
+        private static int RegisterPointerFixed(
+            void* pointer,
+            long bytes,
+            in FixedString128Bytes ownerFixed,
+            in FixedString128Bytes labelFixed,
+            uint ownerHash,
+            uint labelHash,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel,
+            int currentSceneIdentityHash,
+            int currentSceneBuildIndex)
+        {
+            if (bytes <= 0L)
+                return 0;
+
+            IntPtr pointerValue = (IntPtr)pointer;
 
             EnterMutationGate();
             try
@@ -539,7 +749,10 @@ namespace Hecton8.Core
                 for (int i = 0; i < _count; i++)
                 {
                     NativeAllocationRecord existing = _records[i];
-                    bool pointerMatches = pointerValue != IntPtr.Zero && existing.Pointer == pointerValue;
+                    bool pointerMatches =
+                        pointerValue != IntPtr.Zero &&
+                        existing.Pointer == pointerValue &&
+                        CanCoalesceAllocationRecord(in existing, lifetime, currentSceneIdentityHash);
                     bool pointerlessOwnerMatches =
                         coalescePointerlessOwnerLabel &&
                         pointerValue == IntPtr.Zero &&
@@ -547,13 +760,20 @@ namespace Hecton8.Core
                         existing.OwnerHash == ownerHash &&
                         existing.LabelHash == labelHash &&
                         FixedStringEquals(in existing.Owner, in ownerFixed) &&
-                        FixedStringEquals(in existing.Label, in labelFixed);
+                        FixedStringEquals(in existing.Label, in labelFixed) &&
+                        CanCoalesceAllocationRecord(in existing, lifetime, currentSceneIdentityHash);
                     if (pointerMatches || pointerlessOwnerMatches)
                     {
                         bool recordChanged = false;
                         if (existing.Bytes != bytes)
                         {
-                            TrackPersistentReallocation(owner, label, bytes, lifetime);
+                            TrackPersistentReallocationFixed(
+                                in ownerFixed,
+                                in labelFixed,
+                                ownerHash,
+                                labelHash,
+                                bytes,
+                                lifetime);
                             _trackedBytes += bytes - existing.Bytes;
                             existing.Bytes = bytes;
                             recordChanged = true;
@@ -566,6 +786,25 @@ namespace Hecton8.Core
                             existing.Lifetime = lifetime;
                             existing.Allocator = ResolveAllocator(lifetime);
                             existing.AllocationFrame = ResolveCurrentFrame(0);
+                            if (lifetime == NativeAllocationLifetime.Scene)
+                            {
+                                existing.SceneIdentityHash = currentSceneIdentityHash;
+                                existing.SceneBuildIndex = currentSceneBuildIndex;
+                            }
+                            else
+                            {
+                                existing.SceneIdentityHash = 0;
+                                existing.SceneBuildIndex = -1;
+                            }
+
+                            recordChanged = true;
+                        }
+
+                        if (lifetime == NativeAllocationLifetime.Scene &&
+                            existing.SceneIdentityHash == currentSceneIdentityHash &&
+                            existing.SceneBuildIndex != currentSceneBuildIndex)
+                        {
+                            existing.SceneBuildIndex = currentSceneBuildIndex;
                             recordChanged = true;
                         }
 
@@ -603,7 +842,13 @@ namespace Hecton8.Core
                 }
 
                 int id = _nextId++;
-                TrackPersistentReallocation(owner, label, bytes, lifetime);
+                TrackPersistentReallocationFixed(
+                    in ownerFixed,
+                    in labelFixed,
+                    ownerHash,
+                    labelHash,
+                    bytes,
+                    lifetime);
 
                 NativeAllocationRecord record = default;
                 record.Id = id;
@@ -616,6 +861,13 @@ namespace Hecton8.Core
                 record.LabelHash = labelHash;
                 record.Owner = ownerFixed;
                 record.Label = labelFixed;
+                if (lifetime == NativeAllocationLifetime.Scene)
+                {
+                    record.SceneIdentityHash = currentSceneIdentityHash;
+                    record.SceneBuildIndex = currentSceneBuildIndex;
+                }
+                else
+                    record.SceneBuildIndex = -1;
                 _records[_count++] = record;
                 _trackedBytes += bytes;
                 AdjustTransientAllocationCount(lifetime, 1);
@@ -699,7 +951,7 @@ namespace Hecton8.Core
             EnterMutationGate();
             try
             {
-                for (int i = 0; i < _count; i++)
+                for (int i = _count - 1; i >= 0; i--)
                 {
                     if (_records[i].Pointer != target)
                         continue;
@@ -749,6 +1001,65 @@ namespace Hecton8.Core
             uint labelHash = ComputeStableHash(label);
             FixedString128Bytes ownerFixed = ToFixedString128(owner);
             FixedString128Bytes labelFixed = ToFixedString128(label);
+            UnregisterFixed(in ownerFixed, in labelFixed, ownerHash, labelHash, false, 0);
+        }
+
+        /// <summary>
+        /// Unregisters the latest matching owner/label record for an explicit scene.
+        /// </summary>
+        public static void Unregister(string owner, string label, Scene scene)
+        {
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            UnregisterFixed(in ownerFixed, in labelFixed, ownerHash, labelHash, true, sceneIdentityHash);
+        }
+
+        /// <summary>
+        /// Unregisters the latest matching fixed owner/label record without allocating strings.
+        /// </summary>
+        public static void Unregister(in FixedString128Bytes owner, in FixedString128Bytes label)
+        {
+            UnregisterFixed(
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                false,
+                0);
+        }
+
+        /// <summary>
+        /// Unregisters the latest matching fixed owner/label record for an explicit scene.
+        /// </summary>
+        public static void Unregister(in FixedString128Bytes owner, in FixedString128Bytes label, Scene scene)
+        {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            UnregisterFixed(
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                true,
+                sceneIdentityHash);
+        }
+
+        private static void UnregisterFixed(
+            in FixedString128Bytes ownerFixed,
+            in FixedString128Bytes labelFixed,
+            uint ownerHash,
+            uint labelHash,
+            bool hasExplicitSceneIdentity,
+            int explicitSceneIdentityHash)
+        {
+            int currentSceneIdentityHash = 0;
+            bool currentSceneIdentityResolved = hasExplicitSceneIdentity;
+            int fallbackSceneIndex = -1;
+            int fallbackSceneMatchCount = 0;
+            if (hasExplicitSceneIdentity)
+                currentSceneIdentityHash = explicitSceneIdentityHash;
 
             EnterMutationGate();
             try
@@ -764,9 +1075,35 @@ namespace Hecton8.Core
                         continue;
                     }
 
+                    if (record.Lifetime == NativeAllocationLifetime.Scene)
+                    {
+                        if (!currentSceneIdentityResolved)
+                        {
+                            ResolveCurrentSceneIdentity(out currentSceneIdentityHash, out _);
+                            currentSceneIdentityResolved = true;
+                        }
+
+                        if (record.SceneIdentityHash == currentSceneIdentityHash)
+                        {
+                            RemoveAt(i);
+                            return;
+                        }
+
+                        if (!hasExplicitSceneIdentity)
+                        {
+                            fallbackSceneIndex = i;
+                            fallbackSceneMatchCount++;
+                        }
+
+                        continue;
+                    }
+
                     RemoveAt(i);
                     return;
                 }
+
+                if (!hasExplicitSceneIdentity && fallbackSceneMatchCount == 1)
+                    RemoveAt(fallbackSceneIndex);
             }
             finally
             {
@@ -779,28 +1116,50 @@ namespace Hecton8.Core
         /// </summary>
         public static void ReportSceneLifetimeLeaks(string context)
         {
-            EnterMutationGate();
+            ReportSceneLifetimeLeaks(context, 0);
+        }
+
+        /// <summary>
+        /// Reports scene-lifetime native allocations for an explicit scene context.
+        /// </summary>
+        public static void ReportSceneLifetimeLeaks(string context, Scene scene)
+        {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            ReportSceneLifetimeLeaks(context, sceneIdentityHash);
+        }
+
+        private static void ReportSceneLifetimeLeaks(string context, int sceneIdentityHash)
+        {
+            int reported = 0;
+            EnterSceneLeakReportGate();
             try
             {
-                int reported = 0;
-                for (int i = 0; i < _count; i++)
+                EnterMutationGate();
+                try
                 {
-                    NativeAllocationRecord record = _records[i];
-                    if (record.LeakReported || record.Lifetime != NativeAllocationLifetime.Scene)
-                        continue;
+                    for (int i = 0; i < _count; i++)
+                    {
+                        NativeAllocationRecord record = _records[i];
+                        if (record.LeakReported ||
+                            record.Lifetime != NativeAllocationLifetime.Scene ||
+                            !MatchesSceneLeakFilter(in record, sceneIdentityHash))
+                        {
+                            continue;
+                        }
 
-                    reported++;
-                    Interlocked.Increment(ref _sceneLeakViolationCount);
-                    PublishPerformanceWarningNoReentry(
-                        _criticalMemoryViolationHash,
-                        _nativeMemoryContextHash,
-                        record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
-                    record.LeakReported = true;
-                    _records[i] = record;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
-#endif
+                        reported++;
+                        record.LeakReported = true;
+                        _records[i] = record;
+                        _sceneLeakReportScratch[reported - 1] = record;
+                    }
                 }
+                finally
+                {
+                    ExitMutationGate();
+                }
+
+                for (int i = 0; i < reported; i++)
+                    PublishSceneLifetimeLeak(in _sceneLeakReportScratch[i]);
 
 #if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
                 int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
@@ -819,10 +1178,210 @@ namespace Hecton8.Core
             }
             finally
             {
+                for (int i = 0; i < reported; i++)
+                    _sceneLeakReportScratch[i] = default;
+
+                ExitSceneLeakReportGate();
+            }
+        }
+
+        private static void PublishSceneLifetimeLeak(in NativeAllocationRecord record)
+        {
+            Interlocked.Increment(ref _sceneLeakViolationCount);
+            PublishPerformanceWarningNoReentry(
+                _criticalMemoryViolationHash,
+                _nativeMemoryContextHash,
+                record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+            uint allocationHash = ComputeOwnerLabelHash(record.OwnerHash, record.LabelHash);
+            CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, 0, record.Bytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
+                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+#endif
+        }
+
+        /// <summary>
+        /// Fails closed when scene lifetime native allocations survive a scene unload.
+        /// </summary>
+        public static bool AssertNoSceneLifetimeAllocations(string context)
+        {
+            return AssertNoSceneLifetimeAllocations(context, 0);
+        }
+
+        /// <summary>
+        /// Fails closed when an explicit scene still owns scene-lifetime native allocations.
+        /// </summary>
+        public static bool AssertNoSceneLifetimeAllocations(string context, Scene scene)
+        {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            return AssertNoSceneLifetimeAllocations(context, sceneIdentityHash);
+        }
+
+        private static bool AssertNoSceneLifetimeAllocations(string context, int sceneIdentityHash)
+        {
+            int sceneAllocationCount = CountSceneLifetimeAllocations(sceneIdentityHash);
+            if (sceneAllocationCount <= 0)
+                return true;
+
+            ReportSceneLifetimeLeaks(context, sceneIdentityHash);
+            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, sceneAllocationCount, true, sceneIdentityHash));
+        }
+
+        /// <summary>
+        /// Counts scene-lifetime allocations without mutating leak state.
+        /// </summary>
+        public static int CountSceneLifetimeAllocations()
+        {
+            return CountSceneLifetimeAllocations(0);
+        }
+
+        /// <summary>
+        /// Counts scene-lifetime allocations for an explicit scene without mutating leak state.
+        /// </summary>
+        public static int CountSceneLifetimeAllocations(Scene scene)
+        {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            return CountSceneLifetimeAllocations(sceneIdentityHash);
+        }
+
+        /// <summary>
+        /// Diagnostic-only scene leak assertion used by editor stress probes.
+        /// Does not publish telemetry, mark records as reported, or write Console errors.
+        /// Runtime scene-unload validation must use AssertNoSceneLifetimeAllocations instead.
+        /// </summary>
+        public static bool AssertNoSceneLifetimeAllocationsForDiagnostics(string context)
+        {
+            int sceneAllocationCount = CountSceneLifetimeAllocations(0);
+            if (sceneAllocationCount <= 0)
+                return true;
+
+            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, sceneAllocationCount, true, 0));
+        }
+
+        private static int CountSceneLifetimeAllocations(int sceneIdentityHash)
+        {
+            EnterMutationGate();
+            try
+            {
+                int sceneAllocationCount = 0;
+                for (int i = 0; i < _count; i++)
+                {
+                    NativeAllocationRecord record = _records[i];
+                    if (record.Lifetime == NativeAllocationLifetime.Scene &&
+                        MatchesSceneLeakFilter(in record, sceneIdentityHash))
+                    {
+                        sceneAllocationCount++;
+                    }
+                }
+
+                return sceneAllocationCount;
+            }
+            finally
+            {
                 ExitMutationGate();
             }
         }
 
+        /// <summary>
+        /// Suppresses expected scene leak error logging during diagnostic probes only.
+        /// Fatal exception and telemetry behavior remain active.
+        /// </summary>
+        public static void BeginDiagnosticSceneLeakLogSuppression()
+        {
+            Interlocked.Increment(ref _diagnosticSceneLeakLogSuppressions);
+        }
+
+        /// <summary>
+        /// Ends a diagnostic scene leak log suppression scope.
+        /// </summary>
+        public static void EndDiagnosticSceneLeakLogSuppression()
+        {
+            int remaining = Interlocked.Decrement(ref _diagnosticSceneLeakLogSuppressions);
+            if (remaining >= 0)
+                return;
+
+            Interlocked.Exchange(ref _diagnosticSceneLeakLogSuppressions, 0);
+        }
+
+        /// <summary>
+        /// Diagnostic-only exact allocation lookup used by editor stress probes.
+        /// </summary>
+        public static bool ContainsTrackedAllocationForDiagnostics(
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime,
+            Scene scene)
+        {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
+            return ContainsTrackedAllocationForDiagnostics(
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                lifetime,
+                true,
+                sceneIdentityHash);
+        }
+
+        /// <summary>
+        /// Diagnostic-only exact allocation lookup used by editor stress probes.
+        /// </summary>
+        public static bool ContainsTrackedAllocationForDiagnostics(
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            NativeAllocationLifetime lifetime)
+        {
+            return ContainsTrackedAllocationForDiagnostics(
+                in owner,
+                in label,
+                ComputeStableHash(in owner),
+                ComputeStableHash(in label),
+                lifetime,
+                false,
+                0);
+        }
+
+        private static bool ContainsTrackedAllocationForDiagnostics(
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            uint ownerHash,
+            uint labelHash,
+            NativeAllocationLifetime lifetime,
+            bool hasSceneIdentity,
+            int sceneIdentityHash)
+        {
+            EnterMutationGate();
+            try
+            {
+                for (int i = _count - 1; i >= 0; i--)
+                {
+                    NativeAllocationRecord record = _records[i];
+                    if (record.Lifetime != lifetime ||
+                        record.OwnerHash != ownerHash ||
+                        record.LabelHash != labelHash ||
+                        !FixedStringEquals(in record.Owner, in owner) ||
+                        !FixedStringEquals(in record.Label, in label))
+                    {
+                        continue;
+                    }
+
+                    if (hasSceneIdentity &&
+                        record.Lifetime == NativeAllocationLifetime.Scene &&
+                        record.SceneIdentityHash != sceneIdentityHash)
+                    {
+                        continue;
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
+        }
         /// <summary>
         /// Reports and force-frees scene-lifetime native arrays that survived a scene unload.
         /// </summary>
@@ -851,7 +1410,8 @@ namespace Hecton8.Core
                         record.LeakReported = true;
                         _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                        if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
+                            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
                         continue;
                     }
@@ -1006,10 +1566,11 @@ namespace Hecton8.Core
 
         private static void HandleSceneUnloaded(Scene scene)
         {
+            ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            RuntimeWatchdog.ReapNativeSceneLeaks(scene.name);
+            AssertNoSceneLifetimeAllocations(scene.name, sceneIdentityHash);
 #else
-            RuntimeWatchdog.ReapNativeSceneLeaks(string.Empty);
+            AssertNoSceneLifetimeAllocations(string.Empty, sceneIdentityHash);
 #endif
         }
 
@@ -1027,7 +1588,31 @@ namespace Hecton8.Core
             Interlocked.Exchange(ref _mutationGate, 0);
         }
 
+        private static void EnterSceneLeakReportGate()
+        {
+            while (Interlocked.CompareExchange(ref _sceneLeakReportGate, 1, 0) != 0)
+                Thread.SpinWait(MutationGateSpinWait);
+
+            Thread.MemoryBarrier();
+        }
+
+        private static void ExitSceneLeakReportGate()
+        {
+            Thread.MemoryBarrier();
+            Interlocked.Exchange(ref _sceneLeakReportGate, 0);
+        }
+
         private static string BuildFatalLeakMessage(string context, int activeCount)
+        {
+            return BuildFatalLeakMessage(context, activeCount, false);
+        }
+
+        private static string BuildFatalLeakMessage(string context, int activeCount, bool sceneOnly)
+        {
+            return BuildFatalLeakMessage(context, activeCount, sceneOnly, 0);
+        }
+
+        private static string BuildFatalLeakMessage(string context, int activeCount, bool sceneOnly, int sceneIdentityHash)
         {
             StringBuilder builder = new StringBuilder(512);
             builder.Append("FATAL_MEMORY_LEAK: context=");
@@ -1044,7 +1629,14 @@ namespace Hecton8.Core
                 for (int i = 0; i < count; i++)
                 {
                     NativeAllocationRecord record = _records[i];
-                    builder.Append(" | id=");
+                    if (sceneOnly &&
+                        (record.Lifetime != NativeAllocationLifetime.Scene ||
+                         !MatchesSceneLeakFilter(in record, sceneIdentityHash)))
+                    {
+                        continue;
+                    }
+
+                    builder.Append(" | bufferId=");
                     builder.Append(record.Id);
                     builder.Append(" owner=");
                     AppendFixedString(builder, in record.Owner);
@@ -1054,6 +1646,10 @@ namespace Hecton8.Core
                     builder.Append(record.Bytes);
                     builder.Append(" lifetime=");
                     builder.Append((byte)record.Lifetime);
+                    builder.Append(" sceneIdentity=");
+                    builder.Append(record.SceneIdentityHash);
+                    builder.Append(" sceneBuildIndex=");
+                    builder.Append(record.SceneBuildIndex);
                 }
             }
             finally
@@ -1107,6 +1703,9 @@ namespace Hecton8.Core
             uint labelHash = ComputeStableHash(label);
             FixedString128Bytes ownerFixed = ToFixedString128(owner);
             FixedString128Bytes labelFixed = ToFixedString128(label);
+            int currentSceneIdentityHash = 0;
+            int currentSceneBuildIndex = -1;
+            bool currentSceneIdentityResolved = false;
 
             EnterMutationGate();
             try
@@ -1123,12 +1722,47 @@ namespace Hecton8.Core
                         continue;
                     }
 
+                    if (record.Lifetime == NativeAllocationLifetime.Scene)
+                    {
+                        if (!currentSceneIdentityResolved)
+                        {
+                            ResolveCurrentSceneIdentity(out currentSceneIdentityHash, out currentSceneBuildIndex);
+                            currentSceneIdentityResolved = true;
+                        }
+
+                        if (!MatchesPointerlessRefreshScene(in record, currentSceneIdentityHash))
+                            continue;
+                    }
+
                     long delta = bytes - record.Bytes;
                     if (delta == 0L)
-                        return;
+                    {
+                        if (record.Lifetime == NativeAllocationLifetime.Scene &&
+                            record.SceneIdentityHash == currentSceneIdentityHash &&
+                            record.SceneBuildIndex != currentSceneBuildIndex)
+                        {
+                            record.SceneBuildIndex = currentSceneBuildIndex;
+                            _records[i] = record;
+                        }
 
-                    TrackPersistentReallocation(owner, label, bytes, record.Lifetime);
+                        return;
+                    }
+
+                    TrackPersistentReallocationFixed(
+                        in ownerFixed,
+                        in labelFixed,
+                        ownerHash,
+                        labelHash,
+                        bytes,
+                        record.Lifetime);
                     record.Bytes = bytes;
+                    if (record.Lifetime == NativeAllocationLifetime.Scene &&
+                        record.SceneIdentityHash == currentSceneIdentityHash &&
+                        record.SceneBuildIndex != currentSceneBuildIndex)
+                    {
+                        record.SceneBuildIndex = currentSceneBuildIndex;
+                    }
+
                     _records[i] = record;
                     _trackedBytes += delta;
                     return;
@@ -1156,6 +1790,85 @@ namespace Hecton8.Core
             return SystemDispatcher.ActiveRuntimeInstance != null ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
+        private static void ResolveCurrentSceneIdentity(out int sceneIdentityHash, out int sceneBuildIndex)
+        {
+            sceneIdentityHash = 0;
+            sceneBuildIndex = -1;
+            if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+                return;
+
+            ResolveSceneIdentity(SceneManager.GetActiveScene(), out sceneIdentityHash, out sceneBuildIndex);
+        }
+
+        private static void ResolveRegistrationSceneIdentity(
+            NativeAllocationLifetime lifetime,
+            out int sceneIdentityHash,
+            out int sceneBuildIndex)
+        {
+            sceneIdentityHash = 0;
+            sceneBuildIndex = -1;
+            if (lifetime != NativeAllocationLifetime.Scene)
+                return;
+
+            ResolveCurrentSceneIdentity(out sceneIdentityHash, out sceneBuildIndex);
+        }
+
+        private static void ResolveRegistrationSceneIdentity(
+            NativeAllocationLifetime lifetime,
+            Scene scene,
+            out int sceneIdentityHash,
+            out int sceneBuildIndex)
+        {
+            sceneIdentityHash = 0;
+            sceneBuildIndex = -1;
+            if (lifetime != NativeAllocationLifetime.Scene)
+                return;
+
+            ResolveSceneIdentity(scene, out sceneIdentityHash, out sceneBuildIndex);
+        }
+
+        private static void ResolveSceneIdentity(Scene scene, out int sceneIdentityHash, out int sceneBuildIndex)
+        {
+            sceneIdentityHash = 0;
+            sceneBuildIndex = -1;
+            if (!scene.IsValid())
+                return;
+
+            sceneIdentityHash = scene.GetHashCode();
+            sceneBuildIndex = scene.buildIndex;
+        }
+
+        private static bool MatchesSceneLeakFilter(in NativeAllocationRecord record, int sceneIdentityHash)
+        {
+            return sceneIdentityHash == 0 ||
+                   record.SceneIdentityHash == 0 ||
+                   record.SceneIdentityHash == sceneIdentityHash;
+        }
+
+        private static bool CanCoalesceAllocationRecord(
+            in NativeAllocationRecord record,
+            NativeAllocationLifetime lifetime,
+            int currentSceneIdentityHash)
+        {
+            if (record.Lifetime != NativeAllocationLifetime.Scene &&
+                lifetime != NativeAllocationLifetime.Scene)
+            {
+                return true;
+            }
+
+            return record.Lifetime == NativeAllocationLifetime.Scene &&
+                   lifetime == NativeAllocationLifetime.Scene &&
+                   record.SceneIdentityHash == currentSceneIdentityHash;
+        }
+
+        private static bool MatchesPointerlessRefreshScene(
+            in NativeAllocationRecord record,
+            int currentSceneIdentityHash)
+        {
+            return record.Lifetime != NativeAllocationLifetime.Scene ||
+                   record.SceneIdentityHash == currentSceneIdentityHash;
+        }
+
         private static void TrackPersistentReallocation(
             string owner,
             string label,
@@ -1165,11 +1878,31 @@ namespace Hecton8.Core
             if (!IsPersistentLifetime(lifetime) || bytes <= 0L)
                 return;
 
-            float now = ResolveCurrentUnscaledTime();
             uint ownerHash = ComputeStableHash(owner);
             uint labelHash = ComputeStableHash(label);
             FixedString128Bytes ownerFixed = ToFixedString128(owner);
             FixedString128Bytes labelFixed = ToFixedString128(label);
+            TrackPersistentReallocationFixed(
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash,
+                bytes,
+                lifetime);
+        }
+
+        private static void TrackPersistentReallocationFixed(
+            in FixedString128Bytes ownerFixed,
+            in FixedString128Bytes labelFixed,
+            uint ownerHash,
+            uint labelHash,
+            long bytes,
+            NativeAllocationLifetime lifetime)
+        {
+            if (!IsPersistentLifetime(lifetime) || bytes <= 0L)
+                return;
+
+            float now = ResolveCurrentUnscaledTime();
             int recordIndex = FindPersistentReallocationRecord(
                 in ownerFixed,
                 in labelFixed,
@@ -1266,6 +1999,129 @@ namespace Hecton8.Core
                 : unchecked((uint)LocHash.Compute(value));
         }
 
+        private static uint ComputeStableHash(in FixedString128Bytes value)
+        {
+            if (value.Length == 0)
+                return 0u;
+
+            unchecked
+            {
+                uint hash = StableHashFnvOffset;
+                int cursor = 0;
+                while (cursor < value.Length)
+                {
+                    if (TryReadUtf8Scalar(in value, cursor, out int scalar, out int consumed))
+                    {
+                        if (scalar <= 0xFFFF)
+                        {
+                            HashUtf16CodeUnit(ref hash, (char)scalar);
+                        }
+                        else
+                        {
+                            int supplementary = scalar - 0x10000;
+                            HashUtf16CodeUnit(ref hash, (char)(0xD800 + (supplementary >> 10)));
+                            HashUtf16CodeUnit(ref hash, (char)(0xDC00 + (supplementary & 0x3FF)));
+                        }
+
+                        cursor += consumed;
+                        continue;
+                    }
+
+                    HashUtf16CodeUnit(ref hash, '\uFFFD');
+                    cursor++;
+                }
+
+                return hash;
+            }
+        }
+
+        private static void HashUtf16CodeUnit(ref uint hash, char current)
+        {
+            unchecked
+            {
+                hash ^= (byte)current;
+                hash *= StableHashFnvPrime;
+                hash ^= (byte)(current >> 8);
+                hash *= StableHashFnvPrime;
+            }
+        }
+
+        private static bool TryReadUtf8Scalar(
+            in FixedString128Bytes value,
+            int index,
+            out int scalar,
+            out int consumed)
+        {
+            scalar = 0;
+            consumed = 1;
+            byte lead = value[index];
+            if (lead < 0x80)
+            {
+                scalar = lead;
+                return true;
+            }
+
+            if ((lead & 0xE0) == 0xC0)
+            {
+                if (index + 1 >= value.Length || !IsUtf8Continuation(value[index + 1]))
+                    return false;
+
+                scalar = ((lead & 0x1F) << 6) | (value[index + 1] & 0x3F);
+                if (scalar < 0x80)
+                    return false;
+
+                consumed = 2;
+                return true;
+            }
+
+            if ((lead & 0xF0) == 0xE0)
+            {
+                if (index + 2 >= value.Length ||
+                    !IsUtf8Continuation(value[index + 1]) ||
+                    !IsUtf8Continuation(value[index + 2]))
+                {
+                    return false;
+                }
+
+                scalar = ((lead & 0x0F) << 12) |
+                         ((value[index + 1] & 0x3F) << 6) |
+                         (value[index + 2] & 0x3F);
+                if (scalar < 0x800 || (scalar >= 0xD800 && scalar <= 0xDFFF))
+                    return false;
+
+                consumed = 3;
+                return true;
+            }
+
+            if ((lead & 0xF8) == 0xF0)
+            {
+                if (index + 3 >= value.Length ||
+                    !IsUtf8Continuation(value[index + 1]) ||
+                    !IsUtf8Continuation(value[index + 2]) ||
+                    !IsUtf8Continuation(value[index + 3]))
+                {
+                    return false;
+                }
+
+                scalar = ((lead & 0x07) << 18) |
+                         ((value[index + 1] & 0x3F) << 12) |
+                         ((value[index + 2] & 0x3F) << 6) |
+                         (value[index + 3] & 0x3F);
+                if (scalar < 0x10000 || scalar > 0x10FFFF)
+                    return false;
+
+                consumed = 4;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsUtf8Continuation(byte value)
+        {
+            return (value & 0xC0) == 0x80;
+        }
+
         private static FixedString128Bytes ToFixedString128(string value)
         {
             FixedString128Bytes fixedValue = default;
@@ -1290,8 +2146,29 @@ namespace Hecton8.Core
 
         private static void AppendFixedString(StringBuilder builder, in FixedString128Bytes value)
         {
-            for (int i = 0; i < value.Length; i++)
-                builder.Append((char)value[i]);
+            int cursor = 0;
+            while (cursor < value.Length)
+            {
+                if (TryReadUtf8Scalar(in value, cursor, out int scalar, out int consumed))
+                {
+                    if (scalar <= 0xFFFF)
+                    {
+                        builder.Append((char)scalar);
+                    }
+                    else
+                    {
+                        int supplementary = scalar - 0x10000;
+                        builder.Append((char)(0xD800 + (supplementary >> 10)));
+                        builder.Append((char)(0xDC00 + (supplementary & 0x3FF)));
+                    }
+
+                    cursor += consumed;
+                    continue;
+                }
+
+                builder.Append('\uFFFD');
+                cursor++;
+            }
         }
 
         public static void ReportQueueOverflow(uint warningHash, uint overflowCount, uint contextHash)

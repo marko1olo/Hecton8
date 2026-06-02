@@ -260,3 +260,19 @@ Solution: Expand the generated dashboard pipeline to 112 reproducible PNG charts
 Rejected Alternatives: Redrawing only the old 41 charts was rejected because it would not answer the operator's request for maximum detail. Manual PNG creation was rejected because future refreshes need deterministic regeneration. Per-task productivity attribution was rejected because local telemetry only supports same-day correlation, not exact task-to-commit billing proof.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because every future dashboard refresh now carries detailed timing/economics/scale/correlation surfaces without one-off spreadsheet work.
 Hardware Impact: 0 us runtime gain. Audit evidence gain: refreshed total is 124,526,072,948 tokens; chart manifest is 112/112 exact with 0 missing, 0 extra, and 0 bad PNG signatures. Apex JSON SHA-256 is `bed0d284bb008000b0444cbe2c5d79bd230430beaa3deb60f7bc437431d505bd`. Compile proof is correctly blocked by CPU 100 percent and active `dotnet` PID 20236.
+
+## Decision 41 - 2026-06-02 refresh under heavy workspace load
+
+Problem: The operator requested a full update/commit/push after date rollover, but the live workspace had deleted TOKEN_USAGE_AUDIT memory files and the old fast-refresh hourly replay path reread 244 recent JSONL files, causing empty `exit code -1` runs before any report was written.
+Solution: Restore only TOKEN_USAGE_AUDIT status/rationale/log files, keep the current GPT-5.5 pricing evidence boundary, and change the fast refresh to inherit previous hourly buckets while adding exact post-cutoff deltas from the 61 changed JSONL files.
+Rejected Alternatives: Treating the empty `exit code -1` as success was rejected. Killing unrelated Python services was rejected after command-line inspection showed uvicorn/bot/MCP processes, not token-audit orphans. Replaying hundreds of stale hourly JSONL files was rejected because the previous snapshot already owns those buckets and the request needs a current delta refresh.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because date-rollover refresh no longer depends on rereading hundreds of older hourly JSONL files under parallel-agent load.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 129,368,782,512 tokens, delta is 4,842,709,564 tokens, chart manifest is 112/112 exact, and apex JSON SHA-256 is `086b098b84028901c657eba5ff0711e3807f2d58b7daf6ddc0184912f20980c2`. Compile proof is blocked by CPU 52 percent and active dotnet processes.
+
+## Decision 42 - 2026-06-02 full workspace checkpoint gate
+
+Problem: The operator requested full commit/push, but the staged workspace contained 4169 files of mixed cross-agent changes and `git diff --cached --check` failed on trailing whitespace in Unity `.meta/.mat`, package metadata, and temporary prompt text.
+Solution: Strip only trailing spaces/tabs and EOF blank whitespace from the exact staged files reported by the git whitespace gate, restage with `CON` and `*1334*` exclusions, and rerun protected-path plus whitespace validation before commit.
+Rejected Alternatives: Reverting unrelated cross-agent changes was rejected because the operator asked to commit/push everything. Staging root `CON` was rejected because it is a Windows-reserved path. Staging `1334` files was rejected by explicit operator instruction. Running `dotnet build` was rejected because compile-throttle evidence already showed CPU/compiler contention and TOKEN_USAGE_AUDIT changed offline reports/tools.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is repository hygiene around a telemetry checkpoint.
+Hardware Impact: 0 us runtime gain. Process gain: staged path scan returned `NO_STAGED_1334_OR_CON`; `git diff --cached --check` is clean.

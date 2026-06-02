@@ -202,30 +202,33 @@ namespace Hecton8.Data.Editor
                                                        native.Contains("*attached = true;", StringComparison.Ordinal) &&
                                                        native.Contains("if (attached && vm != nullptr)", StringComparison.Ordinal) &&
                                                        native.Contains("vm->DetachCurrentThread();", StringComparison.Ordinal) &&
-                                                       CountToken(native, "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)") == 2 &&
-                                                       CountToken(native, "H8_ReleaseJniEnvironment(javaVm, attached);") >= 8 &&
+                                                       native.Contains("struct H8JniEnvironmentScope", StringComparison.Ordinal) &&
+                                                       native.Contains("struct H8FloatingPointControlScope", StringComparison.Ordinal) &&
+                                                       native.Contains("H8FloatingPointControlScope FloatingPointScope;", StringComparison.Ordinal) &&
+                                                       native.Contains("~H8JniEnvironmentScope()", StringComparison.Ordinal) &&
+                                                       native.Contains("H8_ReleaseJniEnvironment(JavaVm, Attached);", StringComparison.Ordinal) &&
+                                                       native.Contains("msr fpcr", StringComparison.Ordinal) &&
+                                                       native.Contains("msr fpsr", StringComparison.Ordinal) &&
+                                                       native.Contains("_mm_getcsr()", StringComparison.Ordinal) &&
+                                                       native.Contains("_mm_setcsr(Mxcsr);", StringComparison.Ordinal) &&
+                                                       CountToken(native, "H8JniEnvironmentScope jniScope(javaVm);") == 2 &&
                                                        ContainsTokensInOrder(
                                                            native,
                                                            "extern \"C\" JNIEXPORT int32_t JNICALL H8_GetAssetSize",
-                                                           "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)",
-                                                           "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);",
+                                                           "H8JniEnvironmentScope jniScope(javaVm);",
+                                                           "if (!jniScope.IsValid())",
+                                                           "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);",
                                                            "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);",
-                                                           "AAsset_close(asset);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);") &&
+                                                           "AAsset_close(asset);") &&
                                                        ContainsTokensInOrder(
                                                            native,
                                                            "extern \"C\" JNIEXPORT bool JNICALL H8_LoadAssetToPointer",
-                                                           "H8_TryAcquireJniEnvironment(javaVm, &environment, &attached)",
-                                                           "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);",
+                                                           "H8JniEnvironmentScope jniScope(javaVm);",
+                                                           "if (!jniScope.IsValid())",
+                                                           "AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);",
                                                            "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);",
                                                            "AAsset_close(asset);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);",
-                                                           "AAsset_close(asset);",
-                                                           "H8_ReleaseJniEnvironment(javaVm, attached);");
+                                                           "return totalRead == assetLength;");
             bool csharpRawJniRoute = arena.Contains("AndroidJNI.FindClass(\"com/unity3d/player/UnityPlayer\")", StringComparison.Ordinal) &&
                                      arena.Contains("AndroidJNI.GetStaticObjectField", StringComparison.Ordinal) &&
                                      arena.Contains("CallObjectMethodUnsafe(activity, getAssetsMethod, null)", StringComparison.Ordinal) &&

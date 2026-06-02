@@ -283,17 +283,14 @@ def build_report():
     hourly_cutoff = now_utc - datetime.timedelta(hours=120)
     files = audit.collect_jsonl_files()
     changed_files = []
-    hourly_files = []
     for root, path, size, mtime in files:
         mtime_utc = datetime.datetime.fromtimestamp(mtime, UTC)
         if mtime_utc >= cutoff - datetime.timedelta(minutes=10):
             changed_files.append((root, path, size, mtime))
-        if mtime_utc >= hourly_cutoff - datetime.timedelta(minutes=10):
-            hourly_files.append((root, path, size, mtime))
 
     delta_total = zero_usage()
     long_context_delta_usage = zero_usage()
-    hourly = defaultdict(zero_usage)
+    hourly = merge_period_map(previous.get("hourly") or {})
     daily = merge_period_map(previous.get("daily") or {})
     weekly = merge_period_map(previous.get("weekly") or {})
     monthly = merge_period_map(previous.get("monthly") or {})
@@ -320,20 +317,16 @@ def build_report():
             max_event_ts = max(max_event_ts, ts)
             add_usage(delta_total, delta)
             local = ts.astimezone(SAMARA)
+            add_usage(hourly[local.strftime("%Y-%m-%d %H:00")], delta)
             add_usage(daily[local.date().isoformat()], delta)
             add_usage(weekly[week_key(local)], delta)
             add_usage(monthly[f"{local.year}-{local.month:02d}"], delta)
 
-    seen_hourly_paths = {str(path).lower() for _root, path, _size, _mtime in changed_files}
-    for _root, path, _size, _mtime in hourly_files:
-        increments, errors = audit.read_increment_events(path)
-        if str(path).lower() not in seen_hourly_paths:
-            parse_errors += errors
-        for ts, delta, _model, _effort in increments:
-            if ts < hourly_cutoff:
-                continue
-            local = ts.astimezone(SAMARA)
-            add_usage(hourly[local.strftime("%Y-%m-%d %H:00")], delta)
+    hourly = defaultdict(zero_usage, {
+        key: value
+        for key, value in hourly.items()
+        if parse_ts(f"{key}:00+04:00") is None or parse_ts(f"{key}:00+04:00") >= hourly_cutoff
+    })
 
     total = clone_usage(previous.get("totals") or {})
     add_usage(total, delta_total)
@@ -373,7 +366,7 @@ def build_report():
         "fast_refresh_base_mode": previous_snapshot_mode,
         "fast_refresh_cutoff_utc": cutoff.isoformat(),
         "fast_refresh_changed_jsonl_files_scanned": len(changed_files),
-        "fast_refresh_hourly_jsonl_files_scanned": len(hourly_files),
+        "fast_refresh_hourly_jsonl_files_scanned": len(changed_files),
         "fast_refresh_increment_events_after_cutoff": increment_events_after_cutoff,
         "fast_refresh_long_context_increment_events_after_cutoff": long_context_increment_events_after_cutoff,
         "file_count": len(files),

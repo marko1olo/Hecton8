@@ -243,6 +243,25 @@ namespace Hecton8.Gameplay
             _isDispatching = false;
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                ResetStaticState();
+        }
+#endif
+
         public static void Register(IScanEventListener listener)
         {
             if (listener == null)
@@ -256,6 +275,11 @@ namespace Hecton8.Gameplay
             }
 
             RegisterListenerImmediate(listener);
+        }
+
+        public static void EnsureInitializedCold()
+        {
+            EnsureInitialized();
         }
 
         public static void Unregister(IScanEventListener listener)
@@ -709,6 +733,9 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
+            if (!UnityEngine.Application.isPlaying)
+                return;
+
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<ScanEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - deferred scan event lane flushed by SystemDispatcher LateUpdate - owner: ScanEvents

@@ -122,6 +122,7 @@ namespace Hecton.Localization
         private IDepthZoneReadModel _cachedDepthZoneReadModel;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private IAcousticZoneMadnessCueSink _cachedAcousticMadnessCueSink;
+        private INativeInputManagerRuntime _cachedNativeInputRuntime;
         private uint _cachedAnalyzerFrame;
         private bool _cachedAnalyzerInstalled;
         private uint _cachedHullStressFrame;
@@ -794,6 +795,9 @@ namespace Hecton.Localization
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
                     _cachedAcousticMadnessCueSink = currentService as IAcousticZoneMadnessCueSink;
                     break;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    _cachedNativeInputRuntime = currentService as INativeInputManagerRuntime;
+                    break;
             }
         }
 
@@ -988,11 +992,13 @@ namespace Hecton.Localization
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string languageFileName = GetBabelLocaleFileName(language);
 
+            // Locale swaps require a single-language H8AB payload. The generic
+            // Babel_Dictionary files are either balance/content dictionaries or the
+            // multi-locale H8BD tooling artifact, so committing them here corrupts
+            // the active language view.
             if (TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Localization", languageFileName), out path) ||
                 TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Balance", "Baked", languageFileName), out path) ||
-                TryResolveExistingPath(Path.Combine(projectRoot, "Assets", "_Project", "Data", "Localization", languageFileName), out path) ||
-                TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName), out path) ||
-                TryResolveExistingPath(Path.Combine(projectRoot, "Assets", "_Project", "Data", "Localization", H8StaticDataFormat.BabelDictionaryFileName), out path))
+                TryResolveExistingPath(Path.Combine(projectRoot, "Assets", "_Project", "Data", "Localization", languageFileName), out path))
             {
                 return true;
             }
@@ -1365,7 +1371,7 @@ namespace Hecton.Localization
             if (!TryResolveButtonToken(token, out string actionName, out string actionMap))
                 return false;
 
-            INativeInputManagerRuntime input = GlobalRegistry.NativeInputRuntime;
+            INativeInputManagerRuntime input = _cachedNativeInputRuntime;
             if (input == null)
                 return false;
 
@@ -2144,6 +2150,7 @@ namespace Hecton.Localization
             _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
             _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _cachedAcousticMadnessCueSink = GlobalRegistry.AcousticZoneMadnessCueSink;
+            _cachedNativeInputRuntime = GlobalRegistry.NativeInputRuntime;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)

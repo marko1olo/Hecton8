@@ -100,6 +100,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _lateFrameRegistered;
         private bool _registeredHotSwapListener;
+        private bool _dispatcherAvailable;
 
         public void Initialize(Shader shaderOverride)
         {
@@ -168,6 +169,7 @@ namespace Hecton8.Gameplay
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
                 {
+                    _dispatcherAvailable = currentService != null;
                     if (currentService == null)
                     {
                         _registered = false;
@@ -492,7 +494,7 @@ namespace Hecton8.Gameplay
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
@@ -512,7 +514,7 @@ namespace Hecton8.Gameplay
             if (_lateFrameRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -529,6 +531,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerContextCold()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }

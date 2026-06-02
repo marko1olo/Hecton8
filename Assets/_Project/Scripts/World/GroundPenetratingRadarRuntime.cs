@@ -1767,7 +1767,7 @@ namespace Hecton8.World
         private static GraphicsBuffer CreateIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 UnsafeUtility.SizeOf<GroundRadarIndirectArgsDTO>());

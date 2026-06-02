@@ -280,7 +280,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            return false;
+            return H8AppliedLoreRuntime.TryWriteTitleUtf16(hash, H8AppliedLoreRuntime.DefaultLocaleHash, destination, out written);
         }
 
         private static bool TryCopyLoreEntityTitle(

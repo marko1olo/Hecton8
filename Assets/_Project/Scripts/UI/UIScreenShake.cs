@@ -13,18 +13,21 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/UI Screen Shake")]
     public sealed class UIScreenShake : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         [Header("=== SETTINGS ===")]
         [SerializeField] private float shakeDuration = 0.2f;
         [SerializeField] private float shakeIntensity = 10f;
         [SerializeField] private AnimationCurve shakeCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        private const float DefaultGlobalMotionScale = 1f;
+        private const float MinimumActiveMotionScale = 0.0001f;
+
+        // --------------------------------------------------------------------------
         // FIELDS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private RectTransform _rectTransform;
         private Vector2 _originalPosition;
@@ -33,17 +36,24 @@ namespace Hecton8.UI
         private float _activeShakeIntensity;
         private bool _registered;
         private bool _hotSwapRegistered;
+        private static float s_globalMotionScale = DefaultGlobalMotionScale;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void Awake()
         {
             TryGetComponent(out _rectTransform);
             if (_rectTransform != null)
                 _originalPosition = _rectTransform.anchoredPosition;
-            _activeShakeIntensity = shakeIntensity;
+            _activeShakeIntensity = SanitizeNonNegativeFinite(shakeIntensity);
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_globalMotionScale = DefaultGlobalMotionScale;
         }
 
         private void OnEnable()
@@ -84,21 +94,30 @@ namespace Hecton8.UI
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // LATE FRAME
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void LateFrameTick()
         {
             if (!_isShaking)
                 return;
 
-            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            float safeDuration = math.max(0.0001f, shakeDuration);
+            float motionScale = SanitizeMotionScale(s_globalMotionScale);
+            if (motionScale <= MinimumActiveMotionScale)
+            {
+                _isShaking = false;
+                ResetPosition();
+                return;
+            }
+
+            float safeDeltaTime = SanitizeNonNegativeFinite(SystemDispatcher.CurrentFrameDeltaTime);
+            float safeDuration = SanitizePositiveFinite(shakeDuration, 0.0001f);
             _shakeTimer += safeDeltaTime;
             float t = math.saturate(_shakeTimer / safeDuration);
             float envelope = shakeCurve != null ? shakeCurve.Evaluate(t) : 1f - t;
-            float intensity = envelope * _activeShakeIntensity;
+            envelope = SanitizeNonNegativeFinite(envelope);
+            float intensity = envelope * _activeShakeIntensity * motionScale;
 
             if (_rectTransform != null)
             {
@@ -116,9 +135,9 @@ namespace Hecton8.UI
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // PUBLIC API
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         /// <summary>
         /// Trigger screen shake.
@@ -136,9 +155,17 @@ namespace Hecton8.UI
             BeginShake(customIntensity);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        /// <summary>
+        /// Presentation-only accessibility scalar for UI shock motion. Actual transform writes stay in LateFrameTick.
+        /// </summary>
+        public static void SetGlobalMotionScale(float scale)
+        {
+            s_globalMotionScale = SanitizeMotionScale(scale);
+        }
+
+        // --------------------------------------------------------------------------
         // PRIVATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void ResetPosition()
         {
@@ -151,8 +178,11 @@ namespace Hecton8.UI
             if (_rectTransform == null)
                 return;
 
+            if (SanitizeMotionScale(s_globalMotionScale) <= MinimumActiveMotionScale)
+                return;
+
             _originalPosition = _rectTransform.anchoredPosition;
-            _activeShakeIntensity = math.max(0f, intensity);
+            _activeShakeIntensity = SanitizeNonNegativeFinite(intensity);
             _isShaking = true;
             _shakeTimer = 0f;
         }
@@ -165,12 +195,30 @@ namespace Hecton8.UI
             return (math.frac(h) * 2f) - 1f;
         }
 
+        private static float SanitizeMotionScale(float scale)
+        {
+            return math.isfinite(scale) ? math.saturate(scale) : DefaultGlobalMotionScale;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return fallback;
+
+            return value;
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void Unregister()
@@ -178,7 +226,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 

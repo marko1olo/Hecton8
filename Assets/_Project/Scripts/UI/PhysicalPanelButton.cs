@@ -171,7 +171,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             if (_pressDispatched)
-                DispatchPanelEvent(DiegeticPanelInputEventType.Up);
+                _ = DispatchPanelEvent(DiegeticPanelInputEventType.Up);
 
             Unregister(forceLateFrame: true);
             TryUnregisterHotSwapListener();
@@ -219,7 +219,7 @@ namespace Hecton8.UI
 
             if (!handInside && _pressDispatched)
             {
-                DispatchPanelEvent(DiegeticPanelInputEventType.Up);
+                _ = DispatchPanelEvent(DiegeticPanelInputEventType.Up);
                 _pressDispatched = false;
             }
             else if (handInside && _pressDispatched && safeDeltaTime > 0f)
@@ -227,7 +227,7 @@ namespace Hecton8.UI
                 _holdEventRemaining -= safeDeltaTime;
                 if (_holdEventRemaining <= 0f)
                 {
-                    DispatchPanelEvent(DiegeticPanelInputEventType.Hold);
+                    _ = DispatchPanelEvent(DiegeticPanelInputEventType.Hold);
                     _holdEventRemaining = HoldDispatchIntervalSeconds;
                 }
             }
@@ -408,7 +408,9 @@ namespace Hecton8.UI
 
             if (!_pressDispatched)
             {
-                DispatchPanelEvent(DiegeticPanelInputEventType.Down);
+                if (!DispatchPanelEvent(DiegeticPanelInputEventType.Down))
+                    return;
+
                 QueueDiegeticClick(runtimeHitPoint);
                 _pressDispatched = true;
                 _holdEventRemaining = HoldDispatchIntervalSeconds;
@@ -520,18 +522,23 @@ namespace Hecton8.UI
             _receiverRegistered = false;
         }
 
-        private void DispatchPanelEvent(DiegeticPanelInputEventType eventType)
+        private bool DispatchPanelEvent(DiegeticPanelInputEventType eventType)
         {
             if (_panelInteractable == null)
-                return;
+                return false;
+
+            float2 panelHitPoint = new float2(canvasHitPoint.x, canvasHitPoint.y);
+            if (eventType != DiegeticPanelInputEventType.Up && !math.all(math.isfinite(panelHitPoint)))
+                return false;
 
             _panelInteractable.ReceiveCanvasInput(new DiegeticPanelInputEvent
             {
                 PanelId = panelId,
-                CanvasHitPoint = new float2(canvasHitPoint.x, canvasHitPoint.y),
+                CanvasHitPoint = panelHitPoint,
                 EventType = eventType,
                 Timestamp = _buttonClock
             });
+            return true;
         }
 
         private void PlayDiegeticClick(Vector3 runtimeHitPoint)

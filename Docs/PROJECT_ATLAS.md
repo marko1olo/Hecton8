@@ -28,7 +28,7 @@ These phrases are intentionally preserved because local validators and data tool
 - observedAssemblyCount = 83
 - observedDomainIndexCount = 85
 
-Compatibility note: `observedAssemblyCount = 83` is a preserved legacy tool token, not the current asmdef count. Current static source reality on 2026-05-28 is recorded in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`: `167` first-party asmdefs under `Assets/_Project`; generated dependency detail lives in `Docs/Generated/DEPENDENCY_GRAPH.md`.
+Compatibility note: `observedAssemblyCount = 83` is a preserved legacy tool token, not the current asmdef count. Current static source reality on 2026-06-01 is recorded in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`: `171` first-party asmdefs under `Assets/_Project`; generated dependency detail lives in `Docs/Generated/DEPENDENCY_GRAPH.md`.
 
 ## H-Phi / DataSovereignty Boundary
 

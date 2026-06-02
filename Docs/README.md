@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Documentation Index
 
-Date: 2026-05-28
+Date: 2026-06-02
 Status: STATIC INDEX
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
@@ -11,12 +11,13 @@ Purpose: stable read map for active documentation. This is not a current-work di
 
 1. `AGENTS.md`
 2. `TASTE.md`
-3. task-relevant files under `.agents-skills/`
-4. current C# source under `Assets/_Project`
-5. `Docs/PROJECT_BASELINE.md`
-6. active architecture contracts under `Docs/ARCHITECTURE`
-7. fresh proof artifacts under `Docs/Reports`
-8. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
+3. `textes.md` for public copy only
+4. task-relevant files under `.agents-skills/`
+5. current C# source under `Assets/_Project`
+6. `Docs/PROJECT_BASELINE.md`
+7. active architecture contracts under `Docs/ARCHITECTURE`
+8. fresh proof artifacts under `Docs/Reports`
+9. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
 
 Dated reports and archived files are evidence snapshots. They are not active system contracts.
 
@@ -25,10 +26,12 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 | Need | Read |
 |---|---|
 | Project baseline and documentation boundaries | `Docs/PROJECT_BASELINE.md` |
-| Current runtime topology, scene spine, and source owner map | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
+| Source-backed runtime reality, scene spine, and source owner map | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
+| Real-script systems map: source owners, implemented surfaces, missing proof | `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md` |
 | Domain-to-architecture coverage matrix | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` |
 | Root file policy | `Docs/ROOT_DOCS_REFERENCE.md` |
 | Documentation update rules | `Docs/DOC_GOVERNANCE.md` |
+| Public copy voice | `textes.md` |
 | Evidence and acceptance gates | `Docs/QUALITY_GATES.md` |
 | Cross-system contracts | `Docs/SYSTEMS_CONTRACTS.md` |
 | Architecture entry point | `Docs/ARCHITECTURE/README.md` |
@@ -60,6 +63,7 @@ Architecture spine:
 - `Docs/ARCHITECTURE/README.md`
 - `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
 - `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`
 - `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
@@ -90,6 +94,19 @@ Domain contracts:
 - `Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md`
 - `Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md`
 - `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`
+
+Content and support corpora:
+
+| Path | Classification | Active boundary |
+|---|---|---|
+| `Docs/Lore` | narrative, encyclopedia, localization, and applied content corpus | Content authority only. Does not prove implementation, route availability, or runtime wiring. |
+| `Docs/Marketing` | public-copy, launch, outreach, Steam, creator, press, and gate-tracking corpus | Public-facing work must also read root `textes.md`; no public send/readiness claim without proof gates. |
+| `Docs/Modding` | mod/API specification, sandbox, schema, command/event audit matrices, starter-kit planning | API/product plan only unless current source and runtime artifacts prove loader behavior. |
+| `Docs/Design` | design/spec support: binary specs, LUTs, UI scaler, mission notes, VR comfort/haptics | Lower authority than `Docs/ARCHITECTURE` and current source; promote durable engineering facts before treating as contract. |
+| `Docs/Data` | CSV authoring and tuning profiles | Authoring data only. Runtime readiness belongs to Data Monolith contracts and proof artifacts. |
+| `Docs/Audio` | dialogue, stem, and synth CSV authoring data | Audio content/profile data only; DSP/runtime proof remains separate. |
+| `Docs/Atmosphere` | gas/atmosphere CSV profile data | Authoring data only; simulation/runtime proof remains separate. |
+| `Docs/AI_Texturing_Templates` | image/texturing prompt template support | Asset-generation support only; not runtime or art QA proof. |
 
 Evidence and archive boundaries:
 

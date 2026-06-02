@@ -114,7 +114,7 @@ namespace Hecton8.UI
 
         private static RectTransform CreateMarkerLayer(RectTransform overlayRect)
         {
-            // COLD ALLOC: GameObject[1] — dedicated relay HUD marker layer outside the overlay-owned layout root — owner: RelayHUDRuntimeBootstrap
+            // COLD ALLOC: GameObject[1] - dedicated relay HUD marker layer outside the overlay-owned layout root - owner: RelayHUDRuntimeBootstrap
             GameObject markerLayerObject = new GameObject(MarkerLayerName, typeof(RectTransform));
             markerLayerObject.transform.SetParent(overlayRect, false);
 
@@ -131,7 +131,7 @@ namespace Hecton8.UI
 
         private static void CreateMarker(RectTransform parent)
         {
-            // COLD ALLOC: GameObject[4] — runtime relay HUD fail-safe hierarchy — owner: RelayHUDRuntimeBootstrap
+            // COLD ALLOC: GameObject[4] - runtime relay HUD fail-safe hierarchy - owner: RelayHUDRuntimeBootstrap
             GameObject markerRoot = new GameObject(
                 MarkerRootName,
                 typeof(RectTransform),

@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PDAInventoryFilterButton.cs
+// HECTON-8 - PDAInventoryFilterButton.cs
 // Knopka filtra inventarya v PDA.
 // Upravlyaet vizualnym sostoyaniem i filtratsiey predmetov.
 // NOTE: Sozdan kak zaglushka dlya vosstanovleniya kompilyatsii posle refaktoringa.
@@ -20,9 +20,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Inventory Filter Button")]
     public sealed class PDAInventoryFilterButton : MonoBehaviour
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private PDAInventoryTab _inventoryTab;
         private InventoryViewFilter _filter;
@@ -36,9 +36,9 @@ namespace Hecton8.UI
         private Button _button;
         private UnityAction _clickAction;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Filtr, kotoryy primenyaet eta knopka.
@@ -50,9 +50,9 @@ namespace Hecton8.UI
         /// </summary>
         public bool IsActive => _isActive;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Initsializiruet knopku filtra.
@@ -95,9 +95,9 @@ namespace Hecton8.UI
             UpdateVisuals();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE METHODS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void UpdateVisuals()
         {
@@ -108,9 +108,9 @@ namespace Hecton8.UI
                 _label.color = _isActive ? _textActive : _textInactive;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  UNITY CALLBACKS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {

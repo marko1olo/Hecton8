@@ -106,7 +106,7 @@ Shader "Hecton8/Construction/FoundationPylon"
             Varyings vert(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
             {
                 Varyings output;
-                PylonMatrixRaw matrix = _H8FoundationPylonMatrices[instanceId];
+                PylonMatrixRaw pylonMatrix = _H8FoundationPylonMatrices[instanceId];
                 PylonSurfaceRaw surface = _H8FoundationPylonSurfaces[instanceId];
                 uint flags = surface.meta.x;
 
@@ -121,16 +121,16 @@ Shader "Hecton8/Construction/FoundationPylon"
                 local *= active;
 
                 float4 world =
-                    (matrix.c0 * local.x) +
-                    (matrix.c1 * local.y) +
-                    (matrix.c2 * local.z) +
-                    matrix.c3;
+                    (pylonMatrix.c0 * local.x) +
+                    (pylonMatrix.c1 * local.y) +
+                    (pylonMatrix.c2 * local.z) +
+                    pylonMatrix.c3;
                 float3 worldPosition = world.xyz + _H8FoundationPylonCameraWorldOffset.xyz;
                 output.positionHCS = TransformWorldToHClip(worldPosition);
                 output.worldPos = worldPosition;
                 output.normalWS = SafeNormalize(
-                    (matrix.c0.xyz * normalOS.x) +
-                    (matrix.c2.xyz * normalOS.z) +
+                    (pylonMatrix.c0.xyz * normalOS.x) +
+                    (pylonMatrix.c2.xyz * normalOS.z) +
                     (surface.surfaceNormalFlare.xyz * bottom * 0.35),
                     float3(0.0, 1.0, 0.0));
                 output.length01 = saturate(surface.hitLocalLength.w / 42.0);

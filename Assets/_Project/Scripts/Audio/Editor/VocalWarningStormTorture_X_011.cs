@@ -1,31 +1,24 @@
 #if UNITY_EDITOR
-using System;
-using System.IO;
-using System.Text;
 using UnityEditor;
-using UnityEngine;
 
 namespace Hecton8.Audio.Editor
 {
     public static class VocalWarningStormTorture_X_011
     {
-        private const int PriorityWordBitCount = 64;
+        private const int AlarmBitCount = 64;
         private const int StormWarningCount = 50;
-        private const string ReportPath = "Docs/Reports/UX_VWS_STORM_TORTURE_X_011.json";
 
         [MenuItem("Hecton8/Audio/Run VWS Storm Torture X_011")]
         public static void Run()
         {
             StormResult result = ExecuteStorm();
-            WriteReport(result);
-            AssetDatabase.Refresh();
-            Hecton8.Core.H8Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + " wrote " + ReportPath + ".");
+            Hecton8.Core.H8Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + ".");
         }
 
         internal static StormResult ExecuteStorm()
         {
-            StormSlot[] slots = new StormSlot[PriorityWordBitCount];
-            ulong priorityWord = 0UL;
+            StormSlot[] slots = new StormSlot[AlarmBitCount];
+            ulong activeAlarmsMask = 0UL;
             int accepted = 0;
             int replaced = 0;
             int rejected = 0;
@@ -34,7 +27,7 @@ namespace Hecton8.Audio.Editor
             {
                 byte warningId = (byte)((i % 5) + 1);
                 int bitIndex = ResolvePriorityBitIndex(warningId);
-                if ((uint)bitIndex >= PriorityWordBitCount)
+                if ((uint)bitIndex >= AlarmBitCount)
                 {
                     rejected++;
                     continue;
@@ -43,10 +36,10 @@ namespace Hecton8.Audio.Editor
                 float score = ResolveScore(warningId, i);
                 ulong mask = 1UL << bitIndex;
                 ref StormSlot slot = ref slots[bitIndex];
-                if ((priorityWord & mask) == 0UL)
+                if ((activeAlarmsMask & mask) == 0UL)
                 {
                     slot = new StormSlot(warningId, score, i);
-                    priorityWord |= mask;
+                    activeAlarmsMask |= mask;
                     accepted++;
                     continue;
                 }
@@ -62,14 +55,14 @@ namespace Hecton8.Audio.Editor
                 }
             }
 
-            int firstBit = ResolveHighestPriorityBitIndex(priorityWord);
+            int firstBit = ResolveHighestPriorityBitIndex(activeAlarmsMask);
             bool sorted = true;
-            int previousBit = PriorityWordBitCount;
-            ulong scanWord = priorityWord;
+            int previousBit = -1;
+            ulong scanWord = activeAlarmsMask;
             while (scanWord != 0UL)
             {
                 int bitIndex = ResolveHighestPriorityBitIndex(scanWord);
-                if (bitIndex >= previousBit)
+                if (bitIndex <= previousBit)
                     sorted = false;
 
                 previousBit = bitIndex;
@@ -78,13 +71,13 @@ namespace Hecton8.Audio.Editor
 
             return new StormResult
             {
-                Pass = CountBits64(priorityWord) == 5 &&
-                       firstBit == 63 &&
+                Pass = CountBits64(activeAlarmsMask) == 5 &&
+                       firstBit == 0 &&
                        sorted &&
-                       slots[63].WarningId == 1 &&
-                       slots[59].WarningId == 5,
-                PriorityWord = priorityWord,
-                ActiveCount = CountBits64(priorityWord),
+                       slots[0].WarningId == 1 &&
+                       slots[4].WarningId == 5,
+                ActiveAlarmsMask = activeAlarmsMask,
+                ActiveCount = CountBits64(activeAlarmsMask),
                 HighestBit = firstBit,
                 Accepted = accepted,
                 Replaced = replaced,
@@ -101,32 +94,32 @@ namespace Hecton8.Audio.Editor
 
         private static int ResolvePriorityBitIndex(byte warningId)
         {
-            return warningId >= 1 && warningId <= 5 ? PriorityWordBitCount - warningId : -1;
+            return warningId >= 1 && warningId <= 5 ? warningId - 1 : -1;
         }
 
-        private static int ResolveHighestPriorityBitIndex(ulong priorityWord)
+        private static int ResolveHighestPriorityBitIndex(ulong activeAlarmsMask)
         {
-            if (priorityWord == 0UL)
+            if (activeAlarmsMask == 0UL)
                 return -1;
 
-            uint high = (uint)(priorityWord >> 32);
-            if (high != 0u)
-                return 32 + (31 - CountLeadingZeros(high));
+            uint low = (uint)activeAlarmsMask;
+            if (low != 0u)
+                return CountTrailingZeros(low);
 
-            return 31 - CountLeadingZeros((uint)priorityWord);
+            return 32 + CountTrailingZeros((uint)(activeAlarmsMask >> 32));
         }
 
-        private static int CountLeadingZeros(uint value)
+        private static int CountTrailingZeros(uint value)
         {
             if (value == 0u)
                 return 32;
 
             int count = 0;
-            uint mask = 0x80000000u;
+            uint mask = 1u;
             while ((value & mask) == 0u)
             {
                 count++;
-                mask >>= 1;
+                mask <<= 1;
             }
 
             return count;
@@ -151,29 +144,6 @@ namespace Hecton8.Audio.Editor
             return count;
         }
 
-        private static void WriteReport(in StormResult result)
-        {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string absolutePath = Path.Combine(projectRoot, ReportPath);
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            StringBuilder builder = new StringBuilder(512);
-            builder.Append("{\n");
-            builder.Append("  \"agent\": \"X_011\",\n");
-            builder.Append("  \"status\": \"").Append(result.Pass ? "PASS_PENDING_COMPILE" : "FAIL_STATIC_STORM").Append("\",\n");
-            builder.Append("  \"triggerCount\": ").Append(result.TriggerCount).Append(",\n");
-            builder.Append("  \"activeCount\": ").Append(result.ActiveCount).Append(",\n");
-            builder.Append("  \"highestBit\": ").Append(result.HighestBit).Append(",\n");
-            builder.Append("  \"priorityWordHex\": \"0x").Append(result.PriorityWord.ToString("X16")).Append("\",\n");
-            builder.Append("  \"accepted\": ").Append(result.Accepted).Append(",\n");
-            builder.Append("  \"replaced\": ").Append(result.Replaced).Append(",\n");
-            builder.Append("  \"rejected\": ").Append(result.Rejected).Append("\n");
-            builder.Append("}\n");
-            File.WriteAllText(absolutePath, builder.ToString(), Encoding.UTF8);
-        }
-
         private readonly struct StormSlot
         {
             public StormSlot(byte warningId, float score, int sequence)
@@ -191,7 +161,7 @@ namespace Hecton8.Audio.Editor
         internal struct StormResult
         {
             public bool Pass;
-            public ulong PriorityWord;
+            public ulong ActiveAlarmsMask;
             public int ActiveCount;
             public int HighestBit;
             public int Accepted;

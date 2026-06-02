@@ -1,27 +1,27 @@
 ﻿# Codex Token Usage Ledger
 
-Date: 2026-05-31 16:13 Europe/Samara
+Date: 2026-06-02 12:56 Europe/Samara
 Status: CURRENT FAST INCREMENTAL LOCAL TELEMETRY SNAPSHOT / NOT PROJECT ENGINEERING AUTHORITY
 
-Current report: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-31.md`.
+Current report: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-02.md`.
 
 | Metric | Value |
 |---|---:|
-| total_tokens | 124,526,072,948 |
-| input_tokens | 124,095,978,723 |
-| cached_input_tokens | 119,334,398,080 |
-| output_tokens | 429,060,625 |
-| reasoning_output_tokens | 132,838,116 |
-| GPT-5.5 standard under-272K API-equivalent | $96,346.92 |
-| GPT-5.5 long-context sensitivity upper bound | $186,257.93 |
-| GPT-5.5 long-context + regional sensitivity upper bound | $204,883.73 |
-| GPT-5.5 regional +10% sensitivity | $105,981.61 |
-| approx all-time 500-word pages | 186,789,109 |
-| approx all-time 80k-word books | 1,167,431 |
-| approx all-time continuous reading years at 250 wpm | 710.77 |
-| cached input share | 96.16% |
-| total tokens / hour since previous snapshot | 74,577,964.61 |
-| approx pages / hour since previous snapshot | 111,866.95 |
-| GPT-5.5 standard $ / hour since previous snapshot | $58.63 |
+| total_tokens | 129,368,782,512 |
+| input_tokens | 128,922,250,049 |
+| cached_input_tokens | 123,992,808,192 |
+| output_tokens | 445,498,863 |
+| reasoning_output_tokens | 137,440,455 |
+| GPT-5.5 standard under-272K API-equivalent | $100,008.58 |
+| GPT-5.5 long-context sensitivity upper bound | $193,334.68 |
+| GPT-5.5 long-context + regional sensitivity upper bound | $212,668.14 |
+| GPT-5.5 regional +10% sensitivity | $110,009.44 |
+| approx all-time 500-word pages | 194,053,173 |
+| approx all-time 80k-word books | 1,212,832 |
+| approx all-time continuous reading years at 250 wpm | 738.41 |
+| cached input share | 96.18% |
+| total tokens / hour since previous snapshot | 108,306,438.04 |
+| approx pages / hour since previous snapshot | 162,459.66 |
+| GPT-5.5 standard $ / hour since previous snapshot | $81.89 |
 
 Evidence: local Codex JSONL plus official OpenAI pricing/cache/reasoning docs. Not invoice proof.

@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PDALoadoutTab.cs
+// HECTON-8 - PDALoadoutTab.cs
 // Dedicated PDA loadout tab with 4 large slot cards, readiness state,
 // durability, energy profile, and cargo linkage to the real tool backend.
 // ============================================================================
@@ -54,11 +54,11 @@ namespace Hecton8.UI
         [SerializeField] private bool holsterBeforeApplyingPreset = true;
         [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
 
-        // ════════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
-        // ════════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
-        // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
+        // COLD ALLOC: char[1024] - PDA loadout summary composition buffer - owner: PDALoadoutTab
         private readonly char[] _summaryCharBuffer = new char[1024];
         private readonly ulong[] _prefabToolCacheIds = new ulong[PrefabToolCacheCapacity]; // COLD ALLOC: ulong[32] - prefab metadata lookup cache keys - owner: PDALoadoutTab
         private readonly byte[] _prefabToolCacheStates = new byte[PrefabToolCacheCapacity]; // COLD ALLOC: byte[32] - 1=hit, 2=miss - owner: PDALoadoutTab
@@ -213,9 +213,9 @@ namespace Hecton8.UI
             UpdateSummaryMassPulse(deltaTime);
         }
 
-        // ════════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  ZERO-GC OPTIMIZATION HELPERS
-        // ════════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
         private void AutoResolve()
         {
@@ -1510,10 +1510,7 @@ namespace Hecton8.UI
             if (tool?.ToolData == null)
                 return 0u;
 
-            string persistentId = tool.ToolData.PersistentId;
-            return !string.IsNullOrEmpty(persistentId)
-                ? unchecked((uint)Hecton.Localization.LocHash.Compute(persistentId))
-                : 0u;
+            return unchecked((uint)tool.ToolData.PersistentHashId);
         }
 
         private static uint ResolveToolMetadataHash(ToolMetadata metadata)
@@ -1727,10 +1724,7 @@ namespace Hecton8.UI
             if (_registeredToLateFrameDispatcher || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredToLateFrameDispatcher = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredToLateFrameDispatcher = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromLateFrameManager()
@@ -1738,7 +1732,7 @@ namespace Hecton8.UI
             if (!_registeredToLateFrameDispatcher)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredToLateFrameDispatcher = false;
         }
 

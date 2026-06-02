@@ -1,6 +1,6 @@
 ﻿# Root Docs Reference
 
-Date: 2026-05-28
+Date: 2026-06-02
 Status: STATIC POLICY
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_FILESYSTEM
@@ -11,6 +11,7 @@ The repository root may contain only these active text anchors:
 
 - `AGENTS.md`
 - `TASTE.md`
+- `textes.md`
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
 
@@ -28,6 +29,7 @@ Pre-cleanup verbose root copies are historical only:
 - `Docs/README.md` - active documentation map.
 - `Docs/PROJECT_BASELINE.md` - stable project baseline and documentation boundary.
 - `TASTE.md` - taste authority for gameplay, design, presentation, screenshot, audio, UI, creature, base, and marketing review.
+- `textes.md` - public-copy voice authority; use only for advertising, store, social, outreach, bios, and community text.
 - `Docs/DOC_GOVERNANCE.md` - documentation maintenance rules.
 - `Docs/QUALITY_GATES.md` - evidence and acceptance gates.
 - `Docs/SYSTEMS_CONTRACTS.md` - stable cross-system contracts.
@@ -36,8 +38,12 @@ Pre-cleanup verbose root copies are historical only:
 - `Docs/Data/Profiles` - static authoring/tuning profiles, not root doctrine.
 - `Docs/ARCHITECTURE/README.md` - architecture contract index.
 - `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` - source constants, concise proof snapshots, and documentation-change register.
-- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` - current static scene spine, package envelope, and source owner map.
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` - current static scene spine, package envelope, source-backed runtime reality, and source owner map.
 - `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` - 85-domain roster mapped to active architecture docs and source areas by echelon.
+- `Docs/Lore` - narrative/content corpus; content authority only, not implementation proof.
+- `Docs/Marketing` - public/commercial planning corpus; public copy still obeys `textes.md` and permission/proof gates.
+- `Docs/Modding` - mod/API planning, schemas, sandbox, and audit matrices.
+- `Docs/Design`, `Docs/Data`, `Docs/Audio`, `Docs/Atmosphere`, `Docs/AI_Texturing_Templates` - support corpora and authoring/profile data, not runtime proof.
 
 ## Evidence Placement
 

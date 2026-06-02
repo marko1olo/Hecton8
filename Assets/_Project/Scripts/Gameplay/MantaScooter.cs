@@ -164,6 +164,8 @@ namespace Hecton8.Gameplay
         private bool _hudPresentationDirty;
         private bool _registeredLateFrame;
         private bool _unregisterLateFrameAfterHeadlightClear;
+        private bool _dispatcherAvailable;
+        private bool _headlightDefaultsRestoreDirty;
         private bool _isActive;
         private bool _isMoving;
         private float _driveThrottleCurrent;
@@ -392,6 +394,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             RefreshCachedRegistryServices();
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
@@ -649,6 +652,12 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (_headlightDefaultsRestoreDirty)
+            {
+                _headlightDefaultsRestoreDirty = false;
+                RestoreHeadlightDefaults();
+            }
+
             if (_headlightClearGlobalsDirty)
             {
                 _headlightClearGlobalsDirty = false;
@@ -754,7 +763,7 @@ namespace Hecton8.Gameplay
             MarkScooterActiveForCentralSolver(false, 0f);
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
-            RestoreHeadlightDefaults();
+            QueueHeadlightDefaultsRestore();
             ClearHeadlightGlobals();
             UpdatePowerIndicator();
         }
@@ -2031,6 +2040,12 @@ namespace Hecton8.Gameplay
             RegisterToLateFrame();
         }
 
+        private void QueueHeadlightDefaultsRestore()
+        {
+            _headlightDefaultsRestoreDirty = true;
+            RegisterToLateFrame();
+        }
+
         private void ClearHeadlightGlobalsImmediate()
         {
             _headlightClearGlobalsDirty = false;
@@ -2422,7 +2437,7 @@ namespace Hecton8.Gameplay
         {
             if (_registeredTick)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -2455,7 +2470,7 @@ namespace Hecton8.Gameplay
         {
             if (_registeredLateFrame)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -2471,6 +2486,7 @@ namespace Hecton8.Gameplay
             _headlightClearGlobalsDirty = false;
             _headlightPresentationDirty = false;
             _hudPresentationDirty = false;
+            _headlightDefaultsRestoreDirty = false;
             _unregisterLateFrameAfterHeadlightClear = false;
             _headlightPresentationDeltaTime = 0f;
         }
@@ -2480,6 +2496,25 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _dispatcherAvailable = currentService != null;
+                if (currentService == null)
+                {
+                    _registeredTick = false;
+                    _registeredLateFrame = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled && IsEquipped)
+                {
+                    RegisterToTick();
+                    RegisterToLateFrame();
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
                 serviceSlot != GlobalRegistryServiceSlot.ObjectPool &&
                 serviceSlot != GlobalRegistryServiceSlot.AcousticZoneRuntime &&

@@ -6346,7 +6346,7 @@ namespace Hecton8.Construction
 
             if (s_DroneProceduralArgsBuffer == null)
                 s_DroneProceduralArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                     1,
                     UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - headless drone procedural indirect draw arguments with mapped CPU upload - owner: DroneFleetManager
             if (s_DroneProceduralArgsUploadBuffer == null)

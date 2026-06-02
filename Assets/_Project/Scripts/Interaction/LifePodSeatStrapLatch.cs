@@ -10,7 +10,7 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Interaction/LifePod Seat Strap Latch")]
-    public sealed class LifePodSeatStrapLatch : MonoBehaviour, IInteractable, IInteractableTextProvider, IPhysicalPanelButtonReceiver, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class LifePodSeatStrapLatch : MonoBehaviour, IInteractable, IInteractableTextProvider, IPhysicalPanelButtonReceiver, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumHoldSeconds = 0.01f;
         private const float MaximumHoldSeconds = 2.0f;
@@ -62,8 +62,11 @@ namespace Hecton8.Interaction
         private bool _latched;
         private bool _registeredReceiver;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _tickDormant;
+        private bool _dispatcherAvailable;
+        private bool _strapVisualDirty;
         private bool _contactThisTick;
         private float _holdProgressSeconds;
         private float _resolvedRequiredHoldSeconds = MinimumHoldSeconds;
@@ -71,6 +74,7 @@ namespace Hecton8.Interaction
         private Vector3 _lastHandPosition;
         private PhysicalHandSide _lastHandSide;
         private Collider _registeredCollider;
+        private Quaternion _pendingStrapLocalRotation = Quaternion.identity;
 
         /// <summary>
         /// True after the latch completed its required hold.
@@ -99,6 +103,7 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             CacheScalarConfig();
             CacheColdReferences();
             CacheLatchedVisualRotation();
@@ -112,7 +117,9 @@ namespace Hecton8.Interaction
             InteractableRegistry.InvalidateTree(this);
             UnregisterReceiver();
             TryUnregisterTick();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
+            _strapVisualDirty = false;
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             _contactThisTick = false;
@@ -123,6 +130,14 @@ namespace Hecton8.Interaction
         {
             InteractableRegistry.InvalidateTree(this);
             UnregisterReceiver();
+            TryUnregisterTick();
+            TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+            _strapVisualDirty = false;
+            if (_highlighter != null)
+                _highlighter.SetHighlight(false);
+            _contactThisTick = false;
+            _holdProgressSeconds = 0f;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -133,11 +148,23 @@ namespace Hecton8.Interaction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            _dispatcherAvailable = currentService != null;
             bool shouldRestoreTick = (_registeredTick && !_tickDormant) || ShouldRunLatchTick();
-            _registeredTick = false;
+            bool shouldRestoreLateFrame = _registeredLateFrame || _strapVisualDirty;
+            TryUnregisterTick();
+            TryUnregisterLateFrame();
             _tickDormant = false;
-            if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
-                TryRegisterTick();
+            if (!shouldRestoreTick && !shouldRestoreLateFrame)
+                return;
+
+            bool restoredTick = !shouldRestoreTick ||
+                (currentService != null && isActiveAndEnabled && TryRegisterTick());
+            bool restoredLateFrame = !shouldRestoreLateFrame ||
+                (currentService != null && isActiveAndEnabled && TryRegisterLateFrame());
+            if (restoredTick && restoredLateFrame)
+                return;
+
+            ClearTransientHoldStateForLostDispatcherRoute();
         }
 
         /// <inheritdoc />
@@ -255,7 +282,7 @@ namespace Hecton8.Interaction
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             if (strapVisual != null && _idleRotationCached)
-                strapVisual.localRotation = _idleLocalRotation;
+                QueueStrapVisualRotation(_idleLocalRotation);
             TryUnregisterTick();
         }
 
@@ -268,7 +295,8 @@ namespace Hecton8.Interaction
             _lastHandSide = handSide;
             _contactThisTick = true;
             _tickDormant = false;
-            TryRegisterTick();
+            if (!TryRegisterTick())
+                ClearTransientHoldStateForLostDispatcherRoute();
         }
 
         private void CompleteLatch(Vector3 handPosition, PhysicalHandSide handSide)
@@ -293,7 +321,35 @@ namespace Hecton8.Interaction
             if (!_latchedRotationCached)
                 CacheLatchedVisualRotation();
 
-            strapVisual.localRotation = _latchedLocalRotation;
+            QueueStrapVisualRotation(_latchedLocalRotation);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_strapVisualDirty)
+                FlushStrapVisualRotation();
+            if (!_strapVisualDirty)
+                TryUnregisterLateFrame();
+        }
+
+        private void QueueStrapVisualRotation(Quaternion localRotation)
+        {
+            _pendingStrapLocalRotation = localRotation;
+            _strapVisualDirty = true;
+            if (!Application.isPlaying)
+            {
+                FlushStrapVisualRotation();
+                return;
+            }
+
+            TryRegisterLateFrame();
+        }
+
+        private void FlushStrapVisualRotation()
+        {
+            if (strapVisual != null)
+                strapVisual.localRotation = _pendingStrapLocalRotation;
+            _strapVisualDirty = false;
         }
 
         private void CacheColdReferences()
@@ -359,14 +415,23 @@ namespace Hecton8.Interaction
             _registeredReceiver = false;
         }
 
-        private void TryRegisterTick()
+        private bool TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
+            if (_registeredTick)
+                return true;
+            if (!_registeredHotSwap && !TryRegisterHotSwapListener())
+                return false;
+            if (!Application.isPlaying || !_dispatcherAvailable)
+                return false;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (_registeredTick)
+            {
                 _tickDormant = false;
+                return true;
+            }
+
+            return false;
         }
 
         private void TryUnregisterTick()
@@ -379,17 +444,47 @@ namespace Hecton8.Interaction
             _tickDormant = false;
         }
 
+        private bool TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame)
+                return true;
+            if (!Application.isPlaying || !_dispatcherAvailable)
+                return false;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            return _registeredLateFrame;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
+        }
+
         private bool ShouldRunLatchTick()
         {
             return !_latched && (_contactThisTick || _holdProgressSeconds > 0f);
         }
 
-        private void TryRegisterHotSwapListener()
+        private void ClearTransientHoldStateForLostDispatcherRoute()
         {
-            if (_registeredHotSwap || !Application.isPlaying)
-                return;
+            _contactThisTick = false;
+            _holdProgressSeconds = 0f;
+            _tickDormant = false;
+        }
+
+        private bool TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return true;
+            if (!Application.isPlaying)
+                return false;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+            return _registeredHotSwap;
         }
 
         private void TryUnregisterHotSwapListener()

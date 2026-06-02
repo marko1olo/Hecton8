@@ -236,10 +236,7 @@ namespace Hecton8.UI
             if (_registeredForSurvivalSignals || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredForSurvivalSignals = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredForSurvivalSignals = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterSurvivalSignalPump()
@@ -247,7 +244,7 @@ namespace Hecton8.UI
             if (!_registeredForSurvivalSignals)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredForSurvivalSignals = false;
         }
 

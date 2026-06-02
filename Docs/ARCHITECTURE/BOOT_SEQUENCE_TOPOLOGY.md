@@ -1,6 +1,6 @@
 ﻿# Boot Sequence Topology
 
-Date: 2026-05-12
+Date: 2026-06-02
 
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
@@ -24,7 +24,17 @@ Owner Source: `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`
 
 ## Six-Stage Lifecycle
 
-The stable lifecycle is:
+Current implementation reality:
+
+`GameBootstrapper.BootstrapPhase` is a seven-phase enum in current source:
+
+```text
+HardwareCheck -> MemoryPreWarm -> CoreServices -> Environment -> Player -> UI -> SceneActivate
+```
+
+`GameBootstrapper` also carries explicit scene constants for `01_MAIN_MENU`, `01_ORBIT`, and `02_HECTON_WORLD`, `DataMonolithBootstrapMaxAttempts = 3`, Addressables prewarm timeout `2.5s`, a Kahn execution-order cache, scene-root budget checks, and UI Addressables prefab loading. This is static source evidence only.
+
+The older stable lifecycle grouping remains a contract grouping, not the exact enum:
 
 ```text
 
@@ -32,7 +42,7 @@ Allocators -> Signals -> I/O -> Monolith -> Simulation -> Presentation
 
 ```
 
-This is the documentation contract. The current implementation still has legacy phase names inside `GameBootstrapper`, but the source-backed dependency order maps to the six stages below.
+Use the seven source phases when auditing current code. Use the six-stage grouping only to reason about cold-start responsibilities.
 
 | Stage | Source Owner | Required Work | Hard Rule |
 
@@ -52,7 +62,7 @@ This is the documentation contract. The current implementation still has legacy 
 
 ## Current `GameBootstrapper` Nodes
 
-`GameBootstrapper` contains a Kahn topological execution cache and 26 bootstrap dependency nodes:
+`GameBootstrapper` contains a Kahn topological execution cache and bootstrap dependency nodes. The following node groups are a static orientation only; rerun source scan before treating the count as current:
 
 | Order Class | Nodes |
 

@@ -260,6 +260,33 @@ namespace Hecton8.Crafting
         private float _lastShaderEdgeGlowIntensity = 1f;
         private float _lastVisualUploadMicroseconds;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ShutdownActive();
+            s_active = null;
+        }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InstallEditorLifecycleShutdownHook()
+        {
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActive;
+            AssemblyReloadEvents.beforeAssemblyReload += ShutdownActive;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActive();
+            }
+        }
+#endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void BootstrapAfterSceneLoad()
         {

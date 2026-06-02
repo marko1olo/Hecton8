@@ -101,6 +101,6 @@ Total: 32 bytes, 8-byte alignment, no `Pack=1`, no properties.
 
 ## Verification State
 
-Static source wiring and polish hardening are complete at source level.
+Static source wiring and polish hardening are present in source. This is not compile, import, Burst, profiler, GC, or runtime proof.
 
 Guarded `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false` did not reach SHINOBU_355 diagnostics because construction files fail on missing `Hecton8.Habitat`. Import/Burst/profiler proof pending.

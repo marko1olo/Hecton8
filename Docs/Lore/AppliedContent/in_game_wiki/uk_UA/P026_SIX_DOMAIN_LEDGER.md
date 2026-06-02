@@ -1,0 +1,30 @@
+---
+packet_id: P026_SIX_DOMAIN_LEDGER
+article_id: humanity.six_domain_ledger
+locale: uk_UA
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Реєстр шести доменів
+
+У 2190 людський простір розріджений, але зрілий. Шість вузлів не вся мапа; це мітки на інструментах, законах, маршрутах пакетів і claim-печатках.
+
+## Scanner
+
+Реєстр має шість великих вузлів: Sol, Centauri, Barnard, Tau Ceti, Luyten і Aegir.
+
+## Terminal
+
+Domain register: право Sol Core, легітимність Centauri, верфі Barnard, арбітраж Tau Ceti, relay custody Luyten, claim Aegir.
+
+## Audio
+
+Шість назв у реєстрі. Жодна не встигне в цю кімнату.
+
+## Field Note
+
+Цивілізація присутня. Відстань усе одно перемагає.
+
+<!-- In-Game Wiki; generated from P026_SIX_DOMAIN_LEDGER/uk_UA. -->

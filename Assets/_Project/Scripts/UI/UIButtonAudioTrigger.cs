@@ -16,9 +16,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/UI Button Audio Trigger")]
     public sealed class UIButtonAudioTrigger : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // TYPES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public enum ButtonType
         {
@@ -27,9 +27,9 @@ namespace Hecton8.UI
             Destructive   // Quit, Delete, Reset
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== BUTTON TYPE ===")]
         [SerializeField] private ButtonType buttonType = ButtonType.Primary;
@@ -38,18 +38,18 @@ namespace Hecton8.UI
         [SerializeField] private AudioClip clickSound;
         [SerializeField] private float volume = 1f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private Button _button;
         private IAudioService _audioManager;
         private UnityAction _cachedClickAction;
         private bool _hotSwapListenerRegistered;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -87,9 +87,9 @@ namespace Hecton8.UI
                 _audioManager = currentService as IAudioService;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // CALLBACKS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnButtonClicked()
         {
@@ -116,9 +116,9 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Set button type dynamically.

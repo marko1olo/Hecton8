@@ -1,0 +1,30 @@
+---
+packet_id: P028_NO_FTL_TRANSIT_MATH
+article_id: travel.no_ftl_transit_math
+locale: ja_JP
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# FTLなしの航行計算
+
+FTLなしの移動はHECTON-8をhard sci-fiに保つ。船と通信は速度、遮蔽、制動、保管に縛られる。
+
+## Scanner
+
+経路計算は即時救助を否定する。飛行は年から十年単位で、打上げ、制動、保管遅延を含む。
+
+## Terminal
+
+Transit note: FTLなし、ansibleなし。Aegirパケットは中継、バッファ、軌道窓を通り、返答権限は事故より古い場合がある。
+
+## Audio
+
+救助が無いのではない。物理で遅い。
+
+## Field Note
+
+魔法の通信はSolへ届かない。
+
+<!-- In-Game Wiki; generated from P028_NO_FTL_TRANSIT_MATH/ja_JP. -->

@@ -167,6 +167,7 @@ namespace Hecton8.Rendering.Scatter
         private const string ScatterFrameConstantsBufferName = "HectonScatterFrameConstants";
         private const int ScatterFrameConstantsStrideBytes = 176;
         private const int ScatterBlackBoxEntryStrideBytes = 64;
+        private const float MinimumQualityDrawFraction = 0.08f;
 
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonScatterSourceMatrices");
         private static readonly int _VisibleIndicesId = Shader.PropertyToID("_HectonScatterVisibleIndices");
@@ -1050,7 +1051,7 @@ namespace Hecton8.Rendering.Scatter
             if (_argsBuffer == null)
             {
                 _argsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect flora draw args - owner: GpuScatterLodManager
                 _argsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
@@ -1251,6 +1252,12 @@ namespace Hecton8.Rendering.Scatter
             safeCount = TryResolveAgeView(out var ages01) ? math.min(safeCount, ages01.Length) : safeCount;
             safeCount = TryResolvePhaseSeedView(out var phaseSeeds) ? math.min(safeCount, phaseSeeds.Length) : safeCount;
             safeCount = TryResolveVisualPayloadView(out var visualPayload) ? math.min(safeCount, visualPayload.Length) : safeCount;
+            if (safeCount > 0)
+            {
+                float drawFraction = math.lerp(MinimumQualityDrawFraction, 1f, Smooth01(_cachedQualityWeight01));
+                safeCount = math.clamp((int)math.ceil(safeCount * drawFraction), 1, safeCount);
+            }
+
             return math.clamp(safeCount, 0, instanceCapacity);
         }
 

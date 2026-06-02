@@ -825,14 +825,14 @@ namespace Hecton8.UI
     [DefaultExecutionOrder(-55)]
     public sealed class BaseIntegrityHUD : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        [Header("── Thresholds ─────────────────────────────")]
+        [Header("-- Thresholds -----------------------------")]
         [SerializeField, Range(0f, 1f)] private float warningThreshold = 0.75f;
         [SerializeField, Range(0f, 1f)] private float criticalThreshold = 0.25f;
         [SerializeField, Range(0f, 1f)] private float dangerThreshold = 0.10f;
         [SerializeField, Range(0f, 1f)] private float airWarningThreshold = 0.35f;
         [SerializeField, Range(0f, 1f)] private float airCriticalThreshold = 0.12f;
 
-        [Header("── Scan Radius ───────────────────────────")]
+        [Header("-- Scan Radius ---------------------------")]
         [Tooltip("Search radius for the nearest base module in meters.")]
         [SerializeField] private float scanRadius = 50f;
 
@@ -859,16 +859,19 @@ namespace Hecton8.UI
         private const float EmergencyCooldown = 12f;
         private const float AirWarningCooldown = 18f;
         private const int PercentMessageCacheSize = 101;
+        private static readonly int BaseIntegrityDangerKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_DANGER);
+        private static readonly int BaseIntegrityCriticalKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_CRITICAL);
+        private static readonly int BaseIntegrityWarningKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_WARNING);
 
-        // COLD ALLOC: uint[101] — cached danger notification hashes by rounded percent — owner: BaseIntegrityHUD
+        // COLD ALLOC: uint[101] - cached danger notification hashes by rounded percent - owner: BaseIntegrityHUD
         private readonly uint[] _dangerNotificationHashes = new uint[PercentMessageCacheSize];
-        // COLD ALLOC: uint[101] — cached critical notification hashes by rounded percent — owner: BaseIntegrityHUD
+        // COLD ALLOC: uint[101] - cached critical notification hashes by rounded percent - owner: BaseIntegrityHUD
         private readonly uint[] _criticalNotificationHashes = new uint[PercentMessageCacheSize];
-        // COLD ALLOC: uint[101] — cached warning notification hashes by rounded percent — owner: BaseIntegrityHUD
+        // COLD ALLOC: uint[101] - cached warning notification hashes by rounded percent - owner: BaseIntegrityHUD
         private readonly uint[] _warningNotificationHashes = new uint[PercentMessageCacheSize];
-        // COLD ALLOC: uint[101] — cached air-critical notification hashes by rounded percent — owner: BaseIntegrityHUD
+        // COLD ALLOC: uint[101] - cached air-critical notification hashes by rounded percent - owner: BaseIntegrityHUD
         private readonly uint[] _airCriticalNotificationHashes = new uint[PercentMessageCacheSize];
-        // COLD ALLOC: char[512] — percent notification formatter scratch; avoids composite-format parser/boxing on warning cache misses — owner: BaseIntegrityHUD
+        // COLD ALLOC: char[512] - percent notification formatter scratch; avoids composite-format parser/boxing on warning cache misses - owner: BaseIntegrityHUD
         private readonly char[] _percentMessageBuffer = new char[512];
         private uint _dangerFormatHash;
         private uint _criticalFormatHash;
@@ -1034,7 +1037,7 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _dangerNotificationHashes,
                     ref _dangerFormatHash,
-                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_DANGER, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
+                    ResolveLocalizedSpan(BaseIntegrityDangerKeyHash, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
                     integrityPercent);
                 QueueNotification(messageHash, warning: true);
                 BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
@@ -1047,7 +1050,7 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _criticalNotificationHashes,
                     ref _criticalFormatHash,
-                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_CRITICAL, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
+                    ResolveLocalizedSpan(BaseIntegrityCriticalKeyHash, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
                     integrityPercent);
                 QueueNotification(messageHash, warning: true);
                 BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
@@ -1060,7 +1063,7 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _warningNotificationHashes,
                     ref _warningFormatHash,
-                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_WARNING, "BASE MODULE: INTEGRITY {0}%."),
+                    ResolveLocalizedSpan(BaseIntegrityWarningKeyHash, "BASE MODULE: INTEGRITY {0}%."),
                     integrityPercent);
                 QueueNotification(messageHash, warning: false);
             }
@@ -1255,25 +1258,22 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
             if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registered = false;
             }
         }
@@ -1359,11 +1359,11 @@ namespace Hecton8.UI
             return math.clamp((int)math.round(value * 100f), 0, PercentMessageCacheSize - 1);
         }
 
-        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, string fallback)
         {
             ILocalizationTextReadModel manager = _cachedLocalization;
-            return manager != null
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+            return manager != null && keyHash != 0
+                ? manager.GetRawSpanOrFallback(keyHash, fallback.AsSpan())
                 : fallback.AsSpan();
         }
     }

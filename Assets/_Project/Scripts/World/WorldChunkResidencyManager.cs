@@ -862,6 +862,7 @@ namespace Hecton8.World
         private IMacroDatabaseService _macroDatabaseService;
         private Hecton8.Optimization.AssetLifecycleGovernor _assetLifecycleGovernor;
         private IVramBudgetReadModel _vramMonitor;
+        private IVramPressureReadModel _vramPressure;
         private IObjectPoolService _objectPoolManager;
         private bool _disposed;
         private bool _forceResidencyEvaluation;
@@ -2441,6 +2442,7 @@ namespace Hecton8.World
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
             _assetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
             _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
+            _vramPressure = GlobalRegistry.VRAMPressureReadModel;
             _predictiveVramCeilingBytes = ComputePredictiveVramCeilingBytesCold();
 
             _objectPoolManager = GlobalRegistry.ObjectPoolService;
@@ -2515,6 +2517,7 @@ namespace Hecton8.World
             _macroDatabaseService = null;
             _assetLifecycleGovernor = null;
             _vramMonitor = null;
+            _vramPressure = null;
             _predictiveVramCeilingBytes = 0L;
             _objectPoolManager = null;
             _ambientBiotaService = null;
@@ -2545,6 +2548,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
                     _vramMonitor = currentService as IVramBudgetReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.VRAMPressureRuntime:
+                    _vramPressure = currentService as IVramPressureReadModel;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPoolManager = currentService as IObjectPoolService;
@@ -4652,7 +4658,7 @@ namespace Hecton8.World
             if (!applyAsyncUploadBudget)
                 return;
 
-            float smooth = ResolveSmoothGlobalQualityWeight01();
+            float smooth = ResolveAsyncUploadEffectiveQuality01();
             int uploadBufferSize = math.clamp((int)math.round(math.lerp(64f, 256f, smooth)), 64, 256);
             int uploadTimeSlice = math.clamp((int)math.ceil(math.lerp(1f, 4f, smooth)), 1, 4);
             int budgetHash = (uploadBufferSize << 8) ^ uploadTimeSlice;
@@ -4664,6 +4670,32 @@ namespace Hecton8.World
             QualitySettings.asyncUploadTimeSlice = uploadTimeSlice;
 
             QualitySettings.asyncUploadPersistentBuffer = true;
+        }
+
+        private float ResolveAsyncUploadEffectiveQuality01()
+        {
+            float quality = ResolveSmoothGlobalQualityWeight01();
+            float pressure = ResolveAsyncUploadPressure01();
+            float pressureCollapse = math.smoothstep(0.55f, 0.98f, pressure);
+            return math.saturate(math.lerp(quality, 0f, pressureCollapse));
+        }
+
+        private float ResolveAsyncUploadPressure01()
+        {
+            IVramPressureReadModel pressure = _vramPressure;
+            if (pressure != null && pressure.HasSample)
+            {
+                float factor = pressure.PressureFactor;
+                return math.saturate(math.select(0f, factor, math.isfinite(factor)));
+            }
+
+            IVramBudgetReadModel monitor = _vramMonitor;
+            if (monitor == null)
+                return 0f;
+
+            return monitor.PressureStateCode == VramPressureStateCodes.Critical
+                ? 1f
+                : monitor.PressureStateCode == VramPressureStateCodes.Warning ? 0.75f : 0f;
         }
 
         private bool TryCapturePlayerMotionSnapshot(out AbsoluteUniversePosition playerAup, out float3 velocity)

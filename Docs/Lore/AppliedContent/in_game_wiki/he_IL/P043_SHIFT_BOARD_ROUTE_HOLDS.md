@@ -1,0 +1,30 @@
+---
+packet_id: P043_SHIFT_BOARD_ROUTE_HOLDS
+article_id: hecton8.shift_board_route_holds
+locale: he_IL
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# עיכובי מסלול בלוח משמרות
+
+הראיה מראה איך שפת לוגיסטיקה מסתירה גופות ומפזרת אשמה.
+
+## Scanner
+
+לוח המשמרות לא אומר פאניקה: הוא אומר עיכוב מסלול, דחיית העברה ובדיקת עדיפות.
+
+## Terminal
+
+שחזור מסלול: הפינוי הורד מתחת לרציפות תהליך ולאישור מרוחק של Deep Reach.
+
+## Audio
+
+הם לא כתבו רצח. הם כתבו עיכוב.
+
+## Field Note
+
+המתים הפכו קודם ללוח זמנים.
+
+<!-- In-Game Wiki; generated from P043_SHIFT_BOARD_ROUTE_HOLDS/he_IL. -->

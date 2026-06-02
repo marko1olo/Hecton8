@@ -1,0 +1,30 @@
+---
+packet_id: P005_REPAIR_SCAR
+article_id: atlas.repair_scar
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Cicatriz de reparación
+
+Las cicatrices de reparación de Atlas señalan lugares donde la lógica de mantenimiento cruzó categorías que nunca debía mezclar. El sistema aún identifica fugas, rutas rotas, pérdida de presión, sustrato expuesto, muros de hábitat fallando y material ausente. Ya no distingue de forma fiable cable de raíz, concha de carcasa, animal de herramienta, cadáver de repuesto o colonia de proceso.
+
+## Scanner
+
+El crecimiento biológico sigue la geometría del cable con espaciado no aleatorio. La fuga de energía no basta para explicarlo.
+
+## Terminal
+
+FUGA: cerrada. RUTA: restaurada. MATERIAL: compatible. ESTADO VIDA: sin resolver. CONTINUIDAD: mejorada.
+
+## Audio
+
+Parcheó la puerta con algo que tenía huesos. Aunque la puerta mantiene presión.
+
+## Field Note
+
+Las malas soldaduras se ven sucias. Esto no. Ese es el problema.
+
+<!-- In-Game Wiki; generated from P005_REPAIR_SCAR/es_ES. -->

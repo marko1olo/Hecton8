@@ -544,8 +544,8 @@ public class HectonCelestialEngineEditTests
             HectonSurfaceWeatherDirector director = directorObject.AddComponent<HectonSurfaceWeatherDirector>();
             rigObject.transform.SetParent(directorObject.transform, false);
             LogAssert.Expect(
-                LogType.Error,
-                "[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.");
+                LogType.Log,
+                "[SurfaceWeatherVfxRig] Missing authored LineRenderer. Lightning presentation disabled until authoredBoltRenderer is assigned.");
             SurfaceWeatherVfxRig rig = rigObject.AddComponent<SurfaceWeatherVfxRig>();
 
             SetPrivateField(director, "weatherVfxRig", null);

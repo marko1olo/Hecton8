@@ -27,7 +27,7 @@ namespace Hecton8.VFX
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Volume))]
-    public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const uint KccVelocityLandingImpactMaxAgeFrames = 12u;
 
@@ -159,7 +159,10 @@ namespace Hecton8.VFX
         private bool _hasChromatic;
         private bool _hasVignette;
         private bool _registeredToTickManager;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _dispatcherAvailable;
+        private bool _postProcessingDirty;
         private float _waterTransitionIntensity;
         private float _waterTransitionHoldTimer;
         private float _waterTransitionChromaticScale;
@@ -183,7 +186,7 @@ namespace Hecton8.VFX
 
             if (_volume.profile == null)
             {
-                Hecton8.Core.H8Debug.LogWarning("[LandingImpactVFX] Volume has no profile assigned.", this);
+                Hecton8.Core.H8Debug.Log("[LandingImpactVFX] Volume has no profile assigned. Landing impact presentation disabled.", this);
                 enabled = false;
                 return;
             }
@@ -214,9 +217,9 @@ namespace Hecton8.VFX
 
             if (!_hasChromatic && !_hasVignette)
             {
-                Hecton8.Core.H8Debug.LogWarning(
+                Hecton8.Core.H8Debug.Log(
                     "[LandingImpactVFX] Volume profile has neither ChromaticAberration " +
-                    "nor Vignette. Add at least one override.", this);
+                    "nor Vignette. Landing impact presentation disabled.", this);
                 enabled = false;
                 return;
             }
@@ -229,7 +232,9 @@ namespace Hecton8.VFX
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            UnregisterFromLateFrame();
             TryUnregisterHotSwapListener();
+            _postProcessingDirty = false;
 
             // Reset post-processing to base values
             if (_hasChromatic)
@@ -248,6 +253,7 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
@@ -257,11 +263,14 @@ namespace Hecton8.VFX
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            _dispatcherAvailable = currentService != null;
             UnregisterFromTickManager();
-            RegisterToTickManager();
+            UnregisterFromLateFrame();
+            if (currentService != null && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
         public void Tick(float deltaTime)
@@ -271,7 +280,7 @@ namespace Hecton8.VFX
             UpdateLandingEffect(deltaTime);
             UpdateWaterTransitionEffect(deltaTime);
             UpdateThermoclineTransitionEffect(deltaTime);
-            ApplyPostProcessing();
+            _postProcessingDirty = true;
             return;
 
 #if false
@@ -416,14 +425,18 @@ namespace Hecton8.VFX
             _transportCockpitVignetteRounded = vignetteRoundness >= 0.5f;
             _transportCockpitVignetteSmoothness = math.saturate(vignetteSmoothness);
             _transportCockpitChromaticIntensity = math.max(0f, chromaticIntensity);
+            _postProcessingDirty = true;
         }
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredToTickManager)
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -433,6 +446,24 @@ namespace Hecton8.VFX
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
+        }
+
+        private void UnregisterFromLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_postProcessingDirty)
+                return;
+
+            _postProcessingDirty = false;
+            ApplyPostProcessing();
         }
 
         private void TryRegisterHotSwapListener()

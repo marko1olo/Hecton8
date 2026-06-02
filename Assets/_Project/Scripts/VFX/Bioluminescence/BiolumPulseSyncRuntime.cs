@@ -422,6 +422,11 @@ namespace Hecton8.VFX.Bioluminescence
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeClaim()
         {
+            DisposeActiveRuntimeForLifecycleTransition();
+        }
+
+        private static void DisposeActiveRuntimeForLifecycleTransition()
+        {
             BiolumPulseSyncRuntime runtime = s_activeRuntime;
             if (runtime != null)
                 runtime.Dispose();
@@ -441,21 +446,23 @@ namespace Hecton8.VFX.Bioluminescence
 
             AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
             s_editorReloadHooked = true;
         }
 
         private static void HandleBeforeAssemblyReload()
         {
-            BiolumPulseSyncRuntime runtime = s_activeRuntime;
-            if (runtime == null)
-            {
-                Volatile.Write(ref s_runtimeClaimed, 0);
-                return;
-            }
+            DisposeActiveRuntimeForLifecycleTransition();
+        }
 
-            runtime.Dispose();
-            s_activeRuntime = null;
-            Volatile.Write(ref s_runtimeClaimed, 0);
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.ExitingPlayMode ||
+                change == PlayModeStateChange.EnteredEditMode)
+            {
+                DisposeActiveRuntimeForLifecycleTransition();
+            }
         }
 #endif
 

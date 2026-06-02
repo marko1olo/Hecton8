@@ -5,6 +5,7 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Data;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Modding;
@@ -37,6 +38,9 @@ namespace Hecton8.Interaction
         [Tooltip("Object name used in the discovery log.")]
         [SerializeField] private string displayName = "Obekt";
         [SerializeField] private LocalizedTextReference localizedDisplayName;
+
+        [Tooltip("Optional baked AppliedContent packet hash unlocked into PDA/wiki when this discovery is used.")]
+        [SerializeField] private uint appliedLorePacketHash;
 
         [Header("Audio Log")]
         [Tooltip("Optional audio log played on interaction.")]
@@ -80,6 +84,7 @@ namespace Hecton8.Interaction
         private uint _cachedQuestHash;
         private uint _cachedBiomeHash;
         private uint _cachedSoundscapeHash;
+        private uint _cachedLoreHash;
         private NarrativeSpatialTriggerFlags _cachedSpatialFlags;
         private bool _registeredLifecycle;
         private bool _hotSwapRegistered;
@@ -91,6 +96,7 @@ namespace Hecton8.Interaction
 
         public string DiscoveryId => discoveryId;
         public uint DiscoveryHash => _cachedDiscoveryHash;
+        public uint AppliedLorePacketHash => appliedLorePacketHash;
         public AbsoluteUniversePosition CachedAup => _cachedAup;
         public bool HasValidDiscoveryId => !string.IsNullOrWhiteSpace(discoveryId);
         internal static int ActiveDiscoveryCount => _activeDiscoveryCount;
@@ -231,6 +237,8 @@ namespace Hecton8.Interaction
                 _cachedDiscoveryHash != 0u &&
                 narrativeDiscovery.HasDiscovery(_cachedDiscoveryHash))
             {
+                PublishAppliedLorePacketUnlock();
+
                 if (linkedAudioLog != null && _audioLogs != null)
                     _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
 
@@ -241,9 +249,10 @@ namespace Hecton8.Interaction
             }
 
             NarrativeEvents.TryRaiseDiscoveryMade(_cachedDiscoveryHash);
+            PublishAppliedLorePacketUnlock();
             ILoreUnlockSink loreUnlockSink = _loreUnlockSink;
-            if (loreUnlockSink != null)
-                loreUnlockSink.TryUnlockByHash(LocHash.ComputeAscii(discoveryId));
+            if (loreUnlockSink != null && _cachedLoreHash != 0u)
+                loreUnlockSink.TryUnlockByHash(_cachedLoreHash);
 
             if (linkedAudioLog != null && _audioLogs != null)
                 _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
@@ -254,6 +263,15 @@ namespace Hecton8.Interaction
 
             if (disableAfterDiscovery)
                 gameObject.SetActive(false);
+        }
+
+        private void PublishAppliedLorePacketUnlock()
+        {
+            if (appliedLorePacketHash == 0u)
+                return;
+
+            uint sourceId = _cachedDiscoveryHash != 0u ? _cachedDiscoveryHash : H8AppliedLoreRuntime.UnlockSourceId;
+            H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(appliedLorePacketHash, in _cachedAup, sourceId);
         }
 
         public string GetInteractText() => ResolveInteractVerb();
@@ -304,9 +322,10 @@ namespace Hecton8.Interaction
                 QuestHash = _cachedQuestHash,
                 BiomeHash = _cachedBiomeHash,
                 SoundscapeHash = _cachedSoundscapeHash,
-                LoreHash = LocHash.ComputeAscii(discoveryId),
+                LoreHash = _cachedLoreHash,
                 BitIndex = aupTriggerBitIndex,
-                Flags = _cachedSpatialFlags
+                Flags = _cachedSpatialFlags,
+                AppliedLoreHash = appliedLorePacketHash
             };
             return true;
         }
@@ -458,6 +477,7 @@ namespace Hecton8.Interaction
             _cachedQuestHash = ComputeQuestHash(activeQuestId);
             _cachedBiomeHash = ComputeStableHash(biomeSignalId);
             _cachedSoundscapeHash = ComputeStableHash(soundscapeProfileId);
+            _cachedLoreHash = ComputeLoreHash(discoveryId);
             _cachedSpatialFlags = publishHudBreadcrumb
                 ? NarrativeSpatialTriggerFlags.HudBreadcrumb
                 : NarrativeSpatialTriggerFlags.None;
@@ -511,6 +531,13 @@ namespace Hecton8.Interaction
             return string.IsNullOrWhiteSpace(value)
                 ? 0u
                 : unchecked((uint)LocHash.Compute(value));
+        }
+
+        private static uint ComputeLoreHash(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? 0u
+                : LocHash.ComputeAscii(value);
         }
     }
 }

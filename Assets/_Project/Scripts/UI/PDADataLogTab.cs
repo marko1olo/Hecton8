@@ -1,23 +1,23 @@
 // ============================================================================
-// HECTON-8 â€” PDADataLogTab.cs
-// Ð’ÐºÐ»Ð°Ð´ÐºÐ° PDA: Ð°Ñ€Ñ…Ð¸Ð² Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð½ÐµÐ²Ð½Ð¸ÐºÐ¾Ð² ÐºÐ¾Ð»Ð¾Ð½Ð¸Ð¸.
+// HECTON-8 - PDADataLogTab.cs
+// PDA audio-log archive tab for discovered colony records.
 //
-// Ð ÐžÐ›Ð¬:
-//   â€¢ ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶Ð°ÐµÑ‚ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¾Ð±Ð½Ð°Ñ€ÑƒÐ¶ÐµÐ½Ð½Ñ‹Ñ… AudioLogData.
-//   â€¢ ÐŸÐ¾Ð·Ð²Ð¾Ð»ÑÐµÑ‚ Ð¿ÐµÑ€ÐµÑÐ»ÑƒÑˆÐ°Ñ‚ÑŒ Ð»ÑŽÐ±ÑƒÑŽ Ð·Ð°Ð¿Ð¸ÑÑŒ.
-//   â€¢ ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÑ‚ ÑÑƒÐ±Ñ‚Ð¸Ñ‚Ñ€Ñ‹ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ¹ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ð¼Ð¾Ð¹ Ð·Ð°Ð¿Ð¸ÑÐ¸.
-//   â€¢ ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¸Ð¸ PDA (Ð½Ðµ Ð² Ñ€ÐµÐ°Ð»ÑŒÐ½Ð¾Ð¼ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ â€” zero GC).
+// ROLE:
+//   - Displays discovered AudioLogData entries.
+//   - Allows replaying unlocked records.
+//   - Shows subtitles for the current playback.
+//   - Refreshes when the PDA opens, not every frame - zero GC.
 //
-// ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
-//   â€¢ ÐŸÑ€Ð¾Ñ†ÐµÐ´ÑƒÑ€Ð½Ñ‹Ð¹ UI (Ð±ÐµÐ· UXML/USS) â€” Ð² ÑÑ‚Ð¸Ð»Ðµ PDAInventoryTab.
-//   â€¢ ITickable â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð° Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ.
-//   â€¢ Ð¡Ð»ÑƒÑˆÐ°ÐµÑ‚ AudioLogEvents Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ.
-//   â€¢ ÐšÐ°Ñ‚Ð°Ð»Ð¾Ð³ Ð»Ð¾Ð³Ð¾Ð²: Ð½Ð°Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ (AudioLogData[]).
+// ARCHITECTURE:
+//   - Procedural UI without UXML/USS, matching PDAInventoryTab style.
+//   - Late-frame playback timer only; catalog rebuilds are event-driven.
+//   - Listens to AudioLogEvents for state refresh.
+//   - AudioLogData[] catalog is inspector-authored.
 //
 // ZERO GC:
-//   â€¢ Pre-allocated ÑÐ¿Ð¸ÑÐ¾Ðº ÑÑ‚Ñ€Ð¾Ðº Ð´Ð»Ñ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ.
-//   â€¢ Dirty-flag Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑÑ‚Ð°.
-//   â€¢ ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… new/LINQ Ð² Tick.
+//   - Preallocated row and text buffers.
+//   - Dirty-flag text updates.
+//   - No new/LINQ in LateFrameTick.
 // ============================================================================
 
 using System;
@@ -61,20 +61,37 @@ namespace Hecton8.UI
         private static ILoreDatabaseReadModel s_cachedLoreDatabase;
         private static AudioLogSystem s_cachedAudioLogs;
         private static IPlayerRuntimeContext s_cachedPlayerContext;
+        private static readonly int AudioLogArchiveTitleKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE);
+        private static readonly int AudioLogCategoryPersonalKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL);
+        private static readonly int AudioLogCategoryTechnicalKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL);
+        private static readonly int AudioLogCategoryEmergencyKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY);
+        private static readonly int AudioLogCategoryAtlas6KeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6);
+        private static readonly int AudioLogCategoryUnknownKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN);
+        private static readonly int AudioLogEncryptedKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_ENCRYPTED);
+        private static readonly int AudioLogEncryptedSummaryKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY);
+        private static readonly int AudioLogUnknownAuthorKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR);
+        private static readonly int AudioLogUnknownDateKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE);
+        private static readonly int AudioLogPlayKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_PLAY);
+        private static readonly int AudioLogOpenTextKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_OPEN_TEXT);
+        private static readonly int AudioLogStopKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_STOP);
+        private static readonly int AudioLogCloseTextKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_CLOSE_TEXT);
+        private static readonly int AudioLogLockedKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_LOCKED);
+        private static readonly int AudioLogNoPayloadKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_NO_PAYLOAD);
+        private static readonly int AudioLogEmptyArchiveKeyHash = LocHash.Compute(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE);
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
-        [Header("â”€â”€ Catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Ð’ÑÐµ AudioLogData Ð² Ð¸Ð³Ñ€Ðµ. ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ.")]
+        [Header("-- Catalog ----------------------------------")]
+        [Tooltip("Все AudioLogData в игре. Назначить в инспекторе.")]
         [SerializeField] private AudioLogData[] allLogs = new AudioLogData[0];
 
-        [Header("â”€â”€ Font â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Ð¨Ñ€Ð¸Ñ„Ñ‚ Ñ ÐºÐ¸Ñ€Ð¸Ð»Ð»Ð¸Ñ†ÐµÐ¹. Ð•ÑÐ»Ð¸ null â€” Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ TMP default.")]
+        [Header("-- Font -------------------------------------")]
+        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
 
-        [Header("â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Colors -----------------------------------")]
         [SerializeField] private Color colorBackground  = new Color(0.04f, 0.06f, 0.10f, 0.95f);
         [SerializeField] private Color colorAccent      = new Color(0.20f, 0.80f, 0.60f, 1f);
         [SerializeField] private Color colorText        = new Color(0.85f, 0.90f, 0.85f, 1f);
@@ -82,7 +99,7 @@ namespace Hecton8.UI
         [SerializeField] private Color colorSelected    = new Color(0.10f, 0.25f, 0.18f, 1f);
         [SerializeField] private Color colorPlaying     = new Color(0.05f, 0.35f, 0.20f, 1f);
 
-        [Header("── Hologram ──────────────────────────────")]
+        [Header("-- Hologram ------------------------------")]
         [SerializeField] private Mesh[] hologramProxyMeshes = System.Array.Empty<Mesh>();
         [SerializeField] private Shader hologramShader;
         [SerializeField] private float hologramHeight = 0.14f;
@@ -92,11 +109,11 @@ namespace Hecton8.UI
         [SerializeField] private float hologramBobAmplitude = 0.008f;
         [SerializeField] private float hologramBobFrequency = 1.7f;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PRIVATE STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
-        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ ÑÑ‚Ñ€Ð¾ÐºÐ¸ Ð´Ð»Ñ AudioLogCategory enum (Ð±ÐµÐ· enum string conversion Ð´Ð°Ð¶Ðµ Ð² COLD path)</summary>
+ /// <summary> - AudioLogCategory enum ( - enum string conversion - COLD path)</summary>
 
         // UI roots
         private RectTransform _root;
@@ -154,16 +171,16 @@ namespace Hecton8.UI
         private const int MaxDynamicTextBufferChars = 4096;
         private const int CategoryLabelCapacity = 32;
         private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA data-log strings - owner: PDADataLogTab
-        // COLD ALLOC: uint[allLogs.Length] — precomputed lore hashes for direct packed-word archive reads — owner: PDADataLogTab
+        // COLD ALLOC: uint[allLogs.Length] - precomputed lore hashes for direct packed-word archive reads - owner: PDADataLogTab
         private uint[] _catalogLoreHashes = Array.Empty<uint>();
-        // COLD ALLOC: int[allLogs.Length] — precomputed lore record indices for direct packed-word archive reads — owner: PDADataLogTab
+        // COLD ALLOC: int[allLogs.Length] - precomputed lore record indices for direct packed-word archive reads - owner: PDADataLogTab
         private int[] _catalogLoreRecordIndices = Array.Empty<int>();
         private int[] _catalogLoreSurfaceHashes = Array.Empty<int>();
-        // COLD ALLOC: char[128] — uppercase title staging buffer for allocation-free TMP updates — owner: PDADataLogTab
+        // COLD ALLOC: char[128] - uppercase title staging buffer for allocation-free TMP updates - owner: PDADataLogTab
         private char[] _detailTitleBuffer = new char[128];
-        // COLD ALLOC: char[256] — general PDA archive text staging buffer — owner: PDADataLogTab
+        // COLD ALLOC: char[256] - general PDA archive text staging buffer - owner: PDADataLogTab
         private char[] _dynamicTextBuffer = new char[256];
-        // COLD ALLOC: char[2048] — PDA archive long-form summary staging buffer — owner: PDADataLogTab
+        // COLD ALLOC: char[2048] - PDA archive long-form summary staging buffer - owner: PDADataLogTab
         private char[] _summaryTextBuffer = new char[2048];
 
         // State
@@ -199,7 +216,7 @@ namespace Hecton8.UI
         private string _pendingSummaryDecryptLogId = string.Empty;
         private char[] _resolvedSummaryBaseBuffer = new char[2048];
         private int _resolvedSummaryBaseLength;
-        // COLD ALLOC: char[4096] — PDA archive hex-decrypt overlay staging buffer — owner: PDADataLogTab
+        // COLD ALLOC: char[4096] - PDA archive hex-decrypt overlay staging buffer - owner: PDADataLogTab
         private char[] _resolvedSummaryHexBuffer = new char[4096];
         private int _resolvedSummaryHexLength;
         private float _hologramAnimationTime;
@@ -313,9 +330,9 @@ namespace Hecton8.UI
             return false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  NESTED TYPE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private struct LogRow
         {
@@ -328,9 +345,9 @@ namespace Hecton8.UI
             public int LogIndex; // index into allLogs
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void Awake()
         {
@@ -428,16 +445,16 @@ namespace Hecton8.UI
             _catalogTabRegistered = false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  ITickable
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void AdvanceVisualPlaybackState(float deltaTime)
         {
             if (_dirty)
                 _visualLateFrameDirty = true;
 
-            // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ
+            // --------------------------------------------------------------------------
             if (_playbackRemaining > 0f)
             {
                 _playbackRemaining -= deltaTime;
@@ -489,11 +506,11 @@ namespace Hecton8.UI
             RenderSelectedLoreHologram(deltaTime);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PUBLIC API
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
-        /// <summary>Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ Ð¿Ð¾ Ð¸Ð½Ð´ÐµÐºÑÑƒ Ð² allLogs.</summary>
+ /// <summary> - - allLogs.</summary>
         public void SelectLog(int logIndex)
         {
             if (logIndex < 0 || logIndex >= CatalogCount) return;
@@ -503,7 +520,7 @@ namespace Hecton8.UI
             RefreshRowHighlights();
         }
 
-        /// <summary>Ð’Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÑÑ‚Ð¸ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½ÑƒÑŽ Ð·Ð°Ð¿Ð¸ÑÑŒ.</summary>
+ /// <summary> - .</summary>
         public void PlaySelected()
         {
             if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
@@ -520,9 +537,9 @@ namespace Hecton8.UI
             system.PlayLog(log);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  EVENT HANDLERS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
@@ -666,14 +683,14 @@ namespace Hecton8.UI
                 return;
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 
@@ -755,9 +772,9 @@ namespace Hecton8.UI
             s_cachedPlayerContext = GlobalRegistry.Player;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  BUILD UI
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void EnsureBuilt()
         {
@@ -809,7 +826,7 @@ namespace Hecton8.UI
             Image lBg = _listPanel.gameObject.AddComponent<Image>();
             lBg.color = new Color(0.03f, 0.05f, 0.04f, 1f);
 
-            // Scroll view would be ideal but for minimal impl â€“ static rows
+            // Scroll view would be ideal but for minimal impl - static rows
             // COLD ALLOC: up to 32 rows
             BuildLogRows();
 
@@ -1056,9 +1073,9 @@ namespace Hecton8.UI
             SetDetailVisible(false);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  REFRESH
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void RefreshList()
         {
@@ -1102,7 +1119,7 @@ namespace Hecton8.UI
                     ApplyCategoryLabelText(row.CategoryLabel, log, ref _dynamicTextBuffer);
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
-                // Replace title with ??? for undiscovered
+                // Replace title with encrypted label for undiscovered rows.
                 if (row.TitleLabel != null)
                 {
                     if (isDiscovered)
@@ -1491,9 +1508,9 @@ namespace Hecton8.UI
             return false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  UI HELPERS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
 
@@ -1514,23 +1531,23 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            _localizedArchiveTitleLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY".AsSpan(), _localizedArchiveTitleBuffer);
-            _categoryPersonalLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL".AsSpan(), _categoryPersonalBuffer);
-            _categoryTechnicalLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL".AsSpan(), _categoryTechnicalBuffer);
-            _categoryEmergencyLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY".AsSpan(), _categoryEmergencyBuffer);
-            _categoryAtlas6Length = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6".AsSpan(), _categoryAtlas6Buffer);
-            _categoryUnknownLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN".AsSpan(), _categoryUnknownBuffer);
-            _localizedEncryptedLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???".AsSpan(), _localizedEncryptedLabelBuffer);
-            _localizedEncryptedSummaryLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.".AsSpan(), _localizedEncryptedSummaryBuffer);
-            _localizedUnknownAuthorLineLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN".AsSpan(), _localizedUnknownAuthorLineBuffer);
-            _localizedUnknownDateLineLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN".AsSpan(), _localizedUnknownDateLineBuffer);
-            _localizedPlayAudioLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel.AsSpan(), _localizedPlayAudioLabelBuffer);
-            _localizedOpenTextLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel.AsSpan(), _localizedOpenTextLabelBuffer);
-            _localizedStopAudioLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel.AsSpan(), _localizedStopAudioLabelBuffer);
-            _localizedCloseTextLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel.AsSpan(), _localizedCloseTextLabelBuffer);
-            _localizedLockedLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel.AsSpan(), _localizedLockedLabelBuffer);
-            _localizedNoPayloadLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel.AsSpan(), _localizedNoPayloadLabelBuffer);
-            _localizedEmptyStateTextLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY".AsSpan(), _localizedEmptyStateTextBuffer);
+            _localizedArchiveTitleLength = CopyLocalizedSpan(AudioLogArchiveTitleKeyHash, "DATA ARCHIVE - HECTON-8 COLONY".AsSpan(), _localizedArchiveTitleBuffer);
+            _categoryPersonalLength = CopyLocalizedSpan(AudioLogCategoryPersonalKeyHash, "PERSONAL".AsSpan(), _categoryPersonalBuffer);
+            _categoryTechnicalLength = CopyLocalizedSpan(AudioLogCategoryTechnicalKeyHash, "TECHNICAL".AsSpan(), _categoryTechnicalBuffer);
+            _categoryEmergencyLength = CopyLocalizedSpan(AudioLogCategoryEmergencyKeyHash, "EMERGENCY".AsSpan(), _categoryEmergencyBuffer);
+            _categoryAtlas6Length = CopyLocalizedSpan(AudioLogCategoryAtlas6KeyHash, "ATLAS6".AsSpan(), _categoryAtlas6Buffer);
+            _categoryUnknownLength = CopyLocalizedSpan(AudioLogCategoryUnknownKeyHash, "UNKNOWN".AsSpan(), _categoryUnknownBuffer);
+            _localizedEncryptedLabelLength = CopyLocalizedSpan(AudioLogEncryptedKeyHash, "[ENCRYPTED]".AsSpan(), _localizedEncryptedLabelBuffer);
+            _localizedEncryptedSummaryLength = CopyLocalizedSpan(AudioLogEncryptedSummaryKeyHash, "Entry encrypted. Discovery required before archive access.".AsSpan(), _localizedEncryptedSummaryBuffer);
+            _localizedUnknownAuthorLineLength = CopyLocalizedSpan(AudioLogUnknownAuthorKeyHash, "UNKNOWN".AsSpan(), _localizedUnknownAuthorLineBuffer);
+            _localizedUnknownDateLineLength = CopyLocalizedSpan(AudioLogUnknownDateKeyHash, "DATE UNKNOWN".AsSpan(), _localizedUnknownDateLineBuffer);
+            _localizedPlayAudioLabelLength = CopyLocalizedSpan(AudioLogPlayKeyHash, PlayAudioLabel.AsSpan(), _localizedPlayAudioLabelBuffer);
+            _localizedOpenTextLabelLength = CopyLocalizedSpan(AudioLogOpenTextKeyHash, OpenTextLogLabel.AsSpan(), _localizedOpenTextLabelBuffer);
+            _localizedStopAudioLabelLength = CopyLocalizedSpan(AudioLogStopKeyHash, StopAudioLabel.AsSpan(), _localizedStopAudioLabelBuffer);
+            _localizedCloseTextLabelLength = CopyLocalizedSpan(AudioLogCloseTextKeyHash, CloseTextLogLabel.AsSpan(), _localizedCloseTextLabelBuffer);
+            _localizedLockedLabelLength = CopyLocalizedSpan(AudioLogLockedKeyHash, LockedLogLabel.AsSpan(), _localizedLockedLabelBuffer);
+            _localizedNoPayloadLabelLength = CopyLocalizedSpan(AudioLogNoPayloadKeyHash, NoPayloadLabel.AsSpan(), _localizedNoPayloadLabelBuffer);
+            _localizedEmptyStateTextLength = CopyLocalizedSpan(AudioLogEmptyArchiveKeyHash, "ARCHIVE EMPTY".AsSpan(), _localizedEmptyStateTextBuffer);
         }
 
         private void ApplyLocalizedStaticText()
@@ -1785,14 +1802,14 @@ namespace Hecton8.UI
                 out length);
         }
 
-        private static int CopyLocalizedSpan(string key, ReadOnlySpan<char> fallback, char[] destination)
+        private static int CopyLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback, char[] destination)
         {
             if (destination == null || destination.Length == 0)
                 return 0;
 
             ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
-            ReadOnlySpan<char> source = manager != null && !string.IsNullOrEmpty(key)
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
+            ReadOnlySpan<char> source = manager != null && keyHash != 0
+                ? manager.GetRawSpanOrFallback(keyHash, fallback)
                 : fallback;
 
             return CopySpanToBuffer(source, destination);
@@ -2388,9 +2405,9 @@ namespace Hecton8.UI
             return (triangle * 2f) - 1f;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  NESTED BUTTON HANDLERS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private sealed class LogRowButton : MonoBehaviour,
             UnityEngine.EventSystems.IPointerClickHandler,

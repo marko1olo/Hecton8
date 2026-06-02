@@ -210,11 +210,11 @@ namespace Hecton8.Gameplay
     /// Attach to the player GameObject and assign a SurvivalStats asset.
     ///
     /// FEATURES:
-    ///   � Zero-GC Tick System (ISlowTickable, ILateFrameTickable)
-    ///   � Atmospheric Hazards (Pressure, Temperature, Radiation)
-    ///   � Suit Resource Management (O2, Energy, Integrity)
-    ///   � Persistence (ISaveable)
-    ///   � Throttled HUD Events
+    ///   - Zero-GC Tick System (ISlowTickable, ILateFrameTickable)
+    ///   - Atmospheric Hazards (Pressure, Temperature, Radiation)
+    ///   - Suit Resource Management (O2, Energy, Integrity)
+    ///   - Persistence (ISaveable)
+    ///   - Throttled HUD Events
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HectonSurvivalSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerSurvivalEnvironmentReadModel, IPlayerBleedingReadModel
@@ -352,7 +352,7 @@ namespace Hecton8.Gameplay
         private PlayerRuntimeContext _runtimeContext;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private Unity.Mathematics.Random _traumaRandom;
-        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] � telemetry construction � owner: HectonSurvivalSystem
+        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - telemetry construction - owner: HectonSurvivalSystem
         private const float HazardGraceDuration = 3f;
         private const float SaveVelocityHardCapMetersPerSecond = 80f;
         private const float SaveVelocityHardCapSq = SaveVelocityHardCapMetersPerSecond * SaveVelocityHardCapMetersPerSecond;
@@ -3435,9 +3435,9 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(databaseText))
                 return false;
 
-            // COLD ALLOC: List<SurvivalDatabaseItemParameters>[256] � injected survival database row staging during cold parse � owner: HectonSurvivalSystem
+            // COLD ALLOC: List<SurvivalDatabaseItemParameters>[256] - injected survival database row staging during cold parse - owner: HectonSurvivalSystem
             List<SurvivalDatabaseItemParameters> parsedRows = new List<SurvivalDatabaseItemParameters>(SurvivalDatabaseRowCapacity);
-            // COLD ALLOC: Dictionary<string, int>[16] � survival database header column map during cold parse � owner: HectonSurvivalSystem
+            // COLD ALLOC: Dictionary<string, int>[16] - survival database header column map during cold parse - owner: HectonSurvivalSystem
             Dictionary<string, int> columnLookup = new Dictionary<string, int>(SurvivalDatabaseColumnCapacity, StringComparer.Ordinal);
 
             bool headerFound = false;
@@ -3484,7 +3484,7 @@ namespace Hecton8.Gameplay
             if (!headerFound || parsedRows.Count == 0)
                 return false;
 
-            // COLD ALLOC: Dictionary<string, int>[parsedRows.Count] � StableId to injected item-parameter index map � owner: HectonSurvivalSystem
+            // COLD ALLOC: Dictionary<string, int>[parsedRows.Count] - StableId to injected item-parameter index map - owner: HectonSurvivalSystem
             parsedLookup = new Dictionary<string, int>(parsedRows.Count, StringComparer.Ordinal);
             for (int i = 0; i < parsedRows.Count; i++)
             {
@@ -3495,7 +3495,7 @@ namespace Hecton8.Gameplay
                 parsedLookup.Add(stableId, i);
             }
 
-            // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] � immutable injected item-parameter snapshot � owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] - immutable injected item-parameter snapshot - owner: HectonSurvivalSystem
             parsedItems = new SurvivalDatabaseItemParameters[parsedRows.Count];
             parsedRows.CopyTo(parsedItems);
             return true;
@@ -3645,7 +3645,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             ReadOnlySpan<char> databaseSpan = databaseText.AsSpan();
-            // COLD ALLOC: SurvivalDatabaseItemRecord[256] � injected survival database row staging during cold parse � owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemRecord[256] - injected survival database row staging during cold parse - owner: HectonSurvivalSystem
             NativeArray<SurvivalDatabaseItemRecord> stagingRows = H8Memory.Allocate<SurvivalDatabaseItemRecord>(
                 SurvivalDatabaseRowCapacity,
                 SystemID.GameplayPlayer,
@@ -3724,7 +3724,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] � immutable injected item-parameter snapshot � owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] - immutable injected item-parameter snapshot - owner: HectonSurvivalSystem
             parsedItems = H8Memory.Allocate<SurvivalDatabaseItemRecord>(
                 parsedItemCount,
                 SystemID.GameplayPlayer,

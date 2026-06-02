@@ -474,8 +474,41 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            SpatialAudioManager activeRuntime = ActiveRuntimeInstance;
+            if (activeRuntime != null)
+                activeRuntime.ShutdownServiceState(releaseRuntimeResources: true);
+
             ActiveRuntimeInstance = null;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= DisposeActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += DisposeActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                DisposeActiveRuntimeForEditorReload();
+            }
+        }
+
+        private static void DisposeActiveRuntimeForEditorReload()
+        {
+            SpatialAudioManager activeRuntime = ActiveRuntimeInstance;
+            if (activeRuntime != null)
+                activeRuntime.ShutdownServiceState(releaseRuntimeResources: true);
+        }
+#endif
         private const int MaxDelayedAudioEvents = 16;
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private const int MaxHarvestAudioEventsPerFrame = 10;
@@ -3640,6 +3673,8 @@ namespace Hecton8.Audio
                 return false;
             }
 
+            NativeArray<byte> snapshot = default;
+            bool snapshotReady = false;
             bool mutationGuardHeld = true;
             try
             {
@@ -3652,7 +3687,7 @@ namespace Hecton8.Audio
                         SpatialAudioAcousticVoxelSdfTexture3DBufferId,
                         SystemID.Audio,
                         requiredLength,
-                        out NativeArray<byte> snapshot))
+                        out snapshot))
                 {
                     return false;
                 }
@@ -3660,13 +3695,7 @@ namespace Hecton8.Audio
                 for (int i = 0; i < requiredLength; i++)
                     snapshot[i] = sourceSdf[i];
 
-                if (!vault.TryLockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio))
-                    return false;
-
-                snapshotLocked = true;
-                _acousticOcclusionSdfSnapshotGuardVault = vault;
-                snapshotSdf = snapshot.AsReadOnly();
-                return true;
+                snapshotReady = true;
             }
             finally
             {
@@ -3675,6 +3704,14 @@ namespace Hecton8.Audio
                 if (!snapshotLocked)
                     _acousticOcclusionSdfSnapshotGuardVault = null;
             }
+
+            if (!snapshotReady || !vault.TryLockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio))
+                return false;
+
+            snapshotLocked = true;
+            _acousticOcclusionSdfSnapshotGuardVault = vault;
+            snapshotSdf = snapshot.AsReadOnly();
+            return true;
         }
 
         private static bool TryResolveAcousticSdfVoxelCount(int3 dimensions, out int voxelCount)
@@ -7020,7 +7057,7 @@ namespace Hecton8.Audio
                    ReferenceEquals(listenerRoot, owner.root);
         }
 
-        private static void ResolveListenerBasis(
+        private void ResolveListenerBasis(
             Transform listener,
             out float3 listenerRight,
             out float3 listenerUp,
@@ -7032,8 +7069,9 @@ namespace Hecton8.Audio
             if (listener == null)
                 return;
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
+            IPlayerRuntimeContext runtimeContext = _cachedPlayerRuntimeContext;
+            if (runtimeContext != null &&
+                runtimeContext.IsInitialized &&
                 IsPlayerOwnedListener(listener, runtimeContext.PlayerTransform, runtimeContext.PlayerObject, runtimeContext.PlayerCamera) &&
                 TryResolveRuntimeContextForward(runtimeContext, out listenerForward))
             {
@@ -7046,24 +7084,30 @@ namespace Hecton8.Audio
             listenerForward = (float3)listener.forward;
         }
 
-        private static bool TryResolveRuntimeContextForward(PlayerRuntimeContext runtimeContext, out float3 listenerForward)
+        private static bool TryResolveRuntimeContextForward(IPlayerRuntimeContext runtimeContext, out float3 listenerForward)
         {
             listenerForward = default;
-            float3 lookForward = runtimeContext.LookState.AimForward;
-            if (math.lengthsq(lookForward) > 0.0001f)
+            if (runtimeContext.TryGetLookRuntimeState(out PlayerLookState lookState))
             {
-                listenerForward = ResolveDominantAxisDirection(lookForward);
-                return true;
+                float3 lookForward = lookState.AimForward;
+                if (math.lengthsq(lookForward) > 0.0001f)
+                {
+                    listenerForward = ResolveDominantAxisDirection(lookForward);
+                    return true;
+                }
             }
 
-            float3 cameraForward = runtimeContext.MovementState.CameraForward;
+            if (!runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return false;
+
+            float3 cameraForward = movementState.CameraForward;
             if (math.lengthsq(cameraForward) > 0.0001f)
             {
                 listenerForward = ResolveDominantAxisDirection(cameraForward);
                 return true;
             }
 
-            float3 movementForward = runtimeContext.MovementState.Forward;
+            float3 movementForward = movementState.Forward;
             if (math.lengthsq(movementForward) > 0.0001f)
             {
                 listenerForward = ResolveDominantAxisDirection(movementForward);

@@ -357,31 +357,31 @@ namespace Hecton8.UI
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
         }
 
         private void TryRegisterLateFrame()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryRegisterSlowTick()
         {
-            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void RunVisualSync(float deltaTime)
@@ -680,7 +680,7 @@ namespace Hecton8.UI
             if (_pointCloudIndirectArgsBuffer == null || !_pointCloudIndirectArgsBuffer.IsValid())
             {
                 _pointCloudIndirectArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     1,
                     SonarIndirectArgsStrideBytes); // COLD ALLOC: GraphicsBuffer[5 uint] — GPU-written PDA sonar indirect args — owner: PDAMapTab
             }

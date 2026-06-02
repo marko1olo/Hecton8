@@ -1,16 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Profiling;
-using Hecton8.Core;
-using Hecton8.Core.Contracts;
 
 namespace Hecton8.Optimization
 {
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct VramTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public long TextureBytes;
+        [FieldOffset(16)] public long RenderTextureBytes;
+        [FieldOffset(24)] public long TotalVramBytes;
+        [FieldOffset(32)] public long GfxUsedBytes;
+        [FieldOffset(40)] public long GraphicsBudgetBytes;
+        [FieldOffset(48)] public float Pressure01;
+        [FieldOffset(52)] public float GlobalQualityWeight01;
+        [FieldOffset(56)] public byte PressureState;
+        [FieldOffset(57)] public byte TextureMipLimit;
+        [FieldOffset(58)] public ushort _pad0;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
     /// <summary>
     /// Monitors VRAM consumption and enforces budget thresholds.
     /// Executes in ISlowTickable (~0.5s interval) to avoid per-frame overhead.
@@ -34,6 +56,14 @@ namespace Hecton8.Optimization
         
         // ── INSPECTOR SETTINGS ─────────────────────────────────────────────────────
         
+        private const int VramTelemetryCapacity = 300;
+        private const BufferID VramTelemetryBufferId = (BufferID)71617;
+        private const SystemID VramTelemetryOwner = SystemID.GraphicsScalability;
+        private const uint TelemetryFlagTextureOverBudget = 1u << 0;
+        private const uint TelemetryFlagRenderTextureOverBudget = 1u << 1;
+        private const uint TelemetryFlagTotalOverBudget = 1u << 2;
+        private const uint TelemetryFlagMissingGpuCounter = 1u << 3;
+
         [Header("── VRAM Budget Thresholds ──────────────────")]
         [SerializeField] private VRAMBudgetThresholds _budgetThresholds = VRAMBudgetThresholds.Default;
         [Tooltip("Budget utilization at which VRAM pressure moves from stable to warning state.")]
@@ -50,6 +80,10 @@ namespace Hecton8.Optimization
         private ProfilerRecorder _renderTextureMemoryRecorder;
         private ProfilerRecorder _gfxUsedMemoryRecorder;
         private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<VramTelemetryEntry> _vramTelemetryHandle;
+        private int _vramTelemetryCursor;
+        private long _graphicsBudgetBytes;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -144,6 +178,7 @@ namespace Hecton8.Optimization
         private void Awake()
         {
             _budgetThresholds = VRAMBudgetThresholds.ResolveRuntimeBudget(_budgetThresholds);
+            _graphicsBudgetBytes = _budgetThresholds.TotalVRAMBudgetBytes;
             StartRecorders();
         }
         
@@ -169,6 +204,8 @@ namespace Hecton8.Optimization
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ReleaseVramTelemetryRing(_dataVault);
+            _dataVault = null;
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
             _gfxUsedMemoryRecorder.Dispose();
@@ -180,7 +217,19 @@ namespace Hecton8.Optimization
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+            {
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (!ReferenceEquals(previousService, currentService))
+                    ReleaseVramTelemetryRing(previousService as IDataVault);
+
+                _dataVault = currentService as IDataVault;
+                EnsureVramTelemetryRing();
+            }
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -274,6 +323,8 @@ namespace Hecton8.Optimization
         private void CacheRegistryServicesCold()
         {
             _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycleService;
+            _dataVault = GlobalRegistry.DataVault;
+            EnsureVramTelemetryRing();
         }
 
         private void TryRegisterHotSwapListener()
@@ -314,6 +365,7 @@ namespace Hecton8.Optimization
                 TotalVRAMBytes,
                 _budgetThresholds.TotalVRAMBudgetBytes);
             UpdatePressureState();
+            WriteTelemetrySample();
         }
         
         private void CheckThresholds()
@@ -417,6 +469,96 @@ namespace Hecton8.Optimization
         {
             long graphicsDriverBytes = Profiler.GetAllocatedMemoryForGraphicsDriver();
             return graphicsDriverBytes > 0L ? graphicsDriverBytes : 0L;
+        }
+
+        private void EnsureVramTelemetryRing()
+        {
+            if (!Application.isPlaying || _vramTelemetryHandle.BufferID != 0u)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
+
+            _vramTelemetryHandle = vault.EnsureGenerationHandle<VramTelemetryEntry>(
+                VramTelemetryBufferId,
+                VramTelemetryCapacity,
+                VramTelemetryOwner,
+                NativeArrayOptions.ClearMemory);
+            _vramTelemetryCursor = 0;
+        }
+
+        private void ReleaseVramTelemetryRing(IDataVault vault)
+        {
+            if (vault != null && _vramTelemetryHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _vramTelemetryHandle);
+
+            _vramTelemetryHandle = default;
+            _vramTelemetryCursor = 0;
+        }
+
+        private void WriteTelemetrySample()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _vramTelemetryHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _vramTelemetryHandle, VramTelemetryOwner, out NativeArray<VramTelemetryEntry> ring))
+            {
+                return;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length == 0)
+                    return;
+
+                int capacity = math.min(VramTelemetryCapacity, ring.Length);
+                int cursor = _vramTelemetryCursor;
+                if ((uint)cursor >= (uint)capacity)
+                    cursor = 0;
+
+                ring[cursor] = new VramTelemetryEntry
+                {
+                    Frame = SystemDispatcher.CurrentFrameId,
+                    Flags = ResolveTelemetryFlags(),
+                    TextureBytes = TextureMemoryBytes,
+                    RenderTextureBytes = RenderTextureMemoryBytes,
+                    TotalVramBytes = TotalVRAMBytes,
+                    GfxUsedBytes = GfxUsedMemoryBytes,
+                    GraphicsBudgetBytes = _graphicsBudgetBytes,
+                    Pressure01 = math.saturate(TotalVRAMBudgetUtilization),
+                    GlobalQualityWeight01 = ResolveGlobalQualityWeight01(),
+                    PressureState = (byte)PressureState,
+                    TextureMipLimit = (byte)math.clamp(QualitySettings.globalTextureMipmapLimit, 0, 255)
+                };
+
+                cursor++;
+                _vramTelemetryCursor = cursor < capacity ? cursor : 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _vramTelemetryHandle, VramTelemetryOwner);
+            }
+        }
+
+        private uint ResolveTelemetryFlags()
+        {
+            uint flags = 0u;
+            if (IsTextureMemoryOverBudget)
+                flags |= TelemetryFlagTextureOverBudget;
+            if (IsRenderTextureMemoryOverBudget)
+                flags |= TelemetryFlagRenderTextureOverBudget;
+            if (IsTotalVRAMOverBudget)
+                flags |= TelemetryFlagTotalOverBudget;
+            if (GfxUsedMemoryBytes <= 0L)
+                flags |= TelemetryFlagMissingGpuCounter;
+            return flags;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

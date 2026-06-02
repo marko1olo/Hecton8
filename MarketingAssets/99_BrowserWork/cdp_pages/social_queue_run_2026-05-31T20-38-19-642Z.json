@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-05-31T20:38:19.643Z",
+  "queue": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\social_post_queue_20260601.json",
+  "mode": "dryrun",
+  "itemFilter": "READY",
+  "platformFilter": "x,bluesky",
+  "results": [
+    {
+      "item": "20260601_002_devnote_cutting_frames",
+      "platform": "x",
+      "exitCode": 0,
+      "ms": 48575,
+      "stdout": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\x_devnote_cutting_frames_20260601.json",
+      "stderr": ""
+    },
+    {
+      "item": "20260601_002_devnote_cutting_frames",
+      "platform": "bluesky",
+      "exitCode": 0,
+      "ms": 48526,
+      "stdout": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_devnote_cutting_frames_20260601.json",
+      "stderr": ""
+    }
+  ]
+}

@@ -25,12 +25,16 @@ namespace Hecton8.UI
         private const float StatusFadeOutSpeed = 6f;
         private const int FontReadinessTimeoutFrames = 2;
         private const ushort UIRescaleReasonLocalizedFontSwap = 1;
+        private const ushort UIRescaleReasonAccessibilityTextScale = 2;
+        private const float MinimumAccessibilityTextScale = 0.78f;
+        private const float MaximumAccessibilityTextScale = 1.35f;
+        private const uint AccessibilityTextScaleSourceHash = 0x41313332u;
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
         private static readonly uint _fontSwapRescaleHash = unchecked((uint)LocHash.Compute("FontStreamingManager.UIRescale"));
-        // COLD ALLOC: LabelSwapScheduler[1] â€” staged font swap queue owner for active localized labels â€” owner: FontStreamingManager
+        // COLD ALLOC: LabelSwapScheduler[1] — staged font swap queue owner for active localized labels — owner: FontStreamingManager
         private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
-        // COLD ALLOC: char[96] â€” status label assembly for staged font streaming â€” owner: FontStreamingManager
+        // COLD ALLOC: char[96] — status label assembly for staged font streaming — owner: FontStreamingManager
         private char[] _statusBuffer = new char[96];
         private bool _registered;
         private bool _hotSwapListenerRegistered;
@@ -185,8 +189,11 @@ namespace Hecton8.UI
                     prefetchedCount < prefetchBudget)
                 {
                     uint keyHash = unchecked((uint)entry.LocalizationKeyHash);
-                    hasPrefetchedSlice = LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice);
-                    prefetchedCount++;
+                    if (LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice))
+                    {
+                        hasPrefetchedSlice = true;
+                        prefetchedCount++;
+                    }
                 }
 
                 if (!_swapScheduler.Enqueue(entry, prefetchedSlice, hasPrefetchedSlice))
@@ -204,7 +211,7 @@ namespace Hecton8.UI
             UpdateStatusLabel();
             if (!_swapScheduler.HasPending)
             {
-                PublishRescaleRequest();
+                PublishLocalizedFontSwapRescaleRequest();
                 _streaming = false;
                 _queueCount = 0;
                 _queueIndex = 0;
@@ -217,19 +224,50 @@ namespace Hecton8.UI
             }
         }
 
-        private static void PublishRescaleRequest()
+        /// <summary>
+        /// Queues a sanitized global text scale request for accessibility and settings flows.
+        /// </summary>
+        public static bool RequestAccessibilityTextScale(float fontScale)
         {
+            return PublishRescaleRequest(
+                AccessibilityTextScaleSourceHash,
+                UIRescaleReasonAccessibilityTextScale,
+                0u,
+                fontScale);
+        }
+
+        private static void PublishLocalizedFontSwapRescaleRequest()
+        {
+            PublishRescaleRequest(_fontSwapRescaleHash, UIRescaleReasonLocalizedFontSwap, 0u, 1f);
+        }
+
+        private static bool PublishRescaleRequest(uint sourceHash, ushort reason, uint flags, float fontScale)
+        {
+            float safeFontScale = ResolveSafeTextScale(fontScale);
+            SignalBus<UIRescaleRequestSignal>.EnsureInitialized();
             UIRescaleRequestSignal signal = new UIRescaleRequestSignal
             {
-                SourceHash = _fontSwapRescaleHash,
+                SourceHash = sourceHash,
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Reason = UIRescaleReasonLocalizedFontSwap,
+                Reason = reason,
                 Language = (ushort)LocRegistry.ActiveLanguage,
-                Flags = 0u,
-                FontScale = 1f
+                Flags = flags,
+                FontScale = safeFontScale
             };
-            SignalBus<UIRescaleRequestSignal>.TryPushTracked(in signal, ref s_x001FontStreamingManagerSignalPushDropCount);
-            DiegeticHudManualLayout.FlushGlobalRescaleRequests();
+
+            if (!SignalBus<UIRescaleRequestSignal>.TryPushTracked(in signal, ref s_x001FontStreamingManagerSignalPushDropCount))
+                return false;
+
+            DiegeticHudManualLayout.ApplyGlobalRescaleRequest(in signal);
+            return true;
+        }
+
+        private static float ResolveSafeTextScale(float fontScale)
+        {
+            if (!math.isfinite(fontScale) || fontScale <= 0f)
+                return 1f;
+
+            return math.clamp(fontScale, MinimumAccessibilityTextScale, MaximumAccessibilityTextScale);
         }
 
         private void EvaluatePendingFontReadiness()
@@ -331,7 +369,7 @@ namespace Hecton8.UI
             _root.SetAsLastSibling();
 
             if (!_root.TryGetComponent(out _group))
-                _group = _root.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - repairs missing font streaming root component - owner: FontStreamingManager
+                _group = _root.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — repairs missing font streaming root component — owner: FontStreamingManager
 
             _group.alpha = 0f;
             _group.blocksRaycasts = false;
@@ -339,7 +377,7 @@ namespace Hecton8.UI
             _visibleAlpha = 0f;
 
             if (!_root.TryGetComponent(out Image background))
-                background = _root.gameObject.AddComponent<Image>(); // COLD ALLOC: Image[1] - repairs missing font streaming root component - owner: FontStreamingManager
+                background = _root.gameObject.AddComponent<Image>(); // COLD ALLOC: Image[1] — repairs missing font streaming root component — owner: FontStreamingManager
 
             background.color = StatusBackgroundColor;
             background.raycastTarget = false;
@@ -358,7 +396,7 @@ namespace Hecton8.UI
                 labelRect.offsetMin = new Vector2(12f, 4f);
                 labelRect.offsetMax = new Vector2(-12f, -4f);
 
-                _statusLabel = labelObject.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] â€” localized font streaming status label â€” owner: FontStreamingManager
+                _statusLabel = labelObject.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] — localized font streaming status label — owner: FontStreamingManager
                 _statusLabel.font = LocalizedFontResolver.ResolveReadableFont(null);
                 _statusLabel.color = StatusTextColor;
                 _statusLabel.fontSize = 14f;
@@ -447,10 +485,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -458,7 +493,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 

@@ -1,5 +1,5 @@
 ﻿# SAVE_PAGING_PROTOCOL
-Date: 2026-05-07
+Date: 2026-06-02
 
 Status: PENDING VERIFICATION
 
@@ -29,6 +29,18 @@ Current source-backed authority:
 Use `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` and
 `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md` before changing save code or reporting live
 save compatibility. Do not use this file alone to claim the current save container version.
+
+## 2026-06-02 Source Reality
+
+`SaveManager` is not just a passive file helper in current source. It is a `MonoBehaviour` runtime owner implementing async persistence plus update/slow/frost/late-frame/service heartbeat/shutdown participation and `IGlobalRegistryHotSwapListener`.
+
+Current source facts:
+
+- `SaveManager` registers async persistence and dispatcher lanes through `GlobalRegistry`.
+- Native transient arrays are tracked through `NativeMemorySentinel` helper routes.
+- `SaveBinaryStorage` remains the active writer authority: writer `0x000B`, current header `56`, legacy header `44`, LZ4, XXH3, temp/backup paths, and indexed sector/entity-state paths.
+
+Boundary: this is `STATIC_SOURCE`. It does not prove save/load roundtrip, corruption recovery, frame cost, GC, or platform persistence behavior.
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 

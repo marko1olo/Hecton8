@@ -1,6 +1,6 @@
 ﻿# Dispatch Pipeline
 
-Date: 2026-05-07
+Date: 2026-06-02
 
 Status: PENDING VERIFICATION
 
@@ -21,6 +21,18 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 ## Scope
 
 Scope: `SystemDispatcher`, `PhysicsApplySystem`, late-frame job ownership recovery, and structural command draining.
+
+## 2026-06-02 Source Reality
+
+`SystemDispatcher` is a hybrid implementation in current source. It is not only a clean four-phase abstraction.
+
+- Master phases exist: pre-simulation, simulation, post-simulation, visual sync, and fixed-simulation bridge.
+- Legacy/priority tick lanes still exist through `GlobalRegistry` registration helpers: updatable, fast, fixed, slow, cold, frost, unscaled fast, late-frame, and post-fixed.
+- Cadence constants exist in source: fast `1/60s`, slow `0.1s`, thermal-critical slow `0.2s`, cold `1.0s`, frost `5.0s`, plus emergency/homeostasis slow behavior.
+- Dispatcher black boxes exist as 300-frame DataVault-backed rings for dispatcher/master dispatcher state.
+- `RenderDispatcher`, `GlobalRenderContext`, `GraphicsBufferUploadUtility`, and `TimeSliceScheduler` live in the same source file, so dispatcher docs must consider render upload/presentation utilities too.
+
+This is `STATIC_SOURCE` only. It does not prove compliance for every registered system.
 
 Current-state boundary:
 

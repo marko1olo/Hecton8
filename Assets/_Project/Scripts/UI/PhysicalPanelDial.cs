@@ -18,6 +18,11 @@ namespace Hecton8.UI
         private const float Pi = 3.14159274f;
         private const float TwoPi = 6.28318548f;
         private const float InvTwoPi = 0.159154943f;
+        private const float DefaultScrollDegreesPerUnit = 0.15f;
+        private const float DefaultMinimumDegrees = -135f;
+        private const float DefaultMaximumDegrees = 135f;
+        private const float DefaultDialHalfExtent = 32f;
+        private const float DefaultAudioPitch = 1f;
 
         [SerializeField, Tooltip("Stable panel id accepted by this dial.")]
         private int panelId = 1;
@@ -35,13 +40,13 @@ namespace Hecton8.UI
         private Vector3 localRotationAxis = Vector3.forward;
 
         [SerializeField, Tooltip("Degrees applied per native scroll-wheel unit.")]
-        private float degreesPerScrollUnit = 0.15f;
+        private float degreesPerScrollUnit = DefaultScrollDegreesPerUnit;
 
         [SerializeField, Tooltip("Minimum clamped dial angle in degrees.")]
-        private float minimumDegrees = -135f;
+        private float minimumDegrees = DefaultMinimumDegrees;
 
         [SerializeField, Tooltip("Maximum clamped dial angle in degrees.")]
-        private float maximumDegrees = 135f;
+        private float maximumDegrees = DefaultMaximumDegrees;
 
         [SerializeField, Tooltip("Routes scroll ticks into the central NativeQueue-backed audio drain when an event id is authored.")]
         private bool emitScrollAudio = true;
@@ -101,6 +106,7 @@ namespace Hecton8.UI
             if (inputEvent.PanelId != panelId ||
                 (inputEvent.EventType & DiegeticPanelInputEventType.Scroll) == 0 ||
                 !IsInsideDialHotZone(inputEvent.CanvasHitPoint) ||
+                !math.all(math.isfinite(inputEvent.AnalogDelta)) ||
                 math.lengthsq(inputEvent.AnalogDelta) <= MinimumScrollSq)
             {
                 return;
@@ -110,11 +116,12 @@ namespace Hecton8.UI
             if (!math.isfinite(scrollY) || math.abs(scrollY) <= 0.0001f)
                 return;
 
+            float scrollDegrees = scrollY * ResolveSafeScrollScale();
+            if (!math.isfinite(scrollDegrees) || math.abs(scrollDegrees) <= 0.000001f)
+                return;
+
             CacheBaseRotation();
-            _currentDegrees = math.clamp(
-                _currentDegrees + scrollY * degreesPerScrollUnit,
-                minimumDegrees,
-                maximumDegrees);
+            _currentDegrees = ClampDialDegrees(_currentDegrees + scrollDegrees);
             ApplyRotation();
             QueueScrollAudio();
         }
@@ -122,17 +129,23 @@ namespace Hecton8.UI
         public void SetAngleDegrees(float degrees)
         {
             CacheBaseRotation();
-            _currentDegrees = math.clamp(
-                math.isfinite(degrees) ? degrees : 0f,
-                minimumDegrees,
-                maximumDegrees);
+            _currentDegrees = ClampDialDegrees(degrees);
             ApplyRotation();
         }
 
         private bool IsInsideDialHotZone(float2 canvasPosition)
         {
-            float2 center = new float2(dialCenter.x, dialCenter.y);
-            float2 extents = math.max(new float2(0.5f, 0.5f), new float2(dialHalfExtents.x, dialHalfExtents.y));
+            if (!math.all(math.isfinite(canvasPosition)))
+                return false;
+
+            float2 center = new float2(
+                SanitizeFinite(dialCenter.x, 0f),
+                SanitizeFinite(dialCenter.y, 0f));
+            float2 extents = math.max(
+                new float2(0.5f, 0.5f),
+                new float2(
+                    SanitizeFinite(dialHalfExtents.x, DefaultDialHalfExtent),
+                    SanitizeFinite(dialHalfExtents.y, DefaultDialHalfExtent)));
             float2 delta = math.abs(canvasPosition - center);
             return delta.x <= extents.x && delta.y <= extents.y;
         }
@@ -150,6 +163,7 @@ namespace Hecton8.UI
         private void ApplyRotation()
         {
             Transform target = knobTransform != null ? knobTransform : transform;
+            _currentDegrees = ClampDialDegrees(_currentDegrees);
             float3 axis = new float3(localRotationAxis.x, localRotationAxis.y, localRotationAxis.z);
             float axisLengthSq = math.lengthsq(axis);
             if (!math.isfinite(axisLengthSq) || axisLengthSq <= MinimumAxisLengthSq)
@@ -235,9 +249,53 @@ namespace Hecton8.UI
             AudioEvent audioEvent = new AudioEvent(
                 scrollAudioEventId,
                 sourcePosition,
-                math.saturate(scrollAudioVolume),
-                math.clamp(scrollAudioPitch, 0.25f, 2.5f));
+                ResolveSafeAudioVolume(),
+                ResolveSafeAudioPitch());
             audio.QueueAudioEvent(in audioEvent);
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private void ResolveSafeDialBounds(out float minimum, out float maximum)
+        {
+            minimum = SanitizeFinite(minimumDegrees, DefaultMinimumDegrees);
+            maximum = SanitizeFinite(maximumDegrees, DefaultMaximumDegrees);
+            if (maximum < minimum)
+            {
+                float tmp = minimum;
+                minimum = maximum;
+                maximum = tmp;
+            }
+        }
+
+        private float ClampDialDegrees(float degrees)
+        {
+            ResolveSafeDialBounds(out float minimum, out float maximum);
+            return math.clamp(SanitizeFinite(degrees, 0f), minimum, maximum);
+        }
+
+        private float ResolveSafeScrollScale()
+        {
+            return math.clamp(
+                SanitizeFinite(degreesPerScrollUnit, DefaultScrollDegreesPerUnit),
+                -10f,
+                10f);
+        }
+
+        private float ResolveSafeAudioVolume()
+        {
+            return math.saturate(SanitizeFinite(scrollAudioVolume, 0f));
+        }
+
+        private float ResolveSafeAudioPitch()
+        {
+            return math.clamp(
+                SanitizeFinite(scrollAudioPitch, DefaultAudioPitch),
+                0.25f,
+                2.5f);
         }
 
         private void TryRegisterHotSwapListener()
@@ -260,16 +318,14 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            dialHalfExtents.x = math.max(0.5f, dialHalfExtents.x);
-            dialHalfExtents.y = math.max(0.5f, dialHalfExtents.y);
-            if (maximumDegrees < minimumDegrees)
-                maximumDegrees = minimumDegrees;
-            degreesPerScrollUnit = math.clamp(
-                math.isfinite(degreesPerScrollUnit) ? degreesPerScrollUnit : 0.15f,
-                -10f,
-                10f);
-            scrollAudioVolume = math.saturate(scrollAudioVolume);
-            scrollAudioPitch = math.clamp(scrollAudioPitch, 0.25f, 2.5f);
+            dialCenter.x = SanitizeFinite(dialCenter.x, 0f);
+            dialCenter.y = SanitizeFinite(dialCenter.y, 0f);
+            dialHalfExtents.x = math.max(0.5f, SanitizeFinite(dialHalfExtents.x, DefaultDialHalfExtent));
+            dialHalfExtents.y = math.max(0.5f, SanitizeFinite(dialHalfExtents.y, DefaultDialHalfExtent));
+            ResolveSafeDialBounds(out minimumDegrees, out maximumDegrees);
+            degreesPerScrollUnit = ResolveSafeScrollScale();
+            scrollAudioVolume = ResolveSafeAudioVolume();
+            scrollAudioPitch = ResolveSafeAudioPitch();
         }
 #endif
     }

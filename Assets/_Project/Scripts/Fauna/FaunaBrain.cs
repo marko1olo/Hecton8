@@ -498,6 +498,8 @@ namespace Hecton8.AI
         private bool _lodDisabled;
         private FaunaLogicalLodTier _logicalLodTier = FaunaLogicalLodTier.FullSim;
         private bool _logicalLodPresentationSuppressed;
+        private bool _pendingLogicalLodPresentationDirty;
+        private FaunaLogicalLodTier _pendingLogicalLodPresentationTier = FaunaLogicalLodTier.FullSim;
         private int _tier1LodProxyHandle;
         private uint _uniqueInstanceUid;
         private Renderer _renderer;
@@ -3212,6 +3214,7 @@ namespace Hecton8.AI
             FlushCorpseBloatShaderTimer();
             FlushFaunaPresentationShaderState();
             FlushEcosystemInfectionVisuals();
+            FlushLogicalLodPresentationState();
             FlushQueuedPresentationFeedback();
             FlushQueuedDespawnOrDeactivate();
         }
@@ -7172,7 +7175,7 @@ namespace Hecton8.AI
             }
 
             _logicalLodTier = logicalLodTier;
-            ApplyLogicalLodPresentationState(logicalLodTier);
+            QueueLogicalLodPresentationState(logicalLodTier);
             if (logicalLodTier == FaunaLogicalLodTier.DataOnly)
                 RefreshTier1LodProxy(logicalLodTier);
             else
@@ -7358,6 +7361,8 @@ namespace Hecton8.AI
             _pendingCorpseBloatShaderStartTimeSeconds = -1f;
             _pendingAupPresentationPoseDirty = false;
             _pendingAupPresentationPosition = Vector3.zero;
+            _pendingLogicalLodPresentationDirty = false;
+            _pendingLogicalLodPresentationTier = FaunaLogicalLodTier.FullSim;
             _pendingSelfDespawnOrDeactivate = false;
             _pendingExternalDespawnOrDeactivate = null;
         }
@@ -7435,6 +7440,21 @@ namespace Hecton8.AI
             }
 
             _logicalLodColliderScratch.Clear();
+        }
+
+        private void QueueLogicalLodPresentationState(FaunaLogicalLodTier logicalLodTier)
+        {
+            _pendingLogicalLodPresentationTier = logicalLodTier;
+            _pendingLogicalLodPresentationDirty = true;
+        }
+
+        private void FlushLogicalLodPresentationState()
+        {
+            if (!_pendingLogicalLodPresentationDirty)
+                return;
+
+            _pendingLogicalLodPresentationDirty = false;
+            ApplyLogicalLodPresentationState(_pendingLogicalLodPresentationTier);
         }
 
         private void ApplyLogicalLodPresentationState(FaunaLogicalLodTier logicalLodTier)

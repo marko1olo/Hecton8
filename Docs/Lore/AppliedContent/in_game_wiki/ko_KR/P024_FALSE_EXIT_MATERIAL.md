@@ -1,0 +1,30 @@
+---
+packet_id: P024_FALSE_EXIT_MATERIAL
+article_id: endings.false_exit_material
+locale: ko_KR
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 물질 탈출
+
+물질 탈출은 유효한 부분 엔딩이다. 자원으로 정산하지만 큰 진실을 남긴다.
+
+## Scanner
+
+Carrier 제안 유효: payload 질량이 부채를 갚는다. 증거 손실 미해결. Atlas 좌표 요청 대기.
+
+## Terminal
+
+탈출 계약: 봉인 샘플 제출, 심층 증거 포기, claim 감사와 부채 심사 수락.
+
+## Audio
+
+가치를 들고 나갈 수 있다. 깨끗하게는 못 나간다.
+
+## Field Note
+
+진짜 결말도 나쁜 답일 수 있다.
+
+<!-- In-Game Wiki; generated from P024_FALSE_EXIT_MATERIAL/ko_KR. -->

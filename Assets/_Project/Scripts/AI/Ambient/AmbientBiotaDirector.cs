@@ -1847,7 +1847,7 @@ namespace Hecton8.AI.Ambient
         private static GraphicsBuffer CreateIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 GraphicsBuffer.IndirectDrawIndexedArgs.size);

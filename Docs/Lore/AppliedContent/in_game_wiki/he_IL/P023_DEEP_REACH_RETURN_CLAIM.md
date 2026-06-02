@@ -1,0 +1,30 @@
+---
+packet_id: P023_DEEP_REACH_RETURN_CLAIM
+article_id: factions.deep_reach_return_claim
+locale: he_IL
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# תביעת חזרה Deep Reach
+
+Deep Reach קדמה ל-Aegir ורואה ב-HECTON-8 נכס כושל עם ערך חי. המטרה היא משאבים, Atlas, קואורדינטות וראיות.
+
+## Scanner
+
+הוראה מושהית: להשיב קואורדינטות, מצע ושליטה בראיות לפני בני אדם.
+
+## Terminal
+
+שרשרת proxy: גישת Atlas, סיווג רישומי מושבה, שימור claim Xenon-Omega, צמצום עצמאות הקבלן.
+
+## Audio
+
+Deep Reach רוצה את האתר, לא את הסיפור.
+
+## Field Note
+
+הם לא חוזרים בשביל המתים.
+
+<!-- In-Game Wiki; generated from P023_DEEP_REACH_RETURN_CLAIM/he_IL. -->

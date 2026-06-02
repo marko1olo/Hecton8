@@ -131,7 +131,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockFractalNoiseJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<float> Density;
@@ -196,7 +196,25 @@ namespace Hecton8.Editor.GeologyForge
             float voronoiFrequency = math.lerp(0.35f, 0.65f, qualityCurve);
             float voronoi = EvaluateVoronoi(p * safeFrequency * voronoiFrequency + seedOffset);
             float displacement = (fbm * amplitude) + ((voronoi - 0.5f) * amplitude * math.saturate(VoronoiWeight) * qualityCurve);
-            float density = ellipsoid + displacement - IsoLevel;
+            float radialDistance = math.length(new float2(p.x, p.z));
+            float radial01 = math.saturate(radialDistance * math.rcp(math.max(0.001f, RadiusMeters)));
+            float height01 = math.saturate((p.y * math.rcp(math.max(0.001f, radii.y))) * 0.5f + 0.5f);
+            float runoffNoise = math.abs(noise.snoise(new float3(
+                p.x * safeFrequency * 0.9f + seedOffset.z,
+                p.y * 0.18f,
+                p.z * safeFrequency * 0.9f - seedOffset.y)));
+            float runoffChannel = math.saturate(1f - runoffNoise * 1.65f);
+            float hydraulicCut = runoffChannel * runoffChannel * math.saturate(height01 * (1f - radial01)) * amplitude * math.lerp(0.18f, 0.42f, qualityCurve);
+            float sedimentFan = math.saturate(1f - height01 * 2.8f) * math.saturate(1f - radial01) * amplitude * 0.18f;
+            float angle = math.atan2(p.z, p.x);
+            float columnFacet = math.abs(math.cos(angle * 6f + seedOffset.x * 5.1f));
+            float basaltFacetCut = (columnFacet - 0.5f) * amplitude * math.saturate(RidgedWeight) * 0.16f;
+            float ventBlend = math.saturate((HeightScale - 1.95f) * 1.6f) * qualityCurve;
+            float throatRadius = math.max(0.08f, RadiusMeters * math.lerp(0.08f, 0.18f, qualityCurve));
+            float throat = math.saturate(1f - radialDistance * math.rcp(throatRadius));
+            float throatHeight = math.saturate((height01 - 0.28f) * 1.7f);
+            float geyserVentCut = throat * throat * throatHeight * RadiusMeters * 0.3f * ventBlend;
+            float density = ellipsoid + displacement + basaltFacetCut + hydraulicCut + geyserVentCut - sedimentFan - IsoLevel;
             Density[index] = math.isfinite(density) ? density : 1f;
         }
 
@@ -240,7 +258,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct SdfCellVertexCountJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
@@ -289,7 +307,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct SdfToMeshExtractionJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
@@ -418,7 +436,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildNormalBucketJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<GeologyRawVertex> Vertices;
@@ -458,7 +476,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct CalculateSmoothNormalsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
@@ -593,7 +611,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateTriplanarUvsJob : IJobParallelFor
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: The job maps Execute(index) to Vertices[index], so no two workers write the same row.
@@ -623,7 +641,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BakeVertexOcclusionJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
@@ -714,7 +732,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GeologyLodDecimationJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<GeologyRawVertex> SourceVertices;
@@ -766,7 +784,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GeologyPackVertexJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<GeologyRawVertex> SourceVertices;
@@ -778,9 +796,11 @@ namespace Hecton8.Editor.GeologyForge
         {
             GeologyRawVertex src = SourceVertices[index];
             float3 normal = NormalizeOrFallback(src.Normal, new float3(0f, 1f, 0f));
-            byte red = (byte)math.clamp((int)math.round(math.saturate(src.AmbientOcclusion) * 255f), 0, 255);
-            byte green = 0;
-            byte blue = LodMask;
+            float aoDarkness = 1f - math.saturate(src.AmbientOcclusion);
+            float sedimentMask = math.saturate((normal.y - 0.18f) * 1.22f);
+            byte red = LodMask;
+            byte green = (byte)math.clamp((int)math.round(sedimentMask * 255f), 0, 255);
+            byte blue = (byte)math.clamp((int)math.round(aoDarkness * 255f), 0, 255);
             uint color = red | ((uint)green << 8) | ((uint)blue << 16) | (255u << 24);
             PackedVertices[index] = new GeologyVertex32
             {
@@ -807,7 +827,7 @@ namespace Hecton8.Editor.GeologyForge
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GeologyIndexFillJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<uint> Indices;

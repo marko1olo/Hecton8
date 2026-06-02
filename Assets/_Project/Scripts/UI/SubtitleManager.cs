@@ -4,6 +4,7 @@ using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.World;
@@ -95,6 +96,20 @@ namespace Hecton8.UI
             public int Length;
         }
 
+        private struct PendingAudioLogSubtitleEvent
+        {
+            public AudioLogEventType Type;
+            public uint LogHash;
+            public float DurationSeconds;
+
+            public void Clear()
+            {
+                Type = default;
+                LogHash = 0u;
+                DurationSeconds = 0f;
+            }
+        }
+
         internal readonly struct SubtitleLineSlice
         {
             public SubtitleLineSlice(int start, int length, int nextStart)
@@ -162,6 +177,11 @@ namespace Hecton8.UI
         private const float AudioLogCueMinimumImpulseRadius = 1.5f;
         private const float AudioLogCueMaximumImpulseRadius = 5.5f;
         private const float AudioLogCueMaximumCameraShake = 0.18f;
+        private const byte PowerTextGlitchBatteryThresholdPercent = 25;
+        private const float PowerTextGlitchEnergyThreshold01 = 0.18f;
+        private const float PowerTextGlitchRiseSpeed = 11f;
+        private const float PowerTextGlitchDecaySpeed = 3.5f;
+        private const float PowerTextGlitchMaximumMutationRate = 0.11f;
 
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
@@ -179,6 +199,7 @@ namespace Hecton8.UI
             new char[MaxBufferedSubtitleCharacters], new char[MaxBufferedSubtitleCharacters]
         }; // COLD ALLOC: char[8][256] - queued zero-GC subtitle text storage - owner: SubtitleManager
         private readonly TimedSubtitleCue[] _timedAudioLogCues = new TimedSubtitleCue[MaxTimedAudioLogCueCount]; // COLD ALLOC: TimedSubtitleCue[32] - parsed timed subtitle cue metadata - owner: SubtitleManager
+        private readonly PendingAudioLogSubtitleEvent[] _pendingAudioLogEvents = new PendingAudioLogSubtitleEvent[MaxQueuedSubtitles]; // COLD ALLOC: PendingAudioLogSubtitleEvent[8] - value-only audio-log event phase bridge - owner: SubtitleManager
         private readonly char[] _subtitleRenderBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle TMP render buffer - owner: SubtitleManager
         private readonly char[] _lastRenderedSubtitleBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle change cache - owner: SubtitleManager
         private readonly char[] _pendingSubtitleSwapBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - LateUpdate TMP swap buffer - owner: SubtitleManager
@@ -219,6 +240,8 @@ namespace Hecton8.UI
         private int _subtitleCommandQueueCount;
         private int _bufferedQueueHead;
         private int _bufferedQueueCount;
+        private int _pendingAudioLogEventHead;
+        private int _pendingAudioLogEventCount;
         private SubtitleStateDTO _currentSubtitleState;
         private uint _lastEnqueuedCommandTextHash;
         private uint _lastEnqueuedCommandSpeakerHash;
@@ -261,6 +284,11 @@ namespace Hecton8.UI
         private int _audioLogCueSnapshotStart;
         private int _audioLogCueSnapshotLength;
         private float _audioLogCueSnapshotSpeakerIntensity;
+        private float _powerTextGlitchIntensity01;
+        private float _powerTextGlitchHeldTarget01;
+        private float _powerTextGlitchHoldSeconds;
+        private byte _powerTextGlitchBucket;
+        private uint _powerTextGlitchPhase;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -331,6 +359,8 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
+            ClearPendingAudioLogSubtitleEvents();
+            ClearTimedAudioLogState();
 
             if (s_activeInstance == this)
                 s_activeInstance = null;
@@ -342,6 +372,8 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
+            ClearPendingAudioLogSubtitleEvents();
+            ClearTimedAudioLogState();
 
             if (s_activeInstance == this)
                 s_activeInstance = null;
@@ -403,6 +435,12 @@ namespace Hecton8.UI
             {
                 _cachedLoreDatabase = currentService as ILoreDatabaseReadModel;
             }
+            else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault dataVault = currentService as IDataVault;
+                CharBufferPool.BindDataVaultCold(dataVault);
+                BabelSubtitleSyncRuntime.BindDataVaultCold(dataVault);
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -427,6 +465,9 @@ namespace Hecton8.UI
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationStressPresentation;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedLoreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;
+            IDataVault dataVault = Hecton8.Core.GlobalRegistry.DataVault;
+            CharBufferPool.BindDataVaultCold(dataVault);
+            BabelSubtitleSyncRuntime.BindDataVaultCold(dataVault);
         }
 
         /// <summary>
@@ -458,19 +499,55 @@ namespace Hecton8.UI
         /// </summary>
         public bool DisplaySubtitle(uint textHash, float duration, BabelFormatArgs formatArgs)
         {
-            if (textHash == 0u || !CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
-                return false;
+            return DisplaySubtitleResolved(textHash, default, duration, formatArgs, false);
+        }
 
+        /// <summary>
+        /// Resolves a Babel hash and falls back to caller-owned text when the token is absent.
+        /// </summary>
+        public bool DisplaySubtitle(uint textHash, ReadOnlySpan<char> fallback, float duration)
+        {
+            return DisplaySubtitleResolved(textHash, fallback, duration, default, true);
+        }
+
+        /// <summary>
+        /// Resolves a Babel hash with numeric ^0..^3 replacements and a caller-owned fallback span.
+        /// </summary>
+        public bool DisplaySubtitle(uint textHash, ReadOnlySpan<char> fallback, float duration, BabelFormatArgs formatArgs)
+        {
+            return DisplaySubtitleResolved(textHash, fallback, duration, formatArgs, true);
+        }
+
+        private bool DisplaySubtitleResolved(
+            uint textHash,
+            ReadOnlySpan<char> fallback,
+            float duration,
+            BabelFormatArgs formatArgs,
+            bool allowFallback)
+        {
+            if (textHash == 0u)
+                return allowFallback && EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
+
+            if (!CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
+                return allowFallback && EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
+
+            int length = 0;
+            bool found = false;
+            long decodeStart = Stopwatch.GetTimestamp();
+            float decodeMs = 0f;
             try
             {
-                long decodeStart = Stopwatch.GetTimestamp();
-                bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
+                found = LocRegistry.TryWriteVisualSpanFromUtf8(
                     textHash,
                     lease.Span,
-                    out int length,
+                    out length,
                     formatArgs,
                     ShouldStripBabelRichText(textHash));
-                float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
+                decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
+
+                if (!found && allowFallback && fallback.Length > 0)
+                    length = CopyFallbackSpanToBabelLease(textHash, fallback, lease.Span);
+
                 BabelSubtitleSyncRuntime.RecordDecode(textHash, length, !found, decodeMs);
                 length = lease.CopyToTmpBuffer(length);
                 if (length <= 0)
@@ -485,6 +562,28 @@ namespace Hecton8.UI
             {
                 CharBufferPool.Release(in lease);
             }
+        }
+
+        private static int CopyFallbackSpanToBabelLease(uint textHash, ReadOnlySpan<char> fallback, Span<char> destination)
+        {
+            if (fallback.Length <= 0 || destination.Length <= 0)
+                return 0;
+
+            int safeLength = math.min(fallback.Length, destination.Length);
+            for (int i = 0; i < safeLength; i++)
+                destination[i] = fallback[i];
+
+            if (safeLength < fallback.Length)
+            {
+                BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    textHash,
+                    UIOptimizationFailureCode.TextBufferOverflow,
+                    fallback.Length,
+                    safeLength,
+                    destination.Length);
+            }
+
+            return safeLength;
         }
 
         /// <summary>
@@ -556,7 +655,7 @@ namespace Hecton8.UI
         public bool DisplaySubtitle(int keyHash, ReadOnlySpan<char> fallback, float duration)
         {
             if (keyHash != 0)
-                return DisplaySubtitle(unchecked((uint)keyHash), duration);
+                return DisplaySubtitle(unchecked((uint)keyHash), fallback, duration);
 
             return EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
         }
@@ -586,6 +685,7 @@ namespace Hecton8.UI
                 return;
 
             BabelSubtitleSyncRuntime.PreparePresentationFrame();
+            bool powerGlitchChanged = RefreshPowerTextGlitch(deltaTime);
             DrainGlobalSubtitleSignals();
             DrainBabelCueSignals();
 
@@ -630,7 +730,7 @@ namespace Hecton8.UI
             }
 
             if (_isShowing)
-                RefreshStressCorruptionIfNeeded();
+                RefreshStressCorruptionIfNeeded(powerGlitchChanged);
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = _currentAlpha;
@@ -641,6 +741,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            DrainPendingAudioLogEventsVisualSync();
             AdvanceSubtitlePresentation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
 
             if (!_subtitleSwapPending)
@@ -700,14 +801,91 @@ namespace Hecton8.UI
             switch (payload.Type)
             {
                 case AudioLogEventType.PlaybackStarted:
-                    HandleAudioLogPlaybackStarted(payload.LogHash, payload.DurationSeconds);
+                    QueueAudioLogSubtitleEvent(in payload);
                     return;
 
                 case AudioLogEventType.PlaybackStopped:
                 case AudioLogEventType.PlaybackCompleted:
-                    HandleAudioLogPlaybackEnded(payload.LogHash);
+                    QueueAudioLogSubtitleEvent(in payload);
                     return;
             }
+        }
+
+        private void QueueAudioLogSubtitleEvent(in AudioLogEventPayload payload)
+        {
+            int capacity = _pendingAudioLogEvents.Length;
+            if (capacity <= 0)
+                return;
+
+            if (_pendingAudioLogEventCount >= capacity)
+            {
+                _pendingAudioLogEvents[_pendingAudioLogEventHead].Clear();
+                _pendingAudioLogEventHead = (_pendingAudioLogEventHead + 1) & BufferedQueueMask;
+                _pendingAudioLogEventCount--;
+            }
+
+            int slot = (_pendingAudioLogEventHead + _pendingAudioLogEventCount) & BufferedQueueMask;
+            _pendingAudioLogEvents[slot].Type = payload.Type;
+            _pendingAudioLogEvents[slot].LogHash = payload.LogHash;
+            _pendingAudioLogEvents[slot].DurationSeconds = SanitizeAudioLogEventDuration(payload.DurationSeconds);
+            _pendingAudioLogEventCount++;
+        }
+
+        private void DrainPendingAudioLogEventsVisualSync()
+        {
+            int guard = _pendingAudioLogEventCount;
+            while (guard-- > 0 && TryDequeuePendingAudioLogEvent(out PendingAudioLogSubtitleEvent pending))
+            {
+                switch (pending.Type)
+                {
+                    case AudioLogEventType.PlaybackStarted:
+                        HandleAudioLogPlaybackStarted(pending.LogHash, pending.DurationSeconds);
+                        break;
+
+                    case AudioLogEventType.PlaybackStopped:
+                    case AudioLogEventType.PlaybackCompleted:
+                        HandleAudioLogPlaybackEnded(pending.LogHash);
+                        break;
+                }
+            }
+        }
+
+        private bool TryDequeuePendingAudioLogEvent(out PendingAudioLogSubtitleEvent pending)
+        {
+            if (_pendingAudioLogEventCount <= 0)
+            {
+                pending = default;
+                return false;
+            }
+
+            int slot = _pendingAudioLogEventHead;
+            pending = _pendingAudioLogEvents[slot];
+            _pendingAudioLogEvents[slot].Clear();
+            _pendingAudioLogEventHead = (_pendingAudioLogEventHead + 1) & BufferedQueueMask;
+            _pendingAudioLogEventCount--;
+            return true;
+        }
+
+        private void ClearPendingAudioLogSubtitleEvents()
+        {
+            int count = _pendingAudioLogEventCount;
+            int head = _pendingAudioLogEventHead;
+            for (int i = 0; i < count; i++)
+            {
+                int slot = (head + i) & BufferedQueueMask;
+                _pendingAudioLogEvents[slot].Clear();
+            }
+
+            _pendingAudioLogEventHead = 0;
+            _pendingAudioLogEventCount = 0;
+        }
+
+        private static float SanitizeAudioLogEventDuration(float durationSeconds)
+        {
+            if (!math.isfinite(durationSeconds) || durationSeconds <= 0f)
+                return 0f;
+
+            return math.min(durationSeconds, 86400f);
         }
 
         private void HandleAudioLogPlaybackStarted(uint loreHash, float durationSeconds)
@@ -1055,14 +1233,240 @@ namespace Hecton8.UI
             int safeLength = Mathf.Clamp(_currentBufferedSubtitleLength, 0, _currentBufferedSubtitleBuffer.Length);
             ReadOnlySpan<char> sourceSpan = _currentBufferedSubtitleBuffer.AsSpan(0, safeLength);
             ILocalizationStressPresentationReadModel manager = _cachedLocalization;
+            int renderLength;
             if (source != SubtitleSource.AudioLog &&
                 manager != null &&
                 manager.TryApplyHullStressCorruptionIfNeeded(sourceSpan, _subtitleRenderBuffer, out int corruptedLength))
             {
-                return Mathf.Clamp(corruptedLength, 0, _subtitleRenderBuffer.Length);
+                renderLength = Mathf.Clamp(corruptedLength, 0, _subtitleRenderBuffer.Length);
+                return ApplyPowerTextGlitchIfNeeded(renderLength);
             }
 
-            return CopySpanToBuffer(sourceSpan, _subtitleRenderBuffer);
+            renderLength = CopySpanToBuffer(sourceSpan, _subtitleRenderBuffer);
+            return ApplyPowerTextGlitchIfNeeded(renderLength);
+        }
+
+        private bool RefreshPowerTextGlitch(float deltaTime)
+        {
+            float safeDelta = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            float signalTarget = ResolvePowerTextGlitchSignalTarget01();
+            if (signalTarget > 0f)
+            {
+                _powerTextGlitchHeldTarget01 = math.max(_powerTextGlitchHeldTarget01, signalTarget);
+                _powerTextGlitchHoldSeconds = math.lerp(0.35f, 1.15f, SmoothPowerTextGlitch01(signalTarget));
+            }
+            else if (_powerTextGlitchHoldSeconds > 0f)
+            {
+                _powerTextGlitchHoldSeconds = math.max(0f, _powerTextGlitchHoldSeconds - safeDelta);
+            }
+            else
+            {
+                _powerTextGlitchHeldTarget01 = 0f;
+            }
+
+            float targetIntensity = math.max(signalTarget, _powerTextGlitchHeldTarget01);
+            float previousIntensity = _powerTextGlitchIntensity01;
+            float speed = targetIntensity > previousIntensity ? PowerTextGlitchRiseSpeed : PowerTextGlitchDecaySpeed;
+            _powerTextGlitchIntensity01 = math.lerp(
+                previousIntensity,
+                targetIntensity,
+                FastDecayBlend(speed, safeDelta));
+
+            byte previousBucket = _powerTextGlitchBucket;
+            _powerTextGlitchBucket = EncodePowerTextGlitchBucket(_powerTextGlitchIntensity01);
+            if (_powerTextGlitchBucket == 0)
+                return previousBucket != 0;
+
+            _powerTextGlitchPhase++;
+            int cadenceFrames = ResolvePowerTextGlitchCadenceFrames(_powerTextGlitchIntensity01);
+            return previousBucket != _powerTextGlitchBucket ||
+                   cadenceFrames <= 1 ||
+                   (_powerTextGlitchPhase % (uint)cadenceFrames) == 0u;
+        }
+
+        private static float ResolvePowerTextGlitchSignalTarget01()
+        {
+            float target = 0f;
+            ReadOnlySpan<BatteryLevelSignal> batterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshot();
+            for (int i = 0; i < batterySignals.Length; i++)
+            {
+                BatteryLevelSignal signal = batterySignals[i];
+                byte percent = signal.BatteryPercent > 100 ? (byte)100 : signal.BatteryPercent;
+                if (percent >= PowerTextGlitchBatteryThresholdPercent)
+                    continue;
+
+                float severity = (PowerTextGlitchBatteryThresholdPercent - percent) *
+                                 (1f / PowerTextGlitchBatteryThresholdPercent);
+                target = math.max(target, severity);
+            }
+
+            ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < vitalSignals.Length; i++)
+            {
+                SurvivalVitalsChangedSignal signal = vitalSignals[i];
+                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) == 0u)
+                    continue;
+
+                float energy = math.saturate(math.select(0f, signal.Energy01, math.isfinite(signal.Energy01)));
+                if (energy >= PowerTextGlitchEnergyThreshold01)
+                    continue;
+
+                float severity = (PowerTextGlitchEnergyThreshold01 - energy) *
+                                 (1f / PowerTextGlitchEnergyThreshold01);
+                target = math.max(target, severity);
+            }
+
+            return math.saturate(target);
+        }
+
+        private int ApplyPowerTextGlitchIfNeeded(int renderLength)
+        {
+            int safeLength = Mathf.Clamp(renderLength, 0, _subtitleRenderBuffer.Length);
+            if (safeLength <= 0 || _powerTextGlitchBucket == 0)
+                return safeLength;
+
+            float intensity = math.saturate(_powerTextGlitchIntensity01);
+            int mutationBudget = ResolvePowerTextGlitchMutationBudget(safeLength, intensity);
+            if (mutationBudget <= 0)
+                return safeLength;
+
+            ReadOnlySpan<char> renderSpan = _subtitleRenderBuffer.AsSpan(0, safeLength);
+            int candidateCount = CountPowerTextGlitchCandidates(renderSpan);
+            if (candidateCount <= 0)
+                return safeLength;
+
+            mutationBudget = math.min(mutationBudget, candidateCount);
+            uint seed = MixPowerTextGlitch((uint)safeLength ^
+                                           (_powerTextGlitchPhase * 0x9E3779B9u) ^
+                                           ((uint)_powerTextGlitchBucket * 0x85EBCA6Bu));
+            int remainingCandidates = candidateCount;
+            int remainingMutations = mutationBudget;
+            bool insideRichTextTag = false;
+            for (int index = 0; index < safeLength && remainingMutations > 0; index++)
+            {
+                char existing = _subtitleRenderBuffer[index];
+                if (existing == '<')
+                {
+                    insideRichTextTag = true;
+                    continue;
+                }
+
+                if (insideRichTextTag)
+                {
+                    if (existing == '>')
+                        insideRichTextTag = false;
+                    continue;
+                }
+
+                if (!IsPowerTextGlitchMutableGlyph(existing))
+                    continue;
+
+                seed = MixPowerTextGlitch(seed ^ ((uint)index * 0x632BE59Bu) ^ (uint)remainingCandidates);
+                if ((seed % (uint)remainingCandidates) < (uint)remainingMutations)
+                {
+                    _subtitleRenderBuffer[index] = ResolvePowerTextGlitchGlyph(seed);
+                    remainingMutations--;
+                }
+
+                remainingCandidates--;
+            }
+
+            return safeLength;
+        }
+
+        private static int CountPowerTextGlitchCandidates(ReadOnlySpan<char> renderSpan)
+        {
+            int count = 0;
+            bool insideRichTextTag = false;
+            for (int i = 0; i < renderSpan.Length; i++)
+            {
+                char value = renderSpan[i];
+                if (value == '<')
+                {
+                    insideRichTextTag = true;
+                    continue;
+                }
+
+                if (insideRichTextTag)
+                {
+                    if (value == '>')
+                        insideRichTextTag = false;
+                    continue;
+                }
+
+                if (IsPowerTextGlitchMutableGlyph(value))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsPowerTextGlitchMutableGlyph(char value)
+        {
+            return value != ' ' &&
+                   value != '\n' &&
+                   value != '\r' &&
+                   value != '\t' &&
+                   value != '<' &&
+                   value != '>';
+        }
+
+        private static int ResolvePowerTextGlitchMutationBudget(int length, float intensity01)
+        {
+            float quality = SmoothPowerTextGlitch01(ResolveSubtitleQualityWeight01());
+            float mutationRate = math.lerp(0.018f, PowerTextGlitchMaximumMutationRate, quality) *
+                                 SmoothPowerTextGlitch01(intensity01);
+            return math.clamp((int)math.ceil(length * mutationRate), 1, length);
+        }
+
+        private static int ResolvePowerTextGlitchCadenceFrames(float intensity01)
+        {
+            float quality = SmoothPowerTextGlitch01(ResolveSubtitleQualityWeight01());
+            float intensity = SmoothPowerTextGlitch01(intensity01);
+            float cadence = math.lerp(9f, 2f, quality) * math.lerp(1.35f, 0.65f, intensity);
+            return math.clamp((int)math.round(cadence), 1, 12);
+        }
+
+        private static byte EncodePowerTextGlitchBucket(float intensity01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(intensity01) * 15f), 0, 15);
+        }
+
+        private static float ResolveSubtitleQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private static float SmoothPowerTextGlitch01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        private static uint MixPowerTextGlitch(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
+        }
+
+        private static char ResolvePowerTextGlitchGlyph(uint seed)
+        {
+            switch (seed % 8u)
+            {
+                case 0u: return '#';
+                case 1u: return '%';
+                case 2u: return '/';
+                case 3u: return '\\';
+                case 4u: return '|';
+                case 5u: return '_';
+                case 6u: return '-';
+                default: return '*';
+            }
         }
 
         private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
@@ -1200,12 +1604,18 @@ namespace Hecton8.UI
 
         private void RefreshStressCorruptionIfNeeded()
         {
-            if (_currentSource == SubtitleSource.AudioLog)
+            RefreshStressCorruptionIfNeeded(false);
+        }
+
+        private void RefreshStressCorruptionIfNeeded(bool forceVisualRefresh)
+        {
+            bool allowHullStress = _currentSource != SubtitleSource.AudioLog;
+            if (!allowHullStress && !forceVisualRefresh)
                 return;
 
-            ILocalizationStressPresentationReadModel manager = _cachedLocalization;
+            ILocalizationStressPresentationReadModel manager = allowHullStress ? _cachedLocalization : null;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
-            if (stressBucket == _lastStressCorruptionBucket)
+            if (!forceVisualRefresh && stressBucket == _lastStressCorruptionBucket)
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
@@ -1687,7 +2097,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return false;
 
-            _registeredLateFrameSwap = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameSwap = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             return _registeredLateFrameSwap;
         }
 
@@ -1696,7 +2106,7 @@ namespace Hecton8.UI
             if (!_registeredLateFrameSwap)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrameSwap = false;
         }
 

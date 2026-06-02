@@ -219,26 +219,23 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registeredToTickManager)
-                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTickManager = SystemDispatcher.Register((IUpdatable)this, PriorityLayer.UI);
             if (!_registeredToLateFrame)
-                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredToLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredToLateFrame = false;
             }
 
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((IUpdatable)this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
 
@@ -714,11 +711,7 @@ namespace Hecton8.UI
 
             int itemHashId = 0;
             if (tool != null && tool.ToolData != null)
-            {
-                string persistentId = tool.ToolData.PersistentId;
-                if (!string.IsNullOrWhiteSpace(persistentId))
-                    itemHashId = LocHash.Compute(persistentId);
-            }
+                itemHashId = tool.ToolData.PersistentHashId;
 
             _slotItemHashCache[slotIndex] = itemHashId;
             _slotItemHashResolved[slotIndex] = true;

@@ -1,0 +1,43 @@
+{
+  "identity": {
+    "display_name": "Teni Games",
+    "display_name_jp_variant": "Teni Games / 天衣",
+    "handle_primary": "TeniGames",
+    "telegram_handle": "teni_games",
+    "game": "Submerge",
+    "language": "en"
+  },
+  "core_bio": "Small game studio. Building Submerge: pressure, machinery, salvage, black water.",
+  "short_bio": "Building Submerge: pressure, machinery, salvage, black water.",
+  "telegram_description": "Submerge development notes. Pressure, machinery, salvage, black water. Screenshots have to earn the post.",
+  "x_bio": "Small game studio. Building Submerge: pressure, machinery, salvage, black water.",
+  "bluesky_bio": "Small game studio. Building Submerge: pressure, machinery, salvage, black water.",
+  "youtube_description": "Teni Games is building Submerge, a single-player deep-sea survival project about pressure, machinery, salvage, and black water. Public footage waits for current-build proof.",
+  "instagram_bio": "Building Submerge. Pressure, machinery, salvage, black water.",
+  "tiktok_bio": "Building Submerge. Pressure, machinery, salvage, black water.",
+  "reddit_profile_note": "Developer account for Teni Games / Submerge. Disclose dev status before posting outside owned pages.",
+  "website": "",
+  "contact": "",
+  "assets": {
+    "x_avatar": "MarketingAssets/00_Brand/PlatformExports/x_avatar_400.png",
+    "x_banner": "MarketingAssets/00_Brand/PlatformExports/x_banner_1500x500.png",
+    "bluesky_profile": "MarketingAssets/00_Brand/PlatformExports/bluesky_profile_1000.png",
+    "youtube_profile": "MarketingAssets/00_Brand/PlatformExports/youtube_profile_800.png",
+    "youtube_banner": "MarketingAssets/00_Brand/PlatformExports/youtube_banner_2560x1440_safe.png",
+    "instagram_profile": "MarketingAssets/00_Brand/PlatformExports/instagram_profile_1080.png",
+    "tiktok_profile": "MarketingAssets/00_Brand/PlatformExports/tiktok_profile_1024.png",
+    "reddit_profile": "MarketingAssets/00_Brand/PlatformExports/reddit_profile_256.png",
+    "reddit_banner": "MarketingAssets/00_Brand/PlatformExports/reddit_banner_1600x480.png",
+    "telegram_avatar": "MarketingAssets/00_Brand/PlatformExports/telegram_avatar_512.png",
+    "animated_gif": "MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif",
+    "animated_mp4": "MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.mp4"
+  },
+  "posting_rules": [
+    "English-only public copy unless a specific Japanese-language asset is requested.",
+    "No Steam/wishlist CTA until the current build can carry public screenshots.",
+    "No Russian official-channel posts.",
+    "No sterile account setup wording.",
+    "No AI-sounding launch copy.",
+    "One concrete dev fact per post."
+  ]
+}

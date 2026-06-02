@@ -42,7 +42,8 @@ namespace Hecton8.Audio.Synthesis.Editor
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.PlaybackSpeed), 12);
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.VolumeScalar), 16);
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.Flags), 20);
-            AssertOffset<VocalStateDTO>("_pad0", 24);
+            AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.DuckingEnvelope01), 24);
+            AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.SpeakerFloodDistortion01), 28);
 
             AssertOffset<VocalCodecStateDTO>(nameof(VocalCodecStateDTO.PayloadOffset), 0);
             AssertOffset<VocalCodecStateDTO>(nameof(VocalCodecStateDTO.PayloadByteLength), 8);

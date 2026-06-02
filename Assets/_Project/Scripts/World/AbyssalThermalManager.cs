@@ -660,6 +660,7 @@ namespace Hecton8.World
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredThermodynamicsRuntime;
+        private bool _loggedMissingBioCableMaterial;
         private bool _cutterBeamActive;
         private bool _hasSmokeData;
         private int _kernelIndex = -1;
@@ -4185,6 +4186,10 @@ namespace Hecton8.World
             if (_bioCableVisuals == null)
                 return;
 
+            Material resolvedCableMaterial = ResolveBioCableMaterialCold();
+            if (resolvedCableMaterial == null)
+                return;
+
             for (int i = 0; i < _bioCableVisuals.Length; i++)
             {
                 if (_bioCableVisuals[i] != null)
@@ -4192,6 +4197,7 @@ namespace Hecton8.World
 
                 // COLD ALLOC: GameObject[1] - persistent abyssal bio-cable visual rig child created once per cable slot - owner: AbyssalThermalManager
                 GameObject cableObject = new GameObject("BioCableIK");
+                cableObject.SetActive(false);
                 cableObject.transform.SetParent(transform, false);
                 cableObject.transform.localPosition = Vector3.zero;
                 cableObject.transform.localRotation = Quaternion.identity;
@@ -4199,10 +4205,34 @@ namespace Hecton8.World
 
                 // COLD ALLOC: Component[1] - persistent abyssal bio-cable IK rig component - owner: AbyssalThermalManager
                 BioCableIK cableRig = cableObject.AddComponent<BioCableIK>();
+                cableRig.SetCableMaterialCold(resolvedCableMaterial);
+                cableObject.SetActive(true);
                 cableRig.InitializeAt(transform.position, Vector3.up);
                 cableRig.SetCableActive(false);
                 _bioCableVisuals[i] = cableRig;
             }
+        }
+
+        private Material ResolveBioCableMaterialCold()
+        {
+            if (bioCableMaterial != null)
+                return bioCableMaterial;
+
+#if UNITY_EDITOR
+            bioCableMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultBioCableMaterialPath);
+            if (bioCableMaterial != null)
+                return bioCableMaterial;
+#endif
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_loggedMissingBioCableMaterial)
+            {
+                _loggedMissingBioCableMaterial = true;
+                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
+            }
+#endif
+
+            return null;
         }
 
         private static bool EnsureBuffer<T>(ref GraphicsBuffer buffer, int count) where T : struct

@@ -280,11 +280,41 @@ namespace Hecton8.AI.Ecosystem
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntime()
         {
-            if (s_runtime != null)
-                s_runtime.Dispose();
-
-            s_runtime = null;
+            DisposeRuntimeForLifecycleTransition();
         }
+
+        private static void DisposeRuntimeForLifecycleTransition()
+        {
+            ShinobuEcosystemBalancer runtime = s_runtime;
+            s_runtime = null;
+            if (runtime != null)
+                runtime.Dispose();
+            else
+            {
+                ShinobuEcosystemTelemetryForensics.ShutdownDumpWorker();
+                ShinobuSpatialGridForensics.ShutdownDumpWorker();
+            }
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorLifecycleTeardown()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeRuntimeForLifecycleTransition;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeRuntimeForLifecycleTransition;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
+        {
+            if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                change == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                DisposeRuntimeForLifecycleTransition();
+            }
+        }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InitializeAfterSceneLoad()
@@ -2263,8 +2293,8 @@ namespace Hecton8.AI.Ecosystem
                 mockJob.SpeedMetersPerSecond = DefaultBoidSpeedMetersPerSecond;
                 mockJob.ActiveCount = count;
                 mockJob.BaseSeed = 0x53484E31u;
-                JobHandle mockHandle = mockJob.Schedule(count, FrameJobBatchSize);
-                DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: deterministic 100k mock seed rows must exist before first simulation admission.
+                for (int i = 0; i < count; i++)
+                    mockJob.Execute(i); // COLD_BOOTSTRAP_SYNC: DataVault raw views currently share one Unity safety domain, so deterministic seed rows are written by the owner phase.
 
                 for (int i = 0; i < sectors.Length; i++)
                     sectors[i] = default;
@@ -5381,6 +5411,9 @@ namespace Hecton8.AI.Ecosystem
             GraphicsBuffer culledArgsBuffer,
             int activeCount)
         {
+            if (!SupportsGpuWrittenIndirectArgs())
+                return false;
+
             if (cullingParams.CullingCompute == null ||
                 cullingParams.ClearArgsKernel < 0 ||
                 cullingParams.CullKernel < 0 ||
@@ -5485,9 +5518,10 @@ namespace Hecton8.AI.Ecosystem
         private static GraphicsBuffer CreateGpuWrittenIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
-                4,
-                UnsafeUtility.SizeOf<uint>());
+                GraphicsBuffer.Target.IndirectArguments,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
         }
 
         private static bool IsValid(GraphicsBuffer buffer, int count, int stride)
@@ -5503,6 +5537,12 @@ namespace Hecton8.AI.Ecosystem
             return buffer != null &&
                    buffer.IsValid() &&
                    buffer.count * buffer.stride >= minimumBytes;
+        }
+
+        private static bool SupportsGpuWrittenIndirectArgs()
+        {
+            // Unity 6 D3D rejects Raw | IndirectArguments buffers; keep the draw path on CPU-written args.
+            return false;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -6144,12 +6184,12 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockBoidSwarmJob : IJobParallelFor
     {
-        [NoAlias] public NativeArray<AmbientEntityDTO> Entities;
-        [NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
-        [NoAlias] public NativeArray<BoidStateDTO> BoidStates;
+        public NativeArray<AmbientEntityDTO> Entities;
+        public NativeArray<AmbientEntityAupDTO> Aups;
+        public NativeArray<BoidStateDTO> BoidStates;
         public AbsoluteUniversePosition CenterAup;
         public float SectorSizeMeters;
         public float SpeedMetersPerSecond;

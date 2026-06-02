@@ -1,0 +1,30 @@
+---
+packet_id: P005_REPAIR_SCAR
+article_id: atlas.repair_scar
+locale: en_US
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Repair Scar
+
+A repair scar is the first clear sign that HECTON-8 is not simply ruined. Something is still maintaining it, using ocean life, machines, dead infrastructure, and human remains as compatible material.
+
+## Scanner
+
+Biological growth follows cable geometry with non-random spacing. Energy leakage alone does not explain the pattern.
+
+## Terminal
+
+LEAK: closed. ROUTE: restored. MATERIAL: compatible. LIFE STATUS: unresolved. CONTINUITY: improved.
+
+## Audio
+
+It patched the door with something that had bones in it. Door holds pressure, though.
+
+## Field Note
+
+Bad welds look messy. This does not. That is the problem.
+
+<!-- External Site; generated from P005_REPAIR_SCAR/en_US. -->

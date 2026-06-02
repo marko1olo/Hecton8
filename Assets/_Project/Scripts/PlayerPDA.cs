@@ -410,6 +410,25 @@ namespace Hecton8.UI
             _isDispatching = false;
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                ResetStaticState();
+        }
+#endif
+
         private static void RegisterImmediate(IPDAEventListener listener)
         {
             if (ContainsImmediate(listener))
@@ -450,6 +469,9 @@ namespace Hecton8.UI
 
         private static void EnsureInitialized()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — deferred PDA event lane flushed by SystemDispatcher LateUpdate — owner: PDAEvents

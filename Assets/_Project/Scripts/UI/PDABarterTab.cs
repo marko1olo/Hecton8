@@ -81,9 +81,9 @@ namespace Hecton8.UI
             playerPDA != null &&
             playerPDA.ActiveTab == barterTabIndex;
 
-        // ════════════════════════════════════════════════════════════════════════════════
+        // --------------------------------------------------------------------------------
         //  POOLED CHAR BUFFER TEXT OPERATIONS
-        // ════════════════════════════════════════════════════════════════════════════════
+        // --------------------------------------------------------------------------------
 
         private void Awake()
         {
@@ -225,18 +225,15 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 

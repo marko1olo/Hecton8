@@ -143,13 +143,13 @@ namespace Hecton8.UI
         private static readonly Color StorageBarkHeaderColor = new Color(1f, 0.72f, 0.62f, 1f);
         private static readonly Color StorageBarkValueColor = new Color(1f, 0.08f, 0.04f, 1f);
 
-        // COLD ALLOC: SpatialQueryHit[24] — active-sonar leviathan classification buffer — owner: AcousticEcholocationTranslator
+        // COLD ALLOC: SpatialQueryHit[24] - active-sonar leviathan classification buffer - owner: AcousticEcholocationTranslator
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
         private readonly char[] _headerTextBuffer = new char[HeaderTextCapacity]; // COLD ALLOC: char[64] - sonar header TMP buffer - owner: AcousticEcholocationTranslator
         private readonly char[] _classificationTextBuffer = new char[ClassificationTextCapacity]; // COLD ALLOC: char[192] - sonar classification TMP buffer - owner: AcousticEcholocationTranslator
         private readonly char[] _classificationStressTextBuffer = new char[ClassificationTextCapacity]; // COLD ALLOC: char[192] - corrupted sonar classification TMP buffer - owner: AcousticEcholocationTranslator
 
-        [Header("── Font ──────────────────")]
+        [Header("-- Font ------------------")]
         [Tooltip("Optional readable font override for the acoustic translator overlay.")]
         [SerializeField] private TMP_FontAsset labelFont;
         [Tooltip("Optional numeric font override for distance readouts.")]
@@ -893,7 +893,7 @@ namespace Hecton8.UI
             _root = FindExistingChild(canvasRoot, OverlayName);
             if (_root == null)
             {
-                // COLD ALLOC: GameObject[1] — sonar translator HUD panel host — owner: AcousticEcholocationTranslator
+                // COLD ALLOC: GameObject[1] - sonar translator HUD panel host - owner: AcousticEcholocationTranslator
                 GameObject rootObject = new GameObject(OverlayName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 rootObject.TryGetComponent(out _root);
@@ -968,10 +968,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -979,7 +976,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -1125,7 +1122,7 @@ namespace Hecton8.UI
         private static ReadOnlySpan<char> StatusDegradedChars => "[DEGRADED]".AsSpan();
         private static ReadOnlySpan<char> StatusFailedChars => "[FAILED]".AsSpan();
 
-        [Header("── Font ──────────────────")]
+        [Header("-- Font ------------------")]
         [Tooltip("Optional readable font override for the sonar terminal boot feed.")]
         [SerializeField] private TMP_FontAsset font;
 
@@ -1355,7 +1352,7 @@ namespace Hecton8.UI
             _overlayRoot = FindExistingChild(contentRoot, OverlayName);
             if (_overlayRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — sonar terminal boot overlay host — owner: TerminalBootSequence
+                // COLD ALLOC: GameObject[1] - sonar terminal boot overlay host - owner: TerminalBootSequence
                 GameObject overlayObject = new GameObject(
                     OverlayName,
                     typeof(RectTransform),
@@ -1417,10 +1414,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1428,7 +1422,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -1533,7 +1527,7 @@ namespace Hecton8.UI
             public byte HasOriginAup;
         }
 
-        [Header("── Font ──────────────────")]
+        [Header("-- Font ------------------")]
         [Tooltip("Readable font override for spatial audio captions.")]
         [SerializeField] private TMP_FontAsset labelFont;
 
@@ -1546,7 +1540,7 @@ namespace Hecton8.UI
         private bool _uiBuilt;
         private bool _hotSwapListenerRegistered;
         private bool _captionConsumerRegistered;
-        // COLD ALLOC: CaptionSlot[8] — pooled spatial audio caption slots — owner: AudioCaptionOverlay
+        // COLD ALLOC: CaptionSlot[8] - pooled spatial audio caption slots - owner: AudioCaptionOverlay
         private readonly CaptionSlot[] _slots = new CaptionSlot[SlotCount];
 
         private void OnEnable()
@@ -1732,7 +1726,7 @@ namespace Hecton8.UI
             _overlayRoot = FindExistingChild(contentRoot, OverlayName);
             if (_overlayRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — spatial audio caption host — owner: AudioCaptionOverlay
+                // COLD ALLOC: GameObject[1] - spatial audio caption host - owner: AudioCaptionOverlay
                 GameObject overlayObject = new GameObject(OverlayName, typeof(RectTransform));
                 overlayObject.layer = contentRoot.gameObject.layer;
                 overlayObject.TryGetComponent(out _overlayRoot);
@@ -1758,7 +1752,7 @@ namespace Hecton8.UI
 
         private void BuildSlot(int index)
         {
-            // COLD ALLOC: GameObject[1] — pooled caption slot root — owner: AudioCaptionOverlay
+            // COLD ALLOC: GameObject[1] - pooled caption slot root - owner: AudioCaptionOverlay
             GameObject slotObject = new GameObject(
                 SlotName,
                 typeof(RectTransform),
@@ -1777,7 +1771,7 @@ namespace Hecton8.UI
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            // COLD ALLOC: GameObject[1] — pooled caption text owner — owner: AudioCaptionOverlay
+            // COLD ALLOC: GameObject[1] - pooled caption text owner - owner: AudioCaptionOverlay
             GameObject textObject = new GameObject(TextName, typeof(RectTransform));
             textObject.layer = slotObject.layer;
             textObject.TryGetComponent(out RectTransform textRect);
@@ -2099,10 +2093,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryRegisterCaptionConsumer()
@@ -2128,7 +2119,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

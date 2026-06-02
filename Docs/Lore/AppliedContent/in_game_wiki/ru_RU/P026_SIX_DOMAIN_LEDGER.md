@@ -1,0 +1,30 @@
+---
+packet_id: P026_SIX_DOMAIN_LEDGER
+article_id: humanity.six_domain_ledger
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Реестр шести доменов
+
+К 2190 году человеческое пространство разреженное, но зрелое. Шесть названных узлов не вся карта; это метки, которые мародер читает на инструментах, законах, пакетных маршрутах и claim-печатях. HECTON-8 не вне человечества. Он внутри той части, куда помощь приходит слишком поздно.
+
+## Scanner
+
+В реестре шесть крупных узлов людей: Sol, Centauri, Barnard, Tau Ceti, Luyten и Aegir.
+
+## Terminal
+
+Domain register: право Sol Core, легитимность Centauri, верфи Barnard, публичный арбитраж Tau Ceti, relay custody Luyten, корпоративный claim Aegir.
+
+## Audio
+
+Шесть имён в реестре. Ни одно не успеет в эту комнату.
+
+## Field Note
+
+Цивилизация здесь есть. Расстояние всё равно побеждает.
+
+<!-- In-Game Wiki; generated from P026_SIX_DOMAIN_LEDGER/ru_RU. -->

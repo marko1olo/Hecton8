@@ -26,9 +26,9 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 ## Current Contract Snapshot
 
 - Schema revision: `133`
-- Source `ISignal` structs: `173`
+- Source `ISignal` structs: `175`
 - Mod-projected `SignalBus<T>` lanes: `2`
-- Denied-by-default `ISignal` structs: `171`
+- Denied-by-default `ISignal` structs: `173`
 - Accepted command opcodes: `8`
 - Future envelope runtime allowlist: `8` hashes; `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases, not runtime-allowed opcodes, and editor runtime opcode tools must not expose them as injectable opcodes.
 - Public `HectonAPI` surfaces: `15`

@@ -2923,8 +2923,7 @@ namespace Hecton8.Core
             if (!Application.isPlaying || mapMagicObject == null)
                 return;
 
-            _pendingRuntimeMapMagicGenerationFence = true;
-            TryRegisterToLateFrameTickManager();
+            FenceRuntimeMapMagicGenerationImmediate();
         }
 
         private void FenceRuntimeMapMagicGenerationImmediate()
@@ -2932,7 +2931,18 @@ namespace Hecton8.Core
             if (!Application.isPlaying || mapMagicObject == null)
                 return;
 
+            mapMagicObject.instantGenerate = false;
+            mapMagicObject.draftsInPlaymode = false;
+            mapMagicObject.serializedMultithreading = true;
+            mapMagicObject.serializedAutoMaxThreads = false;
+            mapMagicObject.serializedMaxThreads = 1;
+            mapMagicObject.serializedMaxApplyTime = 1f;
+            Den.Tools.Tasks.ThreadManager.useMultithreading = true;
+            Den.Tools.Tasks.ThreadManager.autoMaxThreads = false;
+            Den.Tools.Tasks.ThreadManager.maxThreads = 1;
+            Den.Tools.Tasks.CoroutineManager.timePerFrame = 1f;
             mapMagicObject.enabled = false;
+            _pendingRuntimeMapMagicGenerationFence = false;
             _runtimeTerrainResolutionRepairPending = false;
         }
 

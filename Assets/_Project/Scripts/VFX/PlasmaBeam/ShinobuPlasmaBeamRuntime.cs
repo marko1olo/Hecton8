@@ -382,6 +382,28 @@ namespace Hecton8.VFX.PlasmaBeam
                 active.Shutdown();
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorShutdownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActive;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.quitting -= ShutdownActive;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActive;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.quitting += ShutdownActive;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActive();
+            }
+        }
+#endif
+
         private ShinobuPlasmaBeamRuntime()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

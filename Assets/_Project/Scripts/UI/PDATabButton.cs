@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PDATabButton.cs
+// HECTON-8 - PDATabButton.cs
 // Knopka vkladki PDA.
 // Upravlyaet vizualnym sostoyaniem (aktivnaya/neaktivnaya) i pereklyucheniem vkladok.
 // NOTE: Sozdan kak zaglushka dlya vosstanovleniya kompilyatsii posle refaktoringa.
@@ -21,9 +21,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Tab Button")]
     public sealed class PDATabButton : MonoBehaviour
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private int _tabIndex;
         private PlayerPDA _playerPDA;
@@ -37,9 +37,9 @@ namespace Hecton8.UI
         private UnityAction _cachedClickAction;
         private bool _isActive;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Indeks vkladki.
@@ -93,9 +93,9 @@ namespace Hecton8.UI
             UpdateVisuals();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE METHODS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void UpdateVisuals()
         {
@@ -106,9 +106,9 @@ namespace Hecton8.UI
                 _label.color = _isActive ? _textActive : _textInactive;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  UNITY CALLBACKS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {

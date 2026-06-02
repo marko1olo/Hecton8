@@ -160,7 +160,16 @@ namespace Hecton8.Optimization
 
         internal void ForceImmediateSampleAndResponse()
         {
-            _forceSampleQueued = true;
+            if (!Application.isPlaying)
+            {
+                _forceSampleQueued = true;
+                return;
+            }
+
+            CacheDependencies();
+            _forceSampleQueued = false;
+            _nextSampleFrame = ResolveSampleFrame(ResolveCurrentFrame(), sampleIntervalFrames);
+            SampleAndRespond();
         }
 
         private static int ResolveCurrentFrame()
@@ -343,7 +352,8 @@ namespace Hecton8.Optimization
 
         private void ApplyMipBias()
         {
-            int targetMipLimit = _activeMipLimit;
+            int effectiveBaselineMipLimit = ResolveEffectiveBaselineMipLimit();
+            int targetMipLimit = Mathf.Max(_activeMipLimit, effectiveBaselineMipLimit);
             bool redZonePressure = LastUsedVramBytes >= ResolveRedZoneVramPressureThresholdBytes();
             float softPressureResponse = ResolveSoftPressureResponse();
             float forcedMipResponse = ResolveForcedMipResponse();
@@ -358,12 +368,12 @@ namespace Hecton8.Optimization
             {
                 int mipDelta = ResolveMipLimitDelta(mipPressureResponse, redZonePressure);
                 if (mipDelta > 0)
-                    targetMipLimit = Mathf.Max(_baselineMipLimit, _baselineMipLimit + mipDelta);
+                    targetMipLimit = Mathf.Max(effectiveBaselineMipLimit, effectiveBaselineMipLimit + mipDelta);
             }
             else if (LastUsedVramBytes <= restoreMipThresholdBytes)
-                targetMipLimit = _baselineMipLimit;
+                targetMipLimit = effectiveBaselineMipLimit;
             else if (allowFractionRestore && VramPressureFactor <= ResolveRestoreVramFraction())
-                targetMipLimit = _baselineMipLimit;
+                targetMipLimit = effectiveBaselineMipLimit;
 
             if (targetMipLimit == _activeMipLimit)
                 return;
@@ -388,6 +398,7 @@ namespace Hecton8.Optimization
 
         private void ApplyTextureMipLimit(int targetMipLimit)
         {
+            targetMipLimit = Mathf.Max(targetMipLimit, ResolveEffectiveBaselineMipLimit());
             int oldMipLimit = _activeMipLimit;
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
             _activeMipLimit = targetMipLimit;
@@ -407,10 +418,11 @@ namespace Hecton8.Optimization
 
         private void RestoreGlobalQualityOverrides()
         {
-            if (_activeMipLimit != _baselineMipLimit)
+            int effectiveBaselineMipLimit = ResolveEffectiveBaselineMipLimit();
+            if (_activeMipLimit != effectiveBaselineMipLimit)
             {
-                QualitySettings.globalTextureMipmapLimit = _baselineMipLimit;
-                _activeMipLimit = _baselineMipLimit;
+                QualitySettings.globalTextureMipmapLimit = effectiveBaselineMipLimit;
+                _activeMipLimit = effectiveBaselineMipLimit;
             }
 
             if (_lodAggressionActive)
@@ -420,6 +432,11 @@ namespace Hecton8.Optimization
             }
 
             BrgLodDistanceScalar = 1f;
+        }
+
+        private int ResolveEffectiveBaselineMipLimit()
+        {
+            return Mathf.Max(_baselineMipLimit, VRAMEnforcer.RuntimeTextureMipLimitFloor);
         }
 
         private void ApplyLodAggression()
@@ -495,6 +512,32 @@ namespace Hecton8.Optimization
             return math.select(pressureDelta, math.max(pressureDelta, 2), redZonePressure);
         }
 
+        public static int ResolveMipLimitDeltaForAudit(long usedVramBytes, long budgetBytes, float globalQualityWeight, bool xrActive)
+        {
+            float pressure = budgetBytes > 0L
+                ? math.saturate(usedVramBytes / math.max((float)budgetBytes, 1f))
+                : 0f;
+            float quality = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            float softWarningFraction = ResolveQualityAdjustedFractionExplicit(
+                math.max(0.5f, DefaultWarningVramFraction - 0.18f),
+                DefaultWarningVramFraction,
+                quality);
+            float forcedFraction = xrActive
+                ? ResolveQualityAdjustedFractionExplicit(
+                    math.max(0.25f, VRForcedHalfResolutionVramFraction - 0.12f),
+                    VRForcedHalfResolutionVramFraction,
+                    quality)
+                : ResolveQualityAdjustedFractionExplicit(
+                    math.max(0.25f, ForcedHalfResolutionVramFraction - 0.12f),
+                    ForcedHalfResolutionVramFraction,
+                    quality);
+            float response = math.saturate(math.max(
+                ResolvePressureResponse(softWarningFraction, pressure),
+                ResolvePressureResponse(forcedFraction, pressure)));
+            bool redZonePressure = budgetBytes > 0L && usedVramBytes >= budgetBytes;
+            return ResolveMipLimitDelta(response, redZonePressure);
+        }
+
         private float ResolveEmergencyPressureResponse()
         {
             float vramResponse = ResolvePressureResponse(ResolveEmergencyVramFraction(), VramPressureFactor);
@@ -543,7 +586,12 @@ namespace Hecton8.Optimization
         private static float ResolveQualityAdjustedFraction(float lowQualityFraction, float highQualityFraction)
         {
             float quality = ResolveGlobalQualityWeight();
-            float qualityCurve = math.smoothstep(0.15f, 0.85f, quality);
+            return ResolveQualityAdjustedFractionExplicit(lowQualityFraction, highQualityFraction, quality);
+        }
+
+        private static float ResolveQualityAdjustedFractionExplicit(float lowQualityFraction, float highQualityFraction, float quality)
+        {
+            float qualityCurve = math.smoothstep(0.15f, 0.85f, math.saturate(quality));
             return math.saturate(math.lerp(lowQualityFraction, highQualityFraction, qualityCurve));
         }
 

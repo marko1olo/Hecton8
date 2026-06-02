@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -77,39 +78,58 @@ namespace Hecton8.World.ProceduralCoral
             GraphicsBuffer matrixTarget = _writeIndex == 0 ? _matrixBufferA : _matrixBufferB;
             GraphicsBuffer argsTarget = _writeIndex == 0 ? _argsBufferA : _argsBufferB;
             int writeCount = math.clamp(requested, 0, math.min(_capacity, matrixTarget.count));
-            if (writeCount > 0)
+            long uploadBytes =
+                GraphicsBufferUploadUtility.EstimateUploadBytes<float4x4>(writeCount) +
+                GraphicsBufferUploadUtility.EstimateUploadBytes<CoralIndirectArgsDTO>(1);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return false;
+
+            bool uploadCompleted = false;
+            try
             {
-                bool matrixLocked = false;
+                if (writeCount > 0)
+                {
+                    bool matrixLocked = false;
+                    try
+                    {
+                        NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
+                        matrixLocked = true;
+                        void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
+                        void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
+                        UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                    }
+                    finally
+                    {
+                        if (matrixLocked)
+                            matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                    }
+                }
+
+                CoralIndirectArgsDTO args = indirectArgs[0];
+                args.InstanceCount = (uint)writeCount;
+                args.VertexCountPerInstance = math.max(1u, args.VertexCountPerInstance);
+                bool argsLocked = false;
                 try
                 {
-                    NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
-                    matrixLocked = true;
-                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
-                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
-                    UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                    NativeArray<CoralIndirectArgsDTO> mappedArgs =
+                        argsTarget.LockBufferForWrite<CoralIndirectArgsDTO>(0, 1);
+                    argsLocked = true;
+                    mappedArgs[0] = args;
                 }
                 finally
                 {
-                    if (matrixLocked)
-                        matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                    if (argsLocked)
+                        argsTarget.UnlockBufferAfterWrite<CoralIndirectArgsDTO>(1);
                 }
-            }
 
-            CoralIndirectArgsDTO args = indirectArgs[0];
-            args.InstanceCount = (uint)writeCount;
-            args.VertexCountPerInstance = math.max(1u, args.VertexCountPerInstance);
-            bool argsLocked = false;
-            try
-            {
-                NativeArray<CoralIndirectArgsDTO> mappedArgs =
-                    argsTarget.LockBufferForWrite<CoralIndirectArgsDTO>(0, 1);
-                argsLocked = true;
-                mappedArgs[0] = args;
+                uploadCompleted = true;
             }
             finally
             {
-                if (argsLocked)
-                    argsTarget.UnlockBufferAfterWrite<CoralIndirectArgsDTO>(1);
+                if (uploadCompleted)
+                    GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                else
+                    GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
             }
 
             _activeIndex = _writeIndex;
@@ -213,7 +233,7 @@ namespace Hecton8.World.ProceduralCoral
         private static GraphicsBuffer CreateIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 UnsafeUtility.SizeOf<CoralIndirectArgsDTO>());

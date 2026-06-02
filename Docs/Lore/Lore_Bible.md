@@ -52,7 +52,7 @@ Known spine:
 
 The player is an independent, debt-bound Marauder professional whose salvage interest becomes personal. They are not a hero passenger and not the owner of a clean private starship. Their working origin is Barnard Yards or a connected frontier salvage belt: a domain where dead claims, stripped hulls, rented tools, and bad contracts are normal. Their delivery is tied to an automated or skeleton-crew salvage carrier operating through a shell contract, debt chain, or Marauder claim pool.
 
-The working carrier identity is `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so the name fits current data unless later source work contradicts it. The carrier holds around Aegir or a high transfer orbit rather than loitering safely over HECTON-8. It can provide rare communication windows, contract pressure, orbital timing, and eventual recovery logic, but it cannot perform instant rescue. The player descends by capsule or bathy-drop package. That descent system is damaged on arrival, making departure an engineering problem rather than a menu option.
+The working carrier identity is `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so the name fits current data unless later source work contradicts it. Publicly, Black Keel is Aegir claim-pool infrastructure. Legally, it is debt-impounded / insurance-custody hardware. Secretly, Deep Reach has priority hooks in payload recovery, route certificates, quarantine, and old claim law. The carrier holds around Aegir or a high transfer orbit rather than loitering safely over HECTON-8. It can provide rare communication windows, contract pressure, orbital timing, and eventual recovery logic, but it cannot perform instant rescue. The player descends by capsule or bathy-drop package. That descent system is damaged on arrival, making departure an engineering problem rather than a menu option.
 
 The escape blocker is layered:
 
@@ -68,6 +68,10 @@ Atlas-6's public original directive was habitat continuity and worker safety und
 Deep Reach's post-2147 lie is a layered cover: geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The concealed truth is asset priority, Xenon-Omega continuity, Atlas directive weighting, and worker lockout.
 
 Replay structure is not power-roguelite progression. A run is a long campaign on a world seed. Replay value comes from geology, loot, wreck/module layout, route topology, fauna and ecosystem variance, evidence order, contract pressure, escape timing, and partial-ending access. A Marauder dossier may preserve external knowledge, endings, rumors, and contract context between runs, but it must not trivialize early survival through permanent power.
+
+The player motive arc is professional first. Personal stakes should emerge through recovered names, worker IDs, body ledgers, Barnard/frontier salvage links, and later evidence that the contract was shaped around the player's debt/background/skill profile. Do not start with an explicit ex-Deep-Reach identity unless reopened.
+
+False endings are real outcomes. Minimum families: Material Ending, where blue debt extraction pays but truth fails; and Partial Exit, where the player reaches recovery and can return to the same seed under worsened pressure.
 
 ## Faction Briefing
 
@@ -189,6 +193,8 @@ Resource naming:
 - Marauders say `blue debt`.
 
 HECTON-8 resources include more than Xenon-Omega: structural metals, sulfides, salts, noble-gas pockets, methane/ammonia hydrates, oxygen chemistry, vent minerals, pressure ceramics, bioluminescent compounds, biofibers, enzymes, salvage hardware, and Atlas-altered biometal. Xenon-Omega is the strategic apex of a whole pressure economy.
+
+Blue debt behavior: valuable samples require pressure-rated containment; strong samples can carry a weak Atlas-compatible pressure-harmonic signature; contamination is industrial/ecological, not magic or viral horror. Greed should create engineering pressure, scanner noise, drone/fauna/Atlas attention, and false-ending consequences.
 
 ## Suit DTO Sync - Oxygen Tank
 

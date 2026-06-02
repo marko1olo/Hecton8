@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Documentation Actuality Ledger
 
-Date: 2026-05-28
+Date: 2026-06-02
 Status: PENDING VERIFICATION
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
@@ -15,13 +15,68 @@ This ledger is the concise documentation-change register and proof-snapshot hold
 | Save header size | `56` bytes | `SaveBinaryStorage.CurrentHeaderSize` |
 | Legacy save header size | `44` bytes | `SaveBinaryStorage.LegacyHeaderSize` |
 | H8DM header size | `64` bytes | `Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs` |
-| H8DM directory record size | `64` bytes | `H8DataLayoutConstants.DirectoryRecordSizeBytes` |
-| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `1,064,384` bytes in 2026-05-28 static filesystem check |
+| H8DM directory size | `64` bytes | `H8DataLayoutConstants.DirectorySizeBytes` |
+| H8DM schema hash | `0x33313332` | `H8DataLayoutConstants.SchemaHash` |
+| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `1,804,864` bytes in 2026-06-01 static filesystem check |
 | Signal lane capacity | `512` | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` |
 | Scalability DTO | `16` bytes | `ScalabilityStateDTO` static source |
 | AUP/blit struct | `48` bytes | AUP static source |
 
 Prompt/report values that disagree with source are stale. Current source wins.
+
+## 2026-06-01 Documentation Source Reality Refresh
+
+No runtime code was edited by `1619`. This section records current static facts from filesystem/source scans.
+
+| Area | Current static fact | Source / proof |
+|---|---|---|
+| Root text anchors | `AGENTS.md`, `TASTE.md`, `textes.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md` | `../DOC_GOVERNANCE.md`, `../ROOT_DOCS_REFERENCE.md`; `AGENTS.md` public-copy route requires root `textes.md` |
+| First-party asmdefs | `171` under `Assets/_Project` | `rg --files Assets/_Project -g '*.asmdef'` |
+| Data Monolith payload | present, `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| H8DM header parse | magic `0x4D443848`; format `2`; header `64`; section count `28`; checksum64 `0xA85210353432862A`; schema hash `0x33313332` | Python static byte parse; `H8DataMonolithTypes.cs` |
+| Save constants | writer `0x000B`; current header `56`; legacy header `44`; aligned section header `0x000B` | `Assets/_Project/Scripts/SaveBinaryStorage.cs` |
+| SignalBus constants | lane capacity `512`; default expected capacity `64`; default max frame signals `64` | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` |
+| Link scan | active corpus broken relative markdown links `0`; duplicate header files `0` | 1619 Python markdown scan |
+| Encoding debt | active corpus files without UTF-8 BOM: `1786`; edited files are normalized separately | 1619 Python markdown scan |
+| Build boundary | `dotnet build`, `msbuild`, and Unity batch mode launched `0` times | shell command review; user directive |
+
+Runtime, Unity import, Play Mode, profiler, GCMonitor, player build, save/load, shader, platform, and visual proof remain absent.
+
+## 2026-06-01 DOCS_AUDIT Content Corpus Classification
+
+No runtime code was edited by `DOCS_AUDIT`. This section records documentation and source-surface classification only.
+
+| Area | Current static fact | Source / proof |
+|---|---|---|
+| Active non-archive Docs folders | `ARCHITECTURE`, `Lore`, `Marketing`, `Modding`, `Design`, `Data`, `Audio`, `Atmosphere`, `AI_Texturing_Templates`, `Generated` | `Get-ChildItem Docs -Directory`, excluding `Archive`, `_Archive`, `DEPRECATED`, `Reports`, `AgentLogs`, `Tasks` |
+| Lore corpus | root lore files plus `AppliedContent`, `ContentPacks`, `Encyclopedia`, and local lore archive folders | `Docs/Lore` static filesystem scan |
+| Marketing corpus | controlled public/commercial planning corpus with README, Steam, creator, press, community, launch, data, and operations subfolders | `Docs/Marketing/README.md`; static filesystem scan |
+| Data/profile corpora | `Docs/Data`, `Docs/Audio`, and `Docs/Atmosphere` contain CSV authoring/profile data | static filesystem scan |
+| Design support corpus | binary specs, LUT/shader mapping, UI scaler, mission failure modes, VR comfort/haptic support docs | `Docs/Design` static filesystem scan |
+| Source script surface | `56` direct directories under `Assets/_Project/Scripts` | static filesystem scan |
+
+Interpretation: active docs are split between architecture contracts, content corpora, public/commercial planning, mod/API planning, generated artifacts, and authoring/profile data. Source and fresh proof artifacts still decide runtime reality.
+
+## 2026-06-02 DOCS_AUDIT Code Reality Correction
+
+No runtime code was edited by `DOCS_AUDIT`. User rejected folder/glossary-style documentation. This correction promotes source-backed implementation facts into `PROJECT_RUNTIME_TOPOLOGY.md` and marks proof gaps explicitly.
+
+| Area | Source-backed reality recorded | Source / proof |
+|---|---|---|
+| Bootstrap | `GameBootstrapper` owns real phased boot: hardware, memory prewarm, core services, environment, player, UI, scene activation; scene constants cover bootstrap, main menu, orbit, world; Data Monolith bootstrap retries and Addressables prewarm routes exist. | `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` static source scan |
+| Registry | `GlobalRegistry` has a wide concrete service-registration surface across core, player, environment, ocean, power, interaction, ecosystem/fauna, thermodynamics/fluid, logistics, worldgen, quest, PDA, localization, telemetry, asset lifecycle, VRAM, and floating origin. | `Assets/_Project/Scripts/Core/GlobalRegistry.cs` static source scan |
+| Dispatcher | `SystemDispatcher` implements master phases plus legacy/priority tick lanes; fast/slow/cold/frost cadences exist; 300-frame DataVault-backed black box exists. | `Assets/_Project/Scripts/Core/SystemDispatcher.cs`, `SystemDispatcherContracts.cs` static source scan |
+| SignalBus | `SignalBus<T>` is bounded frame-snapshot transport with capacity policy, finite guards, deterministic ordering policy, overflow faulting, and payload coalescing/load-shed routes. | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` static source scan |
+| Native memory | `IDataVault` / `GlobalDataVault` expose generation handles, read/write handles, writer locks, buffer locks, release routes, frost defrag, and a bootstrap/diagnostic `TryGetLatestCreated()` escape. | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, `H8Memory.cs` static source scan |
+| Save/static data | Save writer `0x000B`, header `56`, legacy header `44`, LZ4, XXH3, tmp/bak, migration, and indexed storage paths exist. Data Monolith arena/layout code exists with schema `0x33313332`, header `64`, directory `64`. | `SaveManager.cs`, `SaveBinaryStorage.cs`, `Data/Monolith/*.cs` static source scan |
+| Domain breadth | Core, world, gameplay, physics, construction, AI/fauna/ecosystem, atmosphere, UI/PDA/visor/audio, optimization, modding, networking, and QA all have active source surfaces with tick/service participants in several domains. | static scan of `Assets/_Project/Scripts` direct domains |
+| Loose root scripts | Root-level `Assets/_Project/Scripts/*.cs` carries real mixed-domain systems: save, crafting, fabricator, survival, tether, voxel/fluid/world, localization, tools, HUD/PDA bridges, smoke/profiler helpers. Folder anchors are routing hints, not full ownership proof. | `cmd.exe /d /c for %f in (Assets/_Project/Scripts/*.cs) do @echo %~nxf` static listing |
+| Boot phases | Current `GameBootstrapper.BootstrapPhase` is seven source phases: `HardwareCheck`, `MemoryPreWarm`, `CoreServices`, `Environment`, `Player`, `UI`, `SceneActivate`. Older six-stage boot language is a contract grouping, not the current enum. | `GameBootstrapper.cs` static source scan |
+| Dispatch hybrid | `SystemDispatcher` has master phases and legacy/priority tick lanes at the same time. Fast/slow/cold/frost cadence constants and 300-frame blackbox rings exist. | `SystemDispatcher.cs`, `GlobalRegistry.cs` static source scan |
+| Data Monolith file identity | Current `static_data.h8bin` static file size remains `1,804,864` bytes; SHA-256 is `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`. | `certutil -hashfile ... SHA256`, file size check |
+| Real script systems map | `SOURCE_SYSTEMS_REALITY_MAP.md` now records concrete source owners across core, save/data, world/voxel/scatter, player/interaction/VR, inventory/crafting/survival, habitat/flooding/power, AI/fauna/ecosystem, atmosphere/thermal, UI/visor/audio/VFX, networking/modding/tooling. | static `rg`/filesystem scan of `Assets/_Project/Scripts` |
+
+Correction boundary: this is still `STATIC_SOURCE`. It does not prove compile, Unity import, Play Mode, route completion, profiler/GC, shader correctness, Data Monolith boot, save/load roundtrip, networking, or device/platform readiness.
 
 ## 2026-05-28 Root And Architecture Source Reality Audit
 
@@ -36,8 +91,8 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Enabled scene spine | `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD` | `ProjectSettings/EditorBuildSettings.asset` |
 | First 20 route docs | New game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resume may enter `02_HECTON_WORLD` directly | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md` |
 | Scene authority drift | `AGENTS.md` still carries older no-orbit scene-flow wording; static source/docs include `01_ORBIT`; owner/integrator decision required before changing route doctrine | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
-| First-party asmdefs | `168` under `Assets/_Project` | 2026-05-29 static filesystem count |
-| Data Monolith payload | present, `1,064,384` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| First-party asmdefs | superseded by 2026-06-01 count: `171` under `Assets/_Project` | 2026-06-01 static filesystem count |
+| Data Monolith payload | superseded by 2026-06-01 payload: `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
 | Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `PROJECT_RUNTIME_TOPOLOGY.md` |
 | Source topology source-spine recheck | Corrected player/environment runtime-context source anchors to `Assets/_Project/Scripts/Core/...` | PowerShell path scan |
@@ -46,7 +101,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Black-box doctrine sync | 300-frame rings; `Dump_*.bin` primary; `.h8dump` legacy | `../Actual Domains of Project.txt`, `../PROJECT_ATLAS.md` |
 | Index updates | Root and architecture read orders now surface topology, boot, dispatch, first route, and platform proof ladder | `../README.md`, `README.md`, `../PROJECT_BASELINE.md`, `../HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `../HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` |
 | Atlas stub cleanup | `observedAssemblyCount = 83` is compatibility-only; current count lives in topology/generated graph | `../PROJECT_ATLAS.md` |
-| Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-05-29 filesystem count of `168` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
+| Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache on 2026-05-28; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-06-01 filesystem count of `171` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
 | AtlasCheck | `ATLAS_CHECK_PASS references=5807` | `python Tools/AtlasCheck.py` |
 | H-Phi atlas | `PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `../Generated/README.md` |
 | Structure validation | `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
@@ -87,6 +142,10 @@ Current guarded builds hit generated-project or CPU-guard boundaries.
 Runtime proof remains absent.
 
 Required proof: Unity import, Console, Play Mode, profiler, GC, player build, shader import, save/load, platform, visual checks.
+
+### Static Audit Wording Boundary
+
+Rows labeled `Latest verified audit` below refer to the cited static/CLI report artifact only. They are not current Unity import, Play Mode, profiler, GC, player build, route, platform, or visual proof unless the row explicitly cites that artifact class.
 
 ## 2026-05-26 Documentation Distillation
 
@@ -481,3 +540,70 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | 1334 final structure | `DOC_STRUCTURE_VALIDATION_1334_FINAL.json`: `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 
 This ledger may cite CLI compile artifacts. It is not Unity import, Play Mode, profiler, GC, player-build, or visual proof.
+## 2026-06-02 Narrative Runtime Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Narrative / AppliedLore route | `Docs/Lore/Implementation_Notes.md` now separates source-present AppliedLore runtime route from missing scene bindings. Source map, topology, and coverage matrix list `H8AppliedLoreRuntime`, generated hashes, PDA streamer, scanner/terminal owners, QuestDAG, progression bridge, and AudioLog owners. | Static source scan plus existing AppliedLore audit text. Unity import, Play Mode, PDA/terminal visual proof, save/load continuity, and scene/prefab non-zero lore hash assignments remain pending. |
+| Lore encyclopedia index | `Docs/Lore/Encyclopedia/Article_Index.md` no longer marks AppliedContent packets as ready in runtime; packet entries are `source-authored` with explicit route-binding proof pending. | Static doc correction only. Scene binding, Unity route, PDA/scanner/terminal UI proof, and save/load continuity remain pending. |
+
+## 2026-06-02 Meta Runtime Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Optimization / Networking / Modding / QA / Build tooling | Source map, topology, and coverage matrix now name concrete owners for asset lifecycle/load dispatch, VRAM pressure/telemetry, RT lifecycle/pool services, rollback/Merkle/prediction, envelope-only mod API/sandbox/loader, mod-world persistence, QA/headless blackbox runners, and editor build/preflight validators. `Docs/Modding` signal split corrected to `175 / 2 / 173` with `rg --pcre2`. | Static source scan and docs/schema reconciliation only. Network loopback, mod envelope runtime playbook, QA/headless run artifacts, player build, platform/device, profiler, GC, and VRAM proof remain pending. |
+
+## 2026-06-02 Presentation Runtime Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| UI / PDA / Visor / Audio / VFX / Graphics | Source map, topology, and coverage matrix now name concrete presentation owners: PDA streamer, subtitle/font/loading managers, visor HUD/URP features, foveated render commander, thermal DRS adapter, culling/TBDR services, player-critical procedural audio, vocal warning/music/adaptive stem systems, marine snow/propwash/plasma/fog VFX buffers. | Static source scan only. UI GC, audio-thread/device, RenderGraph/Frame Debugger, shader import, visual capture, VRAM/DRS, Play Mode, and player-build proof remain pending. |
+
+## 2026-06-02 Gameplay Economy Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Inventory / crafting / tools / survival / economy | Source map, topology, and coverage matrix now name concrete owners for native SOA inventory, inventory service manager, powered fabricator, recipe jobs, physical fabrication output, survival saveable slow/late tick, auxiliary equipment router, AUP/DataVault loot magnet, powered recycler, first-hour director, data archaeology, endings, airlocks, and tools/scavenging. | Static source scan only. Copper acquisition, boot-to-craft-to-save/load, inventory/fabricator UI feedback, loot pickup route, profiler, GC, Play Mode, and player-build proof remain pending. |
+
+## 2026-06-02 World Streaming Voxel Scatter Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| World / terrain / voxel / scatter | Source map, topology, and coverage matrix now split the old broad world row into streaming/residency/HLOD, voxel/geology/terrain seams, and procedural scatter/vegetation/persistent content. Concrete owners include `WorldChunkResidencyManager`, `TerrainChunkPagerRuntime`, `HectonVoxelEngine`, `VoxelDeltaProcessor`, geology seam/voxel bridge, scatter backends, vegetation DataVault/culling routes, persistent world registry, procedural wreckage, ore/resource distribution, regrowth, biome SDF/transition managers, and HLOD/impostor/culling services. | Static source scan only. Scene wiring, Addressables/hydration, voxel carve save/load, terrain seam visual proof, scatter backend parity, vegetation/wreck/resource visual proof, HLOD capture, VRAM/frame hitch, profiler, GC, Play Mode, and player-build proof remain pending. |
+
+## 2026-06-02 Construction Habitat Power Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Construction / habitat / flooding / power / logistics | Source map, topology, and coverage matrix now split the old broad construction row into construction/deconstruction, flooding/fluid pipes/bulkheads, and power/logistics/base modules/drones. Concrete owners include `ConstructionManager`, `BaseModule`, habitat construction/graph managers, deconstruction kernel, module catalog, fluid incursion director/jobs, fluid pipe graph, sump pump grid, bulkhead/hatch containment, power grid service, logistics graph, WFC power boot, RTG, battery charger logistics, Shinobu logistics router, and drone/repair routes. | Static source scan only. Base-building Play Mode proof, module save/load, deconstruction refund/loot, flood authority, pipe rupture/drainage, bulkhead/hatch interaction, power distribution, battery charge inventory, drone/repair gameplay, UI/VR feedback, profiler, GC, visual proof, and player-build proof remain pending. |
+
+## 2026-06-02 AI Ecosystem Atmosphere Thermodynamics Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Fauna / cognition / pathfinding / ecosystem | Source map, topology, and coverage matrix now split the old broad AI row into fauna simulation/cognition/damage, AI cognition/voxel pathfinding, and ecosystem/boids/macro migration. Concrete owners include `FaunaSimulationEngine`, `FaunaBrain`, `PredatorCognitionDomain`, acoustic SDF, stress spawn director, fauna kinematics/IK/tentacles, utility cognition vault/jobs, apex and alpha cognition vaults, path funnel, voxel A*, acoustic echo, `EcosystemDirector`, ecosystem balancer, flora-fauna symbiosis, macro migration, nutrient drift, fauna spatial hash, and vegetation fear field. | Static source scan only. Scene spawn integration, combat damage route, gameplay path requests, SDF/navgrid wiring, deterministic ordering, swarm visual proof, fault-dump runtime proof, profiler, GC, and First 20 Minutes impact remain pending. |
+| Atmosphere / weather / ocean / thermodynamics | Source map, topology, and coverage matrix now split the old broad atmosphere row into base atmosphere/gas/weather/ocean surface and thermodynamics/hazards/reactor thermal grid. Concrete owners include `BaseAtmosphereEngine`, `BaseAtmosphereLogisticsRuntime`, gas dynamics, toxic outgassing, ocean surface atmosphere runtime, global weather director, storm propagation, abyssal thermodynamics solver, thermodynamics hazard grid, and reactor thermal jobs. | Static source scan only. Base room wiring, gas/player survival route, weather/ocean visual proof, reactor/power/atmosphere coupling, deterministic cheat boundaries, continuous quality load-shed, profiler, GC, device, and player-build proof remain pending. |
+
+## 2026-06-02 Combat Vehicle Physics Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Combat / armor / trauma / hazards | Source map, topology, and coverage matrix now name concrete combat owners: `CombatDamageRuntime`, armor penetration, status effects, ballistics, trauma dispatcher, radiation hazard grid, toxin hazard, vehicle component damage, and hull dent shader bridge. | Static source scan only. Weapon/hazard scene route, target registration, vehicle damage-to-hull visual route, HUD/VFX/audio feedback, profiler, GC, and player-build proof remain pending. |
+| Vehicle physics / force application / buoyancy / tethers | Source map, topology, and Echelon 6 now split the old vehicle/equipment physics row into submarine/seaglide/exosuit/docking and physics force/buoyancy/cavitation/tether/cable routes. Concrete owners include submarine dynamics/gyro/ballast, docking autopilot, seaglide hydrodynamics, exosuit kinematics, vehicle motor, buoyancy displacement, analytical waves, async buoyancy readback, cavitation, cable/tether solvers, and harpoon tension. | Static source scan only. PhysicsApplySystem ownership proof, collision correctness, same-frame job/readback audit, controller scene proof, ballast/docking gameplay, tether/cable gameplay, visual/audio feedback, profiler, GC, device, and player-build proof remain pending. |
+
+## 2026-06-02 Player Interaction KCC Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Player input / KCC / movement | Source map, topology, and Echelon 4 now split the old player row into deterministic input/XR buffers, hydrodynamic KCC, and player kinematics. Concrete owners include `InputDispatcher`, haptic synth, `PlayerInputState`, `PlayerRuntimeContext`, `PlayerKinematicsRuntime`, `HydrodynamicKccRuntime`, and `CoreDeterminismSignals`. | Static source scan only. Controller/device route, KCC collision correctness, environment provider wiring, same-frame job/readback audit, First 20 Minutes movement proof, profiler, GC, Play Mode, and player-build proof remain pending. |
+| Physical interaction / VR hands / tool signal queue | Source map, topology, and Echelon 4 now name concrete owners for look target, physical grab/snap, VR hand bridge, somatic comfort, and tool/equipment interaction queues. Concrete owners include `PlayerInteraction`, `PhysicalInteractionHandler`, `PhysicalHandController`, `VRInteractionKinematicBridge`, `VRSomaticProvider`, `EquipmentInteractionContracts`, `EquipmentInteractionHandler`, `InteractableRegistry`, `VRLeakPatchWeldTarget`, tool haptics, tool kinematics, and auxiliary equipment router. | Static source scan only. Physical controller scene proof, grab/force ownership, XR device route, hand bridge runtime proof, queued surface query, tool-to-damage/voxel route, UI/haptic feedback, profiler, GC, Play Mode, and player-build proof remain pending. |
+
+## 2026-06-02 Meta Runtime Support Split Source Sweep
+
+| Area | Correction | Evidence boundary |
+|---|---|---|
+| Optimization / asset lifecycle / VRAM / RT | Source map, topology, and Echelon 9 now split optimization from generic meta tooling. Concrete owners include `AssetLifecycleGovernor`, `AssetLoadDispatcher`, `AssetRecord`, `VRAMMonitor`, `VRAMPressureMonitor`, `VRAMEnforcer`, `RenderTextureLifecycleTracker`, `RenderTexturePool`, RT managers, `ThermalDynamicResolutionAdapter`, `TBDRPipelineSurgeonRuntime`, and `InstanceCullingService`. | Static source scan only. Addressables release, RT leak, Memory Profiler/VRAM capture, DRS visual proof, profiler, GC, and frame proof remain pending. |
+| Rollback networking / prediction | Source map, topology, and Echelon 9 now split rollback networking into its own route. Concrete owners include `HectonNetworkManager`, `HectonRollbackNetcodeRuntime`, and `RollbackNetcodeContracts`: snapshots, Merkle nodes, prediction journals, mock jitter packets, rollback signals, snapshot/restore/hash/mismatch jobs, and quality-scaled rollback math. | Static source scan only. Loopback/device, authoritative transport, packet serialization, desync recovery, rollback correctness, profiler, and GC proof remain pending. |
+| Modding API / sandbox / persistence | Source map, topology, and Echelon 9 now split modding from QA/build. Concrete owners include `HectonAPI`, `HectonEventBus`, game/mod event contracts, event projection, `ModCommandDispatcher`, `FutureCommandSandboxValidator`, `ModLoader`, resource proxy, registry/settings/runtime state, and `ModWorldPersistenceManager`. | Static source scan only. Mod envelope runtime playbook, external starter kit validator proof, mod load/play proof, command budget/security proof, and save roundtrip proof remain pending. |
+| QA watchdog / endurance / headless | Source map, topology, and Echelon 9 now split QA harnesses. Concrete owners include `QA_WatchdogBot`, `QAEnduranceWatchdogBot`, `QAWatchdogGcAllocationFuzzer1524`, headless simulation/stress runners, Shinobu38 watchdog runtime, and Jacobi stress fuzzer. | Static source scan only. Fresh QA/headless run artifacts, current CSV/blackbox reports, profiler/GC execution proof, and CI wiring proof remain pending. |
+| Editor build / platform / SDK tooling | Source map, topology, and Echelon 9 now split editor tooling. Concrete owners include XR/OpenXR readiness, Quest Vulkan/URP configurator, graphics API/native plugin/shader/thread/machine-code validators, debug metadata stripping, platform compatibility audit, build playtest log, and mod sandbox/kernel editor tooling. | Static source scan only. Player build, platform/device, current CI validator output, Quest/PCVR build, and SDK tool run proof remain pending. |

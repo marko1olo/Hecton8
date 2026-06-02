@@ -1725,7 +1725,7 @@ namespace Hecton8.World
             if (_matrixBufferB == null)
                 _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_oreCapacity); // COLD ALLOC: GraphicsBuffer[oreCapacity] — ore matrix upload buffer B — owner: ProceduralOreSpawner
             if (_argsBuffer == null)
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<GeologyIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] — ore DrawProceduralIndirect args — owner: ProceduralOreSpawner
+                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<GeologyIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] — ore DrawProceduralIndirect args — owner: ProceduralOreSpawner
 
             _activeMatrixBuffer = _matrixBufferA;
             UpdateIndirectArgsBuffer(0u);

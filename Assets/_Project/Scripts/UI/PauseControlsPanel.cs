@@ -40,7 +40,7 @@ namespace Hecton8.UI
         [SerializeField] private bool saveAfterRowReset = true;
 
         // TASK 17: Apply/Cancel/Reset buttons
-        [Header("── Control Buttons ──────────────────")]
+        [Header("-- Control Buttons ------------------")]
         [SerializeField] private Button applyButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button resetButton;
@@ -933,7 +933,7 @@ namespace Hecton8.UI
         private void RefreshSelectionVisuals()
         {
             // OPTIMIZATION: Only update previous and current selection to reduce native calls
-            // from 15×3=45 to 2×3=6 per navigation
+ // from 15 - 3=45 to 2 - 3=6 per navigation
             
             if (_previousSelectedIndex >= 0 && _previousSelectedIndex < _rows.Length)
             {
@@ -991,7 +991,7 @@ namespace Hecton8.UI
 
             if (!owner.TryGetComponent(out CanvasGroup canvasGroup))
             {
-                // COLD ALLOC: CanvasGroup[1] — missing selection indicator visibility proxy — owner: PauseControlsPanel
+                // COLD ALLOC: CanvasGroup[1] - missing selection indicator visibility proxy - owner: PauseControlsPanel
                 canvasGroup = owner.AddComponent<CanvasGroup>();
             }
 

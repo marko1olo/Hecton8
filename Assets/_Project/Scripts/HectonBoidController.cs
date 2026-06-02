@@ -973,7 +973,7 @@ namespace Hecton8.AI.GPU
             UploadFallbackFlowField();
             _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written visible boid indices - owner: HectonBoidController
             _visibleIndirectArgsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                 1,
                 GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[IndirectDrawIndexedArgs] - GPU-written visible boid draw args - owner: HectonBoidController
             _visibleIndirectArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(

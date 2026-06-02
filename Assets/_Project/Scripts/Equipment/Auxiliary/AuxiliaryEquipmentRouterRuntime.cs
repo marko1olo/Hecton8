@@ -369,6 +369,9 @@ namespace Hecton8.Equipment.Auxiliary
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             s_activeRuntime = this;
             InitializeService(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
@@ -493,6 +496,9 @@ namespace Hecton8.Equipment.Auxiliary
 
         public void InitializeService(IDataVault dataVault)
         {
+            if (!Application.isPlaying)
+                return;
+
             if (dataVault != null)
                 _dataVault = dataVault;
 

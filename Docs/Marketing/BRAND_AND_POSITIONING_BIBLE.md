@@ -26,6 +26,88 @@ If the claim sells gameplay, pressure, route risk, threat, salvage failure, base
 
 ## The Core Position
 
+## 2026-05-31 Naming Boundary
+
+Owner directive: the game public title candidate is `Submerge`.
+
+Owner account/studio directive: public account/studio label is `Teni Games`.
+
+Operational status: `HOLD_NAMING_CONFLICT_REVIEW`.
+
+Reason: a separate Steam app already uses the exact title `Submerge`:
+
+- Steam app: `https://store.steampowered.com/app/4180620/Submerge/`
+- App ID: `4180620`
+- Developer/publisher shown publicly: `Neuron Activation`
+- Store state observed on 2026-05-31: coming soon / Early Access planned
+- Extra collision weight observed on 2026-05-31: public Steam page exposes a demo, positions around online co-op / horror / psychological horror tags, and includes an AI generated content disclosure for pre-created store/marketing/community assets.
+
+Until a legal/storefront/SEO naming pass clears this:
+
+- do not mass-replace `HECTON-8` in project docs, code, folders, file names, or asset IDs;
+- treat `HECTON-8` as the internal codename and legacy documentation label;
+- use `Submerge` only in new public-title drafts, factsheets, handle/domain candidates, and naming-review notes;
+- do not publish a Steam page, public site, presskit, social profile, or paid campaign under naked `Submerge` without the naming conflict review passing;
+- prefer modifier candidates for store/search uniqueness if the conflict remains: `Submerge: Blackwater`, `Submerge: Pressure Vessel`, `Submerge: Below the Light`, `Submerge Protocol`, `Submerge: HECTON-8`.
+
+Public-facing copy should read as `Submerge` after this gate passes. Internal operational docs may continue to say `HECTON-8` until a controlled rename pass exists.
+
+## 2026-05-31 Studio / Account Identity Boundary
+
+Public studio/account label candidate: `Teni Games`.
+
+Use:
+
+- `Teni Games` as the speaker/account/studio label;
+- `Submerge` as the game title candidate;
+- `HECTON-8` as internal codename and legacy documentation label.
+
+Current search conflict: `TeNi Tiny Games` exists as an indie game developer/publisher on Steam and itch.io. It is not exact `Teni Games`, but it is close enough to require visual and wording separation.
+
+Rules:
+
+- do not use `TeNi` mixed-case styling;
+- do not use `Tiny`;
+- do not describe the studio as a Copenhagen/Danish/VR/escape-room team;
+- do not use `Teni Games` as legal name until owner legal/public credit is verified;
+- use `Teni Games` as public label only after account custody is recorded.
+
+Japanese rendering:
+
+- primary account/studio label: `Teni Games`;
+- phonetic Japanese rendering: `テニゲームス`;
+- owner-selected kanji motif: `天衣`, read as `ten'i`, meaning "heavenly garment";
+- secondary kanji motif allowed: `天意`, read as `ten'i`, meaning "divine will / providence";
+- allowed visual pattern: `Teni Games / 天衣` or `テニゲームス / 天衣`;
+- heavier visual/narrative pattern: `天衣 / 天意`, only where the art direction wants "beauty + fate";
+- do not use `天衣` or `天意` as legal company name or platform username without native/legal review.
+
+Kanji notes:
+
+| Form | Reading | Meaning / risk | Decision |
+|---|---|---|---|
+| `手に` | `te ni` | "in/into hand"; a phrase, not a strong studio name. | Use only as private wordplay. |
+| `天意` | `ten'i` | divine will / providence. Strong myth tone; useful for fate/black-water/Seed-Ship mood, but heavier and more religious. | Approved secondary visual motif; use sparingly. |
+| `天衣` | `ten'i` | heavenly garment; linked to `天衣無縫` natural/seamless feel. Chosen by owner as the visual/cultural motif for Teni. | Approved visual motif; not legal name proof. |
+| `転移` | `ten'i` | transfer/transition, also metastasis. | Avoid for public identity. |
+| `転位` | `ten'i` | displacement/translocation; technical/clinical. | Avoid for public identity. |
+
+Source links for this naming pass:
+
+- Steam near-name conflict: `https://store.steampowered.com/developer/TeNiTinyGames`
+- itch near-name conflict: `https://teni-tiny-games.itch.io/`
+- `天意`: `https://jlearn.net/dictionary/%E5%A4%A9%E6%84%8F`
+- `転移`: `https://www.nihongomaster.com/japanese/dictionary/word/67478/ten%27i-%E8%BB%A2%E7%A7%BB-%E3%81%A6%E3%82%93%E3%81%84`
+- `天衣`: `https://japaneseenglish.aliendictionary.com/en/meaning/%E5%A4%A9%E8%A1%A3.html`
+- `手`: `https://jlearn.net/dictionary/%E6%89%8B`
+
+Current profile asset direction:
+
+- static avatar: `MarketingAssets/00_Brand/Teni_Games_Avatar_DarkWave_CircleSafe_1024.png`;
+- animated avatar: `MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif`;
+- banner: `MarketingAssets/00_Brand/Teni_Games_TenI_Banner_X_1500x500.png`;
+- motion rule: sine/sonar movement is allowed; glitch must stay subtle enough that `天衣` remains readable.
+
 HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about pressure, salvage, machinery, and staying alive below the light.
 
 The enemy is not "Subnautica 2". The enemy is the ocean, pressure, failing machines, bad visibility, resource tension, and the feeling that the player is operating a fragile industrial system in a place humans should not be.
@@ -82,6 +164,47 @@ Operational rule:
 | Generic survival horror | Predictable systems that fail loudly before they kill the player. |
 
 ## Voice Rules
+
+### Teni Human Dev Voice V0
+
+Use the account like a tired developer with standards, not like a campaign manager.
+
+Current owner directive:
+
+- public social copy is English-only unless a specific Japanese text asset/post is requested;
+- no Russian public posts from the official account;
+- do not write "studio account is being wired";
+- do not write "no demo claim";
+- do not write legalistic proof-gate language in public posts;
+- public text should sound like a human dev making a sharp note, not an internal checklist.
+
+Good:
+
+- concrete build-state sentences;
+- small admissions of what is not ready;
+- physical words: pump, hatch, pressure, black water, salvage, scanner, return route;
+- one point per post;
+- English-only public posts for official Teni/Submerge surfaces;
+- first person is allowed when the account acts as a founder/dev voice.
+
+Avoid:
+
+- "we are excited";
+- "revolutionary";
+- "immersive experience";
+- "wishlist now";
+- "soon";
+- "stay tuned";
+- generic inspirational thread format;
+- polished fake-founder vulnerability;
+- hashtags unless the post already has a real screenshot or clip.
+
+Pre-screenshot tone:
+
+- "a screenshot has to earn the post";
+- "black water is useless unless it gives the player a decision";
+- "we are cutting anything that reads like generic underwater mood";
+- "if a shot needs a paragraph, it failed."
 
 Use:
 

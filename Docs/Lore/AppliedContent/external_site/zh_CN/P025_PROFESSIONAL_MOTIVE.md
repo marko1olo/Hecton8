@@ -1,0 +1,30 @@
+---
+packet_id: P025_PROFESSIONAL_MOTIVE
+article_id: player.professional_motive
+locale: zh_CN
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 职业动机
+
+职业动机提供主角能动性而不过度锁死传记：玩家先是能干的marauder，再被证据拉入私人层面。
+
+## Scanner
+
+承包人档案：先是打捞能力。Barnard相关证据后检测到个人升级。
+
+## Terminal
+
+Marauder dossier：出身为Barnard Yards或边境打捞带。不是地球游客。初始动机：合同和技术。当前动机：未解决的人类痕迹。
+
+## Audio
+
+你为工作而来。工作认出了你。
+
+## Field Note
+
+工作在证明它懂你的语言后变成私人问题。
+
+<!-- External Site; generated from P025_PROFESSIONAL_MOTIVE/zh_CN. -->

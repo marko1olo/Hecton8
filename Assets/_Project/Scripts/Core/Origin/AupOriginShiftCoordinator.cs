@@ -82,7 +82,7 @@ namespace Hecton8.Core
     }
 
     /// <summary>Per-shift scheduling result consumed after the job fence completes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 72)]
     public struct AupOriginShiftScheduleInfo
     {
         [FieldOffset(0)] public OriginShiftSignalDTO Signal;
@@ -91,11 +91,12 @@ namespace Hecton8.Core
         [FieldOffset(40)] public int HistoricalPointsScheduled;
         [FieldOffset(44)] public int BatchStartIndex;
         [FieldOffset(48)] public int BatchCount;
-        [FieldOffset(52)] public int TotalActiveEntities;
-        [FieldOffset(56)] public uint ShiftSequence;
-        [FieldOffset(60)] public byte TimeSliced;
-        [FieldOffset(61)] public byte Flags;
-        [FieldOffset(62)] private ushort _pad0;
+        [FieldOffset(52)] public int HistoricalBatchCount;
+        [FieldOffset(56)] public int TotalActiveEntities;
+        [FieldOffset(60)] public uint ShiftSequence;
+        [FieldOffset(64)] public byte TimeSliced;
+        [FieldOffset(65)] public byte Flags;
+        [FieldOffset(66)] private ushort _pad0;
     }
 
     /// <summary>Runtime constants and flags stored in unmanaged vault memory.</summary>
@@ -967,13 +968,12 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(shiftFloat)) || math.lengthsq(shiftFloat) <= 0.0001f)
                 return dependency;
 
-            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return dependency;
 
             bool releasePinsOnExit = true;
             try
             {
-                AupOriginShiftRuntimeState runtime = runtimeState[0];
                 float sectorSize = SanitizeSectorSize(runtime.SectorSizeMeters);
                 uint sectorHash = ResolveSectorHash(newTotalUniverseOffset, sectorSize);
                 double3 shiftDelta = default;
@@ -998,6 +998,7 @@ namespace Hecton8.Core
                 info.HistoricalPointsScheduled = 0;
                 info.BatchStartIndex = 0;
                 info.BatchCount = batchCount;
+                info.HistoricalBatchCount = historicalBatchCount;
                 info.TotalActiveEntities = activeCount;
                 info.ShiftSequence = shiftSequence;
                 info.TimeSliced = timeSliced ? (byte)1 : (byte)0;
@@ -1034,37 +1035,11 @@ namespace Hecton8.Core
                 handle = ScheduleHotEntityRebase(vault, 0, batchCount, activeCount, shiftFloat, shiftSequence, handle, ref info);
                 handle = ScheduleHistoricalRebaseBatch(vault, arrays, 0, historicalBatchCount, shiftFloat, handle, ref info);
 
-                runtime.LastSectorHash = sectorHash;
-                runtime.LastEntitiesShifted = info.EntitiesScheduled;
-                runtime.LastHotEntitiesShifted = info.HotEntitiesScheduled;
-                runtime.LastHistoricalPointsShifted = info.HistoricalPointsScheduled;
-                runtime.PendingTimeSliceSectorHash = sectorHash;
-                runtime.PendingTimeSliceShiftDelta = shiftDelta;
-                runtime.LastShiftSequence = shiftSequence;
-                runtime.PendingTimeSliceShiftSequence = timeSliced ? shiftSequence : 0u;
-                if (timeSliced)
-                {
-                    runtime.TimeSliceActive = 1;
-                    runtime.TimeSliceStartIndex = batchCount;
-                    runtime.HistoricalTimeSliceStartIndex = historicalBatchCount;
-                    runtime.Flags |= RuntimeFlagTimeSliced;
-                }
-                else
-                {
-                    runtime.TimeSliceActive = 0;
-                    runtime.TimeSliceStartIndex = 0;
-                    runtime.HistoricalTimeSliceStartIndex = 0;
-                    runtime.PendingTimeSliceShiftSequence = 0u;
-                    runtime.Flags &= ~RuntimeFlagTimeSliced;
-                }
-
-                runtimeState[0] = runtime;
                 releasePinsOnExit = false;
                 return handle;
             }
             finally
             {
-                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
                 if (releasePinsOnExit)
                     ReleaseScheduledRebaseLocks(vault, in info);
             }
@@ -1082,7 +1057,30 @@ namespace Hecton8.Core
 
             int nonFiniteCount = TryReadCounter(vault, out AupPaddedAtomicCounter counter) ? counter.NonFiniteCount : 0;
             runtime.RebaseCount++;
+            runtime.LastSectorHash = info.Signal.NewSectorHash;
+            runtime.LastEntitiesShifted = info.EntitiesScheduled;
+            runtime.LastHotEntitiesShifted = info.HotEntitiesScheduled;
+            runtime.LastHistoricalPointsShifted = info.HistoricalPointsScheduled;
+            runtime.PendingTimeSliceSectorHash = info.Signal.NewSectorHash;
+            runtime.PendingTimeSliceShiftDelta = info.Signal.ShiftDelta;
             runtime.LastShiftSequence = info.ShiftSequence;
+            runtime.PendingTimeSliceShiftSequence = info.TimeSliced != 0 ? info.ShiftSequence : 0u;
+            if (info.TimeSliced != 0)
+            {
+                runtime.TimeSliceActive = 1;
+                runtime.TimeSliceStartIndex = info.EntitiesScheduled;
+                runtime.HistoricalTimeSliceStartIndex = info.HistoricalBatchCount;
+                runtime.Flags |= RuntimeFlagTimeSliced;
+            }
+            else
+            {
+                runtime.TimeSliceActive = 0;
+                runtime.TimeSliceStartIndex = 0;
+                runtime.HistoricalTimeSliceStartIndex = 0;
+                runtime.PendingTimeSliceShiftSequence = 0u;
+                runtime.Flags &= ~RuntimeFlagTimeSliced;
+            }
+
             runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
             runtime.LastNonFiniteCount = nonFiniteCount;
             WriteRuntimeState(vault, in runtime);

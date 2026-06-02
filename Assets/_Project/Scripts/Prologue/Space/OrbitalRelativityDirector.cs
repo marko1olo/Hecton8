@@ -37,6 +37,8 @@ namespace Hecton8.Prologue.Space
         private const byte MathLodHigh = 2;
         private const byte MathLodUltra = 3;
         private const int MathLodHysteresisFrames = 3;
+        private const float MinimumEclipseLightFloor01 = 0.18f;
+        private const float ShaderGlobalEpsilonSq = 0.00000001f;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
         private const SystemID OwnerSystemId = SystemID.CoreBridge;
         private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
@@ -48,6 +50,16 @@ namespace Hecton8.Prologue.Space
         private static readonly int _cloudWhiteoutId = Shader.PropertyToID("_H8OrbitalCloudWhiteout");
         private static readonly int _leadingEdgeDotId = Shader.PropertyToID("_H8OrbitalLeadingEdgeDot");
         private static readonly int _mathLodId = Shader.PropertyToID("_H8OrbitalMathLod");
+        private static readonly int _aegirSunDirectionId = Shader.PropertyToID("_H8AegirSunDirection");
+        private static readonly int _aegirPlanetCenterRadiusId = Shader.PropertyToID("_H8AegirPlanetCenterRadius");
+        private static readonly int _aegirRingPlaneInnerId = Shader.PropertyToID("_H8AegirRingPlaneInner");
+        private static readonly int _aegirOrbitScalarsId = Shader.PropertyToID("_H8AegirOrbitScalars");
+        private static readonly int _globalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
+        private static readonly int _legacySunDirectionId = Shader.PropertyToID("_SunDirection");
+        private static readonly int _legacyAegirDirectionId = Shader.PropertyToID("_AegirDirection");
+        private static readonly float3 s_defaultSunDirection = new float3(-0.38f, -0.72f, 0.58f);
+        private static readonly float3 s_defaultAegirDirection = new float3(-0.38f, -0.18f, 0.905f);
+        private static readonly float3 s_defaultRingPlaneNormal = new float3(0.16f, 0.93f, 0.33f);
 
         [Header("Authority")]
         [SerializeField] private Transform capsuleAuthority;
@@ -84,10 +96,22 @@ namespace Hecton8.Prologue.Space
         [SerializeField] private float fakePlanetRadiusMeters = 10000000f;
 
         [Header("Orbital Window Fake")]
-        [SerializeField, Range(0f, 0.35f)] private float orbitalArcRadius01 = 0.16f;
-        [SerializeField, Range(0f, 3f)] private float hectonOrbitTurns = 1.35f;
-        [SerializeField] private float orbitPresentationFadeDistanceMeters = 6000f;
         [SerializeField] private float gasGiantBackdropScaleMeters = 110000f;
+
+        [Header("Aegir Sky Shader")]
+        [SerializeField, Range(0.05f, 0.65f)] private float aegirAngularRadius = 0.28f;
+        [SerializeField, Range(0.05f, 0.85f)] private float aegirRingInnerRadius = 0.36f;
+        [SerializeField, Range(0.1f, 1.35f)] private float aegirRingOuterRadius = 0.72f;
+        [SerializeField, Range(0f, 1f)] private float aegirRingShadowStrength = 0.62f;
+        [SerializeField, Range(0f, 2f)] private float aegirBandFlowSpeed = 0.075f;
+        [SerializeField] private Vector3 fallbackAegirDirection = new Vector3(-0.38f, -0.18f, 0.905f);
+        [SerializeField] private Vector3 fallbackRingPlaneNormal = new Vector3(0.16f, 0.93f, 0.33f);
+
+        [Header("Orbit Key Light")]
+        [SerializeField] private Light orbitKeyLight;
+        [SerializeField] private float orbitKeyLightBaseIntensity = 5.5f;
+        [SerializeField, Range(0f, 1f)] private float eclipseLightFadeFloor = 0.05f;
+        [SerializeField, Range(0.05f, 8f)] private float eclipseFadeResponseHz = 1.8f;
 
         [Header("Feedback")]
         [SerializeField] private float signalIntervalSeconds = 0.05f;
@@ -110,9 +134,11 @@ namespace Hecton8.Prologue.Space
         private float _cameraJuiceTimer;
         private float _audioTimer;
         private float _hapticTimer;
+        private float _presentationDeltaTime;
         private byte _mathLod = byte.MaxValue;
         private byte _mathLodCandidate = byte.MaxValue;
         private int _mathLodCandidateFrames;
+        private float _mathLodShader;
         private bool _domainClaimed;
         private bool _registeredUpdate;
         private bool _registeredHotSwapListener;
@@ -137,6 +163,14 @@ namespace Hecton8.Prologue.Space
         private IDataVault _dataVault;
         private IInputService _inputService;
         private IPhysicsService _physicsService;
+        private ICelestialRuntimeSnapshotReadModel _celestialSnapshotReadModel;
+        private PresentationShaderGlobalsDTO _presentationShaderGlobals;
+        private PresentationShaderGlobalsDTO _uploadedPresentationShaderGlobals;
+        private CelestialParametersDTO _celestialParameters;
+        private CelestialParametersDTO _uploadedCelestialParameters;
+        private bool _presentationShaderGlobalsUploaded;
+        private bool _celestialParametersUploaded;
+        private float _eclipseOcclusionSmoothed;
         private OrbitalDirectorSnapshot _snapshot;
         private AbsoluteUniversePosition _originAup;
 
@@ -154,6 +188,33 @@ namespace Hecton8.Prologue.Space
         public void SetInputEnabled(bool enabled)
         {
             consumeInput = enabled;
+        }
+
+        public void ConfigureStandaloneOrbitPacing(
+            float startDistance,
+            float reentryStartDistance,
+            float whiteoutDistance,
+            float passiveSpeed,
+            float scriptedBurnAcceleration,
+            float maxSpeed)
+        {
+            startDistanceMeters = math.max(1000f, startDistance);
+            reentryStartDistanceMeters = math.clamp(
+                reentryStartDistance,
+                1000f,
+                math.max(1000f, startDistanceMeters - 1f));
+            cloudWhiteoutDistanceMeters = math.clamp(
+                whiteoutDistance,
+                250f,
+                math.max(250f, reentryStartDistanceMeters - 1f));
+            passiveApproachSpeedMetersPerSecond = math.max(1f, passiveSpeed);
+            scriptedReentryBurnAccelerationMetersPerSecondSq = math.max(0f, scriptedBurnAcceleration);
+            maxUniverseSpeedMetersPerSecond = math.max(passiveApproachSpeedMetersPerSecond, maxSpeed);
+            planetSphereScaleMeters = math.clamp(planetSphereScaleMeters, 1000f, startDistanceMeters * 0.42f);
+            fakePlanetRadiusMeters = math.max(planetSphereScaleMeters, startDistanceMeters * 80f);
+            gasGiantBackdropScaleMeters = math.max(gasGiantBackdropScaleMeters, startDistanceMeters * 1.15f);
+            if (Application.isPlaying && isActiveAndEnabled)
+                ResetRuntimeState(applyPresentation: true);
         }
 
         public void ConfigureSceneBindings(
@@ -187,6 +248,13 @@ namespace Hecton8.Prologue.Space
                 gasGiantBackdrop = backdropTransform;
             if (backdropRenderer != null)
                 gasGiantBackdropRenderer = backdropRenderer;
+        }
+
+        public void ConfigureOrbitKeyLight(Light keyLight, float baseIntensity)
+        {
+            if (keyLight != null)
+                orbitKeyLight = keyLight;
+            orbitKeyLightBaseIntensity = math.max(0f, baseIntensity);
         }
 
         public void ForceZeroUniverseVelocity(byte reason)
@@ -246,8 +314,11 @@ namespace Hecton8.Prologue.Space
 
             EnsureTelemetry();
             ApplyColdSceneConfiguration();
-            ApplyPresentation();
-            GlobalRegistry.RegisterOrbitalDirectorRuntime(this);
+            QueueOrbitalPresentation();
+            if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready)
+                GlobalRegistry.ReplaceOrbitalDirectorRuntime(this);
+            else
+                GlobalRegistry.RegisterOrbitalDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.OrbitalDirector, this);
             _inputService = GlobalRegistry.Input;
             _physicsService = GlobalRegistry.Physics;
@@ -343,6 +414,7 @@ namespace Hecton8.Prologue.Space
             QueueCapsuleAuthorityLock();
 
             float dt = SanitizeDeltaTime(deltaTime);
+            _presentationDeltaTime = dt;
             if (_aborted || dt <= 0f)
             {
                 RecordTelemetry();
@@ -434,6 +506,8 @@ namespace Hecton8.Prologue.Space
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+
+            _celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
         }
 
         private void ApplyColdSceneConfiguration()
@@ -443,6 +517,8 @@ namespace Hecton8.Prologue.Space
 
             if (gasGiantBackdrop != null)
                 gasGiantBackdrop.localScale = Vector3.one * math.max(planetSphereScaleMeters, gasGiantBackdropScaleMeters);
+
+            SetRendererEnabled(gasGiantBackdropRenderer, false);
 
             if (capsuleRigidbody != null)
             {
@@ -553,6 +629,7 @@ namespace Hecton8.Prologue.Space
             _cameraJuiceTimer = 0f;
             _audioTimer = 0f;
             _hapticTimer = 0f;
+            _presentationDeltaTime = 0f;
             _sequence = 0u;
             _handoffEmitted = false;
             _telemetryDumped = false;
@@ -562,9 +639,15 @@ namespace Hecton8.Prologue.Space
             _mathLod = byte.MaxValue;
             _mathLodCandidate = byte.MaxValue;
             _mathLodCandidateFrames = 0;
+            _mathLodShader = 0f;
+            _eclipseOcclusionSmoothed = 0f;
+            _presentationShaderGlobalsUploaded = false;
+            _uploadedPresentationShaderGlobals = default;
+            _celestialParametersUploaded = false;
+            _uploadedCelestialParameters = default;
             PublishSnapshot();
             if (applyPresentation)
-                ApplyPresentation();
+                QueueOrbitalPresentation();
         }
 
         private float ResolveThrust01()
@@ -668,48 +751,173 @@ namespace Hecton8.Prologue.Space
         private void ApplyPresentation()
         {
             float distance = (float)math.min(_distanceMeters, math.max(200000f, startDistanceMeters));
-            Vector3 orbitalOffset = ResolveOrbitalWindowOffset(distance);
-            Vector3 planetPosition = new Vector3(orbitalOffset.x, -distance, orbitalOffset.z);
-            Vector3 gasGiantPosition = ResolveGasGiantBackdropPosition(distance, orbitalOffset);
 
             if (universeRoot != null)
                 universeRoot.localPosition = Vector3.zero;
 
-            if (planetSphere != null)
-                planetSphere.localPosition = planetPosition;
-
-            if (planetImpostor != null)
-                planetImpostor.localPosition = planetPosition;
-
-            if (cloudLayer != null)
-                cloudLayer.localPosition = new Vector3(orbitalOffset.x * 0.12f, 0f, orbitalOffset.z * 0.12f);
-
-            if (starField != null)
-                starField.localPosition = new Vector3(-orbitalOffset.x * 0.02f, distance * 0.00025f, -orbitalOffset.z * 0.02f);
-
-            if (gasGiantBackdrop != null)
-                gasGiantBackdrop.localPosition = gasGiantPosition;
-
             byte lod = ResolveStableMathLod(distance);
-            if (lod != _mathLod)
+            _mathLod = lod;
+            _mathLodShader = ResolveContinuousMathLod(distance);
+
+            SetRendererEnabled(planetSphereRenderer, false);
+            SetRendererEnabled(planetImpostorRenderer, false);
+            SetRendererEnabled(cloudLayerRenderer, false);
+            SetRendererEnabled(gasGiantBackdropRenderer, false);
+
+            BuildPresentationShaderGlobals(distance);
+            BuildCelestialParameters();
+
+            UploadPresentationShaderGlobalsIfDirty();
+            UploadCelestialGlobalsIfDirty();
+            ApplyEclipseLighting(_celestialParameters.SunDirection.w);
+        }
+
+        private void BuildPresentationShaderGlobals(float distance)
+        {
+            _presentationShaderGlobals.Primary.x = distance;
+            _presentationShaderGlobals.Primary.y = math.max(planetSphereScaleMeters, fakePlanetRadiusMeters);
+            _presentationShaderGlobals.Primary.z = (float)math.min(_universeSpeedMetersPerSecond, float.MaxValue);
+            _presentationShaderGlobals.Primary.w = _reentryHeat01;
+            _presentationShaderGlobals.Secondary.x = _cloudWhiteout01;
+            _presentationShaderGlobals.Secondary.y = _leadingEdgeDot01;
+            _presentationShaderGlobals.Secondary.z = _mathLodShader;
+            _presentationShaderGlobals.Secondary.w = 0f;
+        }
+
+        private void BuildCelestialParameters()
+        {
+            CelestialRuntimeSnapshot snapshot = default;
+            ICelestialRuntimeSnapshotReadModel readModel = _celestialSnapshotReadModel;
+            if (readModel != null)
+                snapshot = readModel.RuntimeSnapshot;
+
+            float3 fallbackAegir = default;
+            fallbackAegir.x = fallbackAegirDirection.x;
+            fallbackAegir.y = fallbackAegirDirection.y;
+            fallbackAegir.z = fallbackAegirDirection.z;
+
+            float3 fallbackRing = default;
+            fallbackRing.x = fallbackRingPlaneNormal.x;
+            fallbackRing.y = fallbackRingPlaneNormal.y;
+            fallbackRing.z = fallbackRingPlaneNormal.z;
+
+            float3 sunDirection = ResolveUnitDirection(snapshot.SunDirection, s_defaultSunDirection);
+            float3 aegirDirection = ResolveUnitDirection(snapshot.GasGiantDirection, fallbackAegir);
+            if (!IsFinite(aegirDirection))
+                aegirDirection = ResolveUnitDirection(snapshot.GasGiantOffset, s_defaultAegirDirection);
+
+            float3 ringNormal = ResolveUnitDirection(fallbackRing, s_defaultRingPlaneNormal);
+            float centerDistance = 1f;
+            float ringInner = math.clamp(aegirRingInnerRadius, aegirAngularRadius + 0.02f, aegirRingOuterRadius - 0.01f);
+            float ringOuter = math.max(ringInner + 0.01f, aegirRingOuterRadius);
+            float quality = ResolveQuality01();
+            float flowSpeed = math.max(0f, aegirBandFlowSpeed);
+
+            _celestialParameters.SunDirection.x = sunDirection.x;
+            _celestialParameters.SunDirection.y = sunDirection.y;
+            _celestialParameters.SunDirection.z = sunDirection.z;
+            _celestialParameters.SunDirection.w = math.saturate(snapshot.EclipseOcclusion01);
+            _celestialParameters.PlanetCenterRadius.x = aegirDirection.x * centerDistance;
+            _celestialParameters.PlanetCenterRadius.y = aegirDirection.y * centerDistance;
+            _celestialParameters.PlanetCenterRadius.z = aegirDirection.z * centerDistance;
+            _celestialParameters.PlanetCenterRadius.w = math.clamp(aegirAngularRadius, 0.05f, 0.65f);
+            _celestialParameters.RingPlaneInner.x = ringNormal.x;
+            _celestialParameters.RingPlaneInner.y = ringNormal.y;
+            _celestialParameters.RingPlaneInner.z = ringNormal.z;
+            _celestialParameters.RingPlaneInner.w = ringInner;
+            _celestialParameters.OrbitScalars.x = ringOuter;
+            _celestialParameters.OrbitScalars.y = math.saturate(aegirRingShadowStrength);
+            _celestialParameters.OrbitScalars.z = flowSpeed;
+            _celestialParameters.OrbitScalars.w = quality;
+        }
+
+        private void UploadPresentationShaderGlobalsIfDirty()
+        {
+            if (_presentationShaderGlobalsUploaded && !PresentationShaderGlobalsChanged(_uploadedPresentationShaderGlobals, _presentationShaderGlobals))
+                return;
+
+            Shader.SetGlobalFloat(_planetDistanceId, _presentationShaderGlobals.Primary.x);
+            Shader.SetGlobalFloat(_fakeRadiusId, _presentationShaderGlobals.Primary.y);
+            Shader.SetGlobalFloat(_universeSpeedId, _presentationShaderGlobals.Primary.z);
+            Shader.SetGlobalFloat(_reentryHeatId, _presentationShaderGlobals.Primary.w);
+            Shader.SetGlobalFloat(_cloudWhiteoutId, _presentationShaderGlobals.Secondary.x);
+            Shader.SetGlobalFloat(_leadingEdgeDotId, _presentationShaderGlobals.Secondary.y);
+            Shader.SetGlobalFloat(_mathLodId, _presentationShaderGlobals.Secondary.z);
+
+            _uploadedPresentationShaderGlobals = _presentationShaderGlobals;
+            _presentationShaderGlobalsUploaded = true;
+        }
+
+        private void UploadCelestialGlobalsIfDirty()
+        {
+            if (_celestialParametersUploaded && !CelestialParametersChanged(_uploadedCelestialParameters, _celestialParameters))
+                return;
+
+            Shader.SetGlobalVector(_aegirSunDirectionId, _celestialParameters.SunDirection);
+            Shader.SetGlobalVector(_aegirPlanetCenterRadiusId, _celestialParameters.PlanetCenterRadius);
+            Shader.SetGlobalVector(_aegirRingPlaneInnerId, _celestialParameters.RingPlaneInner);
+            Shader.SetGlobalVector(_aegirOrbitScalarsId, _celestialParameters.OrbitScalars);
+            Shader.SetGlobalFloat(_globalQualityWeightId, _celestialParameters.OrbitScalars.w);
+            Shader.SetGlobalVector(_legacySunDirectionId, _celestialParameters.SunDirection);
+            Shader.SetGlobalVector(_legacyAegirDirectionId, _celestialParameters.PlanetCenterRadius);
+
+            _uploadedCelestialParameters = _celestialParameters;
+            _celestialParametersUploaded = true;
+        }
+
+        private static bool PresentationShaderGlobalsChanged(PresentationShaderGlobalsDTO lhs, PresentationShaderGlobalsDTO rhs)
+        {
+            return Vector4DeltaSq(lhs.Primary, rhs.Primary) > ShaderGlobalEpsilonSq ||
+                   Vector4DeltaSq(lhs.Secondary, rhs.Secondary) > ShaderGlobalEpsilonSq;
+        }
+
+        private static bool CelestialParametersChanged(CelestialParametersDTO lhs, CelestialParametersDTO rhs)
+        {
+            return Vector4DeltaSq(lhs.SunDirection, rhs.SunDirection) > ShaderGlobalEpsilonSq ||
+                   Vector4DeltaSq(lhs.PlanetCenterRadius, rhs.PlanetCenterRadius) > ShaderGlobalEpsilonSq ||
+                   Vector4DeltaSq(lhs.RingPlaneInner, rhs.RingPlaneInner) > ShaderGlobalEpsilonSq ||
+                   Vector4DeltaSq(lhs.OrbitScalars, rhs.OrbitScalars) > ShaderGlobalEpsilonSq;
+        }
+
+        private static float Vector4DeltaSq(Vector4 lhs, Vector4 rhs)
+        {
+            float dx = lhs.x - rhs.x;
+            float dy = lhs.y - rhs.y;
+            float dz = lhs.z - rhs.z;
+            float dw = lhs.w - rhs.w;
+            return dx * dx + dy * dy + dz * dz + dw * dw;
+        }
+
+        private static float3 ResolveUnitDirection(float3 candidate, float3 fallback)
+        {
+            if (IsFinite(candidate))
             {
-                _mathLod = lod;
-                bool hasImpostor = planetImpostorRenderer != null;
-                bool useMesh = lod != MathLodImpostor || !hasImpostor;
-                SetRendererEnabled(planetSphereRenderer, useMesh);
-                SetRendererEnabled(planetImpostorRenderer, hasImpostor && !useMesh);
+                float candidateLengthSq = math.lengthsq(candidate);
+                if (candidateLengthSq > 0.000001f)
+                    return candidate * math.rsqrt(candidateLengthSq);
             }
 
-            SetRendererEnabled(cloudLayerRenderer, _cloudWhiteout01 > 0.001f);
-            SetRendererEnabled(gasGiantBackdropRenderer, true);
+            float fallbackLengthSq = math.lengthsq(fallback);
+            return fallbackLengthSq > 0.000001f
+                ? fallback * math.rsqrt(fallbackLengthSq)
+                : s_defaultAegirDirection;
+        }
 
-            Shader.SetGlobalFloat(_planetDistanceId, distance);
-            Shader.SetGlobalFloat(_fakeRadiusId, math.max(planetSphereScaleMeters, fakePlanetRadiusMeters));
-            Shader.SetGlobalFloat(_universeSpeedId, (float)math.min(_universeSpeedMetersPerSecond, float.MaxValue));
-            Shader.SetGlobalFloat(_reentryHeatId, _reentryHeat01);
-            Shader.SetGlobalFloat(_cloudWhiteoutId, _cloudWhiteout01);
-            Shader.SetGlobalFloat(_leadingEdgeDotId, _leadingEdgeDot01);
-            Shader.SetGlobalFloat(_mathLodId, _mathLod);
+        private void ApplyEclipseLighting(float eclipseOcclusion01)
+        {
+            if (orbitKeyLight == null)
+                return;
+
+            float targetOcclusion = math.saturate(eclipseOcclusion01);
+            float response = math.max(0.05f, eclipseFadeResponseHz);
+            float step = math.saturate(_presentationDeltaTime * response);
+            _eclipseOcclusionSmoothed = math.lerp(_eclipseOcclusionSmoothed, targetOcclusion, step);
+
+            float baseIntensity = math.max(0f, orbitKeyLightBaseIntensity);
+            float floor = math.max(MinimumEclipseLightFloor01, math.saturate(eclipseLightFadeFloor));
+            float intensity = baseIntensity * math.lerp(1f, floor, _eclipseOcclusionSmoothed);
+            if (math.isfinite(intensity))
+                orbitKeyLight.intensity = intensity;
         }
 
         private byte ResolveStableMathLod(float distance)
@@ -744,35 +952,6 @@ namespace Hecton8.Prologue.Space
                 : _mathLod;
         }
 
-        private Vector3 ResolveOrbitalWindowOffset(float distance)
-        {
-            float safeStart = math.max(1f, startDistanceMeters);
-            float progress01 = 1f - math.saturate(distance * math.rcp(safeStart));
-            float quality01 = ResolveQuality01();
-            float qualityCurve01 = quality01 * quality01 * (3f - (2f * quality01));
-            float turns = math.lerp(0.45f, math.max(0f, hectonOrbitTurns), qualityCurve01);
-            float phase = progress01 * turns;
-            float fadeDistance = math.max(1f, orbitPresentationFadeDistanceMeters);
-            float fade01 = math.smoothstep(fadeDistance, math.max(fadeDistance + 1f, safeStart * 0.22f), distance);
-            float radius = distance * math.saturate(orbitalArcRadius01) * math.lerp(0.35f, 1f, qualityCurve01) * fade01;
-            float x = TriangleWaveSigned(phase);
-            float z = TriangleWaveSigned(phase + 0.25f) * math.lerp(0.22f, 0.55f, qualityCurve01);
-            return new Vector3(x * radius, 0f, z * radius);
-        }
-
-        private Vector3 ResolveGasGiantBackdropPosition(float distance, Vector3 orbitalOffset)
-        {
-            float quality01 = ResolveQuality01();
-            float qualityCurve01 = quality01 * quality01 * (3f - (2f * quality01));
-            float sideOffset = distance * math.lerp(0.18f, 0.34f, qualityCurve01);
-            float depthOffset = distance * math.lerp(0.04f, 0.16f, qualityCurve01);
-            float verticalDistance = distance * math.lerp(0.74f, 0.62f, qualityCurve01);
-            return new Vector3(
-                sideOffset - (orbitalOffset.x * 0.38f),
-                -verticalDistance,
-                depthOffset + (orbitalOffset.z * 0.22f));
-        }
-
         private byte ResolveMathLod(float distance)
         {
             float quality01 = ResolveQuality01();
@@ -788,6 +967,18 @@ namespace Hecton8.Prologue.Space
                 return MathLodHigh;
 
             return MathLodMesh;
+        }
+
+        private float ResolveContinuousMathLod(float distance)
+        {
+            float quality01 = ResolveQuality01();
+            float meshContinuity01 = math.smoothstep(0.12f, 0.45f, quality01);
+            float highDetail01 = math.smoothstep(0.52f, 0.88f, quality01);
+            float ultraDetail01 = math.smoothstep(0.86f, 1f, quality01);
+            float swapRange = math.max(1f, meshSwapDistanceMeters * 0.35f);
+            float distanceMesh01 = 1f - math.saturate((distance - meshSwapDistanceMeters) * math.rcp(swapRange));
+            float baseMesh01 = math.max(meshContinuity01, distanceMesh01);
+            return math.clamp(baseMesh01 + highDetail01 + ultraDetail01, 0f, 3f);
         }
 
         private static float ResolveQuality01()
@@ -1014,6 +1205,9 @@ namespace Hecton8.Prologue.Space
 
             if (serviceSlot == GlobalRegistryServiceSlot.Physics)
                 _physicsService = currentService as IPhysicsService;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+                _celestialSnapshotReadModel = currentService != null ? GlobalRegistry.CelestialRuntimeSnapshotReadModel : null;
         }
 
         private float UniverseSpeed01()
@@ -1229,29 +1423,21 @@ namespace Hecton8.Prologue.Space
 
         private void QueueCapsuleAuthorityLock()
         {
-            if (Application.isPlaying)
-                TryRegisterUpdateLane();
             _pendingCapsuleAuthorityLock = true;
         }
 
         private void QueueOrbitalPresentation()
         {
-            if (Application.isPlaying)
-                TryRegisterUpdateLane();
             _pendingOrbitalPresentation = true;
         }
 
         private void QueueShaderGlobalClear()
         {
-            if (Application.isPlaying)
-                TryRegisterUpdateLane();
             _pendingOrbitalShaderClear = true;
         }
 
         private void QueueRuntimeAuthorityRelease()
         {
-            if (Application.isPlaying)
-                TryRegisterUpdateLane();
             _pendingRuntimeAuthorityRelease = true;
         }
 
@@ -1261,7 +1447,7 @@ namespace Hecton8.Prologue.Space
                 renderer.enabled = enabled;
         }
 
-        private static void ClearShaderGlobals()
+        private void ClearShaderGlobals()
         {
             Shader.SetGlobalFloat(_planetDistanceId, 0f);
             Shader.SetGlobalFloat(_fakeRadiusId, 0f);
@@ -1270,6 +1456,17 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalFloat(_cloudWhiteoutId, 0f);
             Shader.SetGlobalFloat(_leadingEdgeDotId, 0f);
             Shader.SetGlobalFloat(_mathLodId, MathLodImpostor);
+            Shader.SetGlobalVector(_aegirSunDirectionId, Vector4.zero);
+            Shader.SetGlobalVector(_aegirPlanetCenterRadiusId, Vector4.zero);
+            Shader.SetGlobalVector(_aegirRingPlaneInnerId, Vector4.zero);
+            Shader.SetGlobalVector(_aegirOrbitScalarsId, Vector4.zero);
+            Shader.SetGlobalFloat(_globalQualityWeightId, 0f);
+            Shader.SetGlobalVector(_legacySunDirectionId, Vector4.zero);
+            Shader.SetGlobalVector(_legacyAegirDirectionId, Vector4.zero);
+            _presentationShaderGlobalsUploaded = false;
+            _uploadedPresentationShaderGlobals = default;
+            _celestialParametersUploaded = false;
+            _uploadedCelestialParameters = default;
         }
 
         private static float SanitizeDeltaTime(float deltaTime)
@@ -1288,6 +1485,11 @@ namespace Hecton8.Prologue.Space
         private static bool IsFinite(double3 value)
         {
             return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private static double LengthSq(double3 value)
@@ -1344,11 +1546,38 @@ namespace Hecton8.Prologue.Space
             maxUniverseSpeedMetersPerSecond = math.max(passiveApproachSpeedMetersPerSecond, maxUniverseSpeedMetersPerSecond);
             planetSphereScaleMeters = math.max(1f, planetSphereScaleMeters);
             fakePlanetRadiusMeters = math.max(planetSphereScaleMeters, fakePlanetRadiusMeters);
-            orbitalArcRadius01 = math.saturate(orbitalArcRadius01);
-            hectonOrbitTurns = math.max(0f, hectonOrbitTurns);
-            orbitPresentationFadeDistanceMeters = math.max(1f, orbitPresentationFadeDistanceMeters);
             gasGiantBackdropScaleMeters = math.max(planetSphereScaleMeters, gasGiantBackdropScaleMeters);
+            aegirAngularRadius = math.clamp(aegirAngularRadius, 0.05f, 0.65f);
+            aegirRingOuterRadius = math.clamp(aegirRingOuterRadius, 0.1f, 1.35f);
+            aegirRingInnerRadius = math.clamp(aegirRingInnerRadius, 0.05f, aegirRingOuterRadius - 0.01f);
+            aegirRingShadowStrength = math.saturate(aegirRingShadowStrength);
+            aegirBandFlowSpeed = math.max(0f, aegirBandFlowSpeed);
+            orbitKeyLightBaseIntensity = math.max(0f, orbitKeyLightBaseIntensity);
+            eclipseLightFadeFloor = math.saturate(eclipseLightFadeFloor);
+            eclipseFadeResponseHz = math.max(0.05f, eclipseFadeResponseHz);
         }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct CelestialParametersDTO
+    {
+        [FieldOffset(0)]
+        public Vector4 SunDirection;
+        [FieldOffset(16)]
+        public Vector4 PlanetCenterRadius;
+        [FieldOffset(32)]
+        public Vector4 RingPlaneInner;
+        [FieldOffset(48)]
+        public Vector4 OrbitScalars;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PresentationShaderGlobalsDTO
+    {
+        [FieldOffset(0)]
+        public Vector4 Primary;
+        [FieldOffset(16)]
+        public Vector4 Secondary;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

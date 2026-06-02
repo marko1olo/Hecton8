@@ -1,15 +1,15 @@
 // ============================================================================
-// HECTON-8 — PDASpectrumTab.cs
-// Vkladka PDA: SPECTRUM — upravlenie rezhimami vizora.
+// HECTON-8 - PDASpectrumTab.cs
+// Vkladka PDA: SPECTRUM - upravlenie rezhimami vizora.
 //
 // LOR (lor2 Razdel 9):
 //   SPECTRUM: Teplovizor, Sonar, Eholot.
 //   Interfeys: vektornye elementy, monoshirinnye shrifty, HDR-tsveta.
 //
 // ARHITEKTURA:
-//   • Protsedurnyy UI — 4 knopki rezhimov + status tekuschego.
-//   • Slushaet SpectrumEvents dlya obnovleniya aktivnoy knopki.
-//   • Pokazyvaet status sonara (posledniy puls, radius).
+//   - Protsedurnyy UI - 4 knopki rezhimov + status tekuschego.
+//   - Slushaet SpectrumEvents dlya obnovleniya aktivnoy knopki.
+//   - Pokazyvaet status sonara (posledniy puls, radius).
 // ============================================================================
 
 using System;
@@ -29,11 +29,11 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Spectrum Tab")]
     public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener, ISpectrumModeEventListener, ISonarSnapshotEventListener, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Colors ───────────────────────────────────")]
+        [Header("-- Colors -----------------------------------")]
         [SerializeField] private Color colorBg       = new Color(0.03f, 0.05f, 0.08f, 0.95f);
         [SerializeField] private Color colorAccent   = new Color(0.20f, 0.80f, 0.60f, 1f);
         [SerializeField] private Color colorActive   = new Color(0.10f, 0.40f, 0.25f, 1f);
@@ -41,7 +41,7 @@ namespace Hecton8.UI
         [SerializeField] private Color colorText     = new Color(0.85f, 0.90f, 0.85f, 1f);
         [SerializeField] private Color colorDim      = new Color(0.45f, 0.50f, 0.45f, 1f);
 
-        [Header("── Font ─────────────────────────────────────")]
+        [Header("-- Font -------------------------------------")]
         [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
         [SerializeField, Tooltip("GPU point-cloud shader forwarded to the runtime-created PDA map tab.")]
@@ -51,9 +51,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Hologram volume shader forwarded to the runtime-created PDA map tab.")]
         private Shader pdaHologramMapShader;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool _built;
 
@@ -69,11 +69,12 @@ namespace Hecton8.UI
         private TextMeshProUGUI _bioformSummaryLabel;
         private TextMeshProUGUI _signalSummaryLabel;
         private PDAMapTab _mapTab;
+        private SpectrumSystem _spectrumRuntime;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapListenerRegistered;
-        // COLD ALLOC: char[512] — spectrum diagnostic line assembly buffer — owner: PDASpectrumTab
+        // COLD ALLOC: char[512] - spectrum diagnostic line assembly buffer - owner: PDASpectrumTab
         private readonly char[] _lineBuffer = new char[512];
         private int _lineLength;
 
@@ -111,9 +112,9 @@ namespace Hecton8.UI
 
         private const string SonarActiveStatus = "SONAR AKTIVEN — RADIUS: 100M";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -124,6 +125,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CachePlayerRuntimeContextCold();
+            CacheSpectrumRuntimeCold();
             TryRegisterHotSwapListener();
             if (!_built) EnsureBuilt();
 
@@ -159,11 +161,17 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
-                return;
-
-            CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
-            RefreshModeDisplay();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    RefreshModeDisplay();
+                    break;
+                case GlobalRegistryServiceSlot.SpectrumRuntime:
+                    CacheSpectrumRuntime(currentService as SpectrumSystem);
+                    RefreshModeDisplay();
+                    break;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -188,6 +196,11 @@ namespace Hecton8.UI
             CachePlayerRuntimeContext(GlobalRegistry.Player);
         }
 
+        private void CacheSpectrumRuntimeCold()
+        {
+            CacheSpectrumRuntime(GlobalRegistry.Spectrum);
+        }
+
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
         {
             if (ReferenceEquals(_cachedPlayerContext, playerContext))
@@ -198,13 +211,18 @@ namespace Hecton8.UI
             _survivalSystem = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  EVENT-DRIVEN REFRESH
-        // ══════════════════════════════════════════════════════════
+        private void CacheSpectrumRuntime(SpectrumSystem spectrumRuntime)
+        {
+            _spectrumRuntime = spectrumRuntime;
+        }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  EVENT-DRIVEN REFRESH
+        // ----------------------------------------------------------
+
+        // ----------------------------------------------------------
         //  EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void HandleModeChanged(SpectrumMode mode) => RefreshModeDisplay();
         private void HandleSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => RefreshModeDisplay();
@@ -238,9 +256,9 @@ namespace Hecton8.UI
                 HandlePDAOpened(payload.CurrentTab);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  BUILD UI
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         internal void ConfigureMapRuntimeAssets(Shader pointCloudShader, ComputeShader mapCompute, Shader hologramShader)
         {
@@ -395,13 +413,13 @@ namespace Hecton8.UI
                 new Vector2(12, 0), new Vector2(-12, 20));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  REFRESH
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void RefreshModeDisplay()
         {
-            SpectrumSystem sys = GlobalRegistry.Spectrum;
+            SpectrumSystem sys = _spectrumRuntime;
             SpectrumMode active = sys != null ? sys.CurrentMode : SpectrumMode.Normal;
 
             // Obnovlyaem knopki
@@ -462,15 +480,21 @@ namespace Hecton8.UI
             SetLineText(_statusLabel);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void ActivateMode(SpectrumMode mode)
         {
-            SpectrumSystem sys = GlobalRegistry.Spectrum;
+            SpectrumSystem sys = _spectrumRuntime;
             if (sys != null)
                 sys.SetMode(mode);
+        }
+
+        private bool IsModeActive(SpectrumMode mode)
+        {
+            SpectrumSystem sys = _spectrumRuntime;
+            return sys != null && sys.CurrentMode == mode;
         }
 
         private void RefreshSonarSnapshot(SpatialSonarSnapshot snapshot)
@@ -821,9 +845,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  NESTED TYPES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool IsEmpSensorBlindActive()
         {
@@ -889,22 +913,20 @@ namespace Hecton8.UI
 
             public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e)
             {
-                SpectrumSystem sys = GlobalRegistry.Spectrum;
-                bool isActive = sys != null && sys.CurrentMode == _mode;
+                bool isActive = _tab != null && _tab.IsModeActive(_mode);
                 if (_bg != null && !isActive) _bg.color = _hover;
             }
 
             public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e)
             {
-                SpectrumSystem sys = GlobalRegistry.Spectrum;
-                bool isActive = sys != null && sys.CurrentMode == _mode;
+                bool isActive = _tab != null && _tab.IsModeActive(_mode);
                 if (_bg != null && !isActive) _bg.color = _normal;
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  UI HELPERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private RectTransform CreateRect(string name, RectTransform parent)
         {

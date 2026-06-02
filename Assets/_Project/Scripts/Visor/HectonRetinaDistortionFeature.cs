@@ -550,7 +550,7 @@ namespace Hecton8.Visor
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_lateFrameRegistered)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

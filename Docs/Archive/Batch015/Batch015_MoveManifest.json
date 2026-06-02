@@ -1,0 +1,1489 @@
+﻿{
+    "batch":  "Batch015",
+    "cutoff":  "2026-05-30T20:15:36.4703796+04:00",
+    "upperBound":  "2026-06-02T12:07:47.8296588+04:00",
+    "moved":  211,
+    "errors":  0,
+    "files":  [
+                  {
+                      "source":  "Docs\\AgentLogs\\.ledger_diff_check_stderr.tmp",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\.ledger_diff_check_stderr.tmp",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:00:33.0893176+04:00",
+                      "bytes":  0
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\.ledger_diff_check_stdout.tmp",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\.ledger_diff_check_stdout.tmp",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:00:33.0736449+04:00",
+                      "bytes":  0
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Corridor.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Corridor.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8338936+04:00",
+                      "bytes":  56386
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_CurrentTurbine.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_CurrentTurbine.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8396132+04:00",
+                      "bytes":  4658
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Foundation.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Foundation.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8623860+04:00",
+                      "bytes":  60336
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Pylon.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Pylon.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8690492+04:00",
+                      "bytes":  4646
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_ServicePump.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_ServicePump.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8746163+04:00",
+                      "bytes":  4639
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_SargassumCollapseChunk.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_SargassumCollapseChunk.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8813742+04:00",
+                      "bytes":  6024
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\PFB_Submarine_Core.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\PFB_Submarine_Core.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.8913798+04:00",
+                      "bytes":  17648
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Player.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502\\Assets\\_Project\\Prefabs\\Player.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.9637376+04:00",
+                      "bytes":  173897
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_SargassumCollapseChunk.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_SargassumCollapseChunk.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.9699856+04:00",
+                      "bytes":  6024
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Ocean_Crest.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Ocean_Crest.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.9810320+04:00",
+                      "bytes":  22362
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\PFB_Submarine_Core.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\PFB_Submarine_Core.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:27.9895312+04:00",
+                      "bytes":  17648
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Player.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Player.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:28.0379505+04:00",
+                      "bytes":  173897
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_HarpoonLauncher_Held.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_HarpoonLauncher_Held.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:28.0442612+04:00",
+                      "bytes":  5931
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_LaserCutter_Held.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_LaserCutter_Held.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:28.0498330+04:00",
+                      "bytes":  6535
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_Propulsion_Held.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_Propulsion_Held.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:28.0554898+04:00",
+                      "bytes":  7563
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_Scanner_Held.prefab",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_Extended\\Assets\\_Project\\Prefabs\\Tools\\Held\\Tool_Scanner_Held.prefab",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:04:28.0607588+04:00",
+                      "bytes":  6650
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_Damage.asset",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_Damage.asset",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:05:08.8959868+04:00",
+                      "bytes":  963
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_Explosion.asset",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_Explosion.asset",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:05:08.9017525+04:00",
+                      "bytes":  965
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactHeavy.asset",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactHeavy.asset",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:05:08.9058016+04:00",
+                      "bytes":  967
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactLight.asset",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactLight.asset",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:05:08.9107461+04:00",
+                      "bytes":  968
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactMedium.asset",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\_Recovery_1502_ShakeProfile\\Assets\\_Project\\Data\\VFX\\ShakeProfiles\\ShakeProfile_ImpactMedium.asset",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:05:08.9146563+04:00",
+                      "bytes":  968
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\AutomatedMedic_1428.log",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\AutomatedMedic_1428.log",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T21:40:50.1780412+04:00",
+                      "bytes":  37749
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Backup_1502_Manifest.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Backup_1502_Manifest.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:02:41.2775559+04:00",
+                      "bytes":  6132
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\BIOME_TRANSITION_REPORT_1628.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\BIOME_TRANSITION_REPORT_1628.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:09:15.7376544+04:00",
+                      "bytes":  4935
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_1404.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_1404.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T03:03:36.7921972+04:00",
+                      "bytes":  19220
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_1606_GeologyForge.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_1606_GeologyForge.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T03:34:21.7813962+04:00",
+                      "bytes":  19232
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_1606_GeologyForge.bin.bak",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_1606_GeologyForge.bin.bak",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T03:30:59.4939990+04:00",
+                      "bytes":  19232
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_BINARY_LAYOUT_SENTINEL.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_BINARY_LAYOUT_SENTINEL.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T11:56:15.9369592+04:00",
+                      "bytes":  70
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_CORE_DATA_VAULT_WARDEN.txt",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_CORE_DATA_VAULT_WARDEN.txt",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T10:46:05.0498396+04:00",
+                      "bytes":  4628
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_GLOBAL_TELEMETRY_BUS.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_GLOBAL_TELEMETRY_BUS.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T09:21:17.6961493+04:00",
+                      "bytes":  93184
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_ORIGIN_SHIFT.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_ORIGIN_SHIFT.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:59:39.6466237+04:00",
+                      "bytes":  38464
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_ORIGIN_SHIFT.h8dump",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_ORIGIN_SHIFT.h8dump",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:59:39.6481474+04:00",
+                      "bytes":  38464
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_SENTINEL_DISPOSAL_GUARD.bin",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_SENTINEL_DISPOSAL_GUARD.bin",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T10:46:01.7056644+04:00",
+                      "bytes":  25759
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Dump_SENTINEL_DISPOSAL_GUARD.h8dump",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Dump_SENTINEL_DISPOSAL_GUARD.h8dump",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T10:46:01.7084964+04:00",
+                      "bytes":  25759
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1403.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1403.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T22:24:22.8600721+04:00",
+                      "bytes":  195384
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1413.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1413.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T21:00:26.8156264+04:00",
+                      "bytes":  264177
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1428.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1428.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T11:48:31.3239415+04:00",
+                      "bytes":  12839
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_14VOX.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_14VOX.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T23:00:58.2743270+04:00",
+                      "bytes":  70440
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1502.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1502.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:56:33.2109045+04:00",
+                      "bytes":  20699
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1504.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1504.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T02:45:45.6143571+04:00",
+                      "bytes":  35615
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1505.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1505.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T12:28:47.1137261+04:00",
+                      "bytes":  66782
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1524.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1524.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:37:18.1632082+04:00",
+                      "bytes":  10465
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_15MM.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_15MM.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T17:04:43.5040169+04:00",
+                      "bytes":  37907
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1600.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1600.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:34:00.5453035+04:00",
+                      "bytes":  75933
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1601.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1601.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T04:20:37.6795516+04:00",
+                      "bytes":  19607
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1602.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1602.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:47:54.0443097+04:00",
+                      "bytes":  110920
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1603.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1603.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:05:45.6028714+04:00",
+                      "bytes":  67181
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1604.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1604.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:33:57.1132350+04:00",
+                      "bytes":  30666
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1605.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1605.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:07:24.4686792+04:00",
+                      "bytes":  54108
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1606.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1606.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T14:12:03.8883787+04:00",
+                      "bytes":  33955
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1607.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1607.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:20:01.3859671+04:00",
+                      "bytes":  19405
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1608.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1608.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:27:13.7522739+04:00",
+                      "bytes":  59974
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1609.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1609.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:40:15.7576215+04:00",
+                      "bytes":  44464
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1610.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1610.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:06:27.1095214+04:00",
+                      "bytes":  27165
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1611.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1611.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:55:58.2005584+04:00",
+                      "bytes":  72404
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1612.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1612.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:42:15.4257615+04:00",
+                      "bytes":  50370
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1614.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1614.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:42:32.8567355+04:00",
+                      "bytes":  35611
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1615.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1615.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:00:00.9277189+04:00",
+                      "bytes":  65794
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1616.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1616.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:07:15.4908776+04:00",
+                      "bytes":  34537
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1617.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1617.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:19:20.4884555+04:00",
+                      "bytes":  16346
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1618.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1618.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:24:59.1205293+04:00",
+                      "bytes":  16277
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1619.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1619.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:29:40.7581091+04:00",
+                      "bytes":  7686
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1620.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1620.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:38:48.6935090+04:00",
+                      "bytes":  16390
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1621.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1621.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:23:12.8227910+04:00",
+                      "bytes":  1344
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1622.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1622.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:35:08.8746522+04:00",
+                      "bytes":  2883
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1623.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1623.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:13:58.9357956+04:00",
+                      "bytes":  11433
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1624.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1624.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T14:33:53.5269817+04:00",
+                      "bytes":  42542
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1625.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1625.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:59:53.3746922+04:00",
+                      "bytes":  58373
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1626.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1626.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:03:07.3000740+04:00",
+                      "bytes":  28721
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1627.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1627.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:20:41.0827998+04:00",
+                      "bytes":  13578
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1628.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1628.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:32:08.9586670+04:00",
+                      "bytes":  10858
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_1629.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_1629.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:01:55.4301140+04:00",
+                      "bytes":  9914
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_ARCHIVE015.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_ARCHIVE015.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:05:49.0633249+04:00",
+                      "bytes":  71
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_AUDIT_FRAME_LOGIC.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_AUDIT_FRAME_LOGIC.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T20:39:23.7031992+04:00",
+                      "bytes":  92466
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_DOCS_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_DOCS_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:43:10.5861603+04:00",
+                      "bytes":  26911
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_MONETIZATION_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_MONETIZATION_RESEARCH.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T01:45:01.7771347+04:00",
+                      "bytes":  33549
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_NARRATIVE_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_NARRATIVE_RESEARCH.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:01:58.1644012+04:00",
+                      "bytes":  123571
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_PhaseSafetyAuditor.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_PhaseSafetyAuditor.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:44:32.3239300+04:00",
+                      "bytes":  9606
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_PY_ASYNC_AUDITOR.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_PY_ASYNC_AUDITOR.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T12:10:32.0785677+04:00",
+                      "bytes":  2491
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_TOKEN_USAGE_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_TOKEN_USAGE_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:32:02.3061508+04:00",
+                      "bytes":  52216
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_UNASSIGNED.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_UNASSIGNED.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:30:26.8660487+04:00",
+                      "bytes":  3071
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_UNASSIGNED_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_UNASSIGNED_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T11:06:37.0672939+04:00",
+                      "bytes":  30855
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_UNKNOWN.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_UNKNOWN.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T20:22:42.9721600+04:00",
+                      "bytes":  502618
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\LOG_WORKSTATION_CLEANUP.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\LOG_WORKSTATION_CLEANUP.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:09:30.0912142+04:00",
+                      "bytes":  6474
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1403.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1403.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T22:23:56.4378835+04:00",
+                      "bytes":  208308
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1413.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1413.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T21:00:16.2716513+04:00",
+                      "bytes":  387623
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1428.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1428.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T11:53:21.2830004+04:00",
+                      "bytes":  54076
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_14VOX.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_14VOX.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T23:00:36.7216940+04:00",
+                      "bytes":  82938
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1502.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1502.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:57:18.4393890+04:00",
+                      "bytes":  25384
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1504.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1504.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T02:45:28.1023544+04:00",
+                      "bytes":  37276
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1505.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1505.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T12:28:30.9599164+04:00",
+                      "bytes":  75019
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1524.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1524.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:37:05.1146486+04:00",
+                      "bytes":  12599
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_15MM.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_15MM.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T17:04:29.0731239+04:00",
+                      "bytes":  37982
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1600.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1600.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:34:00.5411887+04:00",
+                      "bytes":  59074
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1601.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1601.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T04:20:28.0894572+04:00",
+                      "bytes":  32366
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1602.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1602.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:47:54.0410538+04:00",
+                      "bytes":  102475
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1603.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1603.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:01:38.4055581+04:00",
+                      "bytes":  45274
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1604.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1604.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:33:40.6177334+04:00",
+                      "bytes":  27693
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1605.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1605.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:06:59.8866744+04:00",
+                      "bytes":  90455
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1606.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1606.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T14:11:27.7813226+04:00",
+                      "bytes":  30574
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1607.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1607.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:17:12.8619541+04:00",
+                      "bytes":  20672
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1608.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1608.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:25:55.0078941+04:00",
+                      "bytes":  69909
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1609.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1609.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:39:58.9784600+04:00",
+                      "bytes":  28352
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1610.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1610.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:07:45.1955493+04:00",
+                      "bytes":  32400
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1611.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1611.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:55:45.0295052+04:00",
+                      "bytes":  81509
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1612.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1612.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:38:40.0701124+04:00",
+                      "bytes":  43680
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1614.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1614.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T21:43:14.7575422+04:00",
+                      "bytes":  32558
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1615.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1615.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:59:12.8785489+04:00",
+                      "bytes":  52839
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1616.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1616.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:07:15.4289722+04:00",
+                      "bytes":  33226
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1617.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1617.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:19:01.3585284+04:00",
+                      "bytes":  14924
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1618.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1618.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:24:40.6521280+04:00",
+                      "bytes":  18122
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1619.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1619.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:29:40.5144441+04:00",
+                      "bytes":  15147
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1620.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1620.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:38:34.9594842+04:00",
+                      "bytes":  23758
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1621.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1621.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:23:12.8216561+04:00",
+                      "bytes":  2327
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1622.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1622.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:34:21.7052157+04:00",
+                      "bytes":  3311
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1623.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1623.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:13:58.9357956+04:00",
+                      "bytes":  10101
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1624.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1624.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T14:33:18.7330539+04:00",
+                      "bytes":  37392
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1625.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1625.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:59:16.4765841+04:00",
+                      "bytes":  76897
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1626.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1626.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:02:06.2994239+04:00",
+                      "bytes":  26545
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1627.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1627.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:20:30.9379919+04:00",
+                      "bytes":  16286
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1628.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1628.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:30:37.8846639+04:00",
+                      "bytes":  10913
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_1629.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_1629.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:01:55.4263857+04:00",
+                      "bytes":  11275
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_ARCHIVE015.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_ARCHIVE015.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T12:05:49.0576701+04:00",
+                      "bytes":  866
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_AUDIT_FRAME_LOGIC.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_AUDIT_FRAME_LOGIC.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T20:39:15.6964466+04:00",
+                      "bytes":  118666
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_DOCS_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_DOCS_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T02:42:13.5276193+04:00",
+                      "bytes":  16993
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_MONETIZATION_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_MONETIZATION_RESEARCH.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T01:44:49.3873507+04:00",
+                      "bytes":  33713
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_NARRATIVE_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_NARRATIVE_RESEARCH.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:01:33.0560549+04:00",
+                      "bytes":  125003
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_PhaseSafetyAuditor.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_PhaseSafetyAuditor.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T22:44:32.3227376+04:00",
+                      "bytes":  3860
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_PY_ASYNC_AUDITOR.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_PY_ASYNC_AUDITOR.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T12:10:32.0780281+04:00",
+                      "bytes":  3287
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_TOKEN_USAGE_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_TOKEN_USAGE_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T16:31:34.4592848+04:00",
+                      "bytes":  30302
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_UNASSIGNED.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_UNASSIGNED.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T13:30:26.8636959+04:00",
+                      "bytes":  3659
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_UNASSIGNED_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_UNASSIGNED_AUDIT.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T11:06:21.9320029+04:00",
+                      "bytes":  49967
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_UNKNOWN.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_UNKNOWN.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-30T20:22:42.7658069+04:00",
+                      "bytes":  850649
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\Rationale_WORKSTATION_CLEANUP.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\Rationale_WORKSTATION_CLEANUP.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:09:30.0891937+04:00",
+                      "bytes":  5313
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\ShaderCorpus_1615.md",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\ShaderCorpus_1615.md",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-01T23:59:33.4903541+04:00",
+                      "bytes":  19758
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\ShakeProfileFalloff_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\ShakeProfileFalloff_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:00:54.7348793+04:00",
+                      "bytes":  18804
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\WATCHER_ONCE_stderr.txt",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\WATCHER_ONCE_stderr.txt",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:07:40.5457127+04:00",
+                      "bytes":  0
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\WATCHER_ONCE_stdout.txt",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\WATCHER_ONCE_stdout.txt",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:07:40.5029725+04:00",
+                      "bytes":  0
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\WATCHER_WORKSTATION_CLEANUP.log",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\WATCHER_WORKSTATION_CLEANUP.log",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-06-02T00:08:35.1352947+04:00",
+                      "bytes":  925
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlBackupDelta_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlBackupDelta_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:55:40.1181313+04:00",
+                      "bytes":  66030
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlCleanup_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlCleanup_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:44:37.1950518+04:00",
+                      "bytes":  61985
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlCleanup_1502_DryRun.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlCleanup_1502_DryRun.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:43:35.4670481+04:00",
+                      "bytes":  61033
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlDesync_1502_BiomeMatrixCheck.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlDesync_1502_BiomeMatrixCheck.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:26:32.8683484+04:00",
+                      "bytes":  1834
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlDesync_1502_Ledger.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlDesync_1502_Ledger.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:45:58.5751410+04:00",
+                      "bytes":  161856
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlDesync_1502_ProjectLedger.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlDesync_1502_ProjectLedger.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:04:43.9311536+04:00",
+                      "bytes":  180659
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlDesync_1502_VfxCheck.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlDesync_1502_VfxCheck.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:02:38.1154700+04:00",
+                      "bytes":  1811
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlEvidenceValidation_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlEvidenceValidation_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:56:24.9166349+04:00",
+                      "bytes":  988
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlExtraction_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlExtraction_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:09:24.9275076+04:00",
+                      "bytes":  98170
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlFuzz_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlFuzz_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:47:04.9059334+04:00",
+                      "bytes":  2309
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlInvariant_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlInvariant_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T00:47:22.0864678+04:00",
+                      "bytes":  9081
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlReferenceIntegrity_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlReferenceIntegrity_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:56:12.3476501+04:00",
+                      "bytes":  11668
+                  },
+                  {
+                      "source":  "Docs\\AgentLogs\\YamlThirdPartySerializedDebt_1502.json",
+                      "archived":  "Docs\\Archive\\Batch015\\AgentLogs\\YamlThirdPartySerializedDebt_1502.json",
+                      "kind":  "AgentLogs",
+                      "lastWrite":  "2026-05-31T01:13:38.5479031+04:00",
+                      "bytes":  163951
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\_1602_extracted_prompt.tmp.xml",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\_1602_extracted_prompt.tmp.xml",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T04:29:12.3448487+04:00",
+                      "bytes":  19672
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\_1603_extracted_prompt.tmp.xml",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\_1603_extracted_prompt.tmp.xml",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T13:50:58.4680137+04:00",
+                      "bytes":  20251
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\_1609_extracted_prompt.tmp.xml",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\_1609_extracted_prompt.tmp.xml",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T14:36:03.6167840+04:00",
+                      "bytes":  19479
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\_1620_extracted_prompt.tmp.xml",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\_1620_extracted_prompt.tmp.xml",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:18:51.1867599+04:00",
+                      "bytes":  17439
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\_1627_extracted_prompt.tmp.xml",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\_1627_extracted_prompt.tmp.xml",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:05:40.2726911+04:00",
+                      "bytes":  18693
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\CURRENT_BATCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\CURRENT_BATCH.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T03:21:58.1796753+04:00",
+                      "bytes":  486052
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\shadow_culling_profiles.csv",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\shadow_culling_profiles.csv",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T01:56:49.3327059+04:00",
+                      "bytes":  507
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1403.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1403.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-30T22:23:40.0298624+04:00",
+                      "bytes":  126293
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1413.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1413.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-30T21:00:16.2655735+04:00",
+                      "bytes":  310516
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1428.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1428.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T11:53:13.1723819+04:00",
+                      "bytes":  10182
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_14VOX.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_14VOX.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-30T23:00:13.8094164+04:00",
+                      "bytes":  40559
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1502.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1502.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T01:56:59.3398953+04:00",
+                      "bytes":  21291
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1504.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1504.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T02:45:14.7007389+04:00",
+                      "bytes":  35068
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1505.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1505.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T12:28:16.4493611+04:00",
+                      "bytes":  62200
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1524.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1524.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T00:36:53.4737141+04:00",
+                      "bytes":  15800
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_15MM.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_15MM.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T17:04:16.6779041+04:00",
+                      "bytes":  23721
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1600.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1600.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:34:00.5375834+04:00",
+                      "bytes":  35725
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1601.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1601.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T04:20:17.7630580+04:00",
+                      "bytes":  17591
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1602.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1602.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T21:47:54.0393949+04:00",
+                      "bytes":  117517
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1603.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1603.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T22:05:34.5525195+04:00",
+                      "bytes":  35200
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1604.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1604.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T13:33:28.8225970+04:00",
+                      "bytes":  16933
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1605.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1605.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T12:07:16.7270460+04:00",
+                      "bytes":  99533
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1606.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1606.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T14:12:03.8868140+04:00",
+                      "bytes":  34813
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1607.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1607.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T22:19:53.9643523+04:00",
+                      "bytes":  13592
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1608.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1608.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T21:27:07.1917312+04:00",
+                      "bytes":  37745
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1609.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1609.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:39:54.3463981+04:00",
+                      "bytes":  22185
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1610.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1610.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T12:07:33.8663032+04:00",
+                      "bytes":  18227
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1611.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1611.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:55:21.3292652+04:00",
+                      "bytes":  67435
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1612.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1612.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T21:42:15.4220065+04:00",
+                      "bytes":  49951
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1614.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1614.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T21:41:58.7436941+04:00",
+                      "bytes":  26653
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1615.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1615.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:58:58.9658348+04:00",
+                      "bytes":  38655
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1616.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1616.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T12:07:15.3644103+04:00",
+                      "bytes":  17977
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1617.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1617.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:18:39.8088289+04:00",
+                      "bytes":  11418
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1618.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1618.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:24:25.4882045+04:00",
+                      "bytes":  22139
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1619.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1619.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:30:47.7712721+04:00",
+                      "bytes":  13895
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1620.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1620.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:38:10.4654081+04:00",
+                      "bytes":  12813
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1621.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1621.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T22:23:12.8184980+04:00",
+                      "bytes":  2508
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1622.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1622.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T22:35:14.0069151+04:00",
+                      "bytes":  4188
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1623.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1623.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:13:58.9337785+04:00",
+                      "bytes":  9694
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1624.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1624.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T14:33:04.1066041+04:00",
+                      "bytes":  29495
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1625.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1625.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T23:59:01.7229716+04:00",
+                      "bytes":  45524
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1626.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1626.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T02:02:44.2094265+04:00",
+                      "bytes":  32070
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1627.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1627.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:20:15.1067974+04:00",
+                      "bytes":  13769
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1628.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1628.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:32:01.8077194+04:00",
+                      "bytes":  14380
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_1629.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_1629.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T02:01:55.4213270+04:00",
+                      "bytes":  11976
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_ARCHIVE015.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_ARCHIVE015.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T12:05:49.0540048+04:00",
+                      "bytes":  1081
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_AUDIT_FRAME_LOGIC.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_AUDIT_FRAME_LOGIC.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-30T20:39:05.2715707+04:00",
+                      "bytes":  80511
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_DOCS_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_DOCS_AUDIT.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T02:43:10.5851101+04:00",
+                      "bytes":  32275
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_MONETIZATION_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_MONETIZATION_RESEARCH.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T01:44:37.4777184+04:00",
+                      "bytes":  31130
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_NARRATIVE_RESEARCH.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_NARRATIVE_RESEARCH.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T13:01:20.1571984+04:00",
+                      "bytes":  125085
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_PhaseSafetyAuditor.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_PhaseSafetyAuditor.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T22:44:32.3216961+04:00",
+                      "bytes":  3606
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_PY_ASYNC_AUDITOR.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_PY_ASYNC_AUDITOR.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T12:10:32.0769811+04:00",
+                      "bytes":  1516
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_TOKEN_USAGE_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_TOKEN_USAGE_AUDIT.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T16:31:18.6999957+04:00",
+                      "bytes":  36407
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_UNASSIGNED.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_UNASSIGNED.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-01T13:30:26.8596164+04:00",
+                      "bytes":  3658
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_UNASSIGNED_AUDIT.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_UNASSIGNED_AUDIT.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-31T11:06:07.4760936+04:00",
+                      "bytes":  24161
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_UNKNOWN.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_UNKNOWN.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-05-30T20:22:42.5986054+04:00",
+                      "bytes":  723012
+                  },
+                  {
+                      "source":  "Docs\\Tasks\\Status_WORKSTATION_CLEANUP.md",
+                      "archived":  "Docs\\Archive\\Batch015\\Tasks\\Status_WORKSTATION_CLEANUP.md",
+                      "kind":  "Tasks",
+                      "lastWrite":  "2026-06-02T00:09:30.0861457+04:00",
+                      "bytes":  3703
+                  }
+              ],
+    "moveErrors":  [
+
+                   ]
+}

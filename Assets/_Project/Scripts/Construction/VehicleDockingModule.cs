@@ -209,6 +209,7 @@ namespace Hecton8.Construction
         private int _lastDockTelemetryCaptureFrame = -DockTelemetryCaptureCooldownFrames;
         private bool _hotSwapRegistered;
         private bool _registeredLateFrame;
+        private bool _dispatcherAvailable;
         private Transform _pendingDockedTransform;
         private Vector3 _pendingDockedTransformPosition;
         private Quaternion _pendingDockedTransformRotation = Quaternion.identity;
@@ -294,6 +295,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
             TryRegisterHotSwapListener();
@@ -472,6 +474,7 @@ namespace Hecton8.Construction
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _dispatcherAvailable = currentService != null;
                 _registeredUpdate = false;
                 _registeredFixed = false;
                 _registeredLateFrame = false;
@@ -497,7 +500,7 @@ namespace Hecton8.Construction
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             TryRegisterUpdateIfNeeded();
@@ -510,7 +513,7 @@ namespace Hecton8.Construction
             if (_registeredUpdate || !Application.isPlaying || !HasActiveUpdateWork())
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -521,7 +524,7 @@ namespace Hecton8.Construction
             if (_registeredFixed || !Application.isPlaying || !_dockingInProgress)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
@@ -532,7 +535,7 @@ namespace Hecton8.Construction
             if (_registeredLateFrame || !Application.isPlaying || !_pendingDockedTransformPoseDirty)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);

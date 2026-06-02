@@ -946,9 +946,14 @@ namespace Hecton8.Visor
             CachePlatformCapabilitiesCold(settings);
             TryRegisterHotSwapListener();
 
+            bool runtimeAllocationAllowed = Application.isPlaying;
+
             // COLD ALLOC: VisorUberPostPass[1] - reused ScriptableRenderPass instance - owner: HectonVisorUberPostFeature
             _pass ??= new VisorUberPostPass();
-            _pass.PrepareStaticPostTextureHandlesCold(settings);
+            if (runtimeAllocationAllowed)
+                _pass.PrepareStaticPostTextureHandlesCold(settings);
+            else
+                _pass.ReleaseStaticPostTextureHandles();
             EnsureNoirPassCold();
             Shader shader = settings != null ? settings.shader : null;
             Shader reconstructionShader = settings != null && !settings.deepSeaNoirUnifiedPass ? settings.reconstructionShader : null;
@@ -965,6 +970,12 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _reconstructionMaterial, reconstructionShader);
             if (settings != null && settings.deepSeaNoirUnifiedPass)
             {
+                if (!runtimeAllocationAllowed)
+                {
+                    ReleaseNoirRuntimeResourcesCold();
+                    return;
+                }
+
                 EnsureNoirConstantsBuffersCold();
                 EnsureNoirVaultHandles();
                 _noirColorCsvLoadAttempted = false;
@@ -974,6 +985,12 @@ namespace Hecton8.Visor
 #endif
                 TryRegisterSlowTickable();
                 TryRegisterLateFrameTickable();
+                return;
+            }
+
+            if (!runtimeAllocationAllowed)
+            {
+                ReleaseReconstructionRuntimeResourcesCold();
                 return;
             }
 
@@ -992,6 +1009,9 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (!Application.isPlaying)
+                return;
+
             if (settings == null || _pass == null || (_material == null && _reconstructionMaterial == null))
             {
                 ClearRawColorHistoryRequest();
@@ -1013,6 +1033,12 @@ namespace Hecton8.Visor
             {
                 ClearRawColorHistoryRequest();
                 ClearPendingReconstructionInput();
+                if (!EnsureNoirConstantsBuffersCold() ||
+                    !EnsureNoirVaultHandles())
+                {
+                    return;
+                }
+
                 if (_material == null ||
                     !NoirConstantsBuffersReady() ||
                     !NoirVaultHandlesReady() ||
@@ -1027,6 +1053,7 @@ namespace Hecton8.Visor
                 return;
             }
 
+            _pass.PrepareStaticPostTextureHandlesCold(settings);
             Camera renderCamera = renderingData.cameraData.camera;
             float memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01();
             if (!TryBuildRuntimeState(renderCamera, settings, memoryQualityPressureFloor01, out RuntimeState runtimeState))
@@ -1036,8 +1063,8 @@ namespace Hecton8.Visor
                 return;
             }
 
-            bool reconstructionStorageReady = IsReconstructionConstantsBufferReady();
-            if (!ReconstructionVaultHandlesReady())
+            bool reconstructionStorageReady = EnsureReconstructionConstantsBufferCold();
+            if (!EnsureReconstructionVaultHandles())
             {
                 ClearRawColorHistoryRequest();
                 ClearPendingReconstructionInput();
@@ -1071,6 +1098,17 @@ namespace Hecton8.Visor
                 reconstructionConstantsReady && requestRawColorHistory,
                 _noirWrappedVisualTimeSeconds);
             renderer.EnqueuePass(_pass);
+        }
+
+        private void ReleaseReconstructionRuntimeResourcesCold()
+        {
+            ReleaseReconstructionVaultHandles(_dataVault);
+            _reconstructionConstantsBufferA?.Release();
+            _reconstructionConstantsBufferA = null;
+            _reconstructionConstantsBufferB?.Release();
+            _reconstructionConstantsBufferB = null;
+            _activeReconstructionConstantsBuffer = null;
+            _hasReconstructionConstants = false;
         }
 
         private void StageReconstructionInput(

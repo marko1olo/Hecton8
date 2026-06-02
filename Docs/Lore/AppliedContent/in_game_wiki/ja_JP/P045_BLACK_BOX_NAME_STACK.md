@@ -1,0 +1,30 @@
+---
+packet_id: P045_BLACK_BOX_NAME_STACK
+article_id: hecton8.black_box_name_stack
+locale: ja_JP
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# ブラックボックス名簿スタック
+
+名簿スタックは終盤の真実を物理ペイロードにする。証拠、放送、エンディング文書は持ち上げた内容で変わる。
+
+## Scanner
+
+スタックは名前、シフトハッシュ、最終圧力状態を保持する。これは設定ではない。証拠だ。
+
+## Terminal
+
+記録スタック可読。乗員IDは避難保留、Atlas修理状態、Deep Reach黒塗り要求と連結。
+
+## Audio
+
+海は会社より名前をよく保存した。
+
+## Field Note
+
+名前はペイロードだ。持ち帰れば結末が変わる。
+
+<!-- In-Game Wiki; generated from P045_BLACK_BOX_NAME_STACK/ja_JP. -->

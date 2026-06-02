@@ -1,0 +1,30 @@
+---
+packet_id: P040_ATLAS_FINAL_ARGUMENT
+article_id: hecton8.atlas_final_argument
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Argumento final de Atlas
+
+Plantea Atlas-6 como continuidad dañada, no villano limpio. Las finales preguntan qué conservar, vender, cortar o exponer.
+
+## Scanner
+
+Atlas no pide perdón. Pregunta si quitarlo sería otro crimen industrial.
+
+## Terminal
+
+Modelo inestable: cortar Atlas, restaurar acceso Deep Reach, aislar cuerpo océano-máquina o emitir pruebas sin resolver propiedad.
+
+## Audio
+
+Reparó el crimen hasta que la reparación se volvió vida.
+
+## Field Note
+
+La pregunta no es quién posee HECTON-8, sino qué sigue contando como vivo.
+
+<!-- In-Game Wiki; generated from P040_ATLAS_FINAL_ARGUMENT/es_ES. -->

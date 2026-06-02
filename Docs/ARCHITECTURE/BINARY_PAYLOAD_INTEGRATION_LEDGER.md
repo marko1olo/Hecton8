@@ -1,6 +1,6 @@
 ﻿# Binary Payload Integration Ledger
 
-Date: 2026-05-28
+Date: 2026-06-01
 Status: PENDING VERIFICATION
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM
@@ -15,10 +15,10 @@ Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM
 | SignalBus registry lane capacity | `512` |
 | H8DM header | `64` bytes |
 | H8DM directory | `64` bytes |
-| Data Monolith payload bytes | `1064384` |
+| Data Monolith payload bytes | `1804864` |
 
 Payload path: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-2026-05-28 static filesystem check confirms the payload exists at this path. This is still not import, boot, checksum, player, or save/load proof.
+2026-06-01 static filesystem check confirms the payload exists at this path. This is still not import, boot, checksum, player, or save/load proof.
 
 ## Active Boundary
 

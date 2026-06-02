@@ -6,6 +6,7 @@ Static documentation only. Current source, active architecture contracts, fresh 
 
 Status: actionable pre-asset roadmap
 Public stance: single-player-first scope / proof-first public copy
+Naming stance: owner selected `Submerge` as public title candidate on 2026-05-31; exact-title Steam conflict keeps `HOLD_NAMING_CONFLICT_REVIEW` active.
 Budget stance: no paid ads before proof assets
 Paid microtest stance: PMT rows are hypotheses only; paid ad spend requires `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`.
 Paid creator stance: rate-card replies and creator fit are hypotheses only; paid creator spend requires `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED` in the live CRM.
@@ -42,6 +43,42 @@ The useful work now:
 8. build regional outreach;
 9. build key/press hygiene;
 10. build agent workflows.
+
+## 2026-05-31 Pre-Screenshot Commercial Prep Order
+
+This is work that can be done before screenshots without faking readiness. It prepares ownership, accounts, payment feasibility, and no-link surfaces. It does not open public routes.
+
+| Order | Work | Output | Current gate |
+|---:|---|---|---|
+| 1 | Pick the legal/payout experiment path. | Non-public decision note: RF individual, KZ individual, KZ business, or other lawful structure to verify with a human legal/accounting source. | HOLD_HUMAN_LEGAL_BANK_VERIFICATION |
+| 2 | Create owner-controlled project email custody. | Filled non-secret inbox custody record in `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`; secrets stay in the password manager. | `official_inbox_custody_gate` |
+| 3 | Create password manager structure. | Vault items for domain, inbox, platform accounts, recovery, 2FA, backup codes, receipts, and tax/platform records. | HOLD_OWNER_SECRET_CUSTODY |
+| 4 | Prepare Steamworks feasibility packet. | App-fee payment route, expected payee identity, bank/payout candidate, tax-form owner, and blocker list. No page publication. | `steam_page_publish_permission_gate` remains held |
+| 5 | Prepare no-link holding page copy. | Private draft using only project name, proof-first one-liner, and official contact after inbox custody. | `public_cta_permission_gate` remains held |
+| 6 | Prepare owned-audience form draft. | Demo-alert/playtest/devlog form copy with consent and unsubscribe/delete route; no public form. | `owned_audience_permission_gate` |
+| 7 | Prepare social handle reservation packet. | Candidate handles, profile field kit, abort rules, and post-registration custody row; no accounts until owner custody passes. | `account_registration_permission_gate` |
+| 8 | Prepare RU-local support feasibility card. | Boosty/DonationAlerts/VK Donut terms/tax/support-only check; no keys, no build access, no crypto checkout. | HOLD_SUPPORT_ONLY_FEASIBILITY |
+| 9 | Prepare itch.io feasibility card. | Creator payout/provider check and demo/prototype-only use case; no paid build. | HOLD_PAYOUT_VERIFICATION |
+
+Owner 2026-05-31 browser permission update: personal Gmail accounts supplied in chat can be used only as owner-controlled candidate login/recovery inboxes. They do not become publishable press/support contact by default. Prefer a domain inbox for public identity. Agent work may open onboarding pages and fill non-secret fields, but must stop at passwords, 2FA, backup codes, captcha, KYC identity, or payment/bank entry unless the owner is actively completing those steps in the browser.
+
+Owner 2026-05-31 naming update: use `Submerge` as the public title candidate in new public-facing drafts. Keep `HECTON-8` as internal codename until a controlled rename pass exists. Do not register naked `Submerge` accounts, publish a Steam page, or launch a public site until `HOLD_NAMING_CONFLICT_REVIEW` clears the existing Steam app conflict.
+
+Owner 2026-05-31 domain update: do not buy domains now. Domain checks are only cheap reconnaissance for naming risk and future routing; `HOLD_NO_DOMAIN_PURCHASE` remains active.
+
+Reject as fake progress now:
+
+- creating public profiles from personal sessions;
+- publishing a site that looks like launch;
+- opening Discord;
+- starting newsletter signup;
+- selling keys;
+- crypto checkout;
+- paid ads;
+- paid creator routes;
+- "Steam page soon" language.
+
+If the owner wants agent-assisted browser work later, the agent can fill fields only after project email, vault, 2FA, backup-code custody, approved handle, approved profile text, and exact post-registration record fields are ready. If a platform forces a first post or public profile before assets exist, abort.
 
 ## Direction 01 - Positioning Lock
 

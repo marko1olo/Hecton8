@@ -22,7 +22,9 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Data;
 using Hecton8.Interaction;
+using Hecton8.World;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -49,6 +51,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Unique identifier for this message.")]
         public string messageId;
 
+        [Tooltip("Stable baked message hash. Zero resolves from messageId during cold cache rebuild.")]
+        public uint messageHash;
+
         [Tooltip("Display name for the message.")]
         public string displayName;
 
@@ -74,7 +79,14 @@ namespace Hecton8.Gameplay
     {
         private static int s_x001MessageTerminalSignalPushDropCount;
         private const uint WfcOutpostDatapadSourceHash = 0x57464354u; // WFCT
+        private const uint AppliedLoreTerminalSourceHash = 0x5445524Du; // TERM
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
+        private const byte PendingTerminalEventMessageStarted = 1 << 0;
+        private const byte PendingTerminalEventMessageCompleted = 1 << 1;
+        private const byte PendingTerminalEventNewMessage = 1 << 2;
+        private const byte PendingTerminalEventStateChanged = 1 << 3;
+        private const float DefaultPlaybackDurationSeconds = 5f;
+        private const float MaxPlaybackDurationSeconds = 86400f;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -82,6 +94,16 @@ namespace Hecton8.Gameplay
         [Header("── Messages ────────────────────────────────────")]
         [Tooltip("All messages available on this terminal.")]
         [SerializeField] private MessageEntry[] messages;
+        [Tooltip("Optional baked AppliedContent packet hash for terminal text/audio subtitle lookup.")]
+        [SerializeField] private uint appliedLorePacketHash;
+        [Tooltip("Optional baked AppliedContent locale hash. Zero falls back to en_US.")]
+        [SerializeField] private uint appliedLoreLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
+        [Tooltip("TerminalOS preview row. -1 disables the diegetic preview bridge.")]
+        [SerializeField, Min(-1)] private int terminalOsPreviewIndex = -1;
+        [Tooltip("Optional TerminalOS hash fallback. Zero uses terminalOsPreviewIndex only.")]
+        [SerializeField] private uint terminalOsPreviewHash;
+        [Tooltip("AppliedContent surface rendered into the physical terminal preview line.")]
+        [SerializeField] private H8AppliedLoreSurface terminalOsPreviewSurface = H8AppliedLoreSurface.Terminal;
 
         [Header("── Status Light ───────────────────────────────")]
         [Tooltip("Renderer with the status light material.")]
@@ -113,11 +135,20 @@ namespace Hecton8.Gameplay
         [Tooltip("Fired when a message starts playing. Parameter: messageId.")]
         [SerializeField] private UnityEvent<string> OnMessageStarted;
 
+        [Tooltip("Fired when a message starts playing. Parameter: stable message hash.")]
+        [SerializeField] private UnityEvent<uint> OnMessageStartedHash;
+
         [Tooltip("Fired when a message finishes playing. Parameter: messageId.")]
         [SerializeField] private UnityEvent<string> OnMessageCompleted;
 
+        [Tooltip("Fired when a message finishes playing. Parameter: stable message hash.")]
+        [SerializeField] private UnityEvent<uint> OnMessageCompletedHash;
+
         [Tooltip("Fired when a new message is received. Parameter: messageId.")]
         [SerializeField] private UnityEvent<string> OnNewMessageReceived;
+
+        [Tooltip("Fired when a new message is received. Parameter: stable message hash.")]
+        [SerializeField] private UnityEvent<uint> OnNewMessageReceivedHash;
 
         [Tooltip("Fired when terminal state changes. Parameter: newState.")]
         [SerializeField] private UnityEvent<TerminalState> OnStateChanged;
@@ -143,10 +174,21 @@ namespace Hecton8.Gameplay
         private float _pendingStaticAudioVolume0;
         private float _pendingStaticAudioVolume1;
         private int _pendingStaticAudioCount;
+        private string _pendingMessageStartedId;
+        private string _pendingMessageCompletedId;
+        private string _pendingNewMessageId;
+        private uint _pendingMessageStartedHash;
+        private uint _pendingMessageCompletedHash;
+        private uint _pendingNewMessageHash;
+        private TerminalState _pendingStateChangedEvent;
+        private byte _pendingTerminalEventMask;
         private int _emissionPropertyId;
 
         // Track read messages (for persistence)
         private HashSet<string> _readMessageIds;
+        private uint[] _messageHashes;
+        private uint[] _readMessageHashes;
+        private int _readMessageHashCount;
         private bool[] _initialReadStates;
         private int _pendingMessageIndex = -1;
 
@@ -183,6 +225,54 @@ namespace Hecton8.Gameplay
 
         /// <summary>True if there are unread messages.</summary>
         public bool HasUnreadMessages => _pendingMessageIndex >= 0;
+
+        public bool TryGetAppliedLoreTerminalUtf8(out ReadOnlySpan<byte> utf8)
+        {
+            return H8AppliedLoreRuntime.TryGetUtf8(
+                appliedLorePacketHash,
+                appliedLoreLocaleHash,
+                H8AppliedLoreSurface.Terminal,
+                out utf8);
+        }
+
+        public bool TryGetAppliedLoreAudioSubtitleUtf8(out ReadOnlySpan<byte> utf8)
+        {
+            return H8AppliedLoreRuntime.TryGetUtf8(
+                appliedLorePacketHash,
+                appliedLoreLocaleHash,
+                H8AppliedLoreSurface.Audio,
+                out utf8);
+        }
+
+        public bool TryCopyAppliedLoreTitle(Span<char> destination, out int length)
+        {
+            return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
+                appliedLorePacketHash,
+                appliedLoreLocaleHash,
+                H8AppliedLoreSurface.Title,
+                destination,
+                out length);
+        }
+
+        public bool TryCopyAppliedLoreTerminalText(Span<char> destination, out int length)
+        {
+            return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
+                appliedLorePacketHash,
+                appliedLoreLocaleHash,
+                H8AppliedLoreSurface.Terminal,
+                destination,
+                out length);
+        }
+
+        public bool TryCopyAppliedLoreAudioSubtitle(Span<char> destination, out int length)
+        {
+            return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
+                appliedLorePacketHash,
+                appliedLoreLocaleHash,
+                H8AppliedLoreSurface.Audio,
+                destination,
+                out length);
+        }
 
         public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
         {
@@ -228,11 +318,11 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out statusLightRenderer);
 
             CacheRegistryServicesCold();
+            CacheMessageHashesCold();
             CaptureInitialReadStates();
 
-            // Initialize read messages tracking
-            int readMessageCapacity = messages != null ? messages.Length : 0;
-            _readMessageIds = new HashSet<string>(readMessageCapacity); // COLD ALLOC: HashSet<string>[messages.Length] - track read messages - owner: MessageTerminal
+            // Initialize read messages tracking.
+            EnsureWfcOutpostReadMessageSetCold();
             RebuildReadMessageSetFromMessageStates();
 
             // Find first unread message
@@ -258,6 +348,7 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterHotSwapListener();
             ClearQueuedStaticAudio();
+            ClearQueuedTerminalEvents();
             ClearWfcOutpostPersistence();
         }
 
@@ -267,6 +358,7 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterHotSwapListener();
             ClearQueuedStaticAudio();
+            ClearQueuedTerminalEvents();
         }
 
         private void TryRegister()
@@ -352,12 +444,13 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
             switch (_state)
             {
                 case TerminalState.NewMessage:
                     // Blink the status light
-                    _blinkTimer += deltaTime;
-                    if (_blinkTimer >= blinkInterval)
+                    _blinkTimer += safeDeltaTime;
+                    if (_blinkTimer >= SanitizeBlinkInterval(blinkInterval))
                     {
                         _blinkTimer = 0f;
                         _blinkOn = !_blinkOn;
@@ -367,7 +460,7 @@ namespace Hecton8.Gameplay
 
                 case TerminalState.Playing:
                     // Count down playback timer
-                    _playbackTimer -= deltaTime;
+                    _playbackTimer -= safeDeltaTime;
                     if (_playbackTimer <= 0f)
                     {
                         CompletePlayback();
@@ -381,11 +474,7 @@ namespace Hecton8.Gameplay
         {
             FlushStatusLight();
             FlushQueuedStaticAudio();
-        }
-
-        void ILateFrameTickable.LateFrameTick()
-        {
-            LateFrameTick();
+            FlushQueuedTerminalEvents();
         }
 
         //  IInteractable
@@ -415,6 +504,7 @@ namespace Hecton8.Gameplay
         {
             // Play access sound
             QueueStaticAudio(accessSound, 0.7f);
+            PublishAppliedLorePacketUnlock();
 
             if (_state == TerminalState.NewMessage && _pendingMessageIndex >= 0)
             {
@@ -425,7 +515,7 @@ namespace Hecton8.Gameplay
             {
                 // No new messages - could open message list UI
                 // For now, just fire an event for UI to handle
-                OnStateChanged?.Invoke(_state);
+                QueueStateChangedEvent(_state);
             }
             // If Playing, ignore interaction (or could stop playback)
         }
@@ -474,6 +564,44 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        private void PublishAppliedLorePacketUnlock()
+        {
+            if (appliedLorePacketHash == 0u)
+                return;
+
+            Transform terminalTransform = _cachedTransform != null ? _cachedTransform : transform;
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(terminalTransform.position);
+            H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(
+                appliedLorePacketHash,
+                in aup,
+                AppliedLoreTerminalSourceHash);
+            PublishAppliedLoreTerminalPreview();
+        }
+
+        private void PublishAppliedLoreTerminalPreview()
+        {
+            if (appliedLorePacketHash == 0u ||
+                (terminalOsPreviewIndex < 0 && terminalOsPreviewHash == 0u))
+            {
+                return;
+            }
+
+            AppliedLoreTerminalPreviewSignal signal = new AppliedLoreTerminalPreviewSignal
+            {
+                PacketHash = appliedLorePacketHash,
+                LocaleHash = appliedLoreLocaleHash,
+                TerminalHash = terminalOsPreviewHash,
+                Frame = SystemDispatcher.CurrentFrameId,
+                TerminalIndex = terminalOsPreviewIndex,
+                SourceHash = AppliedLoreTerminalSourceHash,
+                Surface = (byte)terminalOsPreviewSurface,
+                Flags = terminalOsPreviewHash != 0u ? AppliedLoreTerminalPreviewSignal.FlagHasTerminalHash : (byte)0
+            };
+            SignalBus<AppliedLoreTerminalPreviewSignal>.TryPushTracked(
+                in signal,
+                ref s_x001MessageTerminalSignalPushDropCount);
+        }
+
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
@@ -498,15 +626,22 @@ namespace Hecton8.Gameplay
 
             EnsureInitialReadStateCapacity(messages.Length);
             _initialReadStates[messages.Length - 1] = message.isRead;
+            EnsureMessageHashCapacityCold(messages.Length);
+            uint messageHash = ResolveMessageHashCold(message);
+            _messageHashes[messages.Length - 1] = messageHash;
 
             // Check if this is a new unread message
-            EnsureWfcOutpostReadMessageSet();
+            EnsureWfcOutpostReadMessageSetCold();
             if (message.isRead)
             {
                 if (!string.IsNullOrEmpty(message.messageId))
                     _readMessageIds.Add(message.messageId);
+                AddReadMessageHash(messageHash);
             }
-            else if (!string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
+            else if (!IsReadMessageHash(messageHash) &&
+                     (messageHash != 0u ||
+                      string.IsNullOrEmpty(message.messageId) ||
+                      !_readMessageIds.Contains(message.messageId)))
             {
                 _pendingMessageIndex = messages.Length - 1;
                 UpdateState();
@@ -514,7 +649,7 @@ namespace Hecton8.Gameplay
                 // Play new message alert
                 QueueStaticAudio(newMessageAlertSound, 0.8f);
 
-                OnNewMessageReceived?.Invoke(message.messageId);
+                QueueNewMessageReceivedEvent(messageHash, message.messageId);
             }
         }
 
@@ -527,31 +662,13 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(messageId))
                 return;
 
-            EnsureWfcOutpostReadMessageSet();
-            bool wasRead = _readMessageIds.Contains(messageId);
-            _readMessageIds.Add(messageId);
+            CacheMessageHashesCold();
+            int messageIndex = FindMessageIndexByLegacyId(messageId);
+            uint messageHash = messageIndex >= 0
+                ? GetCachedMessageHashNoAlloc(messageIndex)
+                : H8DataHash.ComputeFnv1A32(messageId);
 
-            // Update the message entry
-            if (messages != null)
-            {
-                for (int i = 0; i < messages.Length; i++)
-                {
-                    MessageEntry entry = messages[i];
-                    if (entry != null && entry.messageId == messageId)
-                    {
-                        entry.isRead = true;
-                        break;
-                    }
-                }
-            }
-
-            UpdatePendingMessage();
-            UpdateState();
-
-            if (!wasRead)
-                SetWfcOutpostFlags(
-                    (byte)(_wfcOutpostFlags | WfcDatapadLootedFlag),
-                    SystemDispatcher.CurrentFrameId);
+            MarkMessageReadAtIndex(messageIndex, messageHash, messageId);
         }
 
         /// <summary>
@@ -561,7 +678,14 @@ namespace Hecton8.Gameplay
         /// <returns>True if the message has been read.</returns>
         public bool IsMessageRead(string messageId)
         {
-            return !string.IsNullOrEmpty(messageId) && _readMessageIds != null && _readMessageIds.Contains(messageId);
+            if (string.IsNullOrEmpty(messageId))
+                return false;
+
+            uint messageHash = H8DataHash.ComputeFnv1A32(messageId);
+            if (messageHash != 0u && IsReadMessageHash(messageHash))
+                return true;
+
+            return _readMessageIds != null && _readMessageIds.Contains(messageId);
         }
 
         /// <summary>
@@ -582,10 +706,11 @@ namespace Hecton8.Gameplay
 
         private void ApplyWfcOutpostDatapadLootedState()
         {
-            EnsureWfcOutpostReadMessageSet();
+            EnsureWfcOutpostReadMessageSetCold();
 
             if (messages != null)
             {
+                CacheMessageHashesCold();
                 for (int i = 0; i < messages.Length; i++)
                 {
                     MessageEntry entry = messages[i];
@@ -596,6 +721,7 @@ namespace Hecton8.Gameplay
                     if (!string.IsNullOrEmpty(messageId))
                         _readMessageIds.Add(messageId);
 
+                    AddReadMessageHash(GetCachedMessageHashNoAlloc(i));
                     entry.isRead = true;
                 }
             }
@@ -646,13 +772,130 @@ namespace Hecton8.Gameplay
                 _state = TerminalState.Idle;
         }
 
-        private void EnsureWfcOutpostReadMessageSet()
+        private void EnsureWfcOutpostReadMessageSetCold()
         {
             if (_readMessageIds != null)
+            {
+                EnsureReadMessageHashCapacityCold(messages != null ? messages.Length : 0);
                 return;
+            }
 
             int readMessageCapacity = messages != null ? messages.Length : 0;
-            _readMessageIds = new HashSet<string>(readMessageCapacity);
+            _readMessageIds = new HashSet<string>(readMessageCapacity); // COLD ALLOC: HashSet<string>[messages.Length] - track read messages - owner: MessageTerminal
+            EnsureReadMessageHashCapacityCold(readMessageCapacity);
+        }
+
+        private void EnsureMessageHashCapacityCold(int count)
+        {
+            if (count <= 0)
+                return;
+
+            if (_messageHashes == null)
+            {
+                _messageHashes = new uint[count];
+                return;
+            }
+
+            if (_messageHashes.Length < count)
+                System.Array.Resize(ref _messageHashes, count);
+        }
+
+        private void EnsureReadMessageHashCapacityCold(int count)
+        {
+            if (count <= 0)
+                count = 1;
+
+            if (_readMessageHashes == null)
+            {
+                _readMessageHashes = new uint[count];
+                _readMessageHashCount = 0;
+                return;
+            }
+
+            if (_readMessageHashes.Length < count)
+                System.Array.Resize(ref _readMessageHashes, count);
+        }
+
+        private void CacheMessageHashesCold()
+        {
+            int count = messages != null ? messages.Length : 0;
+            if (count <= 0)
+            {
+                _messageHashes = null;
+                _readMessageHashCount = 0;
+                return;
+            }
+
+            EnsureMessageHashCapacityCold(count);
+            for (int i = 0; i < count; i++)
+                _messageHashes[i] = ResolveMessageHashCold(messages[i]);
+        }
+
+        private static uint ResolveMessageHashCold(MessageEntry entry)
+        {
+            if (entry == null)
+                return 0u;
+
+            if (entry.messageHash != 0u)
+                return entry.messageHash;
+
+            uint hash = H8DataHash.ComputeFnv1A32(entry.messageId);
+            entry.messageHash = hash;
+            return hash;
+        }
+
+        private uint GetCachedMessageHashNoAlloc(int index)
+        {
+            if (_messageHashes != null && index >= 0 && index < _messageHashes.Length)
+                return _messageHashes[index];
+
+            MessageEntry entry = messages != null && index >= 0 && index < messages.Length ? messages[index] : null;
+            return entry != null ? entry.messageHash : 0u;
+        }
+
+        private bool IsReadMessageHash(uint messageHash)
+        {
+            if (messageHash == 0u || _readMessageHashes == null)
+                return false;
+
+            int count = _readMessageHashCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (_readMessageHashes[i] == messageHash)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void AddReadMessageHash(uint messageHash)
+        {
+            if (messageHash == 0u)
+                return;
+
+            EnsureReadMessageHashCapacityCold(messages != null ? messages.Length : 1);
+            if (IsReadMessageHash(messageHash))
+                return;
+
+            if (_readMessageHashCount >= _readMessageHashes.Length)
+                System.Array.Resize(ref _readMessageHashes, _readMessageHashes.Length + 1);
+
+            _readMessageHashes[_readMessageHashCount++] = messageHash;
+        }
+
+        private int FindMessageIndexByLegacyId(string messageId)
+        {
+            if (messages == null || string.IsNullOrEmpty(messageId))
+                return -1;
+
+            for (int i = 0; i < messages.Length; i++)
+            {
+                MessageEntry entry = messages[i];
+                if (entry != null && string.Equals(entry.messageId, messageId, StringComparison.Ordinal))
+                    return i;
+            }
+
+            return -1;
         }
 
         private void CaptureInitialReadStates()
@@ -689,8 +932,10 @@ namespace Hecton8.Gameplay
 
         private void RebuildReadMessageSetFromMessageStates()
         {
-            EnsureWfcOutpostReadMessageSet();
+            EnsureWfcOutpostReadMessageSetCold();
             _readMessageIds.Clear();
+            _readMessageHashCount = 0;
+            CacheMessageHashesCold();
 
             if (messages == null)
                 return;
@@ -700,6 +945,8 @@ namespace Hecton8.Gameplay
                 MessageEntry entry = messages[i];
                 if (entry != null && entry.isRead && !string.IsNullOrEmpty(entry.messageId))
                     _readMessageIds.Add(entry.messageId);
+                if (entry != null && entry.isRead)
+                    AddReadMessageHash(GetCachedMessageHashNoAlloc(i));
             }
         }
 
@@ -741,13 +988,13 @@ namespace Hecton8.Gameplay
             if (messages == null)
                 return;
 
-            EnsureWfcOutpostReadMessageSet();
             for (int i = 0; i < messages.Length; i++)
             {
                 MessageEntry entry = messages[i];
+                uint messageHash = GetCachedMessageHashNoAlloc(i);
                 if (entry != null &&
                     !entry.isRead &&
-                    (string.IsNullOrEmpty(entry.messageId) || !_readMessageIds.Contains(entry.messageId)))
+                    (messageHash == 0u || !IsReadMessageHash(messageHash)))
                 {
                     _pendingMessageIndex = i;
                     return;
@@ -780,7 +1027,7 @@ namespace Hecton8.Gameplay
                 _blinkTimer = 0f;
                 _blinkOn = true;
                 UpdateStatusLight();
-                OnStateChanged?.Invoke(_state);
+                QueueStateChangedEvent(_state);
             }
         }
 
@@ -796,24 +1043,45 @@ namespace Hecton8.Gameplay
             _currentMessageIndex = messageIndex;
             _state = TerminalState.Playing;
 
-            // Set playback duration
-            if (message.audioClip != null)
-            {
-                _playbackTimer = message.audioClip.length;
-            }
-            else
-            {
-                _playbackTimer = message.duration > 0 ? message.duration : 5f;
-            }
+            _playbackTimer = ResolvePlaybackDuration(message);
 
             // Update status light
             UpdateStatusLight();
 
+            uint messageHash = GetCachedMessageHashNoAlloc(messageIndex);
+
             // Fire event for audio system
-            OnMessageStarted?.Invoke(message.messageId);
+            QueueMessageStartedEvent(messageHash, message.messageId);
 
             // Mark as read
-            MarkMessageRead(message.messageId);
+            MarkMessageReadAtIndex(messageIndex, messageHash, message.messageId);
+        }
+
+        private void MarkMessageReadAtIndex(int messageIndex, uint messageHash, string messageId)
+        {
+            EnsureWfcOutpostReadMessageSetCold();
+            bool hasLegacyId = !string.IsNullOrEmpty(messageId);
+            bool wasRead = (messageHash != 0u && IsReadMessageHash(messageHash)) ||
+                           (hasLegacyId && _readMessageIds.Contains(messageId));
+
+            if (hasLegacyId)
+                _readMessageIds.Add(messageId);
+            AddReadMessageHash(messageHash);
+
+            if (messages != null && messageIndex >= 0 && messageIndex < messages.Length)
+            {
+                MessageEntry entry = messages[messageIndex];
+                if (entry != null)
+                    entry.isRead = true;
+            }
+
+            UpdatePendingMessage();
+            UpdateState();
+
+            if (!wasRead)
+                SetWfcOutpostFlags(
+                    (byte)(_wfcOutpostFlags | WfcDatapadLootedFlag),
+                    SystemDispatcher.CurrentFrameId);
         }
 
         private void CompletePlayback()
@@ -828,13 +1096,14 @@ namespace Hecton8.Gameplay
 
             MessageEntry message = messages[_currentMessageIndex];
             string messageId = message != null ? message.messageId : string.Empty;
+            uint messageHash = GetCachedMessageHashNoAlloc(_currentMessageIndex);
 
             // Reset state
             _currentMessageIndex = -1;
             _playbackTimer = 0f;
 
             // Fire completion event
-            OnMessageCompleted?.Invoke(messageId);
+            QueueMessageCompletedEvent(messageHash, messageId);
 
             // Update state
             UpdatePendingMessage();
@@ -895,16 +1164,17 @@ namespace Hecton8.Gameplay
             if (clip == null || _audioService == null)
                 return;
 
+            float safeVolume = Sanitize01(volume);
             switch (_pendingStaticAudioCount)
             {
                 case 0:
                     _pendingStaticAudio0 = clip;
-                    _pendingStaticAudioVolume0 = Mathf.Clamp01(volume);
+                    _pendingStaticAudioVolume0 = safeVolume;
                     _pendingStaticAudioCount = 1;
                     break;
                 case 1:
                     _pendingStaticAudio1 = clip;
-                    _pendingStaticAudioVolume1 = Mathf.Clamp01(volume);
+                    _pendingStaticAudioVolume1 = safeVolume;
                     _pendingStaticAudioCount = 2;
                     break;
                 default:
@@ -943,6 +1213,138 @@ namespace Hecton8.Gameplay
             _pendingStaticAudioCount = 0;
         }
 
+        private void QueueMessageStartedEvent(uint messageHash, string messageId)
+        {
+            _pendingMessageStartedHash = messageHash;
+            _pendingMessageStartedId = messageId ?? string.Empty;
+            _pendingTerminalEventMask |= PendingTerminalEventMessageStarted;
+        }
+
+        private void QueueMessageCompletedEvent(uint messageHash, string messageId)
+        {
+            _pendingMessageCompletedHash = messageHash;
+            _pendingMessageCompletedId = messageId ?? string.Empty;
+            _pendingTerminalEventMask |= PendingTerminalEventMessageCompleted;
+        }
+
+        private void QueueNewMessageReceivedEvent(uint messageHash, string messageId)
+        {
+            _pendingNewMessageHash = messageHash;
+            _pendingNewMessageId = messageId ?? string.Empty;
+            _pendingTerminalEventMask |= PendingTerminalEventNewMessage;
+        }
+
+        private void QueueStateChangedEvent(TerminalState state)
+        {
+            _pendingStateChangedEvent = state;
+            _pendingTerminalEventMask |= PendingTerminalEventStateChanged;
+        }
+
+        private void FlushQueuedTerminalEvents()
+        {
+            byte mask = _pendingTerminalEventMask;
+            if (mask == 0)
+                return;
+
+            string startedId = _pendingMessageStartedId;
+            string completedId = _pendingMessageCompletedId;
+            string newMessageId = _pendingNewMessageId;
+            uint startedHash = _pendingMessageStartedHash;
+            uint completedHash = _pendingMessageCompletedHash;
+            uint newMessageHash = _pendingNewMessageHash;
+            TerminalState stateChanged = _pendingStateChangedEvent;
+            ClearQueuedTerminalEvents();
+
+            if ((mask & PendingTerminalEventMessageStarted) != 0)
+            {
+                OnMessageStartedHash?.Invoke(startedHash);
+                OnMessageStarted?.Invoke(startedId ?? string.Empty);
+            }
+            if ((mask & PendingTerminalEventMessageCompleted) != 0)
+            {
+                OnMessageCompletedHash?.Invoke(completedHash);
+                OnMessageCompleted?.Invoke(completedId ?? string.Empty);
+            }
+            if ((mask & PendingTerminalEventNewMessage) != 0)
+            {
+                OnNewMessageReceivedHash?.Invoke(newMessageHash);
+                OnNewMessageReceived?.Invoke(newMessageId ?? string.Empty);
+            }
+            if ((mask & PendingTerminalEventStateChanged) != 0)
+                OnStateChanged?.Invoke(stateChanged);
+        }
+
+        private void ClearQueuedTerminalEvents()
+        {
+            _pendingTerminalEventMask = 0;
+            _pendingMessageStartedId = null;
+            _pendingMessageCompletedId = null;
+            _pendingNewMessageId = null;
+            _pendingMessageStartedHash = 0u;
+            _pendingMessageCompletedHash = 0u;
+            _pendingNewMessageHash = 0u;
+            _pendingStateChangedEvent = default;
+        }
+
+        private static float ResolvePlaybackDuration(MessageEntry message)
+        {
+            if (message == null)
+                return DefaultPlaybackDurationSeconds;
+
+            AudioClip clip = message.audioClip;
+            if (clip != null)
+                return SanitizePositiveDuration(clip.length);
+
+            return SanitizePositiveDuration(message.duration);
+        }
+
+        private static float SanitizePositiveDuration(float durationSeconds)
+        {
+            if (float.IsNaN(durationSeconds) ||
+                float.IsInfinity(durationSeconds) ||
+                durationSeconds <= 0f)
+            {
+                return DefaultPlaybackDurationSeconds;
+            }
+
+            return durationSeconds > MaxPlaybackDurationSeconds ? MaxPlaybackDurationSeconds : durationSeconds;
+        }
+
+        private static float SanitizeBlinkInterval(float intervalSeconds)
+        {
+            if (float.IsNaN(intervalSeconds) ||
+                float.IsInfinity(intervalSeconds) ||
+                intervalSeconds < 0.1f)
+            {
+                return 0.1f;
+            }
+
+            return intervalSeconds > 2f ? 2f : intervalSeconds;
+        }
+
+        private static float SanitizeDeltaTime(float deltaTime)
+        {
+            if (float.IsNaN(deltaTime) ||
+                float.IsInfinity(deltaTime) ||
+                deltaTime <= 0f)
+            {
+                return 0f;
+            }
+
+            return deltaTime;
+        }
+
+        private static float Sanitize01(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                return 0f;
+
+            if (value <= 0f)
+                return 0f;
+
+            return value >= 1f ? 1f : value;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
@@ -950,7 +1352,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (blinkInterval < 0.1f) blinkInterval = 0.1f;
+            blinkInterval = SanitizeBlinkInterval(blinkInterval);
 
             // Auto-fill durations from audio clips
             if (messages != null)
@@ -959,10 +1361,11 @@ namespace Hecton8.Gameplay
                 {
                     MessageEntry entry = messages[i];
                     if (entry != null && entry.audioClip != null)
-                        entry.duration = entry.audioClip.length;
+                        entry.duration = SanitizePositiveDuration(entry.audioClip.length);
                 }
             }
 
+            CacheMessageHashesCold();
             RebuildLocalizedTextCache();
         }
 

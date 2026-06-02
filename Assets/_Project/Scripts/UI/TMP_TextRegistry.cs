@@ -32,19 +32,32 @@ namespace Hecton8.UI
     /// </summary>
     public static class TMP_TextRegistry
     {
-        // COLD ALLOC: HectonTextNode[512] — TMP registry node backing store — owner: TMP_TextRegistry
-        private static HectonTextNode[] s_nodes = new HectonTextNode[512];
-        // COLD ALLOC: TMP_TextEntry[512] — TMP registry entry backing store — owner: TMP_TextRegistry
-        private static TMP_TextEntry[] s_entries = new TMP_TextEntry[512];
-        // COLD ALLOC: Dictionary[512] — hierarchy hash to TMP registry index map — owner: TMP_TextRegistry
-        private static readonly Dictionary<int, int> s_indicesByHash = new Dictionary<int, int>(512);
+        private const int FixedRegistryCapacity = 2048;
+
+        // COLD ALLOC: HectonTextNode[2048] — fixed TMP registry node backing store — owner: TMP_TextRegistry
+        private static readonly HectonTextNode[] s_nodes = new HectonTextNode[FixedRegistryCapacity];
+        // COLD ALLOC: TMP_TextEntry[2048] — fixed TMP registry entry backing store — owner: TMP_TextRegistry
+        private static readonly TMP_TextEntry[] s_entries = new TMP_TextEntry[FixedRegistryCapacity];
+        // COLD ALLOC: Dictionary[2048] — hierarchy hash to TMP registry index map — owner: TMP_TextRegistry
+        private static readonly Dictionary<int, int> s_indicesByHash = new Dictionary<int, int>(FixedRegistryCapacity);
         private static int s_count;
+        private static int s_overflowCount;
         private static TMP_FontAsset s_terminalFontAsset;
 
         /// <summary>
         /// Active entry count.
         /// </summary>
         public static int Count => s_count;
+
+        /// <summary>
+        /// Fixed node capacity. Overflow fails closed instead of growing managed arrays.
+        /// </summary>
+        public static int Capacity => s_nodes.Length;
+
+        /// <summary>
+        /// Number of nodes rejected after the fixed registry was saturated.
+        /// </summary>
+        public static int OverflowCount => s_overflowCount;
 
         /// <summary>
         /// Terminal/BIOS font cached by the registry for zero-scan HUD font swaps.
@@ -61,6 +74,7 @@ namespace Hecton8.UI
             }
 
             s_count = 0;
+            s_overflowCount = 0;
             s_indicesByHash.Clear();
             s_terminalFontAsset = null;
         }
@@ -146,7 +160,14 @@ namespace Hecton8.UI
             if (node == null || node.RegistryIndex >= 0)
                 return;
 
-            EnsureCapacity(s_count + 1);
+            if (s_count >= s_nodes.Length)
+            {
+                node.RegistryIndex = -1;
+                if (s_overflowCount < int.MaxValue)
+                    s_overflowCount++;
+                return;
+            }
+
             int index = s_count;
             s_count++;
 
@@ -233,22 +254,5 @@ namespace Hecton8.UI
                 node.IsUserInput);
         }
 
-        private static void EnsureCapacity(int requiredCapacity)
-        {
-            if (requiredCapacity <= s_nodes.Length)
-                return;
-
-            int newCapacity = Mathf.Max(requiredCapacity, s_nodes.Length << 1);
-            HectonTextNode[] resizedNodes = new HectonTextNode[newCapacity]; // COLD ALLOC: HectonTextNode[newCapacity] — expanded TMP registry node store — owner: TMP_TextRegistry
-            TMP_TextEntry[] resizedEntries = new TMP_TextEntry[newCapacity]; // COLD ALLOC: TMP_TextEntry[newCapacity] — expanded TMP registry entry store — owner: TMP_TextRegistry
-            for (int i = 0; i < s_count; i++)
-            {
-                resizedNodes[i] = s_nodes[i];
-                resizedEntries[i] = s_entries[i];
-            }
-
-            s_nodes = resizedNodes;
-            s_entries = resizedEntries;
-        }
     }
 }

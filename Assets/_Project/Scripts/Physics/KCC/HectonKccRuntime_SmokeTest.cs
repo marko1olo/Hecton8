@@ -38,6 +38,8 @@ namespace Hecton8.Physics.KCC
         public const uint KccSmokeFailureInputSanitized = 1u << 7;
         public const uint KccSmokeFailureLayout = 1u << 8;
         public const uint KccSmokeSourceHash = 0x53483355u;
+        public const uint ReplayDeterminismFailureDrift = 12u;
+        public const float ReplayDeterminismEpsilonMeters = 0.000001f;
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct KccSmokeTestStateDTO
@@ -918,6 +920,146 @@ namespace Hecton8.Physics.KCC
                 if (errorMm > 1.0d)
                     result.ErrorFlags |= KccSmokeFailurePrecisionDrift;
                 Results[0] = result;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        public struct ValidateReplayDeterminismJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<ReplayFrameDTO> Frames;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MemoryStateTelemetryEntry> Telemetry;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<KccSmokeTestResultDTO> Results;
+            public KinematicStateDTO InitialState;
+            public HydrodynamicKccTuningDTO Tuning;
+            public float ReplayEpsilonMeters;
+            public float InjectVelocityErrorMetersPerSecond;
+            public int FrameCount;
+
+            public void Execute()
+            {
+                if (!Results.IsCreated || Results.Length == 0)
+                    return;
+
+                KccSmokeTestResultDTO result = Results[0];
+                if (!Frames.IsCreated || Frames.Length == 0)
+                {
+                    result.ErrorFlags |= KccSmokeFailureAllocation;
+                    Results[0] = result;
+                    return;
+                }
+
+                HydrodynamicKccTuningDTO tuning = SanitizeSmokeTuning(Tuning);
+                KinematicStateDTO state = InitialState;
+                state.AUP_Position = HydrodynamicKccMath.QuantizeMillimeter(HydrodynamicKccMath.Sanitize(state.AUP_Position, double3.zero));
+                state.Velocity = HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero);
+                int limit = math.min(math.max(0, FrameCount), Frames.Length);
+                float epsilonValue = math.select(ReplayDeterminismEpsilonMeters, ReplayEpsilonMeters, math.isfinite(ReplayEpsilonMeters));
+                float epsilon = math.max(0.0000001f, epsilonValue);
+                uint hash = KccSmokeSourceHash ^ 0xA6D5F00Du;
+                float maxDriftMeters = 0f;
+
+                for (int frameIndex = 0; frameIndex < limit; frameIndex++)
+                {
+                    ReplayFrameDTO frame = Frames[frameIndex];
+                    float dtValue = math.select(KccSmokeFixedDeltaTime, frame.DeltaTime, math.isfinite(frame.DeltaTime));
+                    float dt = math.max(HydrodynamicKccMath.MinDenominator, dtValue);
+                    float injectedError = math.select(0f, InjectVelocityErrorMetersPerSecond, frameIndex == 0 && math.isfinite(InjectVelocityErrorMetersPerSecond));
+                    float3 velocity = IntegrateReplayVelocity(state.Velocity, frame.InputMoveAxis, tuning, dt, injectedError);
+                    double3 deltaAup = default;
+                    deltaAup.x = velocity.x * dt;
+                    deltaAup.y = velocity.y * dt;
+                    deltaAup.z = velocity.z * dt;
+                    double3 predictedAup = HydrodynamicKccMath.QuantizeMillimeter(state.AUP_Position + deltaAup);
+                    double3 recordedAup = HydrodynamicKccMath.Sanitize(frame.RecordedAup, predictedAup);
+                    double3 driftVector = predictedAup - recordedAup;
+                    double driftMeters64 = math.cmax(math.abs(driftVector));
+                    float driftMeters = (float)math.min(driftMeters64, (double)float.MaxValue);
+                    maxDriftMeters = math.max(maxDriftMeters, driftMeters);
+                    uint frameHash = HydrodynamicKccMath.HashState(predictedAup, velocity, frame.Frame, frame.InputFlags);
+                    hash ^= frameHash + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                    bool invalid = !HydrodynamicKccMath.IsFinite(predictedAup) || !HydrodynamicKccMath.IsFinite(velocity) || !math.isfinite(driftMeters);
+                    bool drifted = driftMeters >= epsilon;
+                    uint failureCode = math.select(0u, ReplayDeterminismFailureDrift, drifted);
+                    failureCode = math.select(failureCode, KccSmokeFailureNonFinite, invalid);
+                    WriteReplayTelemetry(Telemetry, frameIndex, predictedAup, velocity, driftMeters, frameHash, failureCode, frame.InputFlags);
+
+                    if (invalid || drifted)
+                    {
+                        result.ErrorFlags |= math.select(KccSmokeFailurePrecisionDrift, KccSmokeFailureNonFinite, invalid);
+                        result.FailureCount++;
+                        if (result.FirstFailureFrame == 0u)
+                        {
+                            result.FirstFailureFrame = frame.Frame;
+                            result.FirstFailureIndex = (uint)frameIndex;
+                            result.FirstFailureAup = predictedAup;
+                            result.FirstFailureVelocity = velocity;
+                        }
+
+                        result.MaxDriftMillimeters = math.max(result.MaxDriftMillimeters, driftMeters * 1000f);
+                        result.DriftErrorMillimeters = math.max(result.DriftErrorMillimeters, (double)driftMeters * 1000.0d);
+                        result.StateHash = hash;
+                        Results[0] = result;
+                        return;
+                    }
+
+                    state.AUP_Position = predictedAup;
+                    state.Velocity = velocity;
+                }
+
+                result.MaxDriftMillimeters = math.max(result.MaxDriftMillimeters, maxDriftMeters * 1000f);
+                result.StateHash = hash;
+                Results[0] = result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float3 IntegrateReplayVelocity(
+                float3 currentVelocity,
+                float3 inputMoveAxis,
+                HydrodynamicKccTuningDTO tuning,
+                float dt,
+                float injectedErrorMetersPerSecond)
+            {
+                float qualityValue = math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight));
+                float quality = math.saturate(qualityValue);
+                float drive = math.lerp(220f, 620f, quality);
+                float3 move = HydrodynamicKccMath.Sanitize(inputMoveAxis, float3.zero);
+                float3 velocity = HydrodynamicKccMath.Sanitize(currentVelocity, float3.zero) + move * drive * dt;
+                velocity.x += injectedErrorMetersPerSecond;
+                float speed = HydrodynamicKccMath.LengthSafe(velocity);
+                float drag = math.max(0f, tuning.BaseDrag) * math.lerp(0.35f, 1f, quality);
+                velocity *= math.rcp(math.max(HydrodynamicKccMath.MinDenominator, 1f + drag * speed * dt));
+                float maxSpeed = math.max(1f, tuning.MaxSpeed);
+                float speedSq = math.lengthsq(velocity);
+                float maxSpeedSq = maxSpeed * maxSpeed;
+                float clampScale = maxSpeed * math.rsqrt(math.max(speedSq, HydrodynamicKccMath.MinDenominator));
+                velocity = math.select(velocity, velocity * clampScale, speedSq > maxSpeedSq);
+                return HydrodynamicKccMath.Sanitize(velocity, float3.zero);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static void WriteReplayTelemetry(
+                NativeArray<MemoryStateTelemetryEntry> telemetry,
+                int frameIndex,
+                double3 aup,
+                float3 velocity,
+                float driftMeters,
+                uint stateHash,
+                uint failureCode,
+                uint flags)
+            {
+                if (!telemetry.IsCreated || telemetry.Length == 0)
+                    return;
+
+                int ringIndex = frameIndex % telemetry.Length;
+                MemoryStateTelemetryEntry entry = default;
+                entry.Aup = aup;
+                entry.Velocity = velocity;
+                entry.DriftMeters = driftMeters;
+                entry.Frame = (uint)frameIndex;
+                entry.FailureCode = failureCode;
+                entry.StateHash = stateHash;
+                entry.Flags = flags;
+                telemetry[ringIndex] = entry;
             }
         }
 

@@ -1,0 +1,149 @@
+{
+  "generated_at_local": "2026-06-01 00:12 Europe/Samara",
+  "owner_focus_rule": "Background-first. Do not foreground-click logged-in account UIs unless the target window has been reliably screenshot-verified immediately before the action. UIA screenshots are not accepted for Edge proof.",
+  "public_language": "en",
+  "studio": {
+    "display_name": "Teni Games",
+    "display_variant": "Teni Games / 天衣",
+    "kana": "テニゲームス",
+    "primary_motif": "天衣",
+    "secondary_motif": "天意",
+    "game": "Submerge"
+  },
+  "safe_profile_fields": {
+    "bio_short": "Building Submerge: pressure, machinery, salvage, black water.",
+    "bio_core": "Small game studio. Building Submerge: pressure, machinery, salvage, black water.",
+    "telegram_description": "Submerge development notes. Pressure, machinery, salvage, black water. Screenshots have to earn the post.",
+    "website": "",
+    "contact": ""
+  },
+  "asset_paths": {
+    "avatar_x": "MarketingAssets/00_Brand/PlatformExports/x_avatar_400.png",
+    "banner_x": "MarketingAssets/00_Brand/PlatformExports/x_banner_1500x500.png",
+    "avatar_bluesky": "MarketingAssets/00_Brand/PlatformExports/bluesky_profile_1000.png",
+    "avatar_youtube": "MarketingAssets/00_Brand/PlatformExports/youtube_profile_800.png",
+    "banner_youtube": "MarketingAssets/00_Brand/PlatformExports/youtube_banner_2560x1440_safe.png",
+    "avatar_instagram": "MarketingAssets/00_Brand/PlatformExports/instagram_profile_1080.png",
+    "avatar_tiktok": "MarketingAssets/00_Brand/PlatformExports/tiktok_profile_1024.png",
+    "avatar_reddit": "MarketingAssets/00_Brand/PlatformExports/reddit_profile_256.png",
+    "banner_reddit": "MarketingAssets/00_Brand/PlatformExports/reddit_banner_1600x480.png",
+    "avatar_telegram": "MarketingAssets/00_Brand/PlatformExports/telegram_avatar_512.png",
+    "animated_avatar_gif": "MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif",
+    "animated_avatar_mp4": "MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.mp4"
+  },
+  "platforms": [
+    {
+      "platform": "Telegram",
+      "target": "@teni_games",
+      "known_url": "https://t.me/teni_games",
+      "public_check": "PASS_PUBLIC_DESCRIPTION",
+      "logged_in_url_seen": "tg://resolve?domain=teni_games",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Hold posts until first real asset or a short human dev note is explicitly prepared and screenshot-verified in the Telegram compose box.",
+      "do_not_do": "Do not paste into Telegram from an unfocused or unverified window."
+    },
+    {
+      "platform": "X",
+      "target": "@submerge_game",
+      "known_url": "https://x.com/submerge_game",
+      "public_check": "PASS_PUBLIC_BRANDED_PROFILE",
+      "logged_in_url_seen": "https://x.com/settings/profile",
+      "cdp_state": "CONVERTED_PUBLIC_TEXT_AND_ASSETS; display name Teni Games, bio, dark-wave avatar, and dark-wave banner saved. Handle remains @submerge_game. Two public posts sent through dry-run-first CDP queue.",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Use queue-runner only for future X posts; prefer screenshot-led posts after current-build proof exists. Do not rename handle until Submerge naming conflict review decides the public title route.",
+      "do_not_do": "Do not use any X intent URL. Do not bulk-post slogans before screenshots."
+    },
+    {
+      "platform": "YouTube",
+      "target": "@TeniGames",
+      "known_url": "https://www.youtube.com/@TeniGames",
+      "studio_url": "https://studio.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng/editing/profile",
+      "public_check": "PASS_PUBLIC_BRANDED_PROFILE",
+      "logged_in_url_seen": "https://studio.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng/editing/profile",
+      "cdp_state": "CONVERTED_PUBLIC; public page shows Teni Games, @TeniGames, English Submerge description, dark-wave banner, and Teni avatar; Studio still warns about missing 2-Step Verification",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Enable 2-Step Verification through owner account security flow. Hold posts/videos until first proof asset.",
+      "do_not_do": "Do not add website/contact or publish videos/community posts before proof assets and custody."
+    },
+    {
+      "platform": "Instagram",
+      "target": "teni_games",
+      "known_url": "https://www.instagram.com/teni_games/",
+      "public_check": "PASS_PUBLIC_BRANDED_PROFILE",
+      "logged_in_url_seen": "https://www.instagram.com/accounts/edit/",
+      "cdp_state": "CONVERTED_PUBLIC; public profile shows Teni Games, bio, and dark-wave avatar. No posts sent.",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Hold posts/reels until proof asset exists. Website/link edits remain mobile-only on Instagram.",
+      "do_not_do": "Do not publish a first post or Reel before current-build proof exists."
+    },
+    {
+      "platform": "TikTok",
+      "target": "@tenigames",
+      "known_url": "https://www.tiktok.com/@tenigames",
+      "public_check": "PUBLIC_ACCOUNT_NOT_FOUND",
+      "logged_in_url_seen": "https://www.tiktok.com/@tenigames",
+      "cdp_state": "ACCOUNT_NOT_FOUND_PAGE plus GDPR transfer notice",
+      "background_possible_now": false,
+      "logged_in_mutation_needed": true,
+      "next_action": "Treat as candidate handle; confirm inside logged-in flow before filling profile.",
+      "do_not_do": "Do not claim the handle is reserved from public not-found alone."
+    },
+    {
+      "platform": "Reddit",
+      "target": "u/Expert-Try8516",
+      "known_url": "https://www.reddit.com/user/Expert-Try8516/",
+      "public_check": "PASS_PUBLIC_BRANDED_PROFILE",
+      "logged_in_url_seen": "https://www.reddit.com/user/Expert-Try8516/",
+      "cdp_state": "CONVERTED_PUBLIC; display name Teni Games, dark-wave avatar, dark-wave banner, and about text saved; username remains u/Expert-Try8516",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Use as disclosed dev/listening account only. Do subreddit rule checks before any post or comment outreach.",
+      "do_not_do": "Do not post to subreddits before checking each community rule page."
+    },
+    {
+      "platform": "Bluesky",
+      "target": "teni-games.bsky.social",
+      "known_url": "https://bsky.app/profile/teni-games.bsky.social",
+      "public_check": "PASS_PUBLIC_BRANDED_PROFILE",
+      "logged_in_url_seen": "https://bsky.app/",
+      "cdp_state": "CONVERTED_PUBLIC; profile shows Teni Games, @teni-games.bsky.social, dark-wave avatar/banner, short Submerge bio, and two public posts. GIF/video upload remains blocked until email confirmation.",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Use queue-runner only for future Bluesky posts; keep GIF/video held until email confirmation.",
+      "do_not_do": "Do not expose logged-in session data or force media upload through confirmation gates."
+    },
+    {
+      "platform": "Steam",
+      "target": "future developer/game page",
+      "known_url": "https://store.steampowered.com/developer/TeNiTinyGames",
+      "public_check": "EXACT_SUBMERGE_STEAM_COLLISION_PLUS_TENI_NEAR_CONFLICT",
+      "logged_in_url_seen": "https://store.steampowered.com",
+      "background_possible_now": true,
+      "logged_in_mutation_needed": false,
+      "next_action": "Keep Steam as research/collision tracking until Steam Direct/KYC/page proof gates and naming modifier decision are ready.",
+      "do_not_do": "Do not create or imply a Steam page before the current-build asset gate."
+    }
+  ],
+  "quarantined_urls": [
+    {
+      "reason": "Old rejected draft / user deleted post.",
+      "url_contains": "Studio+account+is+being+wired"
+    },
+    {
+      "reason": "Sterile pre-asset copy rejected by owner.",
+      "url_contains": "Teni%20Games%20account%20reserved"
+    },
+    {
+      "reason": "No publish from shell automation.",
+      "url_contains": "x.com/intent/"
+    },
+    {
+      "reason": "No publish from shell automation.",
+      "url_contains": "twitter.com/intent/"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ﻿# Domain Architecture Coverage Matrix
 
-Date: 2026-05-28
+Date: 2026-06-02
 Status: STATIC_DOC / SOURCE-ORIENTED COVERAGE
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM
@@ -17,11 +17,23 @@ This does not replace `Actual Domains of Project.txt`.
 
 1. Identify the assigned domain in `Docs/Actual Domains of Project.txt`.
 2. Read `PROJECT_RUNTIME_TOPOLOGY.md`.
-3. Read `GLOBAL_AUTHORITY_BOUNDARIES.md`.
-4. Read `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`.
-5. Read the matching echelon below.
-6. Read source anchors before editing.
-7. If source and doc disagree, patch the doc with evidence.
+3. Read `SOURCE_SYSTEMS_REALITY_MAP.md`.
+4. Read `GLOBAL_AUTHORITY_BOUNDARIES.md`.
+5. Read `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`.
+6. Read the matching echelon below.
+7. Read source anchors before editing.
+8. If source and doc disagree, patch the doc with evidence.
+
+## Source Anchor Rule
+
+The direct folders below are routing hints, not complete ownership proof. Static source listing on 2026-06-02 shows a large active mixed-domain surface directly under `Assets/_Project/Scripts/*.cs`: save, crafting, fabricator, survival, tether, voxel/fluid/world, localization, tools, HUD/PDA bridges, and smoke/profiler helpers.
+
+Before editing any domain, check both:
+
+- the echelon folder anchors listed below;
+- loose root scripts under `Assets/_Project/Scripts` whose class names match the domain.
+
+If root-level source and a domain doc disagree, source wins and the doc must be downgraded to `STATIC_SOURCE` / `PENDING VERIFICATION` until runtime proof exists.
 
 ## Echelon 1: Core And Memory
 
@@ -79,11 +91,16 @@ Runtime surface:
 - terrain
 - voxel
 - scatter
+- streaming residency
+- HLOD / impostors
 - geology
 - biomes
+- vegetation
+- persistent world registry
 - flow
 - vents
 - wreckage
+- resource distribution / regrowth
 
 Architecture docs:
 
@@ -101,6 +118,25 @@ Architecture docs:
 Source anchors:
 
 - `Assets/_Project/Scripts/World`
+- `Assets/_Project/Scripts/HectonVoxelEngine.cs`
+- `Assets/_Project/Scripts/VoxelDeltaProcessor.cs`
+- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`
+- `Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs`
+- `Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs`
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`
+- `Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs`
+- `Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs`
+- `Assets/_Project/Scripts/World/HectonHLODRenderer.cs`
+- `Assets/_Project/Scripts/World/HectonOctahedralImpostorRenderer.cs`
+- `Assets/_Project/Scripts/World/LODSystemManager.cs`
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`
+- `Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs`
+- `Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs`
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`
+- `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs`
+- `Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs`
+- `Assets/_Project/Scripts/World/ResourceDistributionDirector.cs`
 - `Assets/_Project/Scripts/Environment`
 - `Assets/_Project/Scripts/Physics`
 - `Assets/_Project/Scripts/Rendering`
@@ -109,7 +145,7 @@ Source anchors:
 Default proof gap:
 
 - Static terrain contracts do not prove streamed residency.
-- Copper route availability needs Play Mode/player evidence.
+- World residency, voxel carve persistence, scatter backend parity, vegetation/wreck/resource visuals, HLOD/impostor output, VRAM/frame hitch, profiler, GC, and Play Mode/player evidence remain pending.
 
 ## Echelon 3: Flora Fauna Biota
 
@@ -140,15 +176,23 @@ Architecture docs:
 Source anchors:
 
 - `Assets/_Project/Scripts/AI`
+- `Assets/_Project/Scripts/AI/Cognition`
+- `Assets/_Project/Scripts/AI/Pathfinding`
+- `Assets/_Project/Scripts/AI/Sensory`
+- `Assets/_Project/Scripts/AI/Ecosystem`
 - `Assets/_Project/Scripts/Fauna`
 - `Assets/_Project/Scripts/Ecosystem`
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs`
+- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`
+- `Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs`
+- `Assets/_Project/Scripts/World/VegetationPredatorFearField.cs`
 - `Assets/_Project/Scripts/World`
 - `Assets/_Project/Scripts/Animation`
 
 Default proof gap:
 
-- Ecology breadth is parked without First 20 Minutes impact.
-- Runtime profiler and GC proof remain required.
+- Source owners prove fauna simulation/cognition/pathfinding/ecosystem surfaces only.
+- Scene spawn integration, gameplay request route, SDF/navgrid wiring, deterministic ordering, swarm visual proof, runtime fault dumps, profiler, GC, and First 20 Minutes impact remain pending.
 
 ## Echelon 4: Player Tools Kinematics
 
@@ -156,14 +200,27 @@ Domains: `31-40`.
 
 Runtime surface:
 
+- deterministic input
 - KCC
+- hydrodynamic KCC
+- player kinematics
+- hand probes / hand IK
+- physical interaction
+- physical hand controller
+- VR kinematic hand bridge
+- VR somatic comfort
+- interaction signal queue
 - buoyancy
-- hand IK
 - tether
 - tools
 - scavenging
 - inventory
 - crafting
+- survival
+- auxiliary equipment
+- loot magnet
+- recycler
+- first-hour route
 - XR interaction
 
 Architecture docs:
@@ -179,11 +236,40 @@ Architecture docs:
 
 Source anchors:
 
+- `Assets/_Project/Scripts/Core/InputDispatcher.cs`
+- `Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs`
+- `Assets/_Project/Scripts/Core/PlayerInputState.cs`
+- `Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs`
+- `Assets/_Project/Scripts/Core/Signals/CoreDeterminismSignals.cs`
 - `Assets/_Project/Scripts/Gameplay`
+- `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`
+- `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs`
+- `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs`
+- `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs`
+- `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.HorizonLock.cs`
 - `Assets/_Project/Scripts/Physics/KCC`
+- `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs`
 - `Assets/_Project/Scripts/Interaction`
+- `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs`
+- `Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs`
+- `Assets/_Project/Scripts/Interaction/PhysicalHandController.cs`
+- `Assets/_Project/Scripts/Interaction/VRInteractionKinematicBridge.cs`
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs`
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`
+- `Assets/_Project/Scripts/Interaction/InteractableRegistry.cs`
+- `Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs`
 - `Assets/_Project/Scripts/Equipment`
+- `Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs`
 - `Assets/_Project/Scripts/Inventory`
+- `Assets/_Project/Scripts/PlayerInventory.cs`
+- `Assets/_Project/Scripts/PlayerInventory_SoaQuery.cs`
+- `Assets/_Project/Scripts/Core/PlayerInventoryManager.cs`
+- `Assets/_Project/Scripts/Fabricator.cs`
+- `Assets/_Project/Scripts/CraftingSystem.cs`
+- `Assets/_Project/Scripts/HectonSurvivalSystem.cs`
+- `Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs`
+- `Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs`
+- `Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs`
 - `Assets/_Project/Scripts/Scavenging`
 - `Assets/_Project/Scripts/Tools`
 - `Assets/_Project/Scripts/Visor`
@@ -192,6 +278,8 @@ Default proof gap:
 
 - Starting tool truth is not proven.
 - Copper acquisition is still a route proof blocker.
+- KCC collision correctness, environment provider wiring, controller/device input, physical grab/force ownership, XR hand bridge, somatic comfort, and queued tool-surface route proof remain pending.
+- Boot-to-craft-to-save/load, inventory/fabricator UI feedback, loot pickup route, profiler, and GC proof remain pending.
 
 ## Echelon 5: Combat Physiology
 
@@ -221,6 +309,15 @@ Architecture docs:
 Source anchors:
 
 - `Assets/_Project/Scripts/Gameplay/Combat`
+- `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs`
+- `Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs`
+- `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs`
+- `Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs`
+- `Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs`
+- `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`
+- `Assets/_Project/Scripts/Gameplay/ToxinHazard.cs`
+- `Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs`
+- `Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs`
 - `Assets/_Project/Scripts/Physiology`
 - `Assets/_Project/Scripts/Physics`
 - `Assets/_Project/Scripts/UI`
@@ -229,8 +326,8 @@ Source anchors:
 
 Default proof gap:
 
-- Combat docs are route cards without runtime artifacts.
-- Hazard route proof remains required.
+- Source owners prove combat/armor/status/ballistics/trauma/radiation/toxin/vehicle-damage surfaces only.
+- Weapon and hazard scene route, target registration, vehicle damage-to-hull visual route, HUD/VFX/audio feedback, profiler, GC, and player-build proof remain pending.
 
 ## Echelon 6: Habitat Vehicles
 
@@ -241,6 +338,8 @@ Runtime surface:
 - habitat
 - construction
 - flooding
+- fluid pipes
+- bulkheads and hatch locks
 - power
 - logistics
 - deconstruction
@@ -264,18 +363,53 @@ Architecture docs:
 
 Source anchors:
 
+- `Assets/_Project/Scripts/ConstructionManager.cs`
+- `Assets/_Project/Scripts/BaseModule.cs`
+- `Assets/_Project/Scripts/BaseModuleTemplate.cs`
 - `Assets/_Project/Scripts/Construction`
+- `Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs`
+- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`
+- `Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs`
+- `Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs`
+- `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs`
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs`
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs`
+- `Assets/_Project/Scripts/Construction/DroneFleetManager.cs`
 - `Assets/_Project/Scripts/Habitat`
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs`
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs`
 - `Assets/_Project/Scripts/Power`
+- `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs`
+- `Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs`
+- `Assets/_Project/Scripts/Power/PowerRelayNode.cs`
+- `Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs`
+- `Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs`
 - `Assets/_Project/Scripts/Logistics`
+- `Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs`
+- `Assets/_Project/Scripts/Core/BatteryChargerLogisticsBridge.cs`
 - `Assets/_Project/Scripts/Vehicles`
 - `Assets/_Project/Scripts/Physics`
+- `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs`
+- `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs`
+- `Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs`
+- `Assets/_Project/Scripts/Physics/Vehicles/Automation/DockingAutopilotService.cs`
+- `Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs`
+- `Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs`
+- `Assets/_Project/Scripts/Gameplay/VehicleMotor.cs`
+- `Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs`
+- `Assets/_Project/Scripts/Physics/Buoyancy`
+- `Assets/_Project/Scripts/Physics/Cavitation`
+- `Assets/_Project/Scripts/Physics/Cable132`
+- `Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs`
+- `Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs`
+- `Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs`
 - `Assets/_Project/Scripts/UI`
 
 Default proof gap:
 
 - Do not create a second owner for save truth.
 - Do not create a second owner for power or physics truth.
+- Current source owners prove implementation surface only. Base placement/deconstruction, module save/load, flood containment, fluid pipe rupture/drainage, force application ownership, vehicle controller scene proof, ballast/docking gameplay, tether/cable gameplay, power/brownout, battery charger inventory, drone repair, UI/VR feedback, profiler/GC, and player-build proof remain pending.
 
 ## Echelon 7: Atmosphere Celestial
 
@@ -306,8 +440,18 @@ Architecture docs:
 Source anchors:
 
 - `Assets/_Project/Scripts/Atmosphere`
+- `Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs`
+- `Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs`
+- `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs`
+- `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs`
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs`
+- `Assets/_Project/Scripts/Atmosphere/StormPropagation`
 - `Assets/_Project/Scripts/Thermodynamics`
+- `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs`
+- `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs`
+- `Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs`
 - `Assets/_Project/Scripts/Environment`
+- `Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs`
 - `Assets/_Project/Scripts/Lighting`
 - `Assets/_Project/Scripts/Rendering`
 - `Assets/_Project/Scripts/VFX`
@@ -315,8 +459,8 @@ Source anchors:
 
 Default proof gap:
 
-- Prefer deterministic cheats over expensive realism.
-- Quality load-shed must be continuous.
+- Source owners prove atmosphere/gas/weather/ocean/thermal surfaces only.
+- Base room wiring, gas/player survival route, weather/ocean visual proof, reactor/power/atmosphere coupling, deterministic cheat boundaries, continuous quality load-shed, profiler, GC, device, and player-build proof remain pending.
 
 ## Echelon 8: Presentation UX
 
@@ -326,14 +470,18 @@ Runtime surface:
 
 - UI
 - subtitles
+- fonts and loading screens
 - terminals
 - visor
 - PDA
+- applied lore route
 - narrative POIs
 - cartography
 - scanning
 - audio
 - warnings
+- foveated render / dynamic resolution
+- procedural VFX / propwash / marine snow
 
 Architecture docs:
 
@@ -351,12 +499,33 @@ Architecture docs:
 Source anchors:
 
 - `Assets/_Project/Scripts/UI`
+- `Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs`
+- `Assets/_Project/Scripts/UI/SubtitleManager.cs`
+- `Assets/_Project/Scripts/UI/FontStreamingManager.cs`
+- `Assets/_Project/Scripts/UI/LoadingScreenController.cs`
+- `Assets/_Project/Scripts/Data/Monolith/H8AppliedLoreRuntime.cs`
+- `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs`
+- `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs`
+- `Assets/_Project/Scripts/Gameplay/MessageTerminal.cs`
+- `Assets/_Project/Scripts/ScannableTarget.cs`
+- `Assets/_Project/Scripts/NarrativeDiscovery.cs`
 - `Assets/_Project/Scripts/PDA`
 - `Assets/_Project/Scripts/Visor`
+- `Assets/_Project/Scripts/Visor/VisorHUDController.cs`
+- `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs`
 - `Assets/_Project/Scripts/Narrative`
 - `Assets/_Project/Scripts/Cartography`
 - `Assets/_Project/Scripts/Audio`
+- `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
+- `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs`
+- `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs`
+- `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs`
 - `Assets/_Project/Scripts/AudioLog`
+- `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs`
+- `Assets/_Project/Scripts/VFX/PropwashGpuContracts.cs`
+- `Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs`
+- `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs`
+- `Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs`
 - `Assets/_Project/Scripts/Interaction`
 
 Default proof gap:
@@ -364,6 +533,8 @@ Default proof gap:
 - Presentation consumes snapshots.
 - Presentation does not own gameplay truth.
 - Hot registry polling is forbidden.
+- AppliedLore scene/prefab hash assignments are not proven; current lore audit text reports `scene_bindings=0`.
+- UI GC, audio-thread/device, RenderGraph/Frame Debugger, shader import, visual capture, and VRAM/DRS proof remain pending.
 
 ## Echelon 9: Meta Integration
 
@@ -374,6 +545,11 @@ Runtime surface:
 - haptics
 - camera
 - physics culling
+- asset lifecycle/load dispatch, VRAM pressure, RT lifecycle, DRS/culling telemetry
+- rollback snapshots, Merkle hashing, prediction, mock jitter
+- envelope-only mod API, sandbox, loader, resource proxy, save/world persistence
+- QA watchdogs, endurance harness, GC fuzzer, headless simulation/stress runners
+- editor build/preflight/platform/SDK validators
 - integration
 - docs
 - QA
@@ -394,12 +570,46 @@ Source anchors:
 - `Assets/_Project/Scripts/Input`
 - `Assets/_Project/Scripts/Gameplay`
 - `Assets/_Project/Scripts/Optimization`
-- `Assets/_Project/Scripts/QA`
-- `Assets/_Project/Scripts/Editor`
+- `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs`
+- `Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs`
+- `Assets/_Project/Scripts/Optimization/AssetRecord.cs`
+- `Assets/_Project/Scripts/Optimization/VRAMMonitor.cs`
+- `Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+- `Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+- `Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs`
+- `Assets/_Project/Scripts/Optimization/RenderTexturePool.cs`
+- `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs`
+- `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs`
+- `Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs`
+- `Assets/_Project/Scripts/Networking/HectonNetworkManager.cs`
+- `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs`
+- `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs`
+- `Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs`
+- `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`
+- `Assets/_Project/Scripts/ModdingAPI/ModLoader.cs`
+- `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs`
+- `Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs`
+- `Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs`
+- `Assets/_Project/Scripts/QA/QA_WatchdogBot.cs`
+- `Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs`
+- `Assets/_Project/Scripts/QA/QAWatchdogGcAllocationFuzzer1524.cs`
+- `Assets/_Project/Scripts/QA/Headless`
+- `Assets/_Project/Scripts/Editor/Build`
+- `Assets/_Project/Scripts/Editor/Build/XrPlatformReadinessValidator.cs`
+- `Assets/_Project/Scripts/Editor/Build/QuestVulkanRenderPipelineConfigurator.cs`
+- `Assets/_Project/Scripts/Editor/Build/GraphicsApiMatrixValidator.cs`
+- `Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs`
 - `Assets/_Project/Scripts/BuildTools`
+- `Assets/_Project/Scripts/BuildTools/BuildPlaytestEntry.cs`
 - `Assets/_Project/Scripts/Meta`
 - `Docs`
 - `Tools`
+
+Default proof gap:
+
+- Optimization, rollback networking, modding, QA/headless, and build/platform tooling are source-present.
+- Addressables/RT/VRAM/DRS proof, loopback/device/transport proof, mod envelope/load/save/security proof, fresh QA/headless artifacts, player/platform/CI proof, and profiler/GC proof remain pending.
 
 Default proof gap:
 

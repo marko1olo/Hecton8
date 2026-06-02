@@ -373,6 +373,17 @@ namespace Hecton8.SaveSystem
             _isDispatching = false;
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+        }
+#endif
+
         public static void Register(ISaveEventListener listener)
         {
             if (listener == null)

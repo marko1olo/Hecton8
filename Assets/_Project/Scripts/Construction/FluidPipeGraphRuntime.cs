@@ -46,32 +46,6 @@ namespace Hecton8.Construction
         private const BufferID PipeConnectionOffsetsBufferId = (BufferID)72101;
         private const BufferID PipeConnectionCsrDestinationsBufferId = (BufferID)72102;
         private const BufferID PipeConnectionWriteCursorBufferId = (BufferID)72103;
-        private static readonly ulong PipeGraphMutationGuardMask =
-            FluidPipeMutationGuardBit(PipePressureBufferId) |
-            FluidPipeMutationGuardBit(PipeContentsBufferId) |
-            FluidPipeMutationGuardBit(PipeFlagsBufferId) |
-            FluidPipeMutationGuardBit(PipeContentKindsBufferId) |
-            FluidPipeMutationGuardBit(PipeNetworkIdsBufferId) |
-            FluidPipeMutationGuardBit(PipeRoomIndicesBufferId) |
-            FluidPipeMutationGuardBit(PipeCapacitiesBufferId) |
-            FluidPipeMutationGuardBit(PipeMaxPressureBufferId) |
-            FluidPipeMutationGuardBit(PipeFlowRatesBufferId) |
-            FluidPipeMutationGuardBit(PipeSourceRatesBufferId) |
-            FluidPipeMutationGuardBit(PipeDemandRatesBufferId) |
-            FluidPipeMutationGuardBit(PipeFlowVectorsBufferId) |
-            FluidPipeMutationGuardBit(PipeRoomExchangeContentsBufferId) |
-            FluidPipeMutationGuardBit(PipeLastVisualFlowBufferId) |
-            FluidPipeMutationGuardBit(PipeAupsBufferId) |
-            FluidPipeMutationGuardBit(PipeTelemetryRingBufferId) |
-            FluidPipeMutationGuardBit(PipeRuptureTelemetryRingBufferId) |
-            FluidPipeMutationGuardBit(PipeRuptureBudgetBufferId) |
-            FluidPipeMutationGuardBit(PipeConnectionSourcesBufferId) |
-            FluidPipeMutationGuardBit(PipeConnectionDestinationsBufferId) |
-            FluidPipeMutationGuardBit(PipeRuptureDispatchBufferId) |
-            FluidPipeMutationGuardBit(PipeConnectionOffsetsBufferId) |
-            FluidPipeMutationGuardBit(PipeConnectionCsrDestinationsBufferId) |
-            FluidPipeMutationGuardBit(PipeConnectionWriteCursorBufferId);
-        private const uint SolveLockMutationGuard = 1u << 31;
         private const uint SolveLockPressure = 1u << 0;
         private const uint SolveLockContents = 1u << 1;
         private const uint SolveLockFlags = 1u << 2;
@@ -1352,17 +1326,32 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if ((lockMask & SolveLockMutationGuard) == 0u)
+            if ((lockMask & bit) != 0u ||
+                !vault.TryLockBuffer(expectedBufferId, OwnerSystemId))
             {
-                if (!vault.TryAcquireMutationGuard(PipeGraphMutationGuardMask))
-                    return false;
-
-                lockMask |= SolveLockMutationGuard;
+                return false;
             }
 
-            return vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (vault.TryResolveHandle(in handle, out buffer) &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    lockMask |= bit;
+                    releaseOnFailure = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.TryUnlockBuffer(expectedBufferId, OwnerSystemId);
+            }
         }
 
         private void ReleaseSolveWriteLocks(IDataVault vault, uint lockMask)
@@ -1370,8 +1359,14 @@ namespace Hecton8.Construction
             if (vault == null || lockMask == 0u)
                 return;
 
-            if ((lockMask & SolveLockMutationGuard) != 0u)
-                vault.ReleaseMutationGuard(PipeGraphMutationGuardMask);
+            uint remainingLocks = lockMask;
+            while (remainingLocks != 0u)
+            {
+                uint bit = remainingLocks & (~remainingLocks + 1u);
+                remainingLocks &= ~bit;
+                if (TryResolveSolveLockBufferId(bit, out BufferID bufferId))
+                    vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            }
         }
 
         private bool TryReadOnlyBuffer<T>(
@@ -1480,11 +1475,6 @@ namespace Hecton8.Construction
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)OwnerSystemId &&
                    handle.Generation != 0u;
-        }
-
-        private static ulong FluidPipeMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)bufferId) & 31);
         }
 
         private static bool TryResolveSolveLockBufferId(uint bit, out BufferID bufferId)

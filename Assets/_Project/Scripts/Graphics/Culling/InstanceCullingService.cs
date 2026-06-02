@@ -565,7 +565,7 @@ namespace Hecton8.Graphics.Culling
             if (_indirectArgsBuffer == null)
             {
                 _indirectArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                     IndirectArgsCount,
                     sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - indirect args written by CopyCount - owner: InstanceCullingService
                 _indirectArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(

@@ -18,13 +18,13 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/UI Tooltip")]
     public sealed class UITooltip : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // REGISTRY SERVICE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== UI REFERENCES ===")]
         [SerializeField] private RectTransform tooltipPanel;
@@ -45,9 +45,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Max tooltip width (pixels)")]
         private float maxWidth = 400f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool _registered;
         private bool _runtimeRegistered;
@@ -66,6 +66,8 @@ namespace Hecton8.UI
         private bool _pendingPositionRefresh;
         private int _currentTextLength;
         private static UITooltip s_activeRuntime;
+        private const uint TooltipTextHashSeed = 2166136261u;
+        private const uint TooltipTextHashPrime = 16777619u;
         // COLD ALLOC: char[512] - tooltip TMP staging buffer, never resized - owner: UITooltip
         private readonly char[] _textBuffer = new char[TooltipTextCapacity];
         private const int TooltipTextCapacity = 512;
@@ -78,9 +80,9 @@ namespace Hecton8.UI
             s_activeRuntime = null;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -157,9 +159,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Show tooltip with text at cursor position.
@@ -194,9 +196,9 @@ namespace Hecton8.UI
             instance.HideInternal();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LATE FRAME
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -233,9 +235,9 @@ namespace Hecton8.UI
 
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool TryRegisterRuntime()
         {
@@ -275,10 +277,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -286,7 +285,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
 
             _registered = false;
         }
@@ -310,7 +309,7 @@ namespace Hecton8.UI
 
         private void ShowInternal(ReadOnlySpan<char> text)
         {
-            uint textHash = unchecked((uint)LocHash.Compute(text));
+            uint textHash = ComputeTooltipTextHash(text);
             if (_currentTextHash == textHash &&
                 _currentTextLength == text.Length &&
                 BufferMatches(text, _textBuffer, _currentTextLength) &&
@@ -325,6 +324,18 @@ namespace Hecton8.UI
             _isVisible = false;
             _pendingPositionRefresh = true;
             TryRegister();
+        }
+
+        private static uint ComputeTooltipTextHash(ReadOnlySpan<char> text)
+        {
+            uint hash = TooltipTextHashSeed;
+            for (int i = 0; i < text.Length; i++)
+            {
+                hash ^= text[i];
+                hash *= TooltipTextHashPrime;
+            }
+
+            return hash;
         }
 
         private void ShowTooltip()

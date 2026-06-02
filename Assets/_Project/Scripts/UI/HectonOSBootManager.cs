@@ -62,7 +62,7 @@ namespace Hecton8.UI
         private static readonly int PressureKeyHash = LocHash.Compute(LocalizationKeys.HUD_PRESSURE);
         private static readonly int DepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
 
-        [Header("── Font ──────────────────")]
+        [Header("-- Font ------------------")]
         [Tooltip("Optional TMP font override for the boot log. Leave empty to use the readable fallback resolver.")]
         [SerializeField] private TMP_FontAsset font;
 
@@ -608,10 +608,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -619,7 +616,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

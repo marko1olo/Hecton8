@@ -117,6 +117,67 @@ public sealed class PowerGridJacobiContractsEditTests
     }
 
     [Test]
+    public void BuildCsrPowerGraph_SparkingContactLeaksMinimumConductance()
+    {
+        NativeArray<PowerNodeDTO> nodes = new NativeArray<PowerNodeDTO>(2, Allocator.TempJob);
+        NativeArray<PowerGridEdgeDTO> edges = new NativeArray<PowerGridEdgeDTO>(1, Allocator.TempJob);
+        NativeArray<int> offsets = new NativeArray<int>(3, Allocator.TempJob);
+        NativeArray<int> cursors = new NativeArray<int>(2, Allocator.TempJob);
+        NativeArray<int> destinations = new NativeArray<int>(2, Allocator.TempJob);
+        NativeArray<float> conductance = new NativeArray<float>(2, Allocator.TempJob);
+        NativeArray<float> flow = new NativeArray<float>(2, Allocator.TempJob);
+        try
+        {
+            PowerNodeDTO sourceNode = default;
+            sourceNode.NodeHash = 1u;
+            sourceNode.Flags = PowerGridJacobiConstants.NodeFlagActive;
+            nodes[0] = sourceNode;
+
+            PowerNodeDTO destinationNode = default;
+            destinationNode.NodeHash = 2u;
+            destinationNode.Flags = PowerGridJacobiConstants.NodeFlagActive;
+            nodes[1] = destinationNode;
+
+            PowerGridEdgeDTO edge = default;
+            edge.SourceNodeHash = 1u;
+            edge.DestinationNodeHash = 2u;
+            edge.SourceNodeIndex = 0;
+            edge.DestinationNodeIndex = 1;
+            edge.Conductance = 0.75f;
+            edge.Capacity = 100f;
+            edge.Flags = PowerGridJacobiConstants.EdgeFlagDamaged | PowerGridJacobiConstants.EdgeFlagSparking;
+            edges[0] = edge;
+
+            new BuildCsrPowerGraphJob
+            {
+                Nodes = nodes,
+                FlatEdges = edges,
+                NodeEdgeOffsets = offsets,
+                EdgeWriteCursor = cursors,
+                EdgeDestinations = destinations,
+                EdgeConductance = conductance,
+                EdgeCurrentFlow = flow,
+                NodeCount = 2,
+                EdgeCount = 1
+            }.Execute();
+
+            Assert.AreEqual(2, offsets[2]);
+            Assert.AreEqual(PowerGridJacobiConstants.SparkLeakConductance, conductance[0], 0.0000001f);
+            Assert.AreEqual(PowerGridJacobiConstants.SparkLeakConductance, conductance[1], 0.0000001f);
+        }
+        finally
+        {
+            if (nodes.IsCreated) nodes.Dispose();
+            if (edges.IsCreated) edges.Dispose();
+            if (offsets.IsCreated) offsets.Dispose();
+            if (cursors.IsCreated) cursors.Dispose();
+            if (destinations.IsCreated) destinations.Dispose();
+            if (conductance.IsCreated) conductance.Dispose();
+            if (flow.IsCreated) flow.Dispose();
+        }
+    }
+
+    [Test]
     public void BuildCsrPowerGraph_TruncatedAdjacencyDoesNotOverwriteAcceptedSlots()
     {
         NativeArray<PowerNodeDTO> nodes = new NativeArray<PowerNodeDTO>(3, Allocator.TempJob);
@@ -209,6 +270,82 @@ public sealed class PowerGridJacobiContractsEditTests
             if (nodes.IsCreated) nodes.Dispose();
             if (edges.IsCreated) edges.Dispose();
             if (counts.IsCreated) counts.Dispose();
+        }
+    }
+
+    [Test]
+    public unsafe void PowerVoltageSolver_CascadeShedMarksBrownoutAndRecovers()
+    {
+        NativeArray<PowerNodeDTO> nodes = new NativeArray<PowerNodeDTO>(2, Allocator.TempJob);
+        NativeArray<int> offsets = new NativeArray<int>(3, Allocator.TempJob);
+        NativeArray<int> destinations = new NativeArray<int>(2, Allocator.TempJob);
+        NativeArray<float> conductance = new NativeArray<float>(2, Allocator.TempJob);
+        NativeArray<float> front = new NativeArray<float>(2, Allocator.TempJob);
+        NativeArray<float> demand = new NativeArray<float>(2, Allocator.TempJob);
+        NativeArray<float> back = new NativeArray<float>(2, Allocator.TempJob);
+        try
+        {
+            PowerNodeDTO source = default;
+            source.NodeHash = 1u;
+            source.Flags = PowerGridJacobiConstants.NodeFlagActive | PowerGridJacobiConstants.NodeFlagSource;
+            source.Potential = 1f;
+            nodes[0] = source;
+
+            PowerNodeDTO consumer = default;
+            consumer.NodeHash = 2u;
+            consumer.Flags = PowerGridJacobiConstants.NodeFlagActive;
+            consumer.Potential = 0.05f;
+            nodes[1] = consumer;
+
+            offsets[0] = 0;
+            offsets[1] = 1;
+            offsets[2] = 2;
+            destinations[0] = 1;
+            destinations[1] = 0;
+            front[0] = 1f;
+            front[1] = 0.05f;
+            demand[1] = 1f;
+
+            PowerVoltageSolverJob shedJob = new PowerVoltageSolverJob
+            {
+                NodesPtr = (PowerNodeDTO*)nodes.GetUnsafePtr(),
+                NodeEdgeOffsets = offsets,
+                EdgeDestinations = destinations,
+                EdgeConductance = conductance,
+                FrontPotential = front,
+                DemandRate = demand,
+                BackPotential = back,
+                NodeCount = 2,
+                GlobalQualityWeight = 1f,
+                SmoothingFactor = 1f
+            };
+            shedJob.Execute(1);
+
+            PowerNodeDTO shedNode = nodes[1];
+            Assert.AreEqual(0f, shedNode.Potential);
+            Assert.AreNotEqual(0u, shedNode.Flags & PowerGridJacobiConstants.NodeFlagBrownout);
+            Assert.AreNotEqual(0u, shedNode.Flags & PowerGridJacobiConstants.NodeFlagCascadeShed);
+            Assert.AreEqual(0f, back[1]);
+
+            front[1] = 0.5f;
+            conductance[1] = 10f;
+            demand[1] = 0f;
+            shedJob.Execute(1);
+
+            PowerNodeDTO recoveredNode = nodes[1];
+            Assert.Greater(recoveredNode.Potential, PowerGridJacobiConstants.BrownoutThreshold01);
+            Assert.AreEqual(0u, recoveredNode.Flags & PowerGridJacobiConstants.NodeFlagCascadeShed);
+            Assert.AreEqual(0u, recoveredNode.Flags & PowerGridJacobiConstants.NodeFlagBrownout);
+        }
+        finally
+        {
+            if (nodes.IsCreated) nodes.Dispose();
+            if (offsets.IsCreated) offsets.Dispose();
+            if (destinations.IsCreated) destinations.Dispose();
+            if (conductance.IsCreated) conductance.Dispose();
+            if (front.IsCreated) front.Dispose();
+            if (demand.IsCreated) demand.Dispose();
+            if (back.IsCreated) back.Dispose();
         }
     }
 

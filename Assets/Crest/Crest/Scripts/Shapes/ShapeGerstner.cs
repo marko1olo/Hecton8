@@ -555,6 +555,9 @@ namespace Crest
 #if UNITY_EDITOR
         void OnGUI()
         {
+            if (Application.isPlaying)
+                return;
+
             if (_debug._drawSlicesInEditor && _waveBuffers != null && _waveBuffers.IsCreated())
             {
                 OceanDebugGUI.DrawTextureArray(_waveBuffers, 8, 0.5f);

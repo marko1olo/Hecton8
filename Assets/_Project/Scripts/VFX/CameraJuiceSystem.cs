@@ -882,7 +882,7 @@ namespace Hecton8.VFX
         private static void LogVignetteMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
+            Hecton8.Core.H8Debug.Log("[CameraJuiceSystem] Vignette override not found in Volume profile. Health vignette presentation disabled.");
 #endif
         }
 
@@ -890,7 +890,7 @@ namespace Hecton8.VFX
         private static void LogDepthOfFieldMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
+            Hecton8.Core.H8Debug.Log("[CameraJuiceSystem] DepthOfField override not found in Volume profile. Depth-of-field presentation disabled.");
 #endif
         }
 

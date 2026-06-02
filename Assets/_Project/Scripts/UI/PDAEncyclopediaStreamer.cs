@@ -8,7 +8,9 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Data;
+using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
+using Hecton8.Data;
 using TMPro;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -182,17 +184,26 @@ namespace Hecton8.UI
         private const uint FaultMissingVault = 0x5641554Cu;
         private const uint FaultMissingText = 0x54455854u;
         private const uint FaultUtf8Invalid = 0x55544638u;
+        private const uint FaultMetadataFull = 0x4D455441u;
+        private const uint FaultMetadataCollision = 0x434F4C4Cu;
+        private const string BlackBoxDumpFileName = "Dump_PDAEncyclopediaStreamer_BlackBox.bin";
         private const uint DefaultEntryHash = 0xAEC57EACu;
         private const uint H8lrSourceId = PdaH8lrLoreStore.MagicH8lr;
         private const uint StateFlagEditorBulkUnlock = 1u;
         private const uint StateFlagPreciseAup = 2u;
         private const uint StateFlagCanvasSplit = 4u;
         private const int StateFlagSourceShift = 8;
-        private const uint StateFlagSourceMask = 3u << StateFlagSourceShift;
+        private const uint StateFlagSourceMask = 7u << StateFlagSourceShift;
+        private const ushort MetaFlagPreciseAup = 1;
+        private const ushort MetaFlagH8lrSource = 2;
+        private const ushort MetaFlagDataMonolithSource = 4;
+        private const ushort MetaFlagEncryptedPrerequisite = 8;
         private const uint TelemetryFlagCanvasSplit = 1u << 16;
         private const uint TextSourceH8lr = 1u;
         private const uint TextSourceBabel = 2u;
         private const uint TextSourceVaultMock = 3u;
+        private const uint TextSourceDataMonolith = 4u;
+        private const uint DataMonolithSourceId = H8DataLayoutConstants.BlobMagic;
         private const BufferID UnlockMaskBufferId = (BufferID)70560;
         private const BufferID RuntimeStateBufferId = (BufferID)70561;
         private const BufferID MetadataBufferId = (BufferID)70562;
@@ -227,12 +238,20 @@ namespace Hecton8.UI
         [SerializeField] private Canvas dynamicTextCanvas;
 
         [Header("Data")]
+        [SerializeField] private bool openDataMonolithAppliedLoreOnEnable = true;
+        [SerializeField] private uint dataMonolithLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
         [SerializeField] private bool openDefaultH8lrOnEnable = true;
         [SerializeField] private string h8lrPathOverride;
         [SerializeField] private bool openDefaultBabelOnEnable = true;
         [SerializeField] private string dictionaryPathOverride;
         [SerializeField] private string metadataCsvRelativePath = "Docs/PDA/lore_metadata.csv";
         [SerializeField] private uint initialEntryHash = DefaultEntryHash;
+
+        [Header("Accessibility")]
+        [SerializeField] private bool consumeUiRescaleRequests = true;
+        [SerializeField] private float minimumTextScale = 0.78f;
+        [SerializeField] private float maximumTextScale = 1.35f;
+        [SerializeField] private bool allowInstantRevealRequests = true;
 
         [Header("Diagnostics")]
         [SerializeField] private bool drawDebugGizmo;
@@ -263,6 +282,7 @@ namespace Hecton8.UI
         private bool _vaultReady;
         private bool _mockSeeded;
         private bool _h8lrMetadataSeeded;
+        private bool _dataMonolithMetadataSeeded;
 #pragma warning disable CS0414
         private bool _coldBootstrapAttempted;
 #pragma warning restore CS0414
@@ -278,9 +298,25 @@ namespace Hecton8.UI
         private int _lastSubmittedLength = -1;
         private int _activeSourceBytes;
         private float _charAccumulator;
+        private H8AppliedLorePacketRecord _activeAppliedLoreRecord;
+        private uint _activeAppliedLoreRecordHash;
+        private uint _activeAppliedLoreLocaleHash;
         private uint _lastFaultHash;
         private uint _activeUtf8SourceFlags;
+        private bool _hasActiveAppliedLoreRecord;
         private bool _blackBoxDumpQueued;
+        private bool _forceRevealDecodedTextNextVisualSync;
+        private bool _titleBaseFontSizeCaptured;
+        private bool _bodyBaseFontSizeCaptured;
+        private bool _metaBaseFontSizeCaptured;
+        private float _titleBaseFontSize;
+        private float _bodyBaseFontSize;
+        private float _metaBaseFontSize;
+        private float _appliedTextScale = 1f;
+        private uint _lastUiRescaleFrame;
+        private uint _lastUiRescaleSourceHash;
+        private uint _lastUiRescaleFontScaleBits;
+        private ushort _lastUiRescaleReason;
 
         private void Awake()
         {
@@ -297,6 +333,8 @@ namespace Hecton8.UI
             TryColdBootstrap();
             SignalBus<ScanCompleteSignal>.EnsureInitialized();
             SignalBus<LoreFragmentScannedSignal>.EnsureInitialized();
+            SignalBus<UIRescaleRequestSignal>.EnsureInitialized();
+            CapturePdaTextFontBaselinesCold();
             TryRegisterPdaEvents();
             TryRegisterHotSwapListener();
             TryRegisterDispatcherLanes();
@@ -323,8 +361,10 @@ namespace Hecton8.UI
             FlushQueuedBlackBoxDump();
             _coldBootstrapAttempted = false;
             _vaultReady = false;
+            _dataMonolithMetadataSeeded = false;
             _playerContext = null;
             ResetActiveSourceCache();
+            _forceRevealDecodedTextNextVisualSync = false;
 
             if (_h8lrLoreStore != null)
             {
@@ -384,6 +424,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             AdvanceEncyclopediaFrameState();
+            ConsumeUiRescaleRequestsVisualSync();
 
             if (!_isPdaVisible || bodyText == null)
                 return;
@@ -418,13 +459,15 @@ namespace Hecton8.UI
             ReadOnlySpan<byte> source = SelectActiveUtf8Source();
             if (source.Length <= 0)
             {
+                WriteCorruptedBody(_activeEntryHash != 0u ? _activeEntryHash : DefaultEntryHash);
                 SetFault(FaultMissingText);
+                QueueBlackBoxDump();
                 return;
             }
 
             _activeSourceBytes = source.Length;
-            TryAdvanceTextWindowForLongEntry(source.Length);
-            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            TryAdvanceTextWindowForLongEntry(source);
+            float quality = ResolveGlobalQualityWeight01();
             long decodeStart = Stopwatch.GetTimestamp();
             int decodeBudget = ResolveDecodeBudget(quality);
             int decodedThisFrame = DecodeUtf8Budgeted(source, _bodyLease.Span, decodeBudget);
@@ -436,6 +479,7 @@ namespace Hecton8.UI
                 _streamState = PdaEncyclopediaStreamState.Streaming;
 
             uint charsRenderedThisFrame = StepVisibleCharacters(quality);
+            charsRenderedThisFrame += ForceRevealDecodedTextIfRequested();
             long canvasStart = Stopwatch.GetTimestamp();
             SubmitBodyIfChanged();
             long canvasTicks = Stopwatch.GetTimestamp() - canvasStart;
@@ -573,6 +617,12 @@ namespace Hecton8.UI
 
             _pendingSelectHash = hash;
             _needsEntryReload = true;
+        }
+
+        public void RequestInstantReveal()
+        {
+            if (allowInstantRevealRequests)
+                _forceRevealDecodedTextNextVisualSync = true;
         }
 
         public bool EditorIngestCsv()
@@ -767,11 +817,24 @@ namespace Hecton8.UI
                 if (signal.Hash == 0u)
                     continue;
 
-                PdaAup48 aup = default;
-                if (TryReadLastDiscoveryAup(out PdaAup48 lastAup))
-                    aup = lastAup;
+                if ((signal.Flags & LoreFragmentScannedSignal.FlagPairedScanComplete) != 0 &&
+                    HasPairedScanComplete(scanSignals, in signal))
+                    continue;
 
-                UnlockEntry(signal.Hash, in aup, signal.SourceId, signal.Frame, false);
+                PdaAup48 aup = default;
+                bool hasSignalAup = false;
+                if ((signal.Flags & LoreFragmentScannedSignal.FlagHasAup) != 0 &&
+                    TryCaptureSignalAup(in signal, out PdaAup48 signalAup))
+                {
+                    aup = signalAup;
+                    hasSignalAup = true;
+                }
+                else if (TryReadLastDiscoveryAup(out PdaAup48 lastAup))
+                {
+                    aup = lastAup;
+                }
+
+                UnlockEntry(signal.Hash, in aup, signal.SourceId, signal.Frame, hasSignalAup);
                 _pendingSelectHash = signal.Hash;
             }
         }
@@ -795,6 +858,7 @@ namespace Hecton8.UI
             _activeSourceBytes = 0;
             _charAccumulator = 0f;
             _lastFaultHash = 0u;
+            _forceRevealDecodedTextNextVisualSync = false;
             _needsEntryReload = false;
             ResetActiveSourceCache();
             ResetTypewriterState();
@@ -802,7 +866,10 @@ namespace Hecton8.UI
             if (!IsUnlocked(hash))
             {
                 _streamState = PdaEncyclopediaStreamState.Locked;
-                WriteLockedBody(hash);
+                if (IsEncrypted(hash))
+                    WriteEncryptedBody(hash);
+                else
+                    WriteLockedBody(hash);
                 WriteTitle(hash);
                 WriteMeta(hash);
                 return;
@@ -824,13 +891,20 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || hash == 0u)
                 return false;
 
-            ushort bitIndex = EnsureBitIndex(hash);
+            if (!TryEnsureBitIndex(hash, out ushort bitIndex))
+            {
+                SetFault(FaultMetadataFull);
+                return false;
+            }
+
             int wordIndex = bitIndex >> 6;
             int bitInWord = bitIndex & 63;
             ulong bit = 1UL << bitInWord;
             ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             ref ulong word = ref GetMaskWordRef(ref mask, wordIndex);
-            bool wasLocked = AtomicOr(ref word, bit);
+            bool alreadyUnlocked = (word & bit) != 0UL;
+            bool prerequisitesSatisfied = alreadyUnlocked || AreAppliedLorePrerequisitesSatisfied(hash);
+            bool wasLocked = prerequisitesSatisfied && AtomicOr(ref word, bit);
 
             ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
             state.Magic = StateMagic;
@@ -838,7 +912,7 @@ namespace Hecton8.UI
             state.LastFrame = frame;
             state.LastSourceId = sourceId;
             state.ActiveBitIndex = bitIndex;
-            state.GlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            state.GlobalQualityWeight = ResolveGlobalQualityWeight01();
             mask.Magic = StateMagic;
             mask.LastEntryHash = hash;
             mask.LastFrame = frame;
@@ -849,6 +923,12 @@ namespace Hecton8.UI
             if (wasLocked)
             {
                 state.UnlockedCount = math.min((uint)UnlockBitCount, state.UnlockedCount + 1u);
+                state.Revision++;
+                mask.UnlockedCount = state.UnlockedCount;
+                mask.Revision = state.Revision;
+            }
+            else if (!prerequisitesSatisfied)
+            {
                 state.Revision++;
                 mask.UnlockedCount = state.UnlockedCount;
                 mask.Revision = state.Revision;
@@ -891,10 +971,86 @@ namespace Hecton8.UI
                 meta.DiscoveryLocalX = aup.LocalX;
                 meta.DiscoveryLocalY = aup.LocalY;
                 meta.DiscoveryLocalZ = aup.LocalZ;
-                meta.Flags |= 1;
+                meta.Flags |= MetaFlagPreciseAup;
             }
 
+            if (prerequisitesSatisfied)
+                meta.Flags = (ushort)(meta.Flags & ~MetaFlagEncryptedPrerequisite);
+            else
+                meta.Flags = (ushort)(meta.Flags | MetaFlagEncryptedPrerequisite);
+
+            if (wasLocked)
+                PromoteEncryptedDependents(frame);
+
             return wasLocked;
+        }
+
+        private void PromoteEncryptedDependents(uint frame)
+        {
+            if (!EnsureVaultBuffers())
+                return;
+
+            for (int pass = 0; pass <= H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity; pass++)
+            {
+                bool changedThisPass = false;
+                uint promotedThisPass = 0u;
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
+                ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
+
+                for (ushort bitIndex = 0; bitIndex < MaxMetadataEntries; bitIndex++)
+                {
+                    ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
+                    uint dependentHash = meta.EntryHash;
+                    if (dependentHash == 0u || (meta.Flags & MetaFlagEncryptedPrerequisite) == 0)
+                        continue;
+
+                    if (!AreAppliedLorePrerequisitesSatisfied(dependentHash))
+                        continue;
+
+                    ref ulong word = ref GetMaskWordRef(ref mask, bitIndex >> 6);
+                    ulong bit = 1UL << (bitIndex & 63);
+                    if (AtomicOr(ref word, bit))
+                    {
+                        promotedThisPass++;
+                        state.UnlockedCount = math.min((uint)UnlockBitCount, state.UnlockedCount + 1u);
+                    }
+
+                    meta.Flags = (ushort)(meta.Flags & ~MetaFlagEncryptedPrerequisite);
+                    meta.LastFrame = frame;
+                    meta.Revision++;
+                    changedThisPass = true;
+                }
+
+                if (!changedThisPass)
+                    break;
+
+                state.Revision++;
+                state.LastFrame = frame;
+                mask.UnlockedCount = state.UnlockedCount;
+                mask.Revision = state.Revision;
+                mask.LastFrame = frame;
+
+                if (promotedThisPass == 0u)
+                    break;
+            }
+        }
+
+        private bool AreAppliedLorePrerequisitesSatisfied(uint hash)
+        {
+            if (hash == 0u || !H8AppliedLoreRuntime.TryFindRouteForPacket(hash, out H8AppliedLoreRouteRecord route))
+                return true;
+
+            uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+            for (uint i = 0u; i < requiredCount; i++)
+            {
+                uint requiredHash = H8AppliedLoreRuntime.GetRouteRequiredPacketHash(in route, i);
+                if (requiredHash == 0u || requiredHash == hash)
+                    return false;
+                if (!IsUnlocked(requiredHash))
+                    return false;
+            }
+
+            return true;
         }
 
         private bool IsUnlocked(uint hash)
@@ -911,10 +1067,28 @@ namespace Hecton8.UI
             return (word & bit) != 0UL;
         }
 
-        private ushort EnsureBitIndex(uint hash)
+        private bool IsEncrypted(uint hash)
+        {
+            if (!EnsureVaultBuffers() || !TryFindBitIndex(hash, out ushort bitIndex))
+                return false;
+
+            ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
+            return (meta.Flags & MetaFlagEncryptedPrerequisite) != 0;
+        }
+
+        private bool TryEnsureBitIndex(uint hash, out ushort bitIndex)
         {
             if (TryFindBitIndex(hash, out ushort existingBitIndex))
-                return existingBitIndex;
+            {
+                bitIndex = existingBitIndex;
+                return true;
+            }
+
+            if (!_vaultReady || _vault == null || hash == 0u)
+            {
+                bitIndex = 0;
+                return false;
+            }
 
             int start = (int)(hash & (UnlockBitCount - 1));
             for (int probe = 0; probe < UnlockBitCount; probe++)
@@ -935,10 +1109,12 @@ namespace Hecton8.UI
                     meta.TitleHash = hash;
                 }
 
-                return (ushort)index;
+                bitIndex = (ushort)index;
+                return true;
             }
 
-            return (ushort)start;
+            bitIndex = 0;
+            return false;
         }
 
         private bool TryFindBitIndex(uint hash, out ushort bitIndex)
@@ -970,6 +1146,12 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<byte> SelectActiveUtf8Source()
         {
+            if (TryGetAppliedLoreUtf8(_activeEntryHash, H8AppliedLoreSurface.InGameWiki, out ReadOnlySpan<byte> dataMonolithUtf8))
+            {
+                CacheActiveSource(dataMonolithUtf8, TextSourceDataMonolith);
+                return dataMonolithUtf8;
+            }
+
             if (TryGetH8lrUtf8(_activeEntryHash, out ReadOnlySpan<byte> h8lrUtf8))
             {
                 CacheActiveSource(h8lrUtf8, TextSourceH8lr);
@@ -1002,6 +1184,60 @@ namespace Hecton8.UI
             return store != null && store.IsOpen && store.TryGetUtf8(hash, out utf8);
         }
 
+        private bool TryGetAppliedLoreUtf8(uint hash, H8AppliedLoreSurface surface, out ReadOnlySpan<byte> utf8)
+        {
+            utf8 = ReadOnlySpan<byte>.Empty;
+            if (!openDataMonolithAppliedLoreOnEnable || hash == 0u)
+                return false;
+
+            if (!TryGetAppliedLoreRecord(hash, out H8AppliedLorePacketRecord record))
+                return false;
+
+            return H8AppliedLoreRuntime.TryGetUtf8(in record, surface, out utf8);
+        }
+
+        private bool TryGetAppliedLoreRecord(uint hash, out H8AppliedLorePacketRecord record)
+        {
+            uint localeHash = dataMonolithLocaleHash != 0u ? dataMonolithLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+            if (_hasActiveAppliedLoreRecord &&
+                _activeAppliedLoreRecordHash == hash &&
+                _activeAppliedLoreLocaleHash == localeHash)
+            {
+                record = _activeAppliedLoreRecord;
+                return record.PacketHash == hash && record.LocaleHash != 0u;
+            }
+
+            if (H8AppliedLoreRuntime.TryFindPacket(hash, localeHash, out record))
+            {
+                CacheAppliedLoreRecord(hash, localeHash, in record);
+                return true;
+            }
+
+            record = default;
+            return false;
+        }
+
+        private bool TryWriteAppliedLoreSurfaceUtf16(
+            uint hash,
+            H8AppliedLoreSurface surface,
+            Span<char> destination,
+            out int written)
+        {
+            written = 0;
+            return openDataMonolithAppliedLoreOnEnable &&
+                   hash != 0u &&
+                   TryGetAppliedLoreRecord(hash, out H8AppliedLorePacketRecord record) &&
+                   H8AppliedLoreRuntime.TryWriteSurfaceUtf16(in record, surface, destination, out written);
+        }
+
+        private void CacheAppliedLoreRecord(uint requestedHash, uint requestedLocaleHash, in H8AppliedLorePacketRecord record)
+        {
+            _activeAppliedLoreRecord = record;
+            _activeAppliedLoreRecordHash = requestedHash;
+            _activeAppliedLoreLocaleHash = requestedLocaleHash;
+            _hasActiveAppliedLoreRecord = record.PacketHash == requestedHash && record.LocaleHash != 0u;
+        }
+
         private void CacheActiveSource(ReadOnlySpan<byte> source, uint sourceFlags)
         {
             if (source.Length <= 0)
@@ -1018,6 +1254,10 @@ namespace Hecton8.UI
         {
             _activeSourceBytes = 0;
             _activeUtf8SourceFlags = 0u;
+            _activeAppliedLoreRecord = default;
+            _activeAppliedLoreRecordHash = 0u;
+            _activeAppliedLoreLocaleHash = 0u;
+            _hasActiveAppliedLoreRecord = false;
         }
 
         private static bool IsBabelErrorSentinel(ReadOnlySpan<byte> source)
@@ -1030,13 +1270,28 @@ namespace Hecton8.UI
                    source[4] == (byte)'R';
         }
 
-        private void TryAdvanceTextWindowForLongEntry(int sourceLength)
+        private void TryAdvanceTextWindowForLongEntry(ReadOnlySpan<byte> source)
         {
+            int sourceLength = source.Length;
             if (!_bodyLease.IsValid ||
                 sourceLength <= 0 ||
-                _sourceByteCursor >= sourceLength ||
-                _decodedLength < _bodyLease.Span.Length ||
-                _visibleLength < _decodedLength)
+                _sourceByteCursor >= sourceLength)
+            {
+                return;
+            }
+
+            int capacity = _bodyLease.Span.Length;
+            if (capacity <= 0)
+                return;
+
+            bool pendingSurrogateNeedsFreshWindow =
+                _visibleLength >= _decodedLength &&
+                _decodedLength >= capacity - 1 &&
+                HasPendingUtf8SurrogatePairAtCursor(source);
+
+            if (!pendingSurrogateNeedsFreshWindow &&
+                (_decodedLength < capacity ||
+                 _visibleLength < _decodedLength))
             {
                 return;
             }
@@ -1076,7 +1331,7 @@ namespace Hecton8.UI
                 {
                     byte b1 = source[sourceCursor + 1];
                     int scalar = ((b0 & 0x1F) << 6) | (b1 & 0x3F);
-                    if ((b1 & 0xC0) == 0x80 && scalar >= 0x80)
+                    if (IsUtf8Continuation(b1) && scalar >= 0x80)
                     {
                         destination[outputCursor++] = (char)scalar;
                         sourceCursor += 2;
@@ -1089,7 +1344,10 @@ namespace Hecton8.UI
                     byte b1 = source[sourceCursor + 1];
                     byte b2 = source[sourceCursor + 2];
                     int scalar = ((b0 & 0x0F) << 12) | ((b1 & 0x3F) << 6) | (b2 & 0x3F);
-                    if ((b1 & 0xC0) == 0x80 && (b2 & 0xC0) == 0x80 && scalar >= 0x800)
+                    if (IsUtf8Continuation(b1) &&
+                        IsUtf8Continuation(b2) &&
+                        scalar >= 0x800 &&
+                        !IsUtf16SurrogateScalar(scalar))
                     {
                         destination[outputCursor++] = (char)scalar;
                         sourceCursor += 3;
@@ -1106,9 +1364,9 @@ namespace Hecton8.UI
                     byte b2 = source[sourceCursor + 2];
                     byte b3 = source[sourceCursor + 3];
                     int scalar = ((b0 & 0x07) << 18) | ((b1 & 0x3F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
-                    if ((b1 & 0xC0) == 0x80 &&
-                        (b2 & 0xC0) == 0x80 &&
-                        (b3 & 0xC0) == 0x80 &&
+                    if (IsUtf8Continuation(b1) &&
+                        IsUtf8Continuation(b2) &&
+                        IsUtf8Continuation(b3) &&
                         scalar >= 0x10000 &&
                         scalar <= 0x10FFFF)
                     {
@@ -1130,6 +1388,42 @@ namespace Hecton8.UI
             _sourceByteCursor = sourceCursor;
             _decodedLength = outputCursor;
             return produced;
+        }
+
+        private bool HasPendingUtf8SurrogatePairAtCursor(ReadOnlySpan<byte> source)
+        {
+            int sourceCursor = _sourceByteCursor;
+            if (sourceCursor < 0 || sourceCursor + 3 >= source.Length)
+                return false;
+
+            byte b0 = source[sourceCursor];
+            if ((b0 & 0xF8) != 0xF0)
+                return false;
+
+            byte b1 = source[sourceCursor + 1];
+            byte b2 = source[sourceCursor + 2];
+            byte b3 = source[sourceCursor + 3];
+            if (!IsUtf8Continuation(b1) ||
+                !IsUtf8Continuation(b2) ||
+                !IsUtf8Continuation(b3))
+            {
+                return false;
+            }
+
+            int scalar = ((b0 & 0x07) << 18) | ((b1 & 0x3F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+            return scalar >= 0x10000 && scalar <= 0x10FFFF;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsUtf8Continuation(byte value)
+        {
+            return (value & 0xC0) == 0x80;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsUtf16SurrogateScalar(int scalar)
+        {
+            return scalar >= 0xD800 && scalar <= 0xDFFF;
         }
 
         private bool TryAppendTokenReplacement(
@@ -1165,12 +1459,10 @@ namespace Hecton8.UI
                 if (!ZeroGCFormatter.AppendToSpan("DPT ".AsSpan(), destination, ref cursor))
                     return false;
 
-                int meters = 0;
-                if (EnsureVaultBuffers())
-                {
-                    ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
-                    meters = (int)math.round(math.abs(state.LastDiscoveryLocalY));
-                }
+                if (!TryReadPreciseDiscoveryState(out PdaEncyclopediaRuntimeStateDTO state))
+                    return false;
+
+                int meters = (int)math.round(math.abs(state.LastDiscoveryLocalY));
 
                 return ZeroGCFormatter.AppendInt(meters, destination, ref cursor) &&
                        ZeroGCFormatter.AppendChar('m', destination, ref cursor);
@@ -1181,17 +1473,16 @@ namespace Hecton8.UI
 
             if (tokenHash == TokenQualityHash)
             {
-                int percent = (int)math.round(math.saturate(HomeostasisBrain.GlobalQualityWeight) * 100f);
+                int percent = (int)math.round(ResolveGlobalQualityWeight01() * 100f);
                 return ZeroGCFormatter.AppendInt(percent, destination, ref cursor) &&
                        ZeroGCFormatter.AppendChar('%', destination, ref cursor);
             }
 
             if (tokenHash == TokenDiscoveryGridHash)
             {
-                if (!EnsureVaultBuffers())
+                if (!TryReadPreciseDiscoveryState(out PdaEncyclopediaRuntimeStateDTO state))
                     return false;
 
-                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
                 return ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridX), destination, ref cursor) &&
                        ZeroGCFormatter.AppendChar('/', destination, ref cursor) &&
                        ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridY), destination, ref cursor) &&
@@ -1221,7 +1512,9 @@ namespace Hecton8.UI
             if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
+            if (!TryReadPreciseDiscoveryState(out PdaEncyclopediaRuntimeStateDTO state))
+                return false;
+
             PdaAup48 discovery = new PdaAup48
             {
                 GridX = state.LastDiscoveryGridX,
@@ -1244,6 +1537,33 @@ namespace Hecton8.UI
                 return false;
 
             meters = distance >= int.MaxValue ? int.MaxValue : (int)math.round(math.max(0f, distance));
+            return true;
+        }
+
+        private bool TryReadPreciseDiscoveryState(out PdaEncyclopediaRuntimeStateDTO state)
+        {
+            state = default;
+            if (!EnsureVaultBuffers() || _activeEntryHash == 0u)
+                return false;
+
+            if (!TryFindBitIndex(_activeEntryHash, out ushort bitIndex))
+                return false;
+
+            ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
+            if (meta.EntryHash != _activeEntryHash || (meta.Flags & MetaFlagPreciseAup) == 0)
+                return false;
+
+            state.LastEntryHash = meta.EntryHash;
+            state.LastFrame = meta.LastFrame;
+            state.LastSourceId = meta.SourceId;
+            state.ActiveBitIndex = bitIndex;
+            state.LastDiscoveryGridX = meta.DiscoveryGridX;
+            state.LastDiscoveryGridY = meta.DiscoveryGridY;
+            state.LastDiscoveryGridZ = meta.DiscoveryGridZ;
+            state.LastDiscoveryLocalX = meta.DiscoveryLocalX;
+            state.LastDiscoveryLocalY = meta.DiscoveryLocalY;
+            state.LastDiscoveryLocalZ = meta.DiscoveryLocalZ;
+            state.Flags = StateFlagPreciseAup;
             return true;
         }
 
@@ -1288,6 +1608,23 @@ namespace Hecton8.UI
             int previousVisible = _visibleLength;
             _charAccumulator = math.max(0f, _charAccumulator - step);
             _visibleLength = math.min(_decodedLength, _visibleLength + step);
+            return (uint)math.max(0, _visibleLength - previousVisible);
+        }
+
+        private uint ForceRevealDecodedTextIfRequested()
+        {
+            if (!_forceRevealDecodedTextNextVisualSync)
+                return 0u;
+
+            _forceRevealDecodedTextNextVisualSync = false;
+            int capacity = _bodyLease.IsValid ? _bodyLease.Buffer.Length : 0;
+            int decoded = math.clamp(_decodedLength, 0, capacity);
+            if (decoded <= _visibleLength)
+                return 0u;
+
+            int previousVisible = _visibleLength;
+            _visibleLength = decoded;
+            _charAccumulator = 0f;
             return (uint)math.max(0, _visibleLength - previousVisible);
         }
 
@@ -1354,6 +1691,102 @@ namespace Hecton8.UI
             return (int)math.round(math.lerp(32f, 2048f, q));
         }
 
+        private float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(quality))
+                return math.saturate(quality);
+
+            return 0.5f;
+        }
+
+        private void ConsumeUiRescaleRequestsVisualSync()
+        {
+            if (!consumeUiRescaleRequests)
+                return;
+
+            ReadOnlySpan<UIRescaleRequestSignal> signals = SignalBus<UIRescaleRequestSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            float scale = _appliedTextScale;
+            bool hasRequest = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                UIRescaleRequestSignal signal = signals[i];
+                uint fontScaleBits = math.asuint(signal.FontScale);
+                if (signal.Frame == _lastUiRescaleFrame &&
+                    signal.SourceHash == _lastUiRescaleSourceHash &&
+                    fontScaleBits == _lastUiRescaleFontScaleBits &&
+                    signal.Reason == _lastUiRescaleReason)
+                {
+                    continue;
+                }
+
+                _lastUiRescaleFrame = signal.Frame;
+                _lastUiRescaleSourceHash = signal.SourceHash;
+                _lastUiRescaleFontScaleBits = fontScaleBits;
+                _lastUiRescaleReason = signal.Reason;
+                scale = ResolvePdaTextScale(signal.FontScale);
+                hasRequest = true;
+            }
+
+            if (hasRequest)
+                ApplyPdaTextScaleVisualSync(scale);
+        }
+
+        private float ResolvePdaTextScale(float requestedScale)
+        {
+            float scale = math.isfinite(requestedScale) && requestedScale > 0f ? requestedScale : 1f;
+            float minScale = math.isfinite(minimumTextScale) && minimumTextScale > 0f ? minimumTextScale : 0.78f;
+            float maxScale = math.isfinite(maximumTextScale) && maximumTextScale > 0f ? maximumTextScale : 1.35f;
+            if (maxScale < minScale)
+                maxScale = minScale;
+
+            return math.clamp(scale, minScale, maxScale);
+        }
+
+        private void ApplyPdaTextScaleVisualSync(float scale)
+        {
+            CapturePdaTextFontBaselinesCold();
+            if (math.abs(scale - _appliedTextScale) < 0.001f)
+                return;
+
+            _appliedTextScale = scale;
+            ApplyFontScale(titleText, _titleBaseFontSizeCaptured, _titleBaseFontSize, scale);
+            ApplyFontScale(bodyText, _bodyBaseFontSizeCaptured, _bodyBaseFontSize, scale);
+            ApplyFontScale(metaText, _metaBaseFontSizeCaptured, _metaBaseFontSize, scale);
+        }
+
+        private void CapturePdaTextFontBaselinesCold()
+        {
+            if (!_titleBaseFontSizeCaptured && titleText != null)
+            {
+                _titleBaseFontSize = titleText.fontSize;
+                _titleBaseFontSizeCaptured = math.isfinite(_titleBaseFontSize) && _titleBaseFontSize > 0f;
+            }
+
+            if (!_bodyBaseFontSizeCaptured && bodyText != null)
+            {
+                _bodyBaseFontSize = bodyText.fontSize;
+                _bodyBaseFontSizeCaptured = math.isfinite(_bodyBaseFontSize) && _bodyBaseFontSize > 0f;
+            }
+
+            if (!_metaBaseFontSizeCaptured && metaText != null)
+            {
+                _metaBaseFontSize = metaText.fontSize;
+                _metaBaseFontSizeCaptured = math.isfinite(_metaBaseFontSize) && _metaBaseFontSize > 0f;
+            }
+        }
+
+        private static void ApplyFontScale(TMP_Text text, bool hasBaseline, float baseline, float scale)
+        {
+            if (text == null || !hasBaseline || !math.isfinite(baseline) || baseline <= 0f)
+                return;
+
+            text.fontSize = math.max(1f, baseline * scale);
+        }
+
         private void SubmitBodyIfChanged()
         {
             if (bodyText == null || !_bodyLease.IsValid)
@@ -1371,9 +1804,46 @@ namespace Hecton8.UI
         {
             Span<char> span = _bodyLease.Span;
             int cursor = 0;
-            ZeroGCFormatter.AppendToSpan("LOCKED // SCAN ENTRY ".AsSpan(), span, ref cursor);
-            AppendHex8(span, ref cursor, hash);
-            ZeroGCFormatter.AppendToSpan(" TO STREAM LORE.".AsSpan(), span, ref cursor);
+            if (!ZeroGCFormatter.AppendToSpan("LOCKED // SCAN ENTRY ".AsSpan(), span, ref cursor) ||
+                !AppendHex8(span, ref cursor, hash) ||
+                !ZeroGCFormatter.AppendToSpan(" TO STREAM LORE.".AsSpan(), span, ref cursor))
+            {
+                SetFault(FaultMissingText);
+                return;
+            }
+
+            _decodedLength = cursor;
+            _visibleLength = cursor;
+            SubmitBodyIfChanged();
+        }
+
+        private void WriteEncryptedBody(uint hash)
+        {
+            Span<char> span = _bodyLease.Span;
+            int cursor = 0;
+            if (!ZeroGCFormatter.AppendToSpan("ENCRYPTED // PRIOR EVIDENCE REQUIRED ".AsSpan(), span, ref cursor) ||
+                !AppendHex8(span, ref cursor, hash))
+            {
+                SetFault(FaultMissingText);
+                return;
+            }
+
+            _decodedLength = cursor;
+            _visibleLength = cursor;
+            SubmitBodyIfChanged();
+        }
+
+        private void WriteCorruptedBody(uint hash)
+        {
+            Span<char> span = _bodyLease.Span;
+            int cursor = 0;
+            if (!ZeroGCFormatter.AppendToSpan("[CORRUPTED DATA RECORD] ".AsSpan(), span, ref cursor) ||
+                !AppendHex8(span, ref cursor, hash))
+            {
+                SetFault(FaultMissingText);
+                return;
+            }
+
             _decodedLength = cursor;
             _visibleLength = cursor;
             SubmitBodyIfChanged();
@@ -1386,8 +1856,19 @@ namespace Hecton8.UI
 
             Span<char> span = _titleLease.Buffer.AsSpan(0, math.min(TitleBufferCapacity, _titleLease.Buffer.Length));
             int cursor = 0;
-            ZeroGCFormatter.AppendToSpan("ENCYCLOPEDIA // ".AsSpan(), span, ref cursor);
-            AppendHex8(span, ref cursor, hash);
+            if (TryWriteAppliedLoreSurfaceUtf16(hash, H8AppliedLoreSurface.Title, span, out cursor))
+            {
+                titleText.SetCharArray(_titleLease.Buffer, 0, cursor);
+                return;
+            }
+
+            if (!ZeroGCFormatter.AppendToSpan("ENCYCLOPEDIA // ".AsSpan(), span, ref cursor) ||
+                !AppendHex8(span, ref cursor, hash))
+            {
+                SetFault(FaultMissingText);
+                return;
+            }
+
             titleText.SetCharArray(_titleLease.Buffer, 0, cursor);
         }
 
@@ -1399,21 +1880,117 @@ namespace Hecton8.UI
             Span<char> span = _metaLease.Buffer.AsSpan(0, math.min(MetaBufferCapacity, _metaLease.Buffer.Length));
             int cursor = 0;
             ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
-            ZeroGCFormatter.AppendToSpan("UNLOCKED ".AsSpan(), span, ref cursor);
-            ZeroGCFormatter.AppendInt((int)state.UnlockedCount, span, ref cursor);
-            ZeroGCFormatter.AppendToSpan("/256 | BIT ".AsSpan(), span, ref cursor);
-            if (TryFindBitIndex(hash, out ushort bitIndex))
-                ZeroGCFormatter.AppendInt(bitIndex, span, ref cursor);
-            else
-                ZeroGCFormatter.AppendChar('-', span, ref cursor);
+            if (!ZeroGCFormatter.AppendToSpan("UNLOCKED ".AsSpan(), span, ref cursor) ||
+                !ZeroGCFormatter.AppendInt((int)state.UnlockedCount, span, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("/256 | BIT ".AsSpan(), span, ref cursor))
+            {
+                FailMetaWrite();
+                return;
+            }
 
-            ZeroGCFormatter.AppendToSpan(" | GRID ".AsSpan(), span, ref cursor);
-            ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridX), span, ref cursor);
-            ZeroGCFormatter.AppendChar('/', span, ref cursor);
-            ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridY), span, ref cursor);
-            ZeroGCFormatter.AppendChar('/', span, ref cursor);
-            ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridZ), span, ref cursor);
+            if (TryFindBitIndex(hash, out ushort bitIndex))
+            {
+                if (!ZeroGCFormatter.AppendInt(bitIndex, span, ref cursor))
+                {
+                    FailMetaWrite();
+                    return;
+                }
+            }
+            else if (!ZeroGCFormatter.AppendChar('-', span, ref cursor))
+            {
+                FailMetaWrite();
+                return;
+            }
+
+            if (!ZeroGCFormatter.AppendToSpan(" | GRID ".AsSpan(), span, ref cursor))
+            {
+                FailMetaWrite();
+                return;
+            }
+
+            if (TryReadPreciseDiscoveryState(out PdaEncyclopediaRuntimeStateDTO discoveryState))
+            {
+                if (!ZeroGCFormatter.AppendInt(ClampLongToInt(discoveryState.LastDiscoveryGridX), span, ref cursor) ||
+                    !ZeroGCFormatter.AppendChar('/', span, ref cursor) ||
+                    !ZeroGCFormatter.AppendInt(ClampLongToInt(discoveryState.LastDiscoveryGridY), span, ref cursor) ||
+                    !ZeroGCFormatter.AppendChar('/', span, ref cursor) ||
+                    !ZeroGCFormatter.AppendInt(ClampLongToInt(discoveryState.LastDiscoveryGridZ), span, ref cursor))
+                {
+                    FailMetaWrite();
+                    return;
+                }
+            }
+            else if (!ZeroGCFormatter.AppendToSpan("-/-/-".AsSpan(), span, ref cursor))
+            {
+                FailMetaWrite();
+                return;
+            }
+
+            int routeMetaCursor = cursor;
+            if (!TryAppendAppliedLoreRouteMeta(hash, span, ref cursor))
+                cursor = routeMetaCursor;
+
             metaText.SetCharArray(_metaLease.Buffer, 0, cursor);
+        }
+
+        private void FailMetaWrite()
+        {
+            SetFault(FaultMissingText);
+            if (metaText != null && _metaLease.IsValid)
+                metaText.SetCharArray(_metaLease.Buffer, 0, 0);
+        }
+
+        private static bool TryAppendAppliedLoreRouteMeta(uint hash, Span<char> destination, ref int cursor)
+        {
+            if (hash == 0u || !H8AppliedLoreRuntime.TryFindRouteForPacket(hash, out H8AppliedLoreRouteRecord route))
+                return true;
+
+            uint routePacketCount = math.min(route.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+            if (routePacketCount == 0u)
+                return true;
+
+            if (!ZeroGCFormatter.AppendToSpan(" | ROUTE ".AsSpan(), destination, ref cursor))
+                return false;
+
+            if (H8AppliedLoreRuntime.TryResolveRoutePacketOrdinal(in route, hash, out uint ordinal))
+            {
+                if (!ZeroGCFormatter.AppendInt((int)ordinal, destination, ref cursor))
+                    return false;
+            }
+            else if (!ZeroGCFormatter.AppendChar('-', destination, ref cursor))
+            {
+                return false;
+            }
+
+            if (!ZeroGCFormatter.AppendChar('/', destination, ref cursor) ||
+                !ZeroGCFormatter.AppendInt((int)routePacketCount, destination, ref cursor))
+            {
+                return false;
+            }
+
+            uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+            if (requiredCount > 0u)
+            {
+                if (!ZeroGCFormatter.AppendToSpan(" REQ ".AsSpan(), destination, ref cursor) ||
+                    !ZeroGCFormatter.AppendInt((int)requiredCount, destination, ref cursor))
+                {
+                    return false;
+                }
+            }
+
+            if (route.DepthMaxMeters > route.DepthMinMeters)
+            {
+                if (!ZeroGCFormatter.AppendToSpan(" DPT ".AsSpan(), destination, ref cursor) ||
+                    !ZeroGCFormatter.AppendInt((int)math.round(route.DepthMinMeters), destination, ref cursor) ||
+                    !ZeroGCFormatter.AppendChar('-', destination, ref cursor) ||
+                    !ZeroGCFormatter.AppendInt((int)math.round(route.DepthMaxMeters), destination, ref cursor) ||
+                    !ZeroGCFormatter.AppendChar('m', destination, ref cursor))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void WriteRuntimeState(float quality, long decodeTicks, long canvasTicks)
@@ -1469,7 +2046,7 @@ namespace Hecton8.UI
             entry.DecodeTicks = decodeTicks;
             entry.CanvasTicks = canvasTicks;
             entry.Flags = ((uint)_streamState & 0xFFu) |
-                          ((_activeUtf8SourceFlags & 3u) << StateFlagSourceShift) |
+                          ((_activeUtf8SourceFlags & 7u) << StateFlagSourceShift) |
                           (_canvasSplitReady ? TelemetryFlagCanvasSplit : 0u);
             entry.FaultHash = _lastFaultHash;
             entry.CursorByte = (uint)math.max(0, _sourceByteCursor);
@@ -1584,6 +2161,7 @@ namespace Hecton8.UI
             _vaultReady = false;
             _mockSeeded = false;
             _h8lrMetadataSeeded = false;
+            _dataMonolithMetadataSeeded = false;
             _coldBootstrapAttempted = false;
             ResetActiveSourceCache();
         }
@@ -1626,6 +2204,7 @@ namespace Hecton8.UI
 
             EnsureH8lrLoreStore();
             EnsureBabelStore();
+            SeedDataMonolithAppliedLoreMetadata();
             SeedMockLoreDatabase();
         }
 
@@ -1802,6 +2381,73 @@ namespace Hecton8.UI
             _babelStore.OpenDefault();
         }
 
+        private void SeedDataMonolithAppliedLoreMetadata()
+        {
+            if (_dataMonolithMetadataSeeded ||
+                !openDataMonolithAppliedLoreOnEnable ||
+                !EnsureVaultBuffers())
+            {
+                return;
+            }
+
+            ReadOnlySpan<H8AppliedLorePacketRecord> records = H8AppliedLoreRuntime.GetPacketRecords();
+            if (records.Length <= 0)
+                return;
+
+            uint localeHash = dataMonolithLocaleHash != 0u ? dataMonolithLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+            int imported = SeedAppliedLoreMetadataForLocale(records, localeHash, false);
+            if (localeHash != H8AppliedLoreRuntime.DefaultLocaleHash)
+                imported += SeedAppliedLoreMetadataForLocale(records, H8AppliedLoreRuntime.DefaultLocaleHash, true);
+
+            if (imported > 0)
+            {
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
+                state.Revision++;
+                ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
+                encyclopedia.Revision = state.Revision;
+                encyclopedia.MetadataCount = state.MetadataCount;
+            }
+
+            _dataMonolithMetadataSeeded = true;
+        }
+
+        private int SeedAppliedLoreMetadataForLocale(
+            ReadOnlySpan<H8AppliedLorePacketRecord> records,
+            uint localeHash,
+            bool fillOnlyMissingDataMonolithRows)
+        {
+            int imported = 0;
+            for (int i = 0; i < records.Length && imported < MaxMetadataEntries; i++)
+            {
+                H8AppliedLorePacketRecord record = records[i];
+                if (record.PacketHash == 0u || record.LocaleHash != localeHash)
+                    continue;
+
+                if (!TryEnsureBitIndex(record.PacketHash, out ushort bitIndex))
+                {
+                    SetFault(FaultMetadataFull);
+                    break;
+                }
+
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
+                bool hasDataMonolithMetadata = (meta.Flags & MetaFlagDataMonolithSource) != 0;
+                if (fillOnlyMissingDataMonolithRows && hasDataMonolithMetadata)
+                    continue;
+
+                if (!hasDataMonolithMetadata)
+                    imported++;
+
+                meta.EntryHash = record.PacketHash;
+                meta.BitIndex = bitIndex;
+                meta.SourceId = DataMonolithSourceId;
+                meta.TitleHash = record.PacketHash;
+                meta.Flags = (ushort)(meta.Flags | MetaFlagDataMonolithSource);
+                meta.Revision++;
+            }
+
+            return imported;
+        }
+
         private void SeedH8lrMetadata()
         {
             if (_h8lrMetadataSeeded || !EnsureVaultBuffers())
@@ -1818,7 +2464,12 @@ namespace Hecton8.UI
                 if (!store.TryGetRecord(i, out PdaH8lrRecordDTO record) || record.Hash == 0u)
                     continue;
 
-                ushort bitIndex = EnsureBitIndex(record.Hash);
+                if (!TryEnsureBitIndex(record.Hash, out ushort bitIndex))
+                {
+                    SetFault(FaultMetadataFull);
+                    break;
+                }
+
                 ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
                 if (meta.SourceId != H8lrSourceId)
                     imported++;
@@ -1827,7 +2478,7 @@ namespace Hecton8.UI
                 meta.BitIndex = bitIndex;
                 meta.SourceId = H8lrSourceId;
                 meta.TitleHash = record.Hash;
-                meta.Flags = (ushort)(meta.Flags | 2u);
+                meta.Flags = (ushort)(meta.Flags | MetaFlagH8lrSource);
                 meta.Revision++;
             }
 
@@ -1857,18 +2508,26 @@ namespace Hecton8.UI
                 index[i] = default;
 
             int offset = 0;
+            int seededCount = 0;
             for (int i = 0; i < MockEntryCapacity && i < index.Length; i++)
             {
                 uint hash = ResolveMockHash(i);
                 int start = offset;
-                offset += WriteMockEntry(bytes, offset, hash, i);
+                if (!TryWriteMockEntry(bytes, offset, hash, i, out int byteLength))
+                {
+                    SetFault(FaultMissingText);
+                    break;
+                }
+
+                offset += byteLength;
                 index[i] = new BabelIndexDTO
                 {
                     StringHash = hash,
                     ByteOffset = (uint)start,
-                    ByteLength = (uint)(offset - start),
+                    ByteLength = (uint)byteLength,
                     _pad0 = 0u
                 };
+                seededCount++;
 
                 PdaAup48 aup = default;
                 uint sourceId = TryGetH8lrUtf8(hash, out _) ? H8lrSourceId : 0x5348494Eu;
@@ -1876,25 +2535,39 @@ namespace Hecton8.UI
             }
 
             ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
-            state.MockEntryCount = (uint)math.min(MockEntryCapacity, index.Length);
+            state.MockEntryCount = (uint)seededCount;
             ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             encyclopedia.MockEntryCount = state.MockEntryCount;
             _mockSeeded = true;
         }
 
-        private int WriteMockEntry(NativeArray<byte> bytes, int offset, uint hash, int ordinal)
+        private bool TryWriteMockEntry(
+            NativeArray<byte> bytes,
+            int offset,
+            uint hash,
+            int ordinal,
+            out int byteLength)
         {
+            byteLength = 0;
+            if (!bytes.IsCreated || offset < 0 || offset > bytes.Length)
+                return false;
+
             int cursor = offset;
-            WriteAscii(bytes, ref cursor, "HECTON-8 PDA ENCYCLOPEDIA FALLBACK\n".AsSpan());
-            WriteAscii(bytes, ref cursor, "ENTRY ".AsSpan());
-            WriteHexAscii(bytes, ref cursor, hash);
-            WriteAscii(bytes, ref cursor, "\n\nBaked lore dictionary not present. This Vault-backed mock entry proves the streaming lane without JSON or managed string deserialization.\n\n".AsSpan());
-            WriteAscii(bytes, ref cursor, "DISCOVERY GRID ^DISCOVERY_GRID^ // DIST ^DISCOVERY_DISTANCE^ // ENTRY ^ENTRY_HASH^ // QUALITY ^QUALITY^ // DEPTH ^DEPTH^\n\n".AsSpan());
-            WriteAscii(bytes, ref cursor, "The PDA decodes UTF-8 bytes directly into a pooled TMP page. Typewriter reveal is a presentation lie; the lore payload stays byte-addressed and rollback-safe.\n\n".AsSpan());
-            WriteAscii(bytes, ref cursor, "MOCK ORDINAL ".AsSpan());
-            WriteDecimalAscii(bytes, ref cursor, ordinal);
-            WriteAscii(bytes, ref cursor, "\n".AsSpan());
-            return cursor - offset;
+            if (!TryWriteAscii(bytes, ref cursor, "HECTON-8 PDA ENCYCLOPEDIA FALLBACK\n".AsSpan()) ||
+                !TryWriteAscii(bytes, ref cursor, "ENTRY ".AsSpan()) ||
+                !TryWriteHexAscii(bytes, ref cursor, hash) ||
+                !TryWriteAscii(bytes, ref cursor, "\n\nBaked lore dictionary not present. This Vault-backed mock entry proves the streaming lane without JSON or managed string deserialization.\n\n".AsSpan()) ||
+                !TryWriteAscii(bytes, ref cursor, "DISCOVERY GRID ^DISCOVERY_GRID^ // DIST ^DISCOVERY_DISTANCE^ // ENTRY ^ENTRY_HASH^ // QUALITY ^QUALITY^ // DEPTH ^DEPTH^\n\n".AsSpan()) ||
+                !TryWriteAscii(bytes, ref cursor, "The PDA decodes UTF-8 bytes directly into a pooled TMP page. Typewriter reveal is a presentation lie; the lore payload stays byte-addressed and rollback-safe.\n\n".AsSpan()) ||
+                !TryWriteAscii(bytes, ref cursor, "MOCK ORDINAL ".AsSpan()) ||
+                !TryWriteDecimalAscii(bytes, ref cursor, ordinal) ||
+                !TryWriteAscii(bytes, ref cursor, "\n".AsSpan()))
+            {
+                return false;
+            }
+
+            byteLength = cursor - offset;
+            return byteLength > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1979,9 +2652,26 @@ namespace Hecton8.UI
                     continue;
 
                 ReadOnlySpan<byte> line = bytes.Slice(lineStart, i - lineStart);
-                if (TryParseCsvLine(line, out uint hash, out ushort bitIndex))
+                if (TryParseCsvLine(line, out uint hash, out ushort bitIndex, out bool explicitBitIndex))
                 {
+                    if (!explicitBitIndex)
+                    {
+                        if (!TryEnsureBitIndex(hash, out bitIndex))
+                        {
+                            SetFault(FaultMetadataFull);
+                            lineStart = i + 1;
+                            continue;
+                        }
+                    }
+
                     ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
+                    if (meta.EntryHash != 0u && meta.EntryHash != hash)
+                    {
+                        SetFault(FaultMetadataCollision);
+                        lineStart = i + 1;
+                        continue;
+                    }
+
                     if (meta.EntryHash == 0u)
                     {
                         ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
@@ -2010,10 +2700,11 @@ namespace Hecton8.UI
             return imported > 0;
         }
 
-        private bool TryParseCsvLine(ReadOnlySpan<byte> line, out uint hash, out ushort bitIndex)
+        private bool TryParseCsvLine(ReadOnlySpan<byte> line, out uint hash, out ushort bitIndex, out bool explicitBitIndex)
         {
             hash = 0u;
             bitIndex = 0;
+            explicitBitIndex = false;
             line = TrimAscii(line);
             if (line.Length == 0 || line[0] == (byte)'#')
                 return false;
@@ -2037,11 +2728,24 @@ namespace Hecton8.UI
             if (hash == 0u)
                 return false;
 
-            uint parsedBit = thirdNumeric
-                ? thirdNumber
-                : secondNumeric && third.Length == 0
-                    ? secondNumber
-                    : hash & (UnlockBitCount - 1);
+            uint parsedBit;
+            if (thirdNumeric)
+            {
+                parsedBit = thirdNumber;
+                explicitBitIndex = true;
+            }
+            else if (secondNumeric && third.Length == 0)
+            {
+                parsedBit = secondNumber;
+                explicitBitIndex = true;
+            }
+            else
+            {
+                parsedBit = hash & (UnlockBitCount - 1);
+            }
+
+            if (explicitBitIndex && parsedBit >= UnlockBitCount)
+                return false;
 
             bitIndex = (ushort)(parsedBit & (UnlockBitCount - 1));
             return true;
@@ -2092,27 +2796,27 @@ namespace Hecton8.UI
 
         private void TryRegisterDispatcherLanes()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterDispatcherLanes()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
         }
@@ -2171,15 +2875,39 @@ namespace Hecton8.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static PdaAup48 CaptureSignalAup(in ScanCompleteSignal signal)
         {
-            return new PdaAup48
+            ScanCompleteSignal copy = signal;
+            return UnsafeUtility.As<ScanCompleteSignal, PdaAup48>(ref copy);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryCaptureSignalAup(in LoreFragmentScannedSignal signal, out PdaAup48 aup)
+        {
+            LoreFragmentScannedSignal copy = signal;
+            aup = UnsafeUtility.As<LoreFragmentScannedSignal, PdaAup48>(ref copy);
+            return IsFiniteAup(in aup);
+        }
+
+        private static bool HasPairedScanComplete(
+            ReadOnlySpan<ScanCompleteSignal> scanSignals,
+            in LoreFragmentScannedSignal loreSignal)
+        {
+            for (int i = 0; i < scanSignals.Length; i++)
             {
-                GridX = signal.PositionAup.GridX,
-                GridY = signal.PositionAup.GridY,
-                GridZ = signal.PositionAup.GridZ,
-                LocalX = signal.PositionAup.LocalX,
-                LocalY = signal.PositionAup.LocalY,
-                LocalZ = signal.PositionAup.LocalZ
-            };
+                ScanCompleteSignal scan = scanSignals[i];
+                if (scan.EntryHash == loreSignal.Hash &&
+                    scan.SourceId == loreSignal.SourceId)
+                    return true;
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteAup(in PdaAup48 aup)
+        {
+            return math.isfinite(aup.LocalX) &&
+                math.isfinite(aup.LocalY) &&
+                math.isfinite(aup.LocalZ);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2222,7 +2950,7 @@ namespace Hecton8.UI
         private uint ComposeStateFlags(uint existingFlags)
         {
             uint flags = existingFlags & ~StateFlagSourceMask;
-            flags |= (_activeUtf8SourceFlags & 3u) << StateFlagSourceShift;
+            flags |= (_activeUtf8SourceFlags & 7u) << StateFlagSourceShift;
             if (_canvasSplitReady)
                 flags |= StateFlagCanvasSplit;
             else
@@ -2269,8 +2997,7 @@ namespace Hecton8.UI
             string directory = Path.Combine(root, "Docs", "AgentLogs");
             try
             {
-                WriteBlackBoxDump(Path.Combine(directory, "Dump_1309_PDAEncyclopedia.bin"));
-                WriteBlackBoxDump(Path.Combine(directory, "Dump_PDA_STREAMER.bin"));
+                WriteBlackBoxDump(Path.Combine(directory, BlackBoxDumpFileName));
             }
             catch (IOException)
             {
@@ -2568,19 +3295,24 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static void WriteAscii(NativeArray<byte> bytes, ref int cursor, ReadOnlySpan<char> text)
+        private static bool TryWriteAscii(NativeArray<byte> bytes, ref int cursor, ReadOnlySpan<char> text)
         {
-            for (int i = 0; i < text.Length && cursor < bytes.Length; i++)
+            if (!bytes.IsCreated || cursor < 0 || cursor > bytes.Length || text.Length > bytes.Length - cursor)
+                return false;
+
+            for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 bytes[cursor++] = c <= 0x7F ? (byte)c : (byte)'?';
             }
+
+            return true;
         }
 
-        private static void WriteHexAscii(NativeArray<byte> bytes, ref int cursor, uint value)
+        private static bool TryWriteHexAscii(NativeArray<byte> bytes, ref int cursor, uint value)
         {
-            if (cursor + 10 > bytes.Length)
-                return;
+            if (!bytes.IsCreated || cursor < 0 || cursor > bytes.Length || bytes.Length - cursor < 10)
+                return false;
 
             bytes[cursor++] = (byte)'0';
             bytes[cursor++] = (byte)'x';
@@ -2589,16 +3321,23 @@ namespace Hecton8.UI
                 uint nibble = (value >> shift) & 0xFu;
                 bytes[cursor++] = (byte)(nibble < 10u ? '0' + nibble : 'A' + (nibble - 10u));
             }
+
+            return true;
         }
 
-        private static void WriteDecimalAscii(NativeArray<byte> bytes, ref int cursor, int value)
+        private static bool TryWriteDecimalAscii(NativeArray<byte> bytes, ref int cursor, int value)
         {
             Span<char> tmp = stackalloc char[16];
             if (!value.TryFormat(tmp, out int written))
-                return;
+                return false;
 
-            for (int i = 0; i < written && cursor < bytes.Length; i++)
+            if (!bytes.IsCreated || cursor < 0 || cursor > bytes.Length || written > bytes.Length - cursor)
+                return false;
+
+            for (int i = 0; i < written; i++)
                 bytes[cursor++] = (byte)tmp[i];
+
+            return true;
         }
 
         private static void WriteUIntLittleEndian(Span<byte> destination, uint value)

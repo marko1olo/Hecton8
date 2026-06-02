@@ -53,8 +53,8 @@ public sealed class SurfaceWeatherDirectorEditTests
     {
         _host = new GameObject("SurfaceWeatherVfxRigEditModeRuntimeGateTest");
         LogAssert.Expect(
-            LogType.Error,
-            "[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.");
+            LogType.Log,
+            "[SurfaceWeatherVfxRig] Missing authored LineRenderer. Lightning presentation disabled until authoredBoltRenderer is assigned.");
 
         SurfaceWeatherVfxRig rig = _host.AddComponent<SurfaceWeatherVfxRig>();
 

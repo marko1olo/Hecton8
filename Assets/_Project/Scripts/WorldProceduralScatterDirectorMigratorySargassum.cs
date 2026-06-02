@@ -25,6 +25,8 @@ namespace Hecton8.World
 
         private static readonly int _MigratorySargassumSpeciesHash = ComputeStableStringHash("flora.halo_sargassum");
         private static readonly ProfilerMarker _migratorySargassumProfilerMarker = new("WorldScatter.MigratorySargassum");
+        private const uint MigratorySargassumJobPinIslands = 1u << 0;
+        private const uint MigratorySargassumJobPinFlowSamples = 1u << 1;
         private const uint MigratorySargassumStatePinIslands = 1u << 0;
         private const uint MigratorySargassumStatePinScratchIslands = 1u << 1;
         private const uint MigratorySargassumStatePinSelectedSources = 1u << 2;
@@ -111,6 +113,7 @@ namespace Hecton8.World
         private JobHandle _migratorySargassumJobHandle;
         private bool _migratorySargassumJobRunning;
         private bool _migratorySargassumJobBufferLocksHeld;
+        private uint _migratorySargassumJobBufferPinMask;
         private int _migratorySargassumIslandCount;
         private float _lastMigratorySargassumTickTime;
         private float _nextMigratorySargassumKillZoneTime;
@@ -655,28 +658,37 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.WorldScatterMigratorySargassumIslands, SystemID.WorldSargassum))
-                return false;
-
-            if (!vault.TryLockBuffer(BufferID.WorldScatterMigratorySargassumFlowSamples, SystemID.WorldSargassum))
+            uint pinMask = 0u;
+            bool success = false;
+            try
             {
-                vault.TryUnlockBuffer(BufferID.WorldScatterMigratorySargassumIslands, SystemID.WorldSargassum);
+                if (!TryLockMigratorySargassumJobBuffer(vault, BufferID.WorldScatterMigratorySargassumIslands, MigratorySargassumJobPinIslands, ref pinMask) ||
+                    !TryLockMigratorySargassumJobBuffer(vault, BufferID.WorldScatterMigratorySargassumFlowSamples, MigratorySargassumJobPinFlowSamples, ref pinMask))
+                {
+                    return false;
+                }
+
+                if (_migratorySargassumIslands.TryResolve(out islands) &&
+                    _migratorySargassumFlowSamples.TryResolve(out flowSamples) &&
+                    islands.Length >= _migratorySargassumIslandCount &&
+                    flowSamples.Length >= _migratorySargassumIslandCount)
+                {
+                    _migratorySargassumJobBufferLocksHeld = true;
+                    _migratorySargassumJobBufferPinMask = pinMask;
+                    pinMask = 0u;
+                    success = true;
+                    return true;
+                }
+
+                islands = default;
+                flowSamples = default;
                 return false;
             }
-
-            _migratorySargassumJobBufferLocksHeld = true;
-            if (_migratorySargassumIslands.TryResolve(out islands) &&
-                _migratorySargassumFlowSamples.TryResolve(out flowSamples) &&
-                islands.Length >= _migratorySargassumIslandCount &&
-                flowSamples.Length >= _migratorySargassumIslandCount)
+            finally
             {
-                return true;
+                if (!success)
+                    ReleaseMigratorySargassumJobBufferLocks(vault, pinMask);
             }
-
-            ReleaseMigratorySargassumJobBufferLocks();
-            islands = default;
-            flowSamples = default;
-            return false;
         }
 
         private void ReleaseMigratorySargassumJobBufferLocks()
@@ -685,12 +697,41 @@ namespace Hecton8.World
                 return;
 
             IDataVault vault = _migratorySargassumDataVault;
+            uint pinMask = _migratorySargassumJobBufferPinMask;
+            _migratorySargassumJobBufferPinMask = 0u;
             _migratorySargassumJobBufferLocksHeld = false;
-            if (vault == null)
+            ReleaseMigratorySargassumJobBufferLocks(vault, pinMask);
+        }
+
+        private static bool TryLockMigratorySargassumJobBuffer(
+            IDataVault vault,
+            BufferID bufferId,
+            uint pinBit,
+            ref uint pinMask)
+        {
+            if ((pinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.WorldSargassum))
+                return false;
+
+            pinMask |= pinBit;
+            return true;
+        }
+
+        private static void ReleaseMigratorySargassumJobBufferLocks(IDataVault vault, uint pinMask)
+        {
+            if (vault == null || pinMask == 0u)
                 return;
 
-            vault.TryUnlockBuffer(BufferID.WorldScatterMigratorySargassumFlowSamples, SystemID.WorldSargassum);
-            vault.TryUnlockBuffer(BufferID.WorldScatterMigratorySargassumIslands, SystemID.WorldSargassum);
+            TryUnlockMigratorySargassumJobBuffer(vault, pinMask, MigratorySargassumJobPinFlowSamples, BufferID.WorldScatterMigratorySargassumFlowSamples);
+            TryUnlockMigratorySargassumJobBuffer(vault, pinMask, MigratorySargassumJobPinIslands, BufferID.WorldScatterMigratorySargassumIslands);
+        }
+
+        private static void TryUnlockMigratorySargassumJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.WorldSargassum);
         }
 
         private bool TryLockMigratorySargassumStateBuffers(out IDataVault vault, out uint pinMask)

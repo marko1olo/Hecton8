@@ -219,9 +219,9 @@ namespace Hecton.UI.MainMenu
                 if (child.TryGetComponent(out TMP_Text text))
                 {
                     string candidateName = child.name;
-                    if (slotText == null && IsTextNameMatch(candidateName, "slot", "title", "header", "name"))
+                    if (slotText == null && IsSlotTextNameMatch(candidateName))
                         slotText = text;
-                    else if (detailsText == null && IsTextNameMatch(candidateName, "detail", "meta", "info", "status", "body"))
+                    else if (detailsText == null && IsDetailsTextNameMatch(candidateName))
                         detailsText = text;
                 }
 
@@ -259,22 +259,27 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        private static bool IsTextNameMatch(string candidateName, params string[] tokens)
+        private static bool IsSlotTextNameMatch(string candidateName)
         {
-            if (string.IsNullOrEmpty(candidateName) || tokens == null)
+            if (string.IsNullOrEmpty(candidateName))
                 return false;
 
-            for (int i = 0; i < tokens.Length; i++)
-            {
-                string token = tokens[i];
-                if (!string.IsNullOrEmpty(token) &&
-                    candidateName.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return true;
-                }
-            }
+            return candidateName.IndexOf("slot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("title", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("header", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("name", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
-            return false;
+        private static bool IsDetailsTextNameMatch(string candidateName)
+        {
+            if (string.IsNullOrEmpty(candidateName))
+                return false;
+
+            return candidateName.IndexOf("detail", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("meta", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("info", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("status", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   candidateName.IndexOf("body", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static void ConfigureCompactSingleTextLayout(TMP_Text text)

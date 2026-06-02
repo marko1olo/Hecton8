@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Data;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -41,6 +41,7 @@ namespace Hecton8.UI
         private const uint FaultDecryptionNonFinite = 1u << 5;
         private const uint FaultDecryptionDumpBackpressure = 1u << 6;
         private const uint DecryptionDumpBackpressureHash = 0x53483237u; // SH27
+        private const uint DecryptionDumpContextHash = 0x54444457u; // TDDW
         private const string NativeOwner = nameof(TerminalOsRuntime);
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOS.bin";
         private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOSMirror.h8dump";
@@ -272,6 +273,7 @@ namespace Hecton8.UI
             TryFinalizeClickResolveJob();
             TryFinalizeTerminalInteractionJob();
             TryFinalizeDecryptionJob();
+            ConsumeAppliedLoreTerminalPreviewSignals();
 
             bool visualPipelineBlocked = false;
             if (_formatScheduled)
@@ -285,6 +287,8 @@ namespace Hecton8.UI
                     _formatScheduled = false;
                 }
             }
+            if (!visualPipelineBlocked && !FlushPendingGraphicsResourceRebuild())
+                visualPipelineBlocked = true;
 
             int dirtyCount = 0;
             int dispatchedCount = 0;
@@ -311,6 +315,8 @@ namespace Hecton8.UI
             }
             if (!visualPipelineBlocked)
                 UpdatePanelInstancesIfNeeded();
+            if (!visualPipelineBlocked && _bindingsDirty)
+                BindTerminalRenderers();
             TryScheduleTerminalInteractionPipeline(ownerFrame, !visualPipelineBlocked);
             TryScheduleClickResolveJob();
             if (!visualPipelineBlocked)
@@ -627,6 +633,146 @@ namespace Hecton8.UI
             return true;
         }
 
+        private bool ApplyTerminalAppliedLoreLine(
+            int index,
+            uint expectedTerminalHash,
+            uint packetHash,
+            uint localeHash,
+            H8AppliedLoreSurface surface = H8AppliedLoreSurface.Title)
+        {
+            if (packetHash == 0u ||
+                !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
+                !TryResolveTerminalPreviewIndex(
+                    terminalStates,
+                    index,
+                    expectedTerminalHash,
+                    out int resolvedIndex) ||
+                !TryGetTerminalPreviewAppliedLoreUtf8(packetHash, localeHash, surface, out ReadOnlySpan<byte> utf8Bytes))
+            {
+                return false;
+            }
+
+            TerminalStateDTO state = terminalStates[resolvedIndex];
+            WriteUtf8PreviewLine(ref state.TextLine, utf8Bytes);
+            state.IsDirty = 1;
+            terminalStates[resolvedIndex] = state;
+            ForceDirty(resolvedIndex);
+            return true;
+        }
+
+        private void ConsumeAppliedLoreTerminalPreviewSignals()
+        {
+            ReadOnlySpan<AppliedLoreTerminalPreviewSignal> signals =
+                SignalBus<AppliedLoreTerminalPreviewSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                AppliedLoreTerminalPreviewSignal signal = signals[i];
+                if (signal.PacketHash == 0u)
+                    continue;
+
+                ApplyTerminalAppliedLoreLine(
+                    signal.TerminalIndex,
+                    signal.TerminalHash,
+                    signal.PacketHash,
+                    signal.LocaleHash,
+                    ResolveAppliedLorePreviewSurface(signal.Surface));
+            }
+        }
+
+        private bool TryResolveTerminalPreviewIndex(
+            NativeArray<TerminalStateDTO> terminalStates,
+            int index,
+            uint expectedTerminalHash,
+            out int resolvedIndex)
+        {
+            resolvedIndex = -1;
+            int count = math.min(_terminalCount, terminalStates.Length);
+            bool indexValid = (uint)index < (uint)count;
+            if (expectedTerminalHash == 0u)
+            {
+                if (!indexValid)
+                    return false;
+
+                resolvedIndex = index;
+                return true;
+            }
+
+            if (indexValid && ResolveTerminalHash(terminalStates, index) == expectedTerminalHash)
+            {
+                resolvedIndex = index;
+                return true;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (ResolveTerminalHash(terminalStates, i) != expectedTerminalHash)
+                    continue;
+
+                resolvedIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveTerminalHash(NativeArray<TerminalStateDTO> terminalStates, int index)
+        {
+            uint terminalHash = terminalStates[index].TerminalHash;
+            return terminalHash != 0u ? terminalHash : TerminalOsHash.HashIndex(index);
+        }
+
+        private static H8AppliedLoreSurface ResolveAppliedLorePreviewSurface(byte surface)
+        {
+            switch ((H8AppliedLoreSurface)surface)
+            {
+                case H8AppliedLoreSurface.Title:
+                case H8AppliedLoreSurface.Scanner:
+                case H8AppliedLoreSurface.Terminal:
+                case H8AppliedLoreSurface.Audio:
+                case H8AppliedLoreSurface.InGameWiki:
+                case H8AppliedLoreSurface.ExternalSite:
+                case H8AppliedLoreSurface.FieldNote:
+                    return (H8AppliedLoreSurface)surface;
+                default:
+                    return H8AppliedLoreSurface.Terminal;
+            }
+        }
+
+        private static bool TryGetTerminalPreviewAppliedLoreUtf8(
+            uint packetHash,
+            uint localeHash,
+            H8AppliedLoreSurface surface,
+            out ReadOnlySpan<byte> utf8Bytes)
+        {
+            utf8Bytes = ReadOnlySpan<byte>.Empty;
+            uint resolvedLocale = localeHash != 0u ? localeHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+            bool resolvedIsDefault = resolvedLocale == H8AppliedLoreRuntime.DefaultLocaleHash;
+            if (H8AppliedLoreRuntime.TryGetUtf8(packetHash, resolvedLocale, surface, out utf8Bytes))
+            {
+                if (resolvedIsDefault || IsTerminalPreviewAsciiCompatible(utf8Bytes))
+                    return true;
+            }
+            else if (resolvedIsDefault)
+            {
+                return false;
+            }
+
+            if (H8AppliedLoreRuntime.TryGetUtf8(
+                    packetHash,
+                    H8AppliedLoreRuntime.DefaultLocaleHash,
+                    surface,
+                    out ReadOnlySpan<byte> fallbackUtf8) &&
+                fallbackUtf8.Length > 0)
+            {
+                utf8Bytes = fallbackUtf8;
+                return true;
+            }
+
+            utf8Bytes = ReadOnlySpan<byte>.Empty;
+            return false;
+        }
+
         public void SetScreenCommand(int index, float2 position, float scale)
         {
             if (!TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands) ||
@@ -738,6 +884,50 @@ namespace Hecton8.UI
             TerminalStateDTO state = terminalStates[index];
             state.IsDirty = 1;
             terminalStates[index] = state;
+        }
+
+        private static void WriteUtf8PreviewLine(ref FixedString32Bytes line, ReadOnlySpan<byte> utf8Bytes)
+        {
+            line.Clear();
+            for (int i = 0; i < utf8Bytes.Length && line.Length < TerminalOsConstants.MaxFixedStringPayloadBytes; i++)
+            {
+                byte value = utf8Bytes[i];
+                if (value == 0u)
+                    break;
+
+                if (value == (byte)'\r' || value == (byte)'\n' || value == (byte)'\t')
+                {
+                    line.Add((byte)' ');
+                    continue;
+                }
+
+                if (value >= 0x20 && value < 0x7F)
+                {
+                    line.Add(value);
+                    continue;
+                }
+
+                if ((value & 0xC0) == 0x80)
+                    continue;
+
+                line.Add((byte)'?');
+            }
+        }
+
+        private static bool IsTerminalPreviewAsciiCompatible(ReadOnlySpan<byte> utf8Bytes)
+        {
+            for (int i = 0; i < utf8Bytes.Length; i++)
+            {
+                byte value = utf8Bytes[i];
+                if (value == 0u)
+                    return true;
+                if (value == (byte)'\r' || value == (byte)'\n' || value == (byte)'\t')
+                    continue;
+                if (value < 0x20 || value >= 0x7F)
+                    return false;
+            }
+
+            return utf8Bytes.Length > 0;
         }
 
         private void ForceAllDirty()
@@ -1048,8 +1238,6 @@ namespace Hecton8.UI
             float resolutionCurve = Smooth01(quality);
             int targetResolution = AlignResolution((int)math.round(math.lerp(MinQualityResolution, MaxQualityResolution, resolutionCurve)));
             bool resolutionChanged = _textureResolution != targetResolution;
-            if (_terminalTextureArray != null && Application.isPlaying)
-                return;
 
             _textureResolution = targetResolution;
             if (resolutionChanged)
@@ -1061,7 +1249,6 @@ namespace Hecton8.UI
             int ownerFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             TryMonitorLayoutCsv(ownerFrame);
             TryMonitorDecryptionCsv(ownerFrame);
-            FlushPendingGraphicsResourceRebuild();
             FlushQueuedBlackBoxDumps();
         }
 
@@ -1072,16 +1259,24 @@ namespace Hecton8.UI
             _bindingsDirty = true;
         }
 
-        private void FlushPendingGraphicsResourceRebuild()
+        private bool FlushPendingGraphicsResourceRebuild()
         {
             if (!_pendingGraphicsResourceRebuild)
-                return;
+                return true;
+
+            if (_formatScheduled ||
+                _clickResolveScheduled ||
+                _terminalInteractionScheduled ||
+                _decryptionScheduled)
+            {
+                return false;
+            }
 
             if (!_nativeResourcesReady)
             {
                 EnsureNativeResources();
                 if (!_nativeResourcesReady)
-                    return;
+                    return false;
             }
 
             _pendingGraphicsResourceRebuild = false;
@@ -1091,6 +1286,7 @@ namespace Hecton8.UI
             ForceAllDirty();
             if (!_graphicsResourcesReady)
                 _pendingGraphicsResourceRebuild = true;
+            return _graphicsResourcesReady;
         }
 
         private float ResolveGlobalQualityWeight01()
@@ -1281,6 +1477,12 @@ namespace Hecton8.UI
                 TerminalUnlockedSignal.LowTierFrameSignals,
                 TerminalUnlockedSignal.LaneHash);
             SignalBus<TerminalUnlockedSignal>.EnsureInitialized();
+            SignalBus<AppliedLoreTerminalPreviewSignal>.Configure(
+                AppliedLoreTerminalPreviewSignal.ExpectedCapacity,
+                AppliedLoreTerminalPreviewSignal.MaxFrameSignals,
+                AppliedLoreTerminalPreviewSignal.LowTierFrameSignals,
+                AppliedLoreTerminalPreviewSignal.LaneHash);
+            SignalBus<AppliedLoreTerminalPreviewSignal>.EnsureInitialized();
             SignalBus<InteractionUiSignal>.EnsureInitialized();
         }
 
@@ -1645,8 +1847,6 @@ namespace Hecton8.UI
                 UploadTerminalInputStates();
             if (_decryptionBufferUploadDirty)
                 UploadDecryptionPuzzles();
-            if (_bindingsDirty)
-                BindTerminalRenderers();
 
             bool computeReady = EnsureComputeKernelForOwner() && RefreshDispatchGroupCounts();
             _graphicsResourcesReady = _terminalTextureArray != null &&
@@ -1697,9 +1897,6 @@ namespace Hecton8.UI
                 wrapMode = TextureWrapMode.Clamp
             };
             _terminalTextureArray.Create();
-            Shader.SetGlobalTexture(TerminalTextureArrayId, _terminalTextureArray);
-            if (terminalArrayMaterial != null)
-                terminalArrayMaterial.SetTexture(TerminalTextureArrayId, _terminalTextureArray);
             _bindingsDirty = true;
         }
 
@@ -2258,7 +2455,6 @@ namespace Hecton8.UI
                 _decryptionPuzzleUploadCount = uploadCount;
                 _decryptionBufferUploadDirty = false;
                 _bindingsDirty = true;
-                BindTerminalRenderers();
             }
             else
             {
@@ -2275,7 +2471,6 @@ namespace Hecton8.UI
             _decryptionPuzzleUploadCount = 0;
             _decryptionPuzzleBuffer = null;
             _bindingsDirty = true;
-            BindTerminalRenderers();
         }
 
         private int DispatchDirtyScreens(int dirtyCount, int ownerFrame)
@@ -3611,13 +3806,7 @@ namespace Hecton8.UI
             if (frame < _nextLateFrameRegisterRetryFrame)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-            {
-                ScheduleLateFrameRegisterRetry(frame);
-                return;
-            }
-
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             if (_registeredLateFrame)
             {
                 _nextLateFrameRegisterRetryFrame = 0;
@@ -3633,10 +3822,7 @@ namespace Hecton8.UI
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregisterSlowTick()
@@ -3644,7 +3830,7 @@ namespace Hecton8.UI
             if (!_registeredSlowTick)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredSlowTick = false;
         }
 
@@ -3664,7 +3850,7 @@ namespace Hecton8.UI
             if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrame = false;
         }
 
@@ -4014,7 +4200,7 @@ namespace Hecton8.UI
             if (!_decryptionDumpBackpressureReported)
             {
                 _decryptionDumpBackpressureReported = true;
-                GlobalTelemetryBus.PublishPerformanceWarning(DecryptionDumpBackpressureHash, TerminalUnlockedSignal.LaneHash, 1f);
+                GlobalTelemetryBus.PublishPerformanceWarning(DecryptionDumpBackpressureHash, DecryptionDumpContextHash, 1f);
             }
         }
 
@@ -4240,12 +4426,11 @@ namespace Hecton8.UI
             private const int DumpHeaderBytes = 24;
 
             private readonly object _gate = new object();
-            private readonly AutoResetEvent _signal = new AutoResetEvent(false);
             private readonly DecryptionTelemetryEntry[] _records = new DecryptionTelemetryEntry[TerminalOsConstants.BlackBoxFrameCount];
+            private readonly DecryptionTelemetryEntry[] _writeRecords = new DecryptionTelemetryEntry[TerminalOsConstants.BlackBoxFrameCount];
             private readonly string _path;
-            private Thread _thread;
             private bool _hasPending;
-            private volatile bool _running;
+            private bool _running;
             private uint _pendingFaultFlags;
             private int _pendingCursor;
             private int _pendingCount;
@@ -4258,7 +4443,6 @@ namespace Hecton8.UI
             public void Start()
             {
                 _running = true;
-                _thread = null;
             }
 
             public bool TryEnqueue(uint faultFlags, int cursor, NativeArray<DecryptionTelemetryEntry> telemetryRing)
@@ -4266,8 +4450,10 @@ namespace Hecton8.UI
                 if (!_running || !telemetryRing.IsCreated || telemetryRing.Length <= 0)
                     return false;
 
-                lock (_gate)
+                bool lockTaken = false;
+                try
                 {
+                    System.Threading.Monitor.Enter(_gate, ref lockTaken);
                     if (_hasPending)
                         return false;
 
@@ -4294,81 +4480,84 @@ namespace Hecton8.UI
                     _pendingCount = count;
                     _hasPending = true;
                 }
+                finally
+                {
+                    if (lockTaken)
+                        System.Threading.Monitor.Exit(_gate);
+                }
 
-                return true;
+                return DrainPending();
             }
 
             public void Dispose()
             {
                 _running = false;
-                try
-                {
-                    _signal.Set();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-
-                Thread thread = _thread;
-                if (thread != null && thread.IsAlive)
-                    thread.Join(500);
-
-                DrainPending();
-                _thread = null;
-                _signal.Dispose();
-            }
-
-            private void WriterLoop()
-            {
-                while (_running)
-                {
-                    try
-                    {
-                        _signal.WaitOne(100);
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        return;
-                    }
-
-                    DrainPending();
-                }
-
                 DrainPending();
             }
 
-            private void DrainPending()
+            private bool DrainPending()
             {
+                uint faultFlags;
+                int cursor;
+                int count;
                 lock (_gate)
                 {
                     if (!_hasPending)
-                        return;
+                        return false;
 
-                    try
+                    faultFlags = _pendingFaultFlags;
+                    cursor = _pendingCursor;
+                    count = math.min(_pendingCount, _records.Length);
+                    for (int i = 0; i < count; i++)
                     {
-                        WritePendingUnsafe();
+                        _writeRecords[i] = _records[i];
                     }
-                    catch (IOException)
-                    {
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                    }
-                    finally
-                    {
-                        _hasPending = false;
-                    }
+
+                    _hasPending = false;
+                    _pendingFaultFlags = 0u;
+                    _pendingCursor = 0;
+                    _pendingCount = 0;
+                }
+
+                try
+                {
+                    return WritePendingUnsafe(faultFlags, cursor, count, _writeRecords);
+                }
+                catch (IOException)
+                {
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return false;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
                 }
             }
 
-            private unsafe void WritePendingUnsafe()
+            private unsafe bool WritePendingUnsafe(
+                uint faultFlags,
+                int cursor,
+                int count,
+                DecryptionTelemetryEntry[] records)
             {
-                int count = math.min(_pendingCount, _records.Length);
+                count = math.min(count, records.Length);
                 if (count <= 0 || string.IsNullOrEmpty(_path))
-                    return;
+                    return false;
 
                 int entrySize = TerminalOsConstants.DecryptionTelemetryStrideBytes;
                 int byteCount = DumpHeaderBytes + (count * entrySize);
@@ -4382,19 +4571,19 @@ namespace Hecton8.UI
                     byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                     WriteUInt32LittleEndian(target, 0, DumpMagic);
                     WriteUInt32LittleEndian(target, 4, DumpVersion);
-                    WriteUInt32LittleEndian(target, 8, _pendingFaultFlags);
-                    WriteInt32LittleEndian(target, 12, _pendingCursor);
+                    WriteUInt32LittleEndian(target, 8, faultFlags);
+                    WriteInt32LittleEndian(target, 12, cursor);
                     WriteInt32LittleEndian(target, 16, count);
                     WriteInt32LittleEndian(target, 20, entrySize);
 
                     int offset = DumpHeaderBytes;
                     for (int i = 0; i < count; i++)
                     {
-                        WriteDecryptionTelemetryEntry(target, offset, _records[i]);
+                        WriteDecryptionTelemetryEntry(target, offset, records[i]);
                         offset += entrySize;
                     }
 
-                    NativeFaultDumpWriter.TryWriteAll(_path, payload, byteCount);
+                    return NativeFaultDumpWriter.TryWriteAll(_path, payload, byteCount);
                 }
                 finally
                 {

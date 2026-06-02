@@ -46,6 +46,9 @@ namespace Hecton8.Core
 
         private const double SlowStepBudgetMilliseconds = 500.0;
         private const double SafeHaltTimeoutSeconds = 10.0;
+#if UNITY_EDITOR
+        private const double EditorSafeHaltTimeoutSeconds = 90.0;
+#endif
         private const int RecentStepCapacity = 10;
         private const string SafeHaltMessage =
             "BIOS ERROR 0xBOOT_TIMEOUT\nEXPECTED: ACTIVE BOOT STEP <= 10.0S\nDETECTED: BOOT STALL\nACTION: SAFE HALT";
@@ -60,6 +63,9 @@ namespace Hecton8.Core
         private static int _recentStepWriteIndex;
         private static int _recentStepCount;
         private static bool _stepActive;
+#if UNITY_EDITOR
+        private static bool _editorPlayModeWatchdogArmed;
+#endif
 
         /// <summary>
         /// True once 00_BOOTSTRAP has started its startup sequence.
@@ -105,6 +111,9 @@ namespace Hecton8.Core
             _recentStepWriteIndex = 0;
             _recentStepCount = 0;
             _stepActive = false;
+#if UNITY_EDITOR
+            _editorPlayModeWatchdogArmed = false;
+#endif
             System.Array.Clear(_recentSteps, 0, _recentSteps.Length);
             BootStarted = false;
             MainMenuReached = false;
@@ -115,6 +124,33 @@ namespace Hecton8.Core
             UnityEngine.Time.timeScale = 1f;
             UnityEngine.Physics.simulationMode = SimulationMode.FixedUpdate;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorPlayModeWatchdogGate()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange)
+        {
+            if (stateChange == UnityEditor.PlayModeStateChange.EnteredPlayMode)
+            {
+                _editorPlayModeWatchdogArmed = true;
+                ResetActiveWatchdogClock();
+                return;
+            }
+
+            if (stateChange == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                stateChange == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                _editorPlayModeWatchdogArmed = false;
+                ResetActiveWatchdogClock();
+            }
+        }
+#endif
 
         public static void RegisterSafeHaltTelemetryReporter(BootstrapSafeHaltTelemetryReporter reporter)
         {
@@ -197,6 +233,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Refreshes the watchdog clock after a boot sub-step has made measurable progress.
+        /// </summary>
+        /// <param name="step">Expected active bootstrap step token.</param>
+        public static void PulseActiveStep(BootstrapStepToken step)
+        {
+            if (!_stepActive || _activeStep != step || step == BootstrapStepToken.None || SafeHaltTriggered)
+                return;
+
+            _stepStartTimeSeconds = ResolveBootstrapMonotonicTimeSeconds();
+        }
+
+        /// <summary>
         /// Marks the main-menu handoff as completed.
         /// </summary>
         public static void MarkMainMenuReached()
@@ -237,12 +285,21 @@ namespace Hecton8.Core
             if (!BootStarted || MainMenuReached || SafeHaltTriggered)
                 return false;
 
+#if UNITY_EDITOR
+            if (!_editorPlayModeWatchdogArmed)
+            {
+                ResetActiveWatchdogClock();
+                return false;
+            }
+#endif
+
+            if (!_stepActive)
+                return false;
+
             double nowSeconds = ResolveBootstrapMonotonicTimeSeconds();
             double bootElapsedSeconds = nowSeconds - _bootStartTimeSeconds;
-            double watchedElapsedSeconds = _stepActive
-                ? nowSeconds - _stepStartTimeSeconds
-                : bootElapsedSeconds;
-            if (watchedElapsedSeconds < SafeHaltTimeoutSeconds)
+            double watchedElapsedSeconds = nowSeconds - _stepStartTimeSeconds;
+            if (watchedElapsedSeconds < ResolveSafeHaltTimeoutSeconds(_activeStep))
                 return false;
 
             SafeHaltTriggered = true;
@@ -260,9 +317,7 @@ namespace Hecton8.Core
                 out uint recentStepHash7,
                 out uint recentStepHash8,
                 out uint recentStepHash9);
-            double activeElapsedMilliseconds = _stepActive
-                ? (nowSeconds - _stepStartTimeSeconds) * 1000.0
-                : 0.0;
+            double activeElapsedMilliseconds = (nowSeconds - _stepStartTimeSeconds) * 1000.0;
             _safeHaltTelemetryReporter?.Invoke(
                 _activeStep,
                 LongestStep,
@@ -282,6 +337,25 @@ namespace Hecton8.Core
                 recentStepHash9);
             Debug.LogError(SafeHaltMessage);
             return true;
+        }
+
+#if UNITY_EDITOR
+        private static void ResetActiveWatchdogClock()
+        {
+            double nowSeconds = ResolveBootstrapMonotonicTimeSeconds();
+            _bootStartTimeSeconds = nowSeconds;
+            if (_stepActive)
+                _stepStartTimeSeconds = nowSeconds;
+        }
+#endif
+
+        private static double ResolveSafeHaltTimeoutSeconds(BootstrapStepToken step)
+        {
+#if UNITY_EDITOR
+            if (Application.isEditor && !Application.isBatchMode)
+                return EditorSafeHaltTimeoutSeconds;
+#endif
+            return SafeHaltTimeoutSeconds;
         }
 
         private static void RecordRecentStep(BootstrapStepToken step)

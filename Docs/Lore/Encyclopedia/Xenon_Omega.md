@@ -16,6 +16,8 @@ Marauder slang: `blue debt`.
 
 Technical field slang: `pressure glass`.
 
+Blue debt must be kept in pressure-rated containment if the player wants it to retain high value.
+
 ## Deep Reach Internal
 
 Xenon-Omega justified Aegir.
@@ -55,3 +57,5 @@ Slang guidance:
 - Deep Reach says `Xenon-Omega` or `XO continuity substrate`.
 - technicians say `pressure glass` when they mean the lattice/sample behavior;
 - Marauders say `blue debt` when they mean the payout, risk, and body count together.
+
+Use `Blue_Debt_Field_Behavior.md` for containment, Atlas signal, and contamination behavior.

@@ -11,6 +11,10 @@ namespace Hecton8.Core.Contracts.Signals
         public static void Warm()
         {
             Hecton8.Core.SignalCorridorRuntime.EnsureInitialized();
+            SignalBus<AtmosphericReentrySignal>.EnsureInitialized();
+            SignalBus<ReentryAcousticStressSignal>.EnsureInitialized();
+            SignalBus<PrologueCompleteSignal>.EnsureInitialized();
+            SignalBus<HapticRequest>.EnsureInitialized();
         }
     }
 }

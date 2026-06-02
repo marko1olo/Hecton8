@@ -8,6 +8,17 @@ ShaderVariantCollection:
   m_PrefabAsset: {fileID: 0}
   m_Name: Hecton8MasterVariants
   m_Shaders:
+  - first: {fileID: 4800000, guid: 49aa0d16489a41c88aef21e218cbc32e, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+      - keywords: INSTANCING_ON
+        passType: 0
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 0
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW INSTANCING_ON
+        passType: 0
   - first: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
     second:
       variants:

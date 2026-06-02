@@ -43,23 +43,23 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private readonly char[] _tipBuffer = new char[TipBufferCapacity]; // COLD ALLOC: char[256] — loading tip TMP staging buffer — owner: LoadingTipsDisplay
 
-        private static readonly string[] TipKeys = // COLD ALLOC: localization keys for loading tips — owner: LoadingTipsDisplay
+        private static readonly int[] TipKeyHashes = // COLD ALLOC: precomputed localization key hashes for loading tips — owner: LoadingTipsDisplay
         {
-            LocalizationKeys.LOADING_TIP_01,
-            LocalizationKeys.LOADING_TIP_02,
-            LocalizationKeys.LOADING_TIP_03,
-            LocalizationKeys.LOADING_TIP_04,
-            LocalizationKeys.LOADING_TIP_05,
-            LocalizationKeys.LOADING_TIP_06,
-            LocalizationKeys.LOADING_TIP_07,
-            LocalizationKeys.LOADING_TIP_08,
-            LocalizationKeys.LOADING_TIP_09,
-            LocalizationKeys.LOADING_TIP_10,
-            LocalizationKeys.LOADING_TIP_11,
-            LocalizationKeys.LOADING_TIP_12,
-            LocalizationKeys.LOADING_TIP_13,
-            LocalizationKeys.LOADING_TIP_14,
-            LocalizationKeys.LOADING_TIP_15,
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_01),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_02),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_03),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_04),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_05),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_06),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_07),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_08),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_09),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_10),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_11),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_12),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_13),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_14),
+            LocHash.Compute(LocalizationKeys.LOADING_TIP_15),
         };
 
         private static readonly string[] DefaultTips = // COLD ALLOC: fallback tips — owner: LoadingTipsDisplay
@@ -117,11 +117,11 @@ namespace Hecton8.UI
             if (_isActive)
                 return;
 
-            if (TipKeys.Length == 0)
+            if (TipKeyHashes.Length == 0)
                 return;
 
             _isActive = true;
-            _currentTipIndex = randomOrder ? NextTipIndex(TipKeys.Length) : 0;
+            _currentTipIndex = randomOrder ? NextTipIndex(TipKeyHashes.Length) : 0;
             _tipTimer = 0f;
             _fadeTimer = 0f;
             _isFadingIn = true;
@@ -196,7 +196,7 @@ namespace Hecton8.UI
 
         private void ShowTip(int index)
         {
-            if (tipText == null || index < 0 || index >= TipKeys.Length)
+            if (tipText == null || index < 0 || index >= TipKeyHashes.Length)
                 return;
 
             ReadOnlySpan<char> tip = ResolveTipSpan(index);
@@ -211,9 +211,9 @@ namespace Hecton8.UI
                 : ReadOnlySpan<char>.Empty;
 
             ILocalizationTextReadModel manager = _cachedLocalization;
-            string key = index < TipKeys.Length ? TipKeys[index] : null;
-            return manager != null && !string.IsNullOrEmpty(key)
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
+            int keyHash = index < TipKeyHashes.Length ? TipKeyHashes[index] : 0;
+            return manager != null && keyHash != 0
+                ? manager.GetRawSpanOrFallback(keyHash, fallback)
                 : fallback;
         }
 
@@ -240,27 +240,27 @@ namespace Hecton8.UI
 
         private void NextTip()
         {
-            if (TipKeys.Length == 0)
+            if (TipKeyHashes.Length == 0)
                 return;
 
             if (randomOrder)
             {
-                int newIndex = NextTipIndex(TipKeys.Length);
-                if (TipKeys.Length > 1)
+                int newIndex = NextTipIndex(TipKeyHashes.Length);
+                if (TipKeyHashes.Length > 1)
                 {
-                    int rerollWatchdog = TipKeys.Length << 1;
+                    int rerollWatchdog = TipKeyHashes.Length << 1;
                     while (newIndex == _currentTipIndex && rerollWatchdog-- > 0)
-                        newIndex = NextTipIndex(TipKeys.Length);
+                        newIndex = NextTipIndex(TipKeyHashes.Length);
 
                     if (newIndex == _currentTipIndex)
-                        newIndex = (_currentTipIndex + 1) % TipKeys.Length;
+                        newIndex = (_currentTipIndex + 1) % TipKeyHashes.Length;
                 }
 
                 _currentTipIndex = newIndex;
             }
             else
             {
-                _currentTipIndex = (_currentTipIndex + 1) % TipKeys.Length;
+                _currentTipIndex = (_currentTipIndex + 1) % TipKeyHashes.Length;
             }
 
             ShowTip(_currentTipIndex);
@@ -323,10 +323,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void RefreshTickRegistration()
@@ -381,7 +378,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
     }

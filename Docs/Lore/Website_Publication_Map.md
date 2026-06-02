@@ -29,6 +29,9 @@ Shows public corporation profile. Avoids direct confession.
 Ships And Travel:
 Shows no-FTL hard sci-fi flavor. Good for technical credibility.
 
+Black Keel:
+Shows automated salvage carrier / claim-pool pressure. Avoids hidden Deep Reach hooks before release.
+
 ## Spoiler-Safe Rules
 
 Do not reveal:
@@ -58,7 +61,9 @@ Allowed before release:
 - Why The Player Comes From Barnard Yards.
 - Ships Without FTL.
 - Aegir: A Gas Giant Claim.
+- Aegir Astronomy Reference.
 - Aegir's Moons And Why HECTON-8 Matters.
+- Black Keel: A Salvage Carrier Is Not A Home.
 - Deep Sea Noir In Space.
 - Pressure As Economy.
 - HECTON-8 Resource Catalog.
@@ -73,5 +78,7 @@ Allowed before release:
 - The 2147 Evacuation Lie.
 - Atlas-6 Original Directive.
 - Blue Debt And Pressure Glass.
+- False Endings: Salvage Success / Truth Failure.
+- Black Keel's Contract Hooks.
 - Aegir Route Priority Overrides.
 - Ending Consequence Dossiers.

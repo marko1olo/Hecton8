@@ -1,0 +1,30 @@
+---
+packet_id: P038_MATERIAL_PAYOUT_LEDGER
+article_id: hecton8.material_payout_ledger
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Libro de pago material
+
+El pago material es éxito real hecho de extracción, certificación y silencio. No es final de verdad.
+
+## Scanner
+
+Muestra blue debt certificada. Pago posible. Verdad opcional. Deep Reach prefiere ese orden.
+
+## Terminal
+
+Calendario: masa, pureza, historial de presión y custodia aceptados. Archivo de pruebas sin resolver.
+
+## Audio
+
+La cuenta se limpia. El agua no.
+
+## Field Note
+
+Un contrato exitoso puede seguir siendo una vida fallida.
+
+<!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/es_ES. -->

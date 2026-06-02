@@ -15,20 +15,21 @@ static const int HectonStampCommandCapacity = 16;
 float4 _ScrollUvOffset;
 float _Recovery;
 float4 _TexelSize;
+static const float HectonFiniteFloatMax = 3.402823466e+38;
 
 bool HectonFinite1(float value)
 {
-    return isfinite(value);
+    return abs(value) <= HectonFiniteFloatMax;
 }
 
 bool HectonFinite2(float2 value)
 {
-    return all(isfinite(value));
+    return all(abs(value) <= HectonFiniteFloatMax);
 }
 
 bool HectonFinite4(float4 value)
 {
-    return all(isfinite(value));
+    return all(abs(value) <= HectonFiniteFloatMax);
 }
 
 float HectonFiniteOr(float value, float fallbackValue)

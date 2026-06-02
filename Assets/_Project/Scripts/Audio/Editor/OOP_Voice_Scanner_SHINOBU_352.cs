@@ -13,10 +13,6 @@ namespace Hecton8.Audio.Editor
 {
     public static class OOP_Voice_Scanner_SHINOBU_352
     {
-        private const string SectionKey = "shinobu_352_vocal_warning_system_audio_queue";
-        private const string SharedReportPath = "Docs/Reports/AUDIO_OPTIMIZATION_REPORT.json";
-        private const string SidecarReportPath = "Docs/Reports/AUDIO_OPTIMIZATION_REPORT_SHINOBU_352.json";
-
         private static readonly string[] Roots =
         {
             "Assets/_Project/Scripts/Audio",
@@ -46,9 +42,7 @@ namespace Hecton8.Audio.Editor
         public static void Scan()
         {
             ScanResult result = ScanProject();
-            WriteReports(result);
-            AssetDatabase.Refresh();
-            Hecton8.Core.H8Debug.Log("SHINOBU_352 voice scanner found " + result.Findings.Count + " OOP voice findings.");
+            Hecton8.Core.H8Debug.Log("SHINOBU_352 voice scanner found " + result.Findings.Count + " OOP voice findings; no report files written.");
         }
 
         internal static ScanResult ScanProject()
@@ -404,228 +398,12 @@ namespace Hecton8.Audio.Editor
             return span.StartLinePosition.Line + 1;
         }
 
-        private static void WriteReports(ScanResult result)
-        {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string sectionJson = BuildSectionJson(result);
-            string sidecarPath = Path.Combine(projectRoot, SidecarReportPath);
-            string sharedPath = Path.Combine(projectRoot, SharedReportPath);
-            string sidecarDirectory = Path.GetDirectoryName(sidecarPath);
-            if (!string.IsNullOrEmpty(sidecarDirectory))
-                Directory.CreateDirectory(sidecarDirectory);
-
-            File.WriteAllText(sidecarPath, "{\n" + sectionJson + "\n}\n", Encoding.UTF8);
-
-            string existing = File.Exists(sharedPath) ? File.ReadAllText(sharedPath, Encoding.UTF8) : string.Empty;
-            File.WriteAllText(sharedPath, UpsertSection(existing, sectionJson), Encoding.UTF8);
-        }
-
-        private static string BuildSectionJson(ScanResult result)
-        {
-            StringBuilder builder = new StringBuilder(4096 + result.Findings.Count * 192);
-            builder.Append("  \"").Append(SectionKey).Append("\": {\n");
-            builder.Append("    \"agent\": \"SHINOBU_352\",\n");
-            builder.Append("    \"summary\": \"")
-                .Append(result.Findings.Count == 0 ? "OOP Voice Triggers Eradicated" : "OOP Voice Triggers Detected")
-                .Append("\",\n");
-            builder.Append("    \"scanner\": \"Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_SHINOBU_352.cs\",\n");
-            builder.Append("    \"scannerParserRoute\": \"Roslyn CSharpSyntaxTree AST primary pass; lexical fallback only on parse exception\",\n");
-            builder.Append("    \"scannerExecution\": \"Unity Editor MenuItem; CLI rg verification may be used only as a source-control fallback report\",\n");
-            builder.Append("    \"scannerUsesRoslynAst\": true,\n");
-            builder.Append("    \"filesScanned\": ").Append(result.FilesScanned).Append(",\n");
-            builder.Append("    \"syntaxTreesParsed\": ").Append(result.SyntaxTreesParsed).Append(",\n");
-            builder.Append("    \"syntaxNodesVisited\": ").Append(result.SyntaxNodesVisited).Append(",\n");
-            builder.Append("    \"parserFailures\": ").Append(result.ParserFailures).Append(",\n");
-            builder.Append("    \"lexicalFallbackFiles\": ").Append(result.LexicalFallbackFiles).Append(",\n");
-            builder.Append("    \"forbiddenFindingCount\": ").Append(result.Findings.Count).Append(",\n");
-            builder.Append("    \"scope\": [\n");
-            for (int i = 0; i < Roots.Length; i++)
-            {
-                builder.Append("      ");
-                AppendJsonString(builder, Roots[i]);
-                builder.Append(i + 1 < Roots.Length ? ",\n" : "\n");
-            }
-
-            builder.Append("    ],\n");
-            builder.Append("    \"playerFilePrefixes\": [");
-            for (int i = 0; i < RootPlayerFilePrefixes.Length; i++)
-            {
-                if (i > 0)
-                    builder.Append(", ");
-                AppendJsonString(builder, RootPlayerFilePrefixes[i]);
-            }
-
-            builder.Append("],\n");
-            builder.Append("    \"forbiddenPatterns\": [");
-            for (int i = 0; i < ForbiddenPatterns.Length; i++)
-            {
-                if (i > 0)
-                    builder.Append(", ");
-                AppendJsonString(builder, ForbiddenPatterns[i]);
-            }
-
-            builder.Append("],\n");
-            builder.Append("    \"replacementRoute\": \"SignalBus/Vault VocalWarningDTO -> 64-bit VwsPriorityWord -> VocalCueSignal + SubtitleSignal; no gameplay voice AudioSource or managed voice queues\",\n");
-            builder.Append("    \"findings\": [");
-            for (int i = 0; i < result.Findings.Count; i++)
-            {
-                Finding finding = result.Findings[i];
-                builder.Append(i == 0 ? "\n" : ",\n");
-                builder.Append("      { \"path\": ");
-                AppendJsonString(builder, finding.Path);
-                builder.Append(", \"line\": ").Append(finding.Line).Append(", \"pattern\": ");
-                AppendJsonString(builder, finding.Pattern);
-                builder.Append(", \"route\": ");
-                AppendJsonString(builder, finding.Route);
-                builder.Append(" }");
-            }
-
-            if (result.Findings.Count > 0)
-                builder.Append("\n    ]\n");
-            else
-                builder.Append("]\n");
-
-            builder.Append("  }");
-            return builder.ToString();
-        }
-
-        private static string UpsertSection(string existing, string sectionJson)
-        {
-            string trimmed = string.IsNullOrWhiteSpace(existing) ? "{}" : existing.Trim();
-            if (!trimmed.StartsWith("{", StringComparison.Ordinal) || !trimmed.EndsWith("}", StringComparison.Ordinal))
-                return "{\n" + sectionJson + "\n}\n";
-
-            string key = "\"" + SectionKey + "\"";
-            int keyIndex = trimmed.IndexOf(key, StringComparison.Ordinal);
-            if (keyIndex >= 0)
-            {
-                int propertyStart = FindPropertyStart(trimmed, keyIndex);
-                int objectStart = trimmed.IndexOf('{', keyIndex);
-                int objectEnd = FindObjectEnd(trimmed, objectStart);
-                if (objectStart >= 0 && objectEnd >= objectStart)
-                {
-                    int propertyEnd = objectEnd + 1;
-                    int next = SkipWhitespace(trimmed, propertyEnd);
-                    if (next < trimmed.Length && trimmed[next] == ',')
-                    {
-                        propertyEnd = next + 1;
-                    }
-                    else
-                    {
-                        int previous = propertyStart - 1;
-                        while (previous >= 0 && char.IsWhiteSpace(trimmed[previous]))
-                            previous--;
-                        if (previous >= 0 && trimmed[previous] == ',')
-                            propertyStart = previous;
-                    }
-
-                    trimmed = trimmed.Remove(propertyStart, propertyEnd - propertyStart);
-                }
-            }
-
-            int insertIndex = trimmed.LastIndexOf('}');
-            string prefix = trimmed.Substring(0, insertIndex).TrimEnd();
-            string separator = prefix.Length > 1 ? ",\n" : "\n";
-            return prefix + separator + sectionJson + "\n}\n";
-        }
-
-        private static int FindPropertyStart(string value, int keyIndex)
-        {
-            int start = keyIndex;
-            while (start > 0 && value[start - 1] != '\n' && value[start - 1] != '\r')
-                start--;
-            return start;
-        }
-
-        private static int SkipWhitespace(string value, int index)
-        {
-            while (index < value.Length && char.IsWhiteSpace(value[index]))
-                index++;
-            return index;
-        }
-
-        private static int FindObjectEnd(string value, int objectStart)
-        {
-            if (objectStart < 0)
-                return -1;
-
-            bool inString = false;
-            bool escaped = false;
-            int depth = 0;
-            for (int i = objectStart; i < value.Length; i++)
-            {
-                char c = value[i];
-                if (inString)
-                {
-                    if (escaped)
-                    {
-                        escaped = false;
-                    }
-                    else if (c == '\\')
-                    {
-                        escaped = true;
-                    }
-                    else if (c == '"')
-                    {
-                        inString = false;
-                    }
-
-                    continue;
-                }
-
-                if (c == '"')
-                    inString = true;
-                else if (c == '{')
-                    depth++;
-                else if (c == '}')
-                {
-                    depth--;
-                    if (depth == 0)
-                        return i;
-                }
-            }
-
-            return -1;
-        }
-
         private static string ToProjectPath(string projectRoot, string path)
         {
             string relative = path.StartsWith(projectRoot, StringComparison.Ordinal)
                 ? path.Substring(projectRoot.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                 : path;
             return relative.Replace(Path.DirectorySeparatorChar, '/');
-        }
-
-        private static void AppendJsonString(StringBuilder builder, string value)
-        {
-            builder.Append('"');
-            for (int i = 0; i < value.Length; i++)
-            {
-                char c = value[i];
-                switch (c)
-                {
-                    case '\\':
-                        builder.Append("\\\\");
-                        break;
-                    case '"':
-                        builder.Append("\\\"");
-                        break;
-                    case '\n':
-                        builder.Append("\\n");
-                        break;
-                    case '\r':
-                        builder.Append("\\r");
-                        break;
-                    case '\t':
-                        builder.Append("\\t");
-                        break;
-                    default:
-                        builder.Append(c);
-                        break;
-                }
-            }
-
-            builder.Append('"');
         }
 
         internal struct ScanResult

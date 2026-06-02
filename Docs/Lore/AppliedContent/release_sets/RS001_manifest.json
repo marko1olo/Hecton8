@@ -1,0 +1,60 @@
+{
+  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS001_FIRST_DESCENT",
+  "status": "production_facing_draft",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json",
+    "Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json",
+    "Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json",
+    "Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json",
+    "Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+  ],
+  "packets": [
+    "P001_CRASH_SHELF",
+    "P002_BLACK_KEEL_CONTACT",
+    "P003_BARNARD_MARK",
+    "P004_BLUE_DEBT",
+    "P005_REPAIR_SCAR"
+  ],
+  "locales_present_in_packet_json": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "markdown_publication_locales_present": [
+    "en_US",
+    "ru_RU"
+  ],
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "runtime_contract": {
+    "runtime_must_not_parse_markdown": true,
+    "runtime_must_not_generate_translation": true,
+    "expected_bake_output": [
+      "packet_id_hash",
+      "loc_id_hashes",
+      "surface_enum",
+      "unlock_id",
+      "seed_tags",
+      "localized_string_pool_offsets"
+    ]
+  }
+}

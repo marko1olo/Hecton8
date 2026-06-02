@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
@@ -13,7 +14,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8011)]
-    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int Tier01Slots = 8;
         private const int Tier2Slots = 6;
@@ -23,6 +24,10 @@ namespace Hecton8.Optimization
         private const int Tier56WarningSlots = 0;
         private const int StarvationFrameThreshold = 60;
         private const long BytesPerMegabyte = 1024L * 1024L;
+        private const long UnknownDispatchPayloadBytes = BytesPerMegabyte;
+        private const long MinimumFrameUploadBudgetBytes = 2L * BytesPerMegabyte;
+        private const long LowFrameUploadBudgetBytes = 5L * BytesPerMegabyte;
+        private const long UltraFrameUploadBudgetBytes = 50L * BytesPerMegabyte;
         private const int UnknownGraphicsBudgetMb = 1800;
         private const float UiMipDowngradePressureFraction = 1700f / 2048f;
         private const float UiMipRestorePressureFraction = 1400f / 2048f;
@@ -33,7 +38,9 @@ namespace Hecton8.Optimization
         private const int QueuedRequestCapacity = 128;
         private const int ReadyTicketCapacity = 32;
         private const int InflightRequestCapacity = 64;
+        private const int ProgressSignalBufferCapacity = AssetLoadProgressSignal.ExpectedCapacity;
         private static AssetLoadDispatcher s_registeredInstance;
+        private static int s_x001AssetLoadDispatcherProgressSignalDropCount;
 
         [Header("Dispatch Budget")]
         [Tooltip("Main-thread dispatch budget in milliseconds per frame.")]
@@ -62,11 +69,18 @@ namespace Hecton8.Optimization
         // COLD ALLOC: uint[512]/byte[512] - fixed addressable group cache for UI mip gate - owner: AssetLoadDispatcher
         private readonly uint[] _addressableGroupKeys = new uint[AddressableGroupMapCapacity];
         private readonly byte[] _addressableGroupValues = new byte[AddressableGroupMapCapacity];
+        // COLD ALLOC: AssetLoadProgressSignal[128] - fixed late-frame handoff buffer - owner: AssetLoadDispatcher
+        private readonly AssetLoadProgressSignal[] _progressSignals = new AssetLoadProgressSignal[ProgressSignalBufferCapacity];
         private int _addressableGroupCount;
+        private int _progressSignalCount;
         private long _lastObservedVramBytes;
         private long _graphicsBudgetBytes;
+        private long _frameUploadBudgetBytes;
+        private long _frameUploadGrantedBytes;
+        private uint _uploadBudgetFrameId = uint.MaxValue;
         private bool _uiMipBiasGateActive;
         private bool _uiMipBiasGateEvaluationQueued;
+        private bool _registeredLateFrameTick;
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureReadModel _vramPressure;
         private IVramPressureMipBiasSink _vramPressureMipBias;
@@ -129,6 +143,10 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureProgressSignalLaneCold();
             RefreshGraphicsBudgetBytes();
             CacheDependencies();
             TryRegisterHotSwap();
@@ -138,6 +156,7 @@ namespace Hecton8.Optimization
 
         private void Start()
         {
+            EnsureProgressSignalLaneCold();
             RefreshGraphicsBudgetBytes();
             CacheDependencies();
             TryRegisterHotSwap();
@@ -150,6 +169,7 @@ namespace Hecton8.Optimization
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
+            ClearProgressSignalBuffer();
             ClearCachedDependencies();
         }
 
@@ -162,6 +182,7 @@ namespace Hecton8.Optimization
             ClearCachedDependencies();
             ClearDispatchBuffers();
             ClearAddressableGroupMap();
+            ClearProgressSignalBuffer();
 
             for (int i = 0; i < _inflightCounts.Length; i++)
                 _inflightCounts[i] = 0;
@@ -184,9 +205,21 @@ namespace Hecton8.Optimization
             EvaluateUiMipBiasGate();
         }
 
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            FlushProgressSignalsLateFrame();
+        }
+
         internal bool Enqueue(uint assetKey, AssetPriorityTier priority, bool isDistantHlod, out int requestId)
         {
+            return Enqueue(assetKey, priority, isDistantHlod, 0L, out requestId);
+        }
+
+        internal bool Enqueue(uint assetKey, AssetPriorityTier priority, bool isDistantHlod, long estimatedBytes, out int requestId)
+        {
             requestId = 0;
+            long resolvedEstimatedBytes = ResolveDispatchPayloadBytes(estimatedBytes);
             if (IsUiIconGroup(assetKey))
                 QueueUiMipBiasGateEvaluation();
 
@@ -194,6 +227,13 @@ namespace Hecton8.Optimization
             {
                 if (_queuedRequests[i].AssetKey != assetKey)
                     continue;
+
+                AssetDispatchRequest queued = _queuedRequests[i];
+                if (resolvedEstimatedBytes > queued.EstimatedBytes)
+                {
+                    queued.EstimatedBytes = resolvedEstimatedBytes;
+                    _queuedRequests[i] = queued;
+                }
 
                 requestId = _queuedRequests[i].RequestId;
                 return true;
@@ -219,10 +259,12 @@ namespace Hecton8.Optimization
             {
                 RequestId = requestId,
                 AssetKey = assetKey,
+                EstimatedBytes = resolvedEstimatedBytes,
                 Priority = priority,
                 IsDistantHlod = isDistantHlod ? (byte)1 : (byte)0,
                 AgeFrames = 0
             };
+            QueueProgressSignal(requestId, assetKey, resolvedEstimatedBytes, priority, AssetLoadProgressSignal.StageQueued, 0);
             return true;
         }
 
@@ -268,6 +310,13 @@ namespace Hecton8.Optimization
                 if (_inflightCounts[band] > 0)
                     _inflightCounts[band]--;
 
+                QueueProgressSignal(
+                    request.RequestId,
+                    request.AssetKey,
+                    request.EstimatedBytes,
+                    request.Priority,
+                    success ? AssetLoadProgressSignal.StageCompleted : AssetLoadProgressSignal.StageFailed,
+                    0);
                 RemoveInflightRequestAtSwapBack(i);
                 return true;
             }
@@ -280,13 +329,21 @@ namespace Hecton8.Optimization
             for (int i = _queuedRequestCount - 1; i >= 0; i--)
             {
                 if (_queuedRequests[i].AssetKey == assetKey)
+                {
+                    AssetDispatchRequest request = _queuedRequests[i];
+                    QueueProgressSignal(request.RequestId, request.AssetKey, request.EstimatedBytes, request.Priority, AssetLoadProgressSignal.StageCancelled, 0);
                     RemoveQueuedRequestAtSwapBack(i);
+                }
             }
 
             for (int i = _readyTicketCount - 1; i >= 0; i--)
             {
                 if (_readyTickets[i].AssetKey == assetKey)
+                {
+                    AssetDispatchTicket ticket = _readyTickets[i];
+                    QueueProgressSignal(ticket.RequestId, ticket.AssetKey, ticket.EstimatedBytes, ticket.Priority, AssetLoadProgressSignal.StageCancelled, 0);
                     RemoveReadyTicketAtSwapBack(i);
+                }
             }
 
             for (int i = _inflightRequestCount - 1; i >= 0; i--)
@@ -298,6 +355,8 @@ namespace Hecton8.Optimization
                 if (_inflightCounts[band] > 0)
                     _inflightCounts[band]--;
 
+                AssetDispatchRequest request = _inflightRequests[i];
+                QueueProgressSignal(request.RequestId, request.AssetKey, request.EstimatedBytes, request.Priority, AssetLoadProgressSignal.StageCancelled, 0);
                 RemoveInflightRequestAtSwapBack(i);
             }
         }
@@ -442,7 +501,7 @@ namespace Hecton8.Optimization
 
         private void TryRegister()
         {
-            if (_registeredTick && _registeredSlowTick)
+            if (_registeredTick && _registeredSlowTick && _registeredLateFrameTick)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -454,6 +513,11 @@ namespace Hecton8.Optimization
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+            if (!_registeredLateFrameTick)
+            {
+                EnsureProgressSignalLaneCold();
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            }
         }
 
         private bool TryRegisterService()
@@ -493,6 +557,12 @@ namespace Hecton8.Optimization
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrameTick = false;
             }
         }
 
@@ -591,6 +661,7 @@ namespace Hecton8.Optimization
             }
 
             long dispatchStartTicks = Stopwatch.GetTimestamp();
+            BeginFrameUploadBudget();
             while (_queuedRequestCount > 0 &&
                    _readyTicketCount < readyTicketLimit &&
                    _inflightRequestCount < _inflightRequests.Length)
@@ -604,18 +675,33 @@ namespace Hecton8.Optimization
                     break;
 
                 AssetDispatchRequest request = _queuedRequests[requestIndex];
+                long requestBytes = ResolveDispatchPayloadBytes(request.EstimatedBytes);
+                long nextGrantedBytes = _frameUploadGrantedBytes + requestBytes;
+                if (_frameUploadGrantedBytes > 0L && nextGrantedBytes > _frameUploadBudgetBytes)
+                    break;
+
                 RemoveQueuedRequestAtSwapBack(requestIndex);
+                _frameUploadGrantedBytes = nextGrantedBytes;
 
                 _readyTickets[_readyTicketCount++] = new AssetDispatchTicket
                 {
                     RequestId = request.RequestId,
                     AssetKey = request.AssetKey,
+                    EstimatedBytes = requestBytes,
                     Priority = request.Priority,
                     IsDistantHlod = request.IsDistantHlod
                 };
 
+                request.EstimatedBytes = requestBytes;
                 _inflightRequests[_inflightRequestCount++] = request;
                 _inflightCounts[ResolveBand(request.Priority)]++;
+                QueueProgressSignal(
+                    request.RequestId,
+                    request.AssetKey,
+                    requestBytes,
+                    request.Priority,
+                    AssetLoadProgressSignal.StageGranted,
+                    0);
             }
         }
 
@@ -698,6 +784,12 @@ namespace Hecton8.Optimization
             _inflightRequestCount = 0;
         }
 
+        private void ClearProgressSignalBuffer()
+        {
+            System.Array.Clear(_progressSignals, 0, _progressSignalCount);
+            _progressSignalCount = 0;
+        }
+
         private void ClearAddressableGroupMap()
         {
             System.Array.Clear(_addressableGroupKeys, 0, _addressableGroupCount);
@@ -737,6 +829,112 @@ namespace Hecton8.Optimization
             float collapse = math.saturate(math.lerp(pressureCollapse, math.max(pressureCollapse, qualityCollapse), 0.5f));
             float rawSlots = math.lerp(maxSlots, minSlots, collapse);
             return math.max(minSlots, (int)math.round(rawSlots));
+        }
+
+        public static long ResolveUploadBudgetBytesForAudit(float qualityWeight, float pressureFactor)
+        {
+            float quality = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
+            float pressure = math.saturate(math.select(0f, pressureFactor, math.isfinite(pressureFactor)));
+            float qualityCurve = math.smoothstep(0.15f, 0.85f, quality);
+            float pressureCollapse = math.smoothstep(0.55f, 0.98f, pressure);
+            float qualityBudget = math.lerp((float)LowFrameUploadBudgetBytes, (float)UltraFrameUploadBudgetBytes, qualityCurve);
+            float pressureBudget = math.lerp(qualityBudget, (float)MinimumFrameUploadBudgetBytes, pressureCollapse);
+            return (long)math.max((float)MinimumFrameUploadBudgetBytes, pressureBudget);
+        }
+
+        private void BeginFrameUploadBudget()
+        {
+            uint frame = SystemDispatcher.CurrentFrameId;
+            if (_uploadBudgetFrameId == frame)
+                return;
+
+            _uploadBudgetFrameId = frame;
+            IVramPressureReadModel pressureMonitor = _vramPressure;
+            float pressure = pressureMonitor != null ? pressureMonitor.PressureFactor : 0f;
+            _frameUploadBudgetBytes = ResolveUploadBudgetBytesForAudit(ResolveGlobalQualityWeight(), pressure);
+            _frameUploadGrantedBytes = 0L;
+        }
+
+        private static long ResolveDispatchPayloadBytes(long estimatedBytes)
+        {
+            if (estimatedBytes <= 0L)
+                return UnknownDispatchPayloadBytes;
+
+            return estimatedBytes;
+        }
+
+        private static void EnsureProgressSignalLaneCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            SignalBus<AssetLoadProgressSignal>.Configure(
+                AssetLoadProgressSignal.ExpectedCapacity,
+                AssetLoadProgressSignal.MaxFrameSignals,
+                AssetLoadProgressSignal.LowTierFrameSignals,
+                AssetLoadProgressSignal.LaneHash);
+            SignalBus<AssetLoadProgressSignal>.EnsureInitialized();
+        }
+
+        private void QueueProgressSignal(
+            int requestId,
+            uint assetKey,
+            long estimatedBytes,
+            AssetPriorityTier priority,
+            byte stage,
+            byte flags)
+        {
+            if (_progressSignalCount >= _progressSignals.Length)
+            {
+                IncrementProgressSignalDropCounter();
+                return;
+            }
+
+            _progressSignals[_progressSignalCount++] = new AssetLoadProgressSignal
+            {
+                Frame = SystemDispatcher.CurrentFrameId,
+                AssetKey = assetKey,
+                EstimatedBytes = ResolveDispatchPayloadBytes(estimatedBytes),
+                RequestId = requestId,
+                UploadBudgetMb = BytesToPositiveMegabytes(_frameUploadBudgetBytes),
+                GrantedFrameMb = BytesToPositiveMegabytes(_frameUploadGrantedBytes),
+                Stage = stage,
+                Priority = (byte)priority,
+                Flags = flags
+            };
+        }
+
+        private void FlushProgressSignalsLateFrame()
+        {
+            int count = _progressSignalCount;
+            if (count <= 0)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                AssetLoadProgressSignal signal = _progressSignals[i];
+                _progressSignals[i] = default;
+                SignalBus<AssetLoadProgressSignal>.TryPushTracked(
+                    in signal,
+                    ref s_x001AssetLoadDispatcherProgressSignalDropCount);
+            }
+
+            _progressSignalCount = 0;
+        }
+
+        private static void IncrementProgressSignalDropCounter()
+        {
+            if (s_x001AssetLoadDispatcherProgressSignalDropCount < int.MaxValue)
+                s_x001AssetLoadDispatcherProgressSignalDropCount++;
+        }
+
+        private static uint BytesToPositiveMegabytes(long bytes)
+        {
+            if (bytes <= 0L)
+                return 0u;
+
+            long megabytes = bytes / BytesPerMegabyte;
+            return megabytes > uint.MaxValue ? uint.MaxValue : (uint)megabytes;
         }
 
         private static long ResolveGraphicsBudgetBytes(int graphicsMemoryMb)

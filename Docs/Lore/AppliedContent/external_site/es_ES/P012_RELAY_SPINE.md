@@ -1,0 +1,30 @@
+---
+packet_id: P012_RELAY_SPINE
+article_id: transit.relay_spine
+locale: es_ES
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Espina de relés
+
+Relay Spine define la presión sin FTL de HECTON-8. Hay mensajes, ley y registros, pero no superan a la luz ni al desastre local.
+
+## Scanner
+
+Búfer de relé obsoleto. La edad del paquete saliente supera su valor de rescate local.
+
+## Terminal
+
+Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
+
+## Audio
+
+El relé no está roto. Ese es el problema. Hace exactamente lo que permite la distancia.
+
+## Field Note
+
+Un mensaje puede ser verdad y llegar cuando ya eres huesos.
+
+<!-- External Site; generated from P012_RELAY_SPINE/es_ES. -->

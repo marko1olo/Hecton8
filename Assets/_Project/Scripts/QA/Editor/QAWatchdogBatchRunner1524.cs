@@ -2,6 +2,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -22,8 +23,17 @@ namespace Hecton8.QA.Editor
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/QAWatchdogBatchRunner_1524.txt";
         private const double TimeoutSeconds = 7200.0;
         private const double PollIntervalSeconds = 0.25;
+        private const int CsvReadBufferSize = 8192;
+        private const int CsvLineBufferSize = 4096;
         private static readonly byte[] FlagBytes = { (byte)'1' }; // COLD ALLOC: batch flag payload - owner: QAWatchdogBatchRunner1524
+        private static readonly byte[] CsvReadBuffer = new byte[CsvReadBufferSize];
+        private static readonly byte[] CsvLineBuffer = new byte[CsvLineBufferSize];
+        private static readonly byte[] CsvCompletedPattern = Encoding.ASCII.GetBytes(",Completed,");
+        private static readonly byte[] CsvFailedPattern = Encoding.ASCII.GetBytes(",Failed,");
         private static double _nextPollTime;
+        private static long _csvReadOffset;
+        private static int _csvPendingLineLength;
+        private static bool _csvPendingLineOverflow;
 
         static QAWatchdogBatchRunner1524()
         {
@@ -43,6 +53,7 @@ namespace Hecton8.QA.Editor
             SessionState.SetBool(ExitRequestedKey, false);
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
             _nextPollTime = 0.0;
+            ResetCsvTailParser();
 
             TryDeleteFile(ResolveProjectPath(CsvRelativePath));
             TryDeleteFile(ResolveProjectPath(FlagRelativePath));
@@ -83,7 +94,10 @@ namespace Hecton8.QA.Editor
         private static void Tick()
         {
             if (!SessionState.GetBool(ActiveKey, false))
+            {
+                Detach();
                 return;
+            }
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
@@ -183,21 +197,47 @@ namespace Hecton8.QA.Editor
             try
             {
                 bool sawTerminal = false;
-                foreach (string line in File.ReadLines(csvPath))
+
+                using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
-                    if (line.IndexOf(",Completed,", StringComparison.Ordinal) >= 0)
+                    if (_csvReadOffset > stream.Length)
+                        ResetCsvTailParser();
+
+                    stream.Position = _csvReadOffset;
+                    int bytesRead;
+                    while ((bytesRead = stream.Read(CsvReadBuffer, 0, CsvReadBuffer.Length)) > 0)
                     {
-                        exitCode = 0;
-                        status = "completed";
-                        sawTerminal = true;
+                        for (int i = 0; i < bytesRead; i++)
+                        {
+                            byte value = CsvReadBuffer[i];
+                            if (value == (byte)'\n' || value == (byte)'\r')
+                            {
+                                if (!_csvPendingLineOverflow && _csvPendingLineLength > 0)
+                                    ConsumeCsvLine(_csvPendingLineLength, ref sawTerminal, ref exitCode, ref status);
+
+                                _csvPendingLineLength = 0;
+                                _csvPendingLineOverflow = false;
+                                continue;
+                            }
+
+                            if (_csvPendingLineOverflow)
+                                continue;
+
+                            if (_csvPendingLineLength >= CsvLineBuffer.Length)
+                            {
+                                _csvPendingLineOverflow = true;
+                                continue;
+                            }
+
+                            CsvLineBuffer[_csvPendingLineLength++] = value;
+                        }
                     }
-                    else if (line.IndexOf(",Failed,", StringComparison.Ordinal) >= 0)
-                    {
-                        exitCode = 1;
-                        status = ResolveFailedStatus(line);
-                        sawTerminal = true;
-                    }
+
+                    _csvReadOffset = stream.Position;
                 }
+
+                if (!_csvPendingLineOverflow && _csvPendingLineLength > 0)
+                    ConsumeCsvLine(_csvPendingLineLength, ref sawTerminal, ref exitCode, ref status);
 
                 return sawTerminal;
             }
@@ -215,13 +255,104 @@ namespace Hecton8.QA.Editor
             }
         }
 
-        private static string ResolveFailedStatus(string csvLine)
+        private static void ResetCsvTailParser()
         {
-            string[] columns = csvLine.Split(',');
-            if (columns.Length > 12 && !string.IsNullOrEmpty(columns[12]))
-                return "runtime_fault_" + columns[12];
+            _csvReadOffset = 0L;
+            _csvPendingLineLength = 0;
+            _csvPendingLineOverflow = false;
+        }
 
-            return "runtime_fault";
+        private static void ConsumeCsvLine(int lineLength, ref bool sawTerminal, ref int exitCode, ref string status)
+        {
+            if (ContainsBytes(CsvLineBuffer, lineLength, CsvCompletedPattern))
+            {
+                exitCode = 0;
+                status = "completed";
+                sawTerminal = true;
+                return;
+            }
+
+            if (ContainsBytes(CsvLineBuffer, lineLength, CsvFailedPattern))
+            {
+                exitCode = 1;
+                status = ResolveFailedStatus(CsvLineBuffer, lineLength);
+                sawTerminal = true;
+            }
+        }
+
+        private static string ResolveFailedStatus(byte[] csvLine, int length)
+        {
+            if (!TryGetCsvFieldBounds(csvLine, length, 12, out int fieldStart, out int fieldLength))
+                return "runtime_fault";
+
+            TrimCsvField(csvLine, ref fieldStart, ref fieldLength);
+            if (fieldLength <= 0)
+                return "runtime_fault";
+
+            return "runtime_fault_" + Encoding.ASCII.GetString(csvLine, fieldStart, fieldLength);
+        }
+
+        private static bool ContainsBytes(byte[] source, int length, byte[] pattern)
+        {
+            if (pattern.Length == 0 || length < pattern.Length)
+                return false;
+
+            int lastStart = length - pattern.Length;
+            for (int i = 0; i <= lastStart; i++)
+            {
+                int j = 0;
+                while (j < pattern.Length && source[i + j] == pattern[j])
+                    j++;
+
+                if (j == pattern.Length)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetCsvFieldBounds(byte[] line, int length, int fieldIndex, out int fieldStart, out int fieldLength)
+        {
+            int currentField = 0;
+            int currentStart = 0;
+
+            for (int i = 0; i <= length; i++)
+            {
+                if (i < length && line[i] != (byte)',')
+                    continue;
+
+                if (currentField == fieldIndex)
+                {
+                    fieldStart = currentStart;
+                    fieldLength = i - currentStart;
+                    return true;
+                }
+
+                currentField++;
+                currentStart = i + 1;
+            }
+
+            fieldStart = 0;
+            fieldLength = 0;
+            return false;
+        }
+
+        private static void TrimCsvField(byte[] line, ref int fieldStart, ref int fieldLength)
+        {
+            while (fieldLength > 0 && (line[fieldStart] == (byte)' ' || line[fieldStart] == (byte)'"'))
+            {
+                fieldStart++;
+                fieldLength--;
+            }
+
+            while (fieldLength > 0)
+            {
+                byte value = line[fieldStart + fieldLength - 1];
+                if (value != (byte)' ' && value != (byte)'"')
+                    break;
+
+                fieldLength--;
+            }
         }
 
         private static bool TryWriteFlagFile()

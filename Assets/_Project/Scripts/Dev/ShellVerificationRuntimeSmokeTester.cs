@@ -40,6 +40,8 @@ namespace Hecton8.Dev
         private const float EditorStableWindowSeconds = 0.5f;
         private const string ResumePhaseKey = "Hecton8.ShellSmoke.ResumePhase";
         private const string ResumeSaveSlotKey = "Hecton8.ShellSmoke.ResumeSaveSlot";
+        private const string AutoStartCommandLineSwitch = "-hectonShellSmokeAutoStart";
+        private const string AutoStartEnvironmentVariable = "HECTON_SHELL_SMOKE_AUTOSTART";
 
         [Header("Execution")]
         [SerializeField] private bool runOnStart = true;
@@ -134,6 +136,14 @@ namespace Hecton8.Dev
         {
             if (!Application.isPlaying || _isRunning || _autoStartScheduled || !IsAutoStartSupported())
                 return;
+
+            if (!IsAutomaticExecutionArmed())
+            {
+                if (HasPendingResumeState())
+                    ClearResumeState();
+                LogVerbose("Auto-start skipped because shell smoke is not explicitly armed.");
+                return;
+            }
 
             string activeSceneName = SceneManager.GetActiveScene().name;
             bool canAutoStartFromScene =
@@ -805,7 +815,7 @@ namespace Hecton8.Dev
 
         public bool WantsAutoStart()
         {
-            return runOnStart && IsAutoStartSupported();
+            return runOnStart && IsAutoStartSupported() && IsAutomaticExecutionArmed();
         }
 
         private static bool IsAutoStartSupported()
@@ -817,9 +827,37 @@ namespace Hecton8.Dev
 #endif
         }
 
+        private static bool IsAutomaticExecutionArmed()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string env = System.Environment.GetEnvironmentVariable(AutoStartEnvironmentVariable);
+            if (string.Equals(env, "1", StringComparison.Ordinal) ||
+                string.Equals(env, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(env, "yes", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], AutoStartCommandLineSwitch, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+#endif
+            return false;
+        }
+
         public static bool HasPersistedResumeState()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!IsAutomaticExecutionArmed())
+            {
+                if (HasPendingResumeState())
+                    ClearResumeState();
+                return false;
+            }
+
             return HasPendingResumeState();
 #else
             return false;

@@ -1,0 +1,223 @@
+﻿[
+  {
+    "depth": 0,
+    "name": "‎Teni Games @ ‎Николай Романов (6969687)",
+    "control_type": "Window",
+    "class_name": "class MainWindow",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1920,
+      1080
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "",
+    "control_type": "TitleBar",
+    "class_name": "",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "System",
+    "control_type": "MenuBar",
+    "class_name": "",
+    "automation_id": "MenuBar",
+    "rect": [
+      0,
+      8,
+      22,
+      30
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "System",
+    "control_type": "MenuItem",
+    "class_name": "",
+    "automation_id": "",
+    "rect": [
+      0,
+      8,
+      22,
+      30
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "Minimize",
+    "control_type": "Button",
+    "class_name": "",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "Maximize",
+    "control_type": "Button",
+    "class_name": "",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "Close",
+    "control_type": "Button",
+    "class_name": "",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::Platform::TitleWidget",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1920,
+      36
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::RpWidget",
+    "automation_id": "",
+    "rect": [
+      0,
+      1,
+      1920,
+      36
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "Minimize",
+    "control_type": "Button",
+    "class_name": "class Ui::IconButton",
+    "automation_id": "",
+    "rect": [
+      1764,
+      1,
+      1816,
+      36
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "Restore",
+    "control_type": "Button",
+    "class_name": "class Ui::IconButton",
+    "automation_id": "",
+    "rect": [
+      1816,
+      1,
+      1868,
+      36
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "Close",
+    "control_type": "Button",
+    "class_name": "class Ui::IconButton",
+    "automation_id": "",
+    "rect": [
+      1868,
+      1,
+      1920,
+      36
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::PlainShadow",
+    "automation_id": "",
+    "rect": [
+      0,
+      35,
+      1920,
+      36
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::RpWidget",
+    "automation_id": "",
+    "rect": [
+      0,
+      36,
+      1920,
+      1080
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::RpWidget",
+    "automation_id": "",
+    "rect": [
+      0,
+      36,
+      1920,
+      1080
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class Ui::RpWidget",
+    "automation_id": "",
+    "rect": [
+      0,
+      36,
+      104,
+      1080
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Group",
+    "class_name": "class MainWidget",
+    "automation_id": "",
+    "rect": [
+      104,
+      36,
+      1920,
+      1080
+    ]
+  }
+]

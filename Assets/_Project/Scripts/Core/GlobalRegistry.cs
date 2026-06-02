@@ -330,6 +330,7 @@ namespace Hecton8.Core
         private static int _pendingMathPrecisionShaderLevel = (int)MathPrecisionLevel.Low;
         private static int _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
         private static int _mathPrecisionShaderDirty;
+        private static int _sceneRuntimePublicationGateDepth;
         private static int _currentDomain = (int)Domain.Unknown;
         private static object _currentDomainOwner;
 
@@ -2500,6 +2501,38 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Opens the narrow scene-load publication lane for scene-owned runtime services after bootstrap has locked.
+        /// Core bootstrap slots remain immutable; only hot-swappable scene slots can publish while this gate is open.
+        /// </summary>
+        internal static void BeginSceneRuntimePublicationGate()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            Interlocked.Increment(ref _sceneRuntimePublicationGateDepth);
+        }
+
+        /// <summary>
+        /// Closes one scene-load publication lane opened by <see cref="BeginSceneRuntimePublicationGate"/>.
+        /// </summary>
+        internal static void EndSceneRuntimePublicationGate()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            int current = Volatile.Read(ref _sceneRuntimePublicationGateDepth);
+            while (current > 0)
+            {
+                int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _sceneRuntimePublicationGateDepth, next, current);
+                if (observed == current)
+                    return;
+
+                current = observed;
+            }
+        }
+
+        /// <summary>
         /// Returns a registered service through the guarded BIOS access lane.
         /// Editor/development builds throw on premature access; release builds return a safe null-object or null fallback.
         /// </summary>
@@ -2573,6 +2606,7 @@ namespace Hecton8.Core
             _pendingMathPrecisionShaderLevel = (int)MathPrecisionLevel.Low;
             _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
             _mathPrecisionShaderDirty = 0;
+            _sceneRuntimePublicationGateDepth = 0;
             SignalBusRegistry.ClearSystemKillSwitchBits();
             _currentDomain = (int)Domain.Unknown;
             _currentDomainOwner = null;
@@ -2821,6 +2855,17 @@ namespace Hecton8.Core
             _serviceReboundOverflowLogged = false;
             _isDispatchingServiceRebounds = false;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorServiceReboundTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeServiceReboundQueuesForShutdown;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeServiceReboundQueuesForShutdown;
+            UnityEditor.EditorApplication.quitting -= DisposeServiceReboundQueuesForShutdown;
+            UnityEditor.EditorApplication.quitting += DisposeServiceReboundQueuesForShutdown;
+        }
+#endif
 
         /// <summary>
         /// Registers the immutable boot-time hardware profile before Environment services initialize.
@@ -3573,11 +3618,27 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Hot-swaps the scene-owned orbital prologue director after the bootstrap registration window is locked.
+        /// </summary>
+        public static void ReplaceOrbitalDirectorRuntime(IOrbitalDirector instance)
+        {
+            ReplaceService(ref _orbitalDirectorRuntime, instance, GlobalRegistryServiceSlot.OrbitalDirectorRuntime);
+        }
+
+        /// <summary>
         /// Registers the awaitable prologue sequence runtime owner.
         /// </summary>
         public static void RegisterPrologueSequenceRuntime(IPrologueSequenceService instance)
         {
             RegisterServiceAllowSameInstance(ref _prologueSequenceRuntime, instance);
+        }
+
+        /// <summary>
+        /// Hot-swaps the scene-owned awaitable prologue sequence after the bootstrap registration window is locked.
+        /// </summary>
+        public static void ReplacePrologueSequenceRuntime(IPrologueSequenceService instance)
+        {
+            ReplaceService(ref _prologueSequenceRuntime, instance, GlobalRegistryServiceSlot.PrologueSequenceRuntime);
         }
 
         /// <summary>
@@ -3727,7 +3788,10 @@ namespace Hecton8.Core
                 return;
             }
 
-            GuardServicePublication<IBabelLocalization>(default);
+            ForceOverrideToken effectiveToken = ResolveSceneRuntimePublicationToken(
+                GlobalRegistryServiceSlot.LocalizationRuntime,
+                default);
+            GuardServicePublication<IBabelLocalization>(effectiveToken);
             IBabelLocalization previousService = Volatile.Read(ref _babelLocalizationRuntime);
             if (ReferenceEquals(previousService, instance))
             {
@@ -3735,14 +3799,24 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (previousService != null)
+            if (previousService != null && !effectiveToken.IsValid)
                 ThrowSlotHijack(previousService, instance);
 
-            previousService = Interlocked.CompareExchange(ref _babelLocalizationRuntime, instance, null);
-            if (previousService != null && !ReferenceEquals(previousService, instance))
+            if (effectiveToken.IsValid)
+            {
+                previousService = Interlocked.Exchange(ref _babelLocalizationRuntime, instance);
+            }
+            else
+            {
+                previousService = Interlocked.CompareExchange(ref _babelLocalizationRuntime, instance, null);
+            }
+
+            if (previousService != null && !ReferenceEquals(previousService, instance) && !effectiveToken.IsValid)
                 ThrowSlotHijack(previousService, instance);
 
             MarkServiceRegistered(GlobalRegistryServiceSlot.LocalizationRuntime);
+            if (previousService != null)
+                QueueServiceRebound(GlobalRegistryServiceSlot.LocalizationRuntime, previousService, instance);
         }
 
         /// <summary>
@@ -4423,12 +4497,20 @@ namespace Hecton8.Core
         {
             if (ReferenceEquals(_dataVault, instance))
             {
+                ReleaseSignalDataVaultOwnedHandles();
                 MathGuard.BindDataVaultCold(null);
                 SignalBusRegistry.BindDataVaultCold(null);
                 GlobalTelemetryBus.BindBlackboxDataVaultCold(null);
             }
 
             UnregisterService(ref _dataVault, instance);
+        }
+
+        private static void ReleaseSignalDataVaultOwnedHandles()
+        {
+            SignalTuningTable.ReleaseHandlesOnly();
+            SignalTelemetryRingBuffer.ReleaseHandlesOnly();
+            SignalThreadLocalScratchpad.ReleaseHandlesOnly();
         }
 
         /// <summary>
@@ -4565,6 +4647,14 @@ namespace Hecton8.Core
         public static void RegisterHardwareThermalService(IHardwareThermalService instance)
         {
             RegisterServiceAllowSameInstance(ref _hardwareThermalService, instance);
+        }
+
+        /// <summary>
+        /// Hot-swaps the hardware thermal and battery watchdog after the bootstrap registration window is locked.
+        /// </summary>
+        public static void ReplaceHardwareThermalService(IHardwareThermalService instance)
+        {
+            ReplaceService(ref _hardwareThermalService, instance, GlobalRegistryServiceSlot.HardwareThermalService);
         }
 
         /// <summary>
@@ -6949,6 +7039,63 @@ namespace Hecton8.Core
 #endif
         }
 
+        private static ForceOverrideToken ResolveSceneRuntimePublicationToken(
+            GlobalRegistryServiceSlot serviceSlot,
+            ForceOverrideToken forceOverrideToken)
+        {
+            if (forceOverrideToken.IsValid ||
+                Volatile.Read(ref _sceneRuntimePublicationGateDepth) <= 0 ||
+                !CanIssueSceneRuntimePublicationToken(serviceSlot))
+            {
+                return forceOverrideToken;
+            }
+
+            return CreateHotSwapOverrideToken();
+        }
+
+        private static bool CanIssueSceneRuntimePublicationToken(GlobalRegistryServiceSlot serviceSlot)
+        {
+            RegistryPhase phase = Phase;
+            if (phase == RegistryPhase.Uninitialized)
+                return false;
+
+            return IsSceneRuntimeHotSwapSlot(serviceSlot);
+        }
+
+        private static bool IsSceneRuntimeHotSwapSlot(GlobalRegistryServiceSlot serviceSlot)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Unknown:
+                case GlobalRegistryServiceSlot.Input:
+                case GlobalRegistryServiceSlot.InputBinding:
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                case GlobalRegistryServiceSlot.RaycastBatchRuntime:
+                case GlobalRegistryServiceSlot.Physics:
+                case GlobalRegistryServiceSlot.Audio:
+                case GlobalRegistryServiceSlot.AudioVirtualization:
+                case GlobalRegistryServiceSlot.Scene:
+                case GlobalRegistryServiceSlot.Save:
+                case GlobalRegistryServiceSlot.ObjectPool:
+                case GlobalRegistryServiceSlot.TickManager:
+                case GlobalRegistryServiceSlot.Dispatcher:
+                case GlobalRegistryServiceSlot.RenderDispatcher:
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                case GlobalRegistryServiceSlot.DataVault:
+                case GlobalRegistryServiceSlot.UserOptionsRuntime:
+                case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
+                case GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime:
+                case GlobalRegistryServiceSlot.MacroDatabase:
+                case GlobalRegistryServiceSlot.JobAdmissionRuntime:
+                case GlobalRegistryServiceSlot.StreamingBackpressureRuntime:
+                case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
+                case GlobalRegistryServiceSlot.HardwareThermalService:
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
         private static void GuardServicePublication<T>(ForceOverrideToken forceOverrideToken) where T : class
         {
             if (forceOverrideToken.IsValid || Phase != RegistryPhase.Ready)
@@ -7052,8 +7199,9 @@ namespace Hecton8.Core
                 return;
             }
 
-            GuardServicePublication<T>(forceOverrideToken);
             GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            ForceOverrideToken effectiveToken = ResolveSceneRuntimePublicationToken(serviceSlot, forceOverrideToken);
+            GuardServicePublication<T>(effectiveToken);
             T previousService = Volatile.Read(ref slot);
             if (ReferenceEquals(previousService, instance))
             {
@@ -7061,10 +7209,10 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (previousService != null && !forceOverrideToken.IsValid)
+            if (previousService != null && !effectiveToken.IsValid)
                 ThrowSlotHijack(previousService, instance);
 
-            if (forceOverrideToken.IsValid)
+            if (effectiveToken.IsValid)
             {
                 previousService = Interlocked.Exchange(ref slot, instance);
             }
@@ -7106,8 +7254,9 @@ namespace Hecton8.Core
                 return;
             }
 
-            GuardServicePublication<T>(forceOverrideToken);
             GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            ForceOverrideToken effectiveToken = ResolveSceneRuntimePublicationToken(serviceSlot, forceOverrideToken);
+            GuardServicePublication<T>(effectiveToken);
             T previousService = Volatile.Read(ref slot);
             if (ReferenceEquals(previousService, instance))
             {
@@ -7115,10 +7264,10 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (previousService != null && !forceOverrideToken.IsValid)
+            if (previousService != null && !effectiveToken.IsValid)
                 ThrowSlotHijack(previousService, instance);
 
-            if (forceOverrideToken.IsValid)
+            if (effectiveToken.IsValid)
             {
                 previousService = Interlocked.Exchange(ref slot, instance);
             }
@@ -7319,6 +7468,14 @@ namespace Hecton8.Core
 
             if (_suppressServiceReboundQueueing)
                 return;
+
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+#endif
 
             EnsureServiceReboundQueue();
             if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)

@@ -1181,7 +1181,7 @@ namespace Hecton8.UI
 
             if (!owner.TryGetComponent(out CanvasGroup canvasGroup))
             {
-                // COLD ALLOC: CanvasGroup[1] — missing selection indicator visibility proxy — owner: PDAControlsRebindUI
+                // COLD ALLOC: CanvasGroup[1] - missing selection indicator visibility proxy - owner: PDAControlsRebindUI
                 canvasGroup = owner.AddComponent<CanvasGroup>();
             }
 

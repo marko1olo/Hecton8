@@ -192,7 +192,7 @@ namespace Hecton8.Crafting
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
         {
-            if ((inputEvent.EventType & DiegeticPanelInputEventType.Down) == 0)
+            if (DiegeticPanelInputEvent.ResolvePrimaryPointerAction(inputEvent.EventType) != DiegeticPanelInputEventType.Down)
                 return;
 
             if (inputEvent.PanelId == leverPanelId)

@@ -19,6 +19,13 @@ namespace Hecton8.Editor.GeologyForge
         public const int Lod0TriangleBudget = 15000;
         public const int Lod1TriangleBudget = 7500;
         public const int Lod2TriangleBudget = 1500;
+        public const int CollisionTriangleBudget = 192;
+        public const int CollisionProxyTriangleCount = 12;
+        public const float OccluderStaticMinimumVolumeCubicMeters = 2f;
+        public const float MaximumRadiusMeters = 32f;
+        public const float MaximumHeightScale = 12f;
+        public const float MaximumFrequency = 16f;
+        public const float MaximumNoiseAmplitudeMeters = 8f;
         public const uint WarningEmptySurface = 1u << 0;
         public const uint WarningTriangleBudgetExceeded = 1u << 1;
         public const uint WarningNonFiniteTelemetry = 1u << 2;
@@ -29,12 +36,13 @@ namespace Hecton8.Editor.GeologyForge
         public const uint ManifestVersion = 1u;
         public const uint ManifestFlagBrgReady = 1u << 0;
         public const string MeshOutputFolder = "Assets/_Project/BakedGeometry/Geology";
+        public const string PrefabOutputFolder = "Assets/_Project/BakedGeometry/Geology/Prefabs";
         public const string ManifestPath = "Assets/_Project/BakedGeometry/Geology/geology_mesh_manifest.h8geom";
         public const string CsvPath = "Assets/_Project/Data/Geology/geology_generation_profiles.csv";
         public const string BakeReportPath = "Docs/Reports/GEOLOGY_BAKE_REPORT.json";
         public const string LayoutAuditReportPath = "Docs/Reports/GEOLOGY_LAYOUT_AUDIT.json";
         public const string ScannerReportPath = "Docs/Reports/GEOMETRY_OPTIMIZATION_REPORT.json";
-        public const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_208.bin";
+        public const string DumpPath = "Docs/AgentLogs/Dump_1606_GeologyForge.bin";
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -78,6 +86,43 @@ namespace Hecton8.Editor.GeologyForge
         public ulong _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct GeologySeedDTO
+    {
+        [FieldOffset(0)]
+        public double3 SectorAup;
+
+        [FieldOffset(24)]
+        public uint Seed;
+
+        [FieldOffset(28)]
+        public float RadiusMeters;
+
+        [FieldOffset(32)]
+        public float HeightScale;
+
+        [FieldOffset(36)]
+        public float Frequency;
+
+        [FieldOffset(40)]
+        public float NoiseAmplitude;
+
+        [FieldOffset(44)]
+        public float RidgedWeight;
+
+        [FieldOffset(48)]
+        public float VoronoiWeight;
+
+        [FieldOffset(52)]
+        public float IsoLevel;
+
+        [FieldOffset(56)]
+        public float GlobalQualityWeight;
+
+        [FieldOffset(60)]
+        public uint ProfileHash;
+    }
+
     internal struct GeologyBakeProfile
     {
         public FixedString64Bytes Name;
@@ -107,6 +152,7 @@ namespace Hecton8.Editor.GeologyForge
         public int Lod0Triangles;
         public int Lod1Triangles;
         public int Lod2Triangles;
+        public int CollisionTriangles;
         public int VertexStrideBytes;
         public double SdfMilliseconds;
         public double ExtractMilliseconds;

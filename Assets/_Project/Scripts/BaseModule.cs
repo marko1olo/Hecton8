@@ -1181,6 +1181,7 @@ namespace Hecton8.Gameplay
             _trackedPlayerSurvival = null;
             _trackedPlayerMovement = null;
             _trackedPlayerHypoxiaPresentation = null;
+            _lifeSupportComponent.ClearTrackedSurvivalCold();
             _parasitePowerDrainWatts = 0f;
             _parasiteRootPowerDrainWatts = 0f;
             _solarEmpBlackoutRemainingSeconds = 0f;
@@ -1522,6 +1523,7 @@ namespace Hecton8.Gameplay
                 _trackedPlayerSurvival = null;
                 _trackedPlayerMovement = null;
                 _trackedPlayerHypoxiaPresentation = null;
+                _lifeSupportComponent.ClearTrackedSurvivalCold();
             }
 
             if (trackedPlayerExited)
@@ -4440,6 +4442,7 @@ namespace Hecton8.Gameplay
             bool notifyEnter)
         {
             _trackedPlayerSurvival = resolvedSurvival;
+            _lifeSupportComponent.BindTrackedSurvivalCold(resolvedSurvival);
             _trackedPlayerMovement = ResolvePlayerMovementEnvironmentSink(playerCollider, playerTransform);
             _trackedPlayerHypoxiaPresentation = ResolvePlayerHypoxiaPresentationSink(playerCollider, playerTransform);
             if (notifyEnter)
@@ -4456,6 +4459,7 @@ namespace Hecton8.Gameplay
             bool notifyEnter)
         {
             _trackedPlayerSurvival = resolvedSurvival;
+            _lifeSupportComponent.BindTrackedSurvivalCold(resolvedSurvival);
             HectonPlayerMovement movement = playerRuntime != null ? playerRuntime.PlayerMovement : null;
             _trackedPlayerMovement = movement;
             _trackedPlayerHypoxiaPresentation = movement;
@@ -4528,6 +4532,7 @@ namespace Hecton8.Gameplay
             _trackedPlayerSurvival = null;
             _trackedPlayerMovement = null;
             _trackedPlayerHypoxiaPresentation = null;
+            _lifeSupportComponent.ClearTrackedSurvivalCold();
             ModuleStatusEvents.TryNotifyExit(this);
             PublishPlayerBaseTransitionSignal(false);
         }

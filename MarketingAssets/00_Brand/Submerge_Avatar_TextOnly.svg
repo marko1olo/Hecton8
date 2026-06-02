@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Submerge text-only avatar placeholder</title>
+  <desc id="desc">Temporary text-only profile avatar for Submerge accounts. Not gameplay proof.</desc>
+  <rect width="1024" height="1024" fill="#05080a"/>
+  <rect x="64" y="64" width="896" height="896" fill="none" stroke="#8aa4a8" stroke-width="6"/>
+  <rect x="104" y="104" width="816" height="816" fill="none" stroke="#243338" stroke-width="2"/>
+  <text x="512" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="700" letter-spacing="6" fill="#e8f2ee">SUBMERGE</text>
+  <line x1="244" y1="526" x2="780" y2="526" stroke="#8aa4a8" stroke-width="4"/>
+  <text x="512" y="590" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="3" fill="#8aa4a8">PRESSURE / SALVAGE / MACHINERY</text>
+</svg>

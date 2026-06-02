@@ -17,8 +17,15 @@ namespace Hecton8.UI
         private const int TextCapacity = 128;
         private const byte TerminalHapticPriority = 1;
         private const byte RightMotorMask = 0b0010;
+        private const float DefaultReferenceWidth = 512f;
+        private const float DefaultReferenceHeight = 256f;
+        private const float DefaultKeyboardMinX = 16f;
+        private const float DefaultKeyboardMinY = 42f;
+        private const float DefaultKeyboardWidth = 480f;
+        private const float DefaultKeyboardHeight = 168f;
+        private const float DefaultPressAudioPitch = 1f;
 
-        // COLD ALLOC: char[40] — fixed physical keyboard key map — owner: PhysicalTerminalKeyboard
+        // COLD ALLOC: char[40] - fixed physical keyboard key map - owner: PhysicalTerminalKeyboard
         private static readonly char[] s_keyMap =
         {
             '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -39,7 +46,7 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, 1f)] private float pressAudioVolume = 0.35f;
         [SerializeField, Range(0.25f, 2.5f)] private float pressAudioPitch = 1f;
 
-        // COLD ALLOC: char[128] — terminal keyboard input buffer — owner: PhysicalTerminalKeyboard
+        // COLD ALLOC: char[128] - terminal keyboard input buffer - owner: PhysicalTerminalKeyboard
         private readonly char[] _textBuffer = new char[TextCapacity];
 
         private int _textLength;
@@ -86,15 +93,19 @@ namespace Hecton8.UI
             if (inputEvent.PanelId != panelId)
                 return;
 
+            DiegeticPanelInputEventType pointerAction = DiegeticPanelInputEvent.ResolvePrimaryPointerAction(inputEvent.EventType);
+            if (pointerAction == DiegeticPanelInputEventType.None)
+                return;
+
             CacheLayout();
             int keyIndex = ResolveKeyIndex(inputEvent.CanvasHitPoint);
             _hoverKeyIndex = keyIndex;
-            bool pressed = (inputEvent.EventType & DiegeticPanelInputEventType.Down) != 0;
-            bool held = (inputEvent.EventType & DiegeticPanelInputEventType.Hold) != 0;
+            bool pressed = pointerAction == DiegeticPanelInputEventType.Down;
+            bool held = pointerAction == DiegeticPanelInputEventType.Hold;
             _pressedKeyIndex = pressed || held ? keyIndex : -1;
             _highlightState = ResolveButtonHighlightState(keyIndex >= 0, pressed || held);
 
-            if (!pressed || keyIndex < 0 || keyIndex >= KeyCount)
+            if (pointerAction != DiegeticPanelInputEventType.Down || keyIndex < 0 || keyIndex >= KeyCount)
                 return;
 
             ApplyKey(s_keyMap[keyIndex]);
@@ -128,9 +139,10 @@ namespace Hecton8.UI
 
             int row = keyIndex / KeyColumnCount;
             int column = keyIndex - row * KeyColumnCount;
+            float2 safeKeyboardMin = ResolveSafeKeyboardMin();
             canvasSnapPosition = new float2(
-                keyboardMin.x + (column + 0.5f) * _keyWidth,
-                keyboardMin.y + (row + 0.5f) * _keyHeight);
+                safeKeyboardMin.x + (column + 0.5f) * _keyWidth,
+                safeKeyboardMin.y + (row + 0.5f) * _keyHeight);
             return true;
         }
 
@@ -164,9 +176,14 @@ namespace Hecton8.UI
 
         private int ResolveKeyIndex(float2 canvasPosition)
         {
-            float x = canvasPosition.x - keyboardMin.x;
-            float y = canvasPosition.y - keyboardMin.y;
-            if (x < 0f || y < 0f || x > keyboardSize.x || y > keyboardSize.y)
+            if (!math.all(math.isfinite(canvasPosition)))
+                return -1;
+
+            float2 safeKeyboardMin = ResolveSafeKeyboardMin();
+            float2 safeKeyboardSize = ResolveSafeKeyboardSize();
+            float x = canvasPosition.x - safeKeyboardMin.x;
+            float y = canvasPosition.y - safeKeyboardMin.y;
+            if (x < 0f || y < 0f || x > safeKeyboardSize.x || y > safeKeyboardSize.y)
                 return -1;
 
             int column = (int)math.floor(x * _invKeyWidth);
@@ -182,8 +199,9 @@ namespace Hecton8.UI
             if (_layoutCached)
                 return;
 
-            float safeWidth = math.max(1f, math.isfinite(keyboardSize.x) ? keyboardSize.x : referenceResolution.x);
-            float safeHeight = math.max(1f, math.isfinite(keyboardSize.y) ? keyboardSize.y : referenceResolution.y);
+            float2 safeKeyboardSize = ResolveSafeKeyboardSize();
+            float safeWidth = safeKeyboardSize.x;
+            float safeHeight = safeKeyboardSize.y;
             _keyWidth = safeWidth * (1f / KeyColumnCount);
             _keyHeight = safeHeight * (1f / KeyRowCount);
             _invKeyWidth = math.rcp(math.max(0.0001f, _keyWidth));
@@ -209,9 +227,49 @@ namespace Hecton8.UI
             AudioEvent audioEvent = new AudioEvent(
                 pressAudioEventId,
                 sourcePosition,
-                math.saturate(pressAudioVolume),
-                math.clamp(pressAudioPitch, 0.25f, 2.5f));
+                ResolveSafePressAudioVolume(),
+                ResolveSafePressAudioPitch());
             audio.QueueAudioEvent(in audioEvent);
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private float2 ResolveSafeReferenceResolution()
+        {
+            return new float2(
+                math.max(1f, SanitizeFinite(referenceResolution.x, DefaultReferenceWidth)),
+                math.max(1f, SanitizeFinite(referenceResolution.y, DefaultReferenceHeight)));
+        }
+
+        private float2 ResolveSafeKeyboardMin()
+        {
+            return new float2(
+                SanitizeFinite(keyboardMin.x, DefaultKeyboardMinX),
+                SanitizeFinite(keyboardMin.y, DefaultKeyboardMinY));
+        }
+
+        private float2 ResolveSafeKeyboardSize()
+        {
+            float2 safeReferenceResolution = ResolveSafeReferenceResolution();
+            return new float2(
+                math.max(1f, SanitizeFinite(keyboardSize.x, math.min(DefaultKeyboardWidth, safeReferenceResolution.x))),
+                math.max(1f, SanitizeFinite(keyboardSize.y, math.min(DefaultKeyboardHeight, safeReferenceResolution.y))));
+        }
+
+        private float ResolveSafePressAudioVolume()
+        {
+            return math.saturate(SanitizeFinite(pressAudioVolume, 0f));
+        }
+
+        private float ResolveSafePressAudioPitch()
+        {
+            return math.clamp(
+                SanitizeFinite(pressAudioPitch, DefaultPressAudioPitch),
+                0.25f,
+                2.5f);
         }
 
         private void TryRegisterHotSwapListener()
@@ -234,8 +292,14 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            pressAudioVolume = math.saturate(pressAudioVolume);
-            pressAudioPitch = math.clamp(pressAudioPitch, 0.25f, 2.5f);
+            float2 safeReferenceResolution = ResolveSafeReferenceResolution();
+            referenceResolution = new Vector2(safeReferenceResolution.x, safeReferenceResolution.y);
+            float2 safeKeyboardMin = ResolveSafeKeyboardMin();
+            keyboardMin = new Vector2(safeKeyboardMin.x, safeKeyboardMin.y);
+            float2 safeKeyboardSize = ResolveSafeKeyboardSize();
+            keyboardSize = new Vector2(safeKeyboardSize.x, safeKeyboardSize.y);
+            pressAudioVolume = ResolveSafePressAudioVolume();
+            pressAudioPitch = ResolveSafePressAudioPitch();
         }
 #endif
     }

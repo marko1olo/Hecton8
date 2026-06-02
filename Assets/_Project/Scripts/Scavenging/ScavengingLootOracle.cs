@@ -1024,6 +1024,7 @@ namespace Hecton8.Scavenging
         private static bool _signalLanesConfigured;
         private static bool _staticReset;
 
+        private const string HostObjectName = "ScavengingLootOracleRuntime";
         private const SystemID OwnerSystem = SystemID.GameplayLoot;
         private const uint SimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash;
         private const uint PostSimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash ^ 0x504F5354u; // POST
@@ -1125,6 +1126,7 @@ namespace Hecton8.Scavenging
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            DestroyUnboundHostObjectsCold();
             _host = null;
             _signalLanesConfigured = false;
             _staticReset = true;
@@ -1757,16 +1759,38 @@ namespace Hecton8.Scavenging
         private static ScavengingLootOracleRuntime EnsureHost()
         {
             ConfigureSignalLanes();
+            DestroyUnboundHostObjectsCold();
             if (_host != null)
             {
                 _host.TryRegisterHotSwapListener();
                 return _host;
             }
 
-            GameObject hostObject = new GameObject("ScavengingLootOracleRuntime"); // COLD ALLOC: GameObject[1] - scene-local dispatcher bridge for Burst loot signal completion - owner: SHINOBU_125
+            GameObject hostObject = new GameObject(HostObjectName); // COLD ALLOC: GameObject[1] - scene-local dispatcher bridge for Burst loot signal completion - owner: SHINOBU_125
             hostObject.hideFlags = HideFlags.HideAndDontSave;
             _host = hostObject.AddComponent<ScavengingLootOracleRuntime>(); // COLD ALLOC: MonoBehaviour[1] - dispatcher-phase job owner - owner: SHINOBU_125
             return _host;
+        }
+
+        private static void DestroyUnboundHostObjectsCold()
+        {
+            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>(); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
+            for (int i = 0; i < objects.Length; i++)
+            {
+                GameObject candidate = objects[i];
+                if (candidate == null ||
+                    !string.Equals(candidate.name, HostObjectName, StringComparison.Ordinal) ||
+                    candidate.GetComponent<ScavengingLootOracleRuntime>() != null)
+                {
+                    continue;
+                }
+
+#if UNITY_EDITOR
+                DestroyImmediate(candidate);
+#else
+                Destroy(candidate);
+#endif
+            }
         }
 
         private static ScavengingLootOracleRuntime TryGetPreparedHostForHot()

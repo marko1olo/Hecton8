@@ -17,7 +17,7 @@ namespace Hecton8.UI
         private static readonly int WeightNormalId = Shader.PropertyToID("_WeightNormal");
         private static readonly int WeightBoldId = Shader.PropertyToID("_WeightBold");
 
-        [Header("── Sharpness ──────────────────")]
+        [Header("-- Sharpness ------------------")]
         [SerializeField, Tooltip("Distance where the near-field SDF profile is fully applied.")]
         private float nearDistance = 0.06f;
 
@@ -390,27 +390,24 @@ namespace Hecton8.UI
             if (_registered || _target == null || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registered)
-                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registered = false;
             }
         }

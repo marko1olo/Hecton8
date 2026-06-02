@@ -1,0 +1,232 @@
+{
+  "generated_at": "2026-05-31T20:41:42.869Z",
+  "platform": "bluesky",
+  "mode": "publish",
+  "text": "Opened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.",
+  "mediaPath": null,
+  "readyState": {
+    "url": "https://bsky.app/",
+    "title": "(1) Discover — Bluesky",
+    "textareas": [
+      {
+        "i": 0,
+        "text": "Opened the accounts before the good shots are ready.\nFor now I am mostly deleting frames that look cool and say nothing.",
+        "role": null,
+        "aria": null,
+        "rect": {
+          "x": 474.0625,
+          "y": 108.5096206665039,
+          "w": 491.09375,
+          "h": 140,
+          "cx": 719.609375,
+          "cy": 178.5096206665039
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "i": 0,
+        "text": "What's up?",
+        "disabled": false,
+        "rect": {
+          "x": 394.30767822265625,
+          "y": 91.97115325927734,
+          "w": 600,
+          "h": 65.98558044433594,
+          "cx": 694.3076782226562,
+          "cy": 124.96394348144531
+        }
+      },
+      {
+        "i": 1,
+        "text": "Add image",
+        "disabled": false,
+        "rect": {
+          "x": 955.3173217773438,
+          "y": 111.97115325927734,
+          "w": 23.990385055541992,
+          "h": 23.990385055541992,
+          "cx": 967.3125143051147,
+          "cy": 123.96634578704834
+        }
+      },
+      {
+        "i": 2,
+        "text": "",
+        "disabled": false,
+        "rect": {
+          "x": 464.295654296875,
+          "y": 238.68991088867188,
+          "w": 342.9447326660156,
+          "h": 515.0120239257812,
+          "cx": 635.7680206298828,
+          "cy": 496.1959228515625
+        }
+      },
+      {
+        "i": 3,
+        "text": "Teni Games\n‪@teni-games.bsky.social‬",
+        "disabled": false,
+        "rect": {
+          "x": 170.30526733398438,
+          "y": 15.997596740722656,
+          "w": 208.0048065185547,
+          "h": 47.99279022216797,
+          "cx": 274.3076705932617,
+          "cy": 39.99399185180664
+        }
+      },
+      {
+        "i": 4,
+        "text": "New post",
+        "disabled": false,
+        "rect": {
+          "x": 182.3004608154297,
+          "y": 523.8101196289062,
+          "w": 137.59616088867188,
+          "h": 43.990386962890625,
+          "cx": 251.09854125976562,
+          "cy": 545.8053131103516
+        }
+      },
+      {
+        "i": 5,
+        "text": "Trending options",
+        "disabled": false,
+        "rect": {
+          "x": 1286.53125,
+          "y": 242.7163543701172,
+          "w": 25,
+          "h": 25,
+          "cx": 1299.03125,
+          "cy": 255.2163543701172
+        }
+      },
+      {
+        "i": 6,
+        "text": "Cancel",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 58.762020111083984,
+          "w": 63.605770111083984,
+          "h": 35.98557662963867,
+          "cx": 442.8726177215576,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 7,
+        "text": "Drafts",
+        "disabled": false,
+        "rect": {
+          "x": 858.8221435546875,
+          "y": 58.762020111083984,
+          "w": 67.09134674072266,
+          "h": 35.98557662963867,
+          "cx": 892.3678169250488,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 8,
+        "text": "Post",
+        "disabled": false,
+        "rect": {
+          "x": 933.8942260742188,
+          "y": 58.762020111083984,
+          "w": 59.65144348144531,
+          "h": 35.98557662963867,
+          "cx": 963.7199478149414,
+          "cy": 76.75480842590332
+        }
+      },
+      {
+        "i": 9,
+        "text": "Anyone can interact",
+        "disabled": false,
+        "rect": {
+          "x": 411.0697326660156,
+          "y": 280.2644348144531,
+          "w": 182.4038543701172,
+          "h": 32.980770111083984,
+          "cx": 502.2716598510742,
+          "cy": 296.7548198699951
+        }
+      },
+      {
+        "i": 10,
+        "text": "Add media to post",
+        "disabled": false,
+        "rect": {
+          "x": 410.0721130371094,
+          "y": 325.9975891113281,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 430.060094833374,
+          "cy": 345.9855709075928
+        }
+      },
+      {
+        "i": 11,
+        "text": "Select GIF",
+        "disabled": false,
+        "rect": {
+          "x": 450.048095703125,
+          "y": 325.9975891113281,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 470.03607749938965,
+          "cy": 345.9855709075928
+        }
+      },
+      {
+        "i": 12,
+        "text": "Open emoji picker",
+        "disabled": false,
+        "rect": {
+          "x": 490.0240478515625,
+          "y": 325.9975891113281,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 510.01202964782715,
+          "cy": 345.9855709075928
+        }
+      },
+      {
+        "i": 13,
+        "text": "Add another post to thread",
+        "disabled": false,
+        "rect": {
+          "x": 802.3677978515625,
+          "y": 325.9975891113281,
+          "w": 39.9759635925293,
+          "h": 39.9759635925293,
+          "cx": 822.3557796478271,
+          "cy": 345.9855709075928
+        }
+      },
+      {
+        "i": 14,
+        "text": "English",
+        "disabled": false,
+        "rect": {
+          "x": 842.34375,
+          "y": 329.4952087402344,
+          "w": 74.20673370361328,
+          "h": 32.980770111083984,
+          "cx": 879.4471168518066,
+          "cy": 345.98559379577637
+        }
+      }
+    ],
+    "body": "Discover\nFollowing\nVideo\nWhat's up?\n‪Michael Warburton‬\n ‪@michaelwarburton.bsky.social‬\n· 1h\nJanet Leigh and Tony Curtis with their daughters Jamie Lee & Kelly at their Los Angeles home in 1960.\n25\n32\n305\n‪Marko Silberhand‬\n ‪@markosilberhand.bsky.social‬\n· 6h\n.\nBook Recommendations . . .  ?!\n\nI love this !\n\n#BookSky  💙  📚\n.\n110\n613\n3.6K\n‪Sredni Eel‬\n ‪@srednieel.bsky.social‬\n· 1d\nHere’s a gosling. I think I’ll call him Ryan. He’s a Canadian.\nALT\n144\n511\n6.5K\n‪Naomi Fein‬\n ‪@naomifein.bsky.social‬\n· 20m\nThis guy projects a sort of stupidity I've never witnessed before. Is there a word for this kind of dumbness?\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nBREAM: The Journal says percentage of delinquent credit card balances is 13%, the highest in 15 years. People are using them for necessities. Your message to them?\n\nHASSETT: We talk to CEOs of the credit card companies all the time, and there's not any threat to them. People are taking a bit longer.\n50\n30\n183\n‪Sarah‬\n ‪@sarahfaulkner.bsky.social‬\n· 41m\nMaybe not the rarest, but who can deny the exquisite beauty of a Bee Orchid? \n\nWhat a truly wonderful flower.  Seen a few this week at different locations in Weymouth, and I am compelled to stop and admire every little one. I just love them. 🩷 \n\n#wildflowerhour\n#orchidchallenge\nALT\n6\n90\n‪Hoodlum 🇺🇸‬\n ‪@nothoodlum.bsky.social‬\n· 50m\nA bear was caught red-handed breaking into a parked U-Haul van in North Carolina and making off with a bag in its mouth. \nabcnews.com/video/133461...\n94\n141\n474\n‪Kat Abughazaleh‬\n ‪@katmabu.bsky.social‬\n· 4h\nInterrupting our collective doomscrolling to ask the public what the best global culinary creation is.\n\nBy that, I mean what is your favorite type of dish that was somehow made by every society in some form? Mine is the dumpling.\n466\n289\n1.3K\n‪Lizzer58‬\n ‪@lizpazera.bsky.social‬\n· 9h\nMy friend died of cancer. I told him I would take his dog after he died. This is Pepper. She gets along with my two dogs and two cats. She is family now.\n692\n673\n14K\n‪Pandy Fackler‬\n ‪@thatbrenna.bsky.social‬\n· 5h\nhope you brought urine!\nALT\n94\n969\n4.4K\n‪Marc Elias‬\n ‪@marcelias.bsky.social‬\n· 1h\n👀\n‪Hoosier Dad‬\n ‪@hoosierdad.bsky.social‬\n· 1d\nThen you need the Democratic nominee for President to announce Marc Elias as their pick for AG!\n89\n195\n1.1K\n‪Cats of Yore‬\n ‪@catsofyore.bsky.social‬\n· 46m\nCasting an unschedule nap spell on you. Postcard from my collection, no date.\nALT\n7\n64\n652\n‪Rae Radford‬\n ‪@raeradford.bsky.social‬\n· 9h\nIf only! \n\n#BookSky\n122\n540\n2.5K\n‪Eric Columbus‬\n ‪@ericcolumbus.bsky.social‬\n· 4h\nI'm old enough to remember January 9, 2026. You'll never guess what happened next. (Nothing. Nothing happened next.)\nALT\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nBREAM: The Journal says percentage of delinquent credit card balances is 13%, the highest in 15 years. People are using them for necessities. Your message to them?\n\nHASSETT: We talk to CEOs of the credit card companies all the time, and there's not any threat to them. People are taking a bit longer.\n44\n290\n1.1K\n‪Luca‬\n ‪@lucagalletti.bsky.social‬\n· 18h\nGreat day for a bath 💦\n\nIG: birds_perfection\n93\n675\n4.7K\n‪El Howieson‬\n ‪@elhowieson.bsky.social‬\n· 6h\n👇🏽👇🏽👇🏽\n58\n1.3K\n4.5K\n‪Kathryn Tewson‬\n ‪@kathryntewson.bsky.social‬\n· 45m\nunnoticed by whom, npr\n‪NPR‬\n ‪@npr.org‬\n· 2h\nMisogyny is an increasing factor in far-right attacks, but it often goes unnoticed.\nFor far-right extremists, the rise of a new enemy: Women\nMisogyny is an increasing factor in far-right attacks, but it often goes unnoticed.\nn.pr\n12\n80\n621\n‪Forbes‬\n ‪@forbes.com‬\n· 4h\nA24 said its 20-year-old director is the youngest ever to top the box office.\n‘Backrooms’ Sets A24 Record With $81 Million Opening Weekend—Beating Out ‘Obsession’ And ‘Mandalorian’\nA24 said its 20-year-old director is the youngest ever to top the box office.\nwww.forbes.com\n18\n71\n478\n‪alexvonwitzleben.bsky.social‬\n ‪@alexvonwitzleben.bsky.social‬\n· 1d\n#Scotland is establishing itself as a premier global leader in #renewable"
+  },
+  "beforeScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_devnote_cutting_frames_20260601_before_publish.png",
+  "afterScreenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\bsky_devnote_cutting_frames_20260601_after_publish.png",
+  "clickResult": {
+    "url": "https://bsky.app/",
+    "title": "(1) Discover — Bluesky",
+    "body": "Discover\nFollowing\nVideo\nWhat's up?\n‪Michael Warburton‬\n ‪@michaelwarburton.bsky.social‬\n· 1h\nJanet Leigh and Tony Curtis with their daughters Jamie Lee & Kelly at their Los Angeles home in 1960.\n25\n32\n305\n‪Marko Silberhand‬\n ‪@markosilberhand.bsky.social‬\n· 6h\n.\nBook Recommendations . . .  ?!\n\nI love this !\n\n#BookSky  💙  📚\n.\n110\n613\n3.6K\n‪Sredni Eel‬\n ‪@srednieel.bsky.social‬\n· 1d\nHere’s a gosling. I think I’ll call him Ryan. He’s a Canadian.\nALT\n144\n511\n6.5K\n‪Naomi Fein‬\n ‪@naomifein.bsky.social‬\n· 20m\nThis guy projects a sort of stupidity I've never witnessed before. Is there a word for this kind of dumbness?\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nBREAM: The Journal says percentage of delinquent credit card balances is 13%, the highest in 15 years. People are using them for necessities. Your message to them?\n\nHASSETT: We talk to CEOs of the credit card companies all the time, and there's not any threat to them. People are taking a bit longer.\n50\n30\n183\n‪Sarah‬\n ‪@sarahfaulkner.bsky.social‬\n· 41m\nMaybe not the rarest, but who can deny the exquisite beauty of a Bee Orchid? \n\nWhat a truly wonderful flower.  Seen a few this week at different locations in Weymouth, and I am compelled to stop and admire every little one. I just love them. 🩷 \n\n#wildflowerhour\n#orchidchallenge\nALT\n6\n90\n‪Hoodlum 🇺🇸‬\n ‪@nothoodlum.bsky.social‬\n· 50m\nA bear was caught red-handed breaking into a parked U-Haul van in North Carolina and making off with a bag in its mouth. \nabcnews.com/video/133461...\n94\n141\n474\n‪Kat Abughazaleh‬\n ‪@katmabu.bsky.social‬\n· 4h\nInterrupting our collective doomscrolling to ask the public what the best global culinary creation is.\n\nBy that, I mean what is your favorite type of dish that was somehow made by every society in some form? Mine is the dumpling.\n466\n289\n1.3K\n‪Lizzer58‬\n ‪@lizpazera.bsky.social‬\n· 9h\nMy friend died of cancer. I told him I would take his dog after he died. This is Pepper. She gets along with my two dogs and two cats. She is family now.\n692\n673\n14K\n‪Pandy Fackler‬\n ‪@thatbrenna.bsky.social‬\n· 5h\nhope you brought urine!\nALT\n94\n969\n4.4K\n‪Marc Elias‬\n ‪@marcelias.bsky.social‬\n· 1h\n👀\n‪Hoosier Dad‬\n ‪@hoosierdad.bsky.social‬\n· 1d\nThen you need the Democratic nominee for President to announce Marc Elias as their pick for AG!\n89\n195\n1.1K\n‪Cats of Yore‬\n ‪@catsofyore.bsky.social‬\n· 46m\nCasting an unschedule nap spell on you. Postcard from my collection, no date.\nALT\n7\n64\n652\n‪Rae Radford‬\n ‪@raeradford.bsky.social‬\n· 9h\nIf only! \n\n#BookSky\n122\n540\n2.5K\n‪Eric Columbus‬\n ‪@ericcolumbus.bsky.social‬\n· 4h\nI'm old enough to remember January 9, 2026. You'll never guess what happened next. (Nothing. Nothing happened next.)\nALT\n‪Aaron Rupar‬\n ‪@atrupar.com‬\n· 5h\nBREAM: The Journal says percentage of delinquent credit card balances is 13%, the highest in 15 years. People are using them for necessities. Your message to them?\n\nHASSETT: We talk to CEOs of the credit card companies all the time, and there's not any threat to them. People are taking a bit longer.\n44\n290\n1.1K\n‪Luca‬\n ‪@lucagalletti.bsky.social‬\n· 18h\nGreat day for a bath 💦\n\nIG: birds_perfection\n93\n675\n4.7K\n‪El Howieson‬\n ‪@elhowieson.bsky.social‬\n· 6h\n👇🏽👇🏽👇🏽\n58\n1.3K\n4.5K\n‪Kathryn Tewson‬\n ‪@kathryntewson.bsky.social‬\n· 45m\nunnoticed by whom, npr\n‪NPR‬\n ‪@npr.org‬\n· 2h\nMisogyny is an increasing factor in far-right attacks, but it often goes unnoticed.\nFor far-right extremists, the rise of a new enemy: Women\nMisogyny is an increasing factor in far-right attacks, but it often goes unnoticed.\nn.pr\n12\n80\n621\n‪Forbes‬\n ‪@forbes.com‬\n· 4h\nA24 said its 20-year-old director is the youngest ever to top the box office.\n‘Backrooms’ Sets A24 Record With $81 Million Opening Weekend—Beating Out ‘Obsession’ And ‘Mandalorian’\nA24 said its 20-year-old director is the youngest ever to top the box office.\nwww.forbes.com\n18\n71\n478\n‪alexvonwitzleben.bsky.social‬\n ‪@alexvonwitzleben.bsky.social‬\n· 1d\n#Scotland is establishing itself as a premier global leader in #renewableenergy as its powerful wind turbines now generate enough clean electricity to potentially supply more than twice the nation’s entire current demand. www.enerdynamics.com/Energy-Curre... #ActOnClimate #ClimateActionNow\n237\n1.9K\n7K\n‪Sam Paine‬\n ‪@sampaine.bsky.social‬\n· 5h\nUnless local and state law enforcement are arresting ICE agents engaged in violent behavior and first amendment rights violations, they should be seen and treated as an equivalent enemy of the people.\n33\n141\n540\n‪Scott‬\n ‪@scott"
+  }
+}

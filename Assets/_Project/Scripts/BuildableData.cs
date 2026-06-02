@@ -69,6 +69,7 @@ namespace Hecton8.Building
         public string moduleName = "Module";
         [Tooltip("Stable module ID used by saves, scanner archives, and future content packs. Leave empty to fall back to the asset name.")]
         [SerializeField] private string stableId = string.Empty;
+        private int _persistentHashId;
 
         [Tooltip("Ikonka dlya menyu stroitelstva (optsionalno)")]
         public Sprite icon;
@@ -216,7 +217,7 @@ namespace Hecton8.Building
                 if (moduleTemplate != null)
                     return moduleTemplate.TemplateHashId;
 
-                return Hecton.Localization.LocHash.Compute(PersistentId);
+                return _persistentHashId;
             }
         }
 
@@ -307,8 +308,9 @@ namespace Hecton8.Building
         //  Private
         // ═════════════════════════════════════════════════════════
 
-        private static void RebuildCache()
+        private void RebuildCache()
         {
+            _persistentHashId = Hecton.Localization.LocHash.Compute(PersistentId);
         }
 
         // ══════════════════════════════════════════════════════════

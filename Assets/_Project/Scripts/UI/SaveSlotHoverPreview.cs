@@ -10,7 +10,7 @@ using System;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Hover preview for save slots â€” shows enlarged thumbnail + metadata on hover.
+    /// Hover preview for save slots - shows enlarged thumbnail + metadata on hover.
     /// Save previews must surface route, pressure, and state evidence before load.
     /// Zero-GC: ILateFrameTickable state machine, cached delegates, CanvasGroup alpha.
     /// </summary>
@@ -18,9 +18,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
     public sealed class SaveSlotHoverPreview : MonoBehaviour, ILateFrameTickable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         [Header("=== PREVIEW PANEL ===")]
         [SerializeField] private CanvasGroup previewPanel;
@@ -36,14 +36,23 @@ namespace Hecton8.UI
         [SerializeField] private float fadeOutDuration = 0.1f;
         [SerializeField] private Vector2 previewOffset = new Vector2(20f, 0f);
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // FIELDS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private enum State { Idle, WaitingForDelay, FadingIn, Visible, FadingOut }
 
         private static ReadOnlySpan<char> UnknownTimestampChars => "UNKNOWN".AsSpan();
         private static ReadOnlySpan<char> ZeroPlaytimeChars => "00:00:00".AsSpan();
+        private static readonly int SlotNoDataKeyHash = LocHash.Compute(LocalizationKeys.SLOT_NO_DATA);
+        private static readonly int SlotPrefixKeyHash = LocHash.Compute(LocalizationKeys.SLOT_PREFIX);
+        private static readonly int SlotSceneWorldKeyHash = LocHash.Compute(LocalizationKeys.SLOT_SCENE_WORLD);
+        private static readonly int SlotStatusBackupKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_BACKUP);
+        private static readonly int SlotStatusBackupOnlyKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_BACKUP_ONLY);
+        private static readonly int SlotStatusNoMetaKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_NO_META);
+        private static readonly int SlotStatusMetaRestoredKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_META_RESTORED);
+        private static readonly int SlotStatusMetaSynthKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_META_SYNTH);
+        private static readonly int SlotStatusCorruptKeyHash = LocHash.Compute(LocalizationKeys.SLOT_STATUS_CORRUPT);
 
         private State _state;
         private float _timer;
@@ -66,9 +75,9 @@ namespace Hecton8.UI
         // COLD ALLOC: char[256] - save hover preview integrity status staging for TMP SetCharArray - owner: SaveSlotHoverPreview
         private readonly char[] _previewStatusBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void Awake()
         {
@@ -124,9 +133,9 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // ILATEFRAMETICKABLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -166,9 +175,9 @@ namespace Hecton8.UI
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // POINTER EVENTS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void OnPointerEnter(PointerEventData eventData)
         {
@@ -203,9 +212,9 @@ namespace Hecton8.UI
             _fadeStartAlpha = previewPanel != null ? previewPanel.alpha : 0f;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         // PRIVATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void ShowPreview()
         {
@@ -271,7 +280,7 @@ namespace Hecton8.UI
             {
                 ApplyPreviewTexts(
                     ReadOnlySpan<char>.Empty,
-                    ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_NO_DATA, "NO DATA"),
+                    ResolveLocalizedSpan(localization, SlotNoDataKeyHash, "NO DATA"),
                     ReadOnlySpan<char>.Empty,
                     Color.white);
                 ApplySlotTitle(localization, _currentSlotId);
@@ -421,7 +430,7 @@ namespace Hecton8.UI
             if (buffer == null || buffer.Length == 0)
                 return 0;
 
-            ReadOnlySpan<char> prefix = ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_PREFIX, "SLOT");
+            ReadOnlySpan<char> prefix = ResolveLocalizedSpan(localization, SlotPrefixKeyHash, "SLOT");
             int cursor = AppendSpan(buffer, 0, prefix);
             cursor = AppendChar(buffer, cursor, ' ');
             return AppendSlotNumber(buffer, cursor, slotId);
@@ -433,7 +442,7 @@ namespace Hecton8.UI
                 return ReadOnlySpan<char>.Empty;
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", System.StringComparison.Ordinal))
-                return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_SCENE_WORLD, "WORLD");
+                return ResolveLocalizedSpan(localization, SlotSceneWorldKeyHash, "WORLD");
 
             return sceneName.AsSpan();
         }
@@ -445,17 +454,17 @@ namespace Hecton8.UI
                 case SaveSlotIntegrityState.Healthy:
                     return ReadOnlySpan<char>.Empty;
                 case SaveSlotIntegrityState.HealthyWithBackup:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
+                    return ResolveLocalizedSpan(localization, SlotStatusBackupKeyHash, "BACKUP");
                 case SaveSlotIntegrityState.BackupOnly:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
+                    return ResolveLocalizedSpan(localization, SlotStatusBackupOnlyKeyHash, "BACKUP ONLY");
                 case SaveSlotIntegrityState.MissingMetadata:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
+                    return ResolveLocalizedSpan(localization, SlotStatusNoMetaKeyHash, "NO META");
                 case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
+                    return ResolveLocalizedSpan(localization, SlotStatusMetaRestoredKeyHash, "META RESTORED");
                 case SaveSlotIntegrityState.MetadataSynthesized:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
+                    return ResolveLocalizedSpan(localization, SlotStatusMetaSynthKeyHash, "META SYNTH");
                 case SaveSlotIntegrityState.CorruptedMetadata:
-                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
+                    return ResolveLocalizedSpan(localization, SlotStatusCorruptKeyHash, "CORRUPT");
                 default:
                     return string.IsNullOrEmpty(fallbackStatus) ? ReadOnlySpan<char>.Empty : fallbackStatus.AsSpan();
             }
@@ -606,10 +615,10 @@ namespace Hecton8.UI
             return AppendString(buffer, cursor, slotId);
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel localization, string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel localization, int keyHash, string fallback)
         {
-            return localization != null
-                ? localization.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+            return localization != null && keyHash != 0
+                ? localization.GetRawSpanOrFallback(keyHash, fallback.AsSpan())
                 : fallback.AsSpan();
         }
 
@@ -618,10 +627,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -691,7 +697,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 

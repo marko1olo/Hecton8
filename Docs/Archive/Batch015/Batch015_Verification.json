@@ -1,0 +1,14 @@
+﻿{
+    "batch":  "Batch015",
+    "cutoff":  "2026-05-30T20:15:36.4703796+04:00",
+    "upperBound":  "2026-06-02T12:07:47.8296588+04:00",
+    "moved":  211,
+    "moveErrors":  0,
+    "remainingAtOrBeforeUpperBound":  0,
+    "summaryBytes":  1428389,
+    "summaryUnder2MB":  true,
+    "logSummary":  548821,
+    "rationaleSummary":  486678,
+    "tasksSummary":  392890,
+    "summaryRegeneratedAt":  "2026-06-02T12:20:23.2556010+04:00"
+}

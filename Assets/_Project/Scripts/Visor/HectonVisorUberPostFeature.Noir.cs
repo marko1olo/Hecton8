@@ -648,6 +648,17 @@ namespace Hecton8.Visor
             return NoirConstantsBuffersReady();
         }
 
+        private void ReleaseNoirRuntimeResourcesCold()
+        {
+            ReleaseNoirVaultHandles(_dataVault);
+            _noirConstantsBufferA?.Release();
+            _noirConstantsBufferA = null;
+            _noirConstantsBufferB?.Release();
+            _noirConstantsBufferB = null;
+            _activeNoirConstantsBuffer = null;
+            _hasNoirConstants = false;
+        }
+
         private bool NoirConstantsBuffersReady()
         {
             return _noirSupportsSetConstantBufferCold &&

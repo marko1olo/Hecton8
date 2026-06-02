@@ -12,6 +12,7 @@ StructuredBuffer<DamageVolumeStampCommand> _HectonDamageVolumeStampCommands;
 
 int _HectonDamageVolumeStampCount;
 static const int HectonDamageVolumeStampCapacity = 16;
+static const float HectonDamageVolumeFiniteFloatMax = 3.402823466e+38;
 float _HectonDamageVolumeRecovery;
 float4 _HectonDamageVolumeWorldMinParam;
 float4 _HectonDamageVolumeInvSizeParam;
@@ -19,12 +20,12 @@ int3 _HectonDamageVolumeResolution;
 
 bool HectonDamageVolumeFinite(float value)
 {
-    return !isnan(value) && !isinf(value);
+    return abs(value) <= HectonDamageVolumeFiniteFloatMax;
 }
 
 bool HectonDamageVolumeFinite3(float3 value)
 {
-    return !(any(isnan(value)) || any(isinf(value)));
+    return all(abs(value) <= HectonDamageVolumeFiniteFloatMax);
 }
 
 float HectonDamageVolumeFiniteOr(float value, float fallbackValue)

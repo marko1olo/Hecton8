@@ -1531,10 +1531,10 @@ namespace Hecton8.UI
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrame != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame != 0 || !Application.isPlaying)
                 return;
 
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI) ? 1 : 0;
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI) ? 1 : 0;
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -1542,16 +1542,16 @@ namespace Hecton8.UI
             if (_registeredLateFrame == 0)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrame = 0;
         }
 
         private void TryRegisterSlowTickable()
         {
-            if (_registeredSlowTick != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredSlowTick != 0 || !Application.isPlaying)
                 return;
 
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI) ? 1 : 0;
+            _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI) ? 1 : 0;
         }
 
         private void TryUnregisterSlowTickable()
@@ -1559,7 +1559,7 @@ namespace Hecton8.UI
             if (_registeredSlowTick == 0)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredSlowTick = 0;
         }
 

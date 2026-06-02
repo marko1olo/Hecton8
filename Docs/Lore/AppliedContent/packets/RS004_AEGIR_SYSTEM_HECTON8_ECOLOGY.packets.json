@@ -1,0 +1,832 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS004_AEGIR_SYSTEM_HECTON8_ECOLOGY",
+  "status": "production_facing_draft",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P016_AEGIR_HOST_STAR",
+      "article_id": "location.aegir.host_star",
+      "title_key": "applied_lore.aegir.host_star.title",
+      "status": "production_facing_draft",
+      "surfaces": [
+        "scanner",
+        "in_game_wiki",
+        "terminal",
+        "audio_subtitle",
+        "external_site",
+        "image_brief"
+      ],
+      "unlock": {
+        "primary": "unlock.first_host_star_reading",
+        "poi_tags": [
+          "poi.sky_window",
+          "poi.route_archive",
+          "poi.black_keel_ephemeris"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.surface_weather",
+          "biome.orbit_window"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Host Star",
+          "scanner": "K-type primary light confirmed. Surface illumination exists; depth, storms and eclipse do the dark work.",
+          "field_note": "The star is not the horror. The ocean is.",
+          "terminal": "Ran/Aegir route ephemeris: K-dwarf primary, delayed interstellar packets, no FTL rescue vector. Treat all help as local.",
+          "audio": "Star light reaches the shelf. It does not reach the problem.",
+          "in_game_wiki": "Aegir orbits a normal orange-yellow K-type primary. HECTON-8 is not dark because the system lacks light; it becomes dark through depth, storm water, eclipse timing, silt, pressure and broken industry.",
+          "external_site": "The Aegir host star keeps HECTON-8 hard sci-fi: surface light exists, while survival pressure comes from water, distance, orbital timing and corporate abandonment."
+        },
+        "ru_RU": {
+          "title": "Звезда системы Aegir",
+          "scanner": "Подтвержден свет K-типа. Освещение поверхности есть; темноту создают глубина, штормы и затмения.",
+          "field_note": "Ужас не в звезде. Ужас в океане.",
+          "terminal": "Эфемериды Ran/Aegir: K-карлик, межзвездные пакеты с задержкой, вектора FTL-спасения нет. Помощь считать локальной.",
+          "audio": "Свет звезды достает до шельфа. До проблемы он не достает.",
+          "in_game_wiki": "Aegir обращается вокруг нормальной оранжево-желтой звезды K-типа. HECTON-8 темен не из-за нехватки света; его затемняют глубина, штормовая вода, затмения, ил, давление и сломанная индустрия.",
+          "external_site": "Звезда системы Aegir удерживает HECTON-8 в hard sci-fi: свет на поверхности есть, а давление выживания дают вода, расстояние, орбитальные окна и корпоративное бросание людей."
+        },
+        "ja_JP": {
+          "title": "Aegir主星",
+          "scanner": "K型主星の光を確認。表面光はある。闇は深度、嵐、食が作る。",
+          "field_note": "恐怖は星ではない。海だ。",
+          "terminal": "Ran/Aegir航路暦: K型矮星、遅延する星間パケット、FTL救助経路なし。支援は現地扱い。",
+          "audio": "星明かりは棚まで届く。問題の底までは届かない。",
+          "in_game_wiki": "Aegirは通常の橙黄色K型主星を回る。HECTON-8が暗いのは光がないからではなく、深度、嵐、水、食、シルト、圧力、壊れた産業が暗さを作るからだ。",
+          "external_site": "Aegir主星はHECTON-8を硬いSFに固定する。表面には光があり、生存圧は水、距離、軌道窓、企業の放棄から来る。"
+        },
+        "zh_CN": {
+          "title": "Aegir主恒星",
+          "scanner": "确认K型主星光照。表面有光；黑暗来自深度、风暴和食。",
+          "field_note": "可怕的不是恒星。是海。",
+          "terminal": "Ran/Aegir航线星历：K型矮星，星际数据包延迟，无FTL救援向量。所有支援按本地处理。",
+          "audio": "星光到达陆架。到不了问题本身。",
+          "in_game_wiki": "Aegir围绕一颗正常的橙黄色K型主星运行。HECTON-8并非因为缺少光而黑暗；黑暗来自深度、风暴水体、食、淤泥、压力和损坏工业。",
+          "external_site": "Aegir主恒星让HECTON-8保持硬科幻：表面有光，生存压力来自水、距离、轨道时机和企业遗弃。"
+        },
+        "fr_FR": {
+          "title": "Étoile hôte d’Aegir",
+          "scanner": "Lumière primaire de type K confirmée. La surface reçoit de la lumière; profondeur, tempêtes et éclipses font l’obscurité.",
+          "field_note": "L’horreur n’est pas l’étoile. C’est l’océan.",
+          "terminal": "Éphéméride Ran/Aegir: naine K, paquets interstellaires retardés, aucun vecteur de sauvetage FTL. Toute aide est locale.",
+          "audio": "La lumière atteint le plateau. Pas le problème.",
+          "in_game_wiki": "Aegir orbite une étoile orange-jaune de type K. HECTON-8 n’est pas sombre faute de lumière; l’obscurité vient de la profondeur, des tempêtes, des éclipses, du limon, de la pression et de l’industrie brisée.",
+          "external_site": "L’étoile hôte d’Aegir ancre HECTON-8 dans le hard sci-fi: la lumière existe, mais la survie dépend de l’eau, de la distance, des fenêtres orbitales et de l’abandon."
+        },
+        "es_ES": {
+          "title": "Estrella anfitriona de Aegir",
+          "scanner": "Luz primaria tipo K confirmada. Hay luz en superficie; profundidad, tormentas y eclipses crean la oscuridad.",
+          "field_note": "El horror no es la estrella. Es el océano.",
+          "terminal": "Efemérides Ran/Aegir: enana K, paquetes interestelares demorados, sin vector de rescate FTL. Toda ayuda es local.",
+          "audio": "La luz llega a la plataforma. No llega al problema.",
+          "in_game_wiki": "Aegir orbita una primaria naranja amarilla de tipo K. HECTON-8 no es oscura por falta de luz; la oscurecen profundidad, tormentas, eclipses, limo, presión e industria rota.",
+          "external_site": "La estrella de Aegir fija HECTON-8 como hard sci-fi: hay luz en superficie, pero la presión viene de agua, distancia, órbita y abandono corporativo."
+        },
+        "de_DE": {
+          "title": "Aegirs Heimatstern",
+          "scanner": "K-Typ-Primärlicht bestätigt. Oberfläche hat Licht; Tiefe, Stürme und Finsternisse erzeugen Dunkelheit.",
+          "field_note": "Der Schrecken ist nicht der Stern. Es ist der Ozean.",
+          "terminal": "Ran/Aegir-Ephemeride: K-Zwerg, verzögerte interstellare Pakete, kein FTL-Rettungsvektor. Jede Hilfe ist lokal.",
+          "audio": "Sternlicht erreicht das Schelf. Es erreicht nicht das Problem.",
+          "in_game_wiki": "Aegir umkreist einen orange-gelben K-Stern. HECTON-8 ist nicht dunkel, weil Licht fehlt; Meerestiefe, Sturmwasser, Finsternisse, Schlick, Druck und zerbrochene Industrie machen es dunkel.",
+          "external_site": "Aegirs Heimatstern hält HECTON-8 bei Hard Science Fiction: Licht existiert, Überlebensdruck kommt aus Wasser, Entfernung, Umlaufzeiten und Konzernaufgabe."
+        },
+        "pl_PL": {
+          "title": "Gwiazda macierzysta Aegir",
+          "scanner": "Potwierdzono światło gwiazdy typu K. Powierzchnia ma światło; ciemność robią głębia, sztormy i zaćmienia.",
+          "field_note": "Grozą nie jest gwiazda. Grozą jest ocean.",
+          "terminal": "Efemeryda Ran/Aegir: karzeł K, opóźnione pakiety międzygwiezdne, brak wektora ratunku FTL. Każda pomoc jest lokalna.",
+          "audio": "Światło gwiazdy sięga szelfu. Nie sięga problemu.",
+          "in_game_wiki": "Aegir krąży wokół pomarańczowo-żółtej gwiazdy typu K. HECTON-8 nie jest ciemny z braku światła; ciemność tworzą głębia, sztormy, zaćmienia, muł, ciśnienie i zniszczony przemysł.",
+          "external_site": "Gwiazda Aegir utrzymuje HECTON-8 w hard sci-fi: światło istnieje, a presja pochodzi z wody, dystansu, okien orbitalnych i porzucenia."
+        },
+        "uk_UA": {
+          "title": "Зоря системи Aegir",
+          "scanner": "Підтверджено світло зорі типу K. На поверхні світло є; темряву дають глибина, шторми й затемнення.",
+          "field_note": "Жах не в зорі. Жах в океані.",
+          "terminal": "Ефемериди Ran/Aegir: K-карлик, міжзоряні пакети із затримкою, FTL-рятунку немає. Уся допомога локальна.",
+          "audio": "Світло зорі доходить до шельфу. До проблеми не доходить.",
+          "in_game_wiki": "Aegir обертається навколо помаранчево-жовтої зорі типу K. HECTON-8 темний не через брак світла; темряву створюють глибина, шторми, затемнення, мул, тиск і зламана індустрія.",
+          "external_site": "Зоря Aegir утримує HECTON-8 у hard sci-fi: світло є, а тиск виживання дають вода, відстань, орбітальні вікна і корпоративне покинення."
+        },
+        "ar_SA": {
+          "title": "نجم Aegir المضيف",
+          "scanner": "تأكد ضوء نجم من النوع K. السطح مضاء؛ العمق والعواصف والكسوف تصنع الظلام.",
+          "field_note": "الرعب ليس النجم. الرعب هو المحيط.",
+          "terminal": "تقويم Ran/Aegir: قزم K، حزم بين نجمية متأخرة، لا مسار إنقاذ FTL. كل مساعدة محلية.",
+          "audio": "ضوء النجم يصل إلى الرف. لا يصل إلى المشكلة.",
+          "in_game_wiki": "يدور Aegir حول نجم برتقالي أصفر من النوع K. HECTON-8 ليس مظلماً بسبب نقص الضوء؛ الظلام يأتي من العمق والعواصف والكسوف والطمي والضغط والصناعة المكسورة.",
+          "external_site": "نجم Aegir يثبت HECTON-8 كخيال علمي صلب: الضوء موجود، وضغط النجاة يأتي من الماء والمسافة والنوافذ المدارية والتخلي المؤسسي."
+        },
+        "id_ID": {
+          "title": "Bintang Induk Aegir",
+          "scanner": "Cahaya primer tipe K terkonfirmasi. Permukaan punya cahaya; kedalaman, badai, dan gerhana membuat gelap.",
+          "field_note": "Horornya bukan bintang. Horornya lautan.",
+          "terminal": "Efemeris Ran/Aegir: katai K, paket antarbintang tertunda, tanpa vektor penyelamatan FTL. Semua bantuan lokal.",
+          "audio": "Cahaya bintang mencapai landas. Tidak mencapai masalah.",
+          "in_game_wiki": "Aegir mengorbit bintang oranye-kuning tipe K. HECTON-8 gelap bukan karena kurang cahaya; kedalaman, badai, gerhana, lumpur, tekanan, dan industri rusak yang membuatnya gelap.",
+          "external_site": "Bintang induk Aegir menjaga HECTON-8 sebagai hard sci-fi: cahaya ada, tekanan bertahan hidup datang dari air, jarak, jendela orbit, dan penelantaran korporat."
+        },
+        "ko_KR": {
+          "title": "Aegir 모성",
+          "scanner": "K형 주성의 빛 확인. 표면에는 빛이 있다. 어둠은 수심, 폭풍, 식이 만든다.",
+          "field_note": "공포는 별이 아니다. 바다다.",
+          "terminal": "Ran/Aegir 천체력: K형 왜성, 지연되는 성간 패킷, FTL 구조 벡터 없음. 모든 도움은 현지 자원이다.",
+          "audio": "별빛은 대륙붕까지 닿는다. 문제까지는 닿지 않는다.",
+          "in_game_wiki": "Aegir는 주황빛 K형 주성을 돈다. HECTON-8은 빛이 부족해서 어두운 것이 아니다. 수심, 폭풍, 식, 실트, 압력, 망가진 산업이 어둠을 만든다.",
+          "external_site": "Aegir 모성은 HECTON-8을 하드 SF로 고정한다. 표면에는 빛이 있고, 생존 압력은 물, 거리, 궤도 창, 기업의 방치에서 온다."
+        },
+        "he_IL": {
+          "title": "כוכב האם של Aegir",
+          "scanner": "אור ראשי מסוג K אושר. יש אור על פני השטח; עומק, סערות וליקויים יוצרים את החושך.",
+          "field_note": "האימה אינה הכוכב. היא האוקיינוס.",
+          "terminal": "אפמריס Ran/Aegir: ננס K, חבילות בין-כוכביות מושהות, אין וקטור חילוץ FTL. כל עזרה מקומית.",
+          "audio": "אור הכוכב מגיע למדף. לא לבעיה.",
+          "in_game_wiki": "Aegir מקיף כוכב כתום-צהוב מסוג K. HECTON-8 אינו חשוך ממחסור באור; עומק, סערות, ליקויים, סחף, לחץ ותעשייה שבורה יוצרים חושך.",
+          "external_site": "כוכב האם של Aegir מעגן את HECTON-8 במדע בדיוני קשיח: אור קיים, לחץ ההישרדות מגיע ממים, מרחק, חלונות מסלוליים ונטישה תאגידית."
+        },
+        "pt_BR": {
+          "title": "Estrela hospedeira de Aegir",
+          "scanner": "Luz primária tipo K confirmada. A superfície tem luz; profundidade, tempestades e eclipses fazem o escuro.",
+          "field_note": "O horror não é a estrela. É o oceano.",
+          "terminal": "Efeméride Ran/Aegir: anã K, pacotes interestelares atrasados, sem vetor de resgate FTL. Toda ajuda é local.",
+          "audio": "A luz da estrela chega à plataforma. Não chega ao problema.",
+          "in_game_wiki": "Aegir orbita uma estrela laranja-amarela tipo K. HECTON-8 não é escura por falta de luz; profundidade, tempestades, eclipses, lodo, pressão e indústria quebrada fazem a escuridão.",
+          "external_site": "A estrela de Aegir mantém HECTON-8 em hard sci-fi: existe luz, e a pressão vem da água, distância, janelas orbitais e abandono corporativo."
+        },
+        "nl_NL": {
+          "title": "Gastster van Aegir",
+          "scanner": "Primair licht van K-type bevestigd. Het oppervlak heeft licht; diepte, stormen en eclipsen maken het donker.",
+          "field_note": "De ster is niet de horror. De oceaan is dat.",
+          "terminal": "Ran/Aegir-efemeride: K-dwerg, vertraagde interstellaire pakketten, geen FTL-reddingsvector. Alle hulp is lokaal.",
+          "audio": "Sterlicht bereikt het plateau. Niet het probleem.",
+          "in_game_wiki": "Aegir draait rond een oranjegele K-ster. HECTON-8 is niet donker door gebrek aan licht; diepte, stormen, eclipsen, slib, druk en kapotte industrie maken het donker.",
+          "external_site": "De gastster van Aegir houdt HECTON-8 bij harde sciencefiction: licht bestaat, de overlevingsdruk komt uit water, afstand, baanvensters en zakelijke verlating."
+        }
+      }
+    },
+    {
+      "packet_id": "P017_AEGIR_MOON_LADDER",
+      "article_id": "location.aegir.moon_ladder",
+      "title_key": "applied_lore.aegir.moon_ladder.title",
+      "status": "production_facing_draft",
+      "surfaces": [
+        "scanner",
+        "in_game_wiki",
+        "terminal",
+        "audio_subtitle",
+        "external_site",
+        "image_brief"
+      ],
+      "unlock": {
+        "primary": "unlock.first_moon_ladder_map",
+        "poi_tags": [
+          "poi.orbit_dossier",
+          "poi.signal_mast",
+          "poi.black_keel_ephemeris"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.orbit_window",
+          "biome.service_canyons"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Moon sequence resolved: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "The sky is a mechanism, not scenery.",
+          "terminal": "HECTON-8 is Aegir-VIII: not inner, not farthest. Rake resonance and Pale shadow alter tide and packet quality.",
+          "audio": "Count the moons before you trust a window.",
+          "in_game_wiki": "Aegir uses a practical moon ladder: radiation markers, relay bodies, exhausted claims, resonant hazards, HECTON-8, cold storage moons and outer irregulars. HECTON-8 stays valuable because it sits between living-ocean tolerance and orbital pressure.",
+          "external_site": "The Aegir moon ladder makes the playable moon part of a moving system. Other moons shape tides, carrier waits, relay shadows and the cost of leaving."
+        },
+        "ru_RU": {
+          "title": "Лунная лестница Aegir",
+          "scanner": "Последовательность лун: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Небо здесь механизм, а не фон.",
+          "terminal": "HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Rake и тень Pale меняют прилив и качество пакетов.",
+          "audio": "Считай луны, прежде чем верить окну.",
+          "in_game_wiki": "Aegir использует практическую лунную лестницу: радиационные маркеры, реле, выработанные claims, резонансные опасности, HECTON-8, холодные складские луны и внешние неправильные тела. HECTON-8 ценен, потому что стоит между живым океаном и орбитальным давлением.",
+          "external_site": "Лунная лестница Aegir делает игровую луну частью движущейся системы. Другие луны задают приливы, ожидание carrier, тени relay и цену выхода."
+        },
+        "ja_JP": {
+          "title": "Aegir衛星ラダー",
+          "scanner": "衛星列: Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。",
+          "field_note": "空は背景ではなく機構だ。",
+          "terminal": "HECTON-8はAegir-VIII。内側でも最遠でもない。Rake共鳴とPaleの影が潮汐と通信品質を変える。",
+          "audio": "窓を信じる前に衛星を数えろ。",
+          "in_game_wiki": "Aegirの衛星ラダーは、放射線標識、リレー天体、枯れた請求地、共鳴危険、HECTON-8、低温保管衛星、外側の不規則天体でできている。HECTON-8は生きた海と軌道圧の間にあるから価値を持つ。",
+          "external_site": "Aegir衛星ラダーは、プレイ対象の月を動く大系の一部にする。他の衛星が潮汐、待機、リレー影、脱出コストを決める。"
+        },
+        "zh_CN": {
+          "title": "Aegir卫星阶梯",
+          "scanner": "卫星序列：Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。",
+          "field_note": "天空是机械，不是背景。",
+          "terminal": "HECTON-8是Aegir-VIII：既非内侧，也非最远。Rake共振和Pale阴影会改变潮汐和数据包质量。",
+          "audio": "相信窗口前，先数清卫星。",
+          "in_game_wiki": "Aegir的卫星阶梯包括辐射标记、relay天体、枯竭claim、共振危险、HECTON-8、低温储存卫星和外侧不规则体。HECTON-8的价值在于处于活海容忍度和轨道压力之间。",
+          "external_site": "Aegir卫星阶梯让可游玩的月球成为运动系统的一部分。其他卫星塑造潮汐、carrier等待、relay阴影和离开的代价。"
+        },
+        "fr_FR": {
+          "title": "Échelle lunaire d’Aegir",
+          "scanner": "Séquence lunaire: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Le ciel est un mécanisme, pas un décor.",
+          "terminal": "HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Rake et l’ombre de Pale modifient marée et paquets.",
+          "audio": "Compte les lunes avant de croire à une fenêtre.",
+          "in_game_wiki": "L’échelle lunaire d’Aegir comprend marqueurs irradiés, relais, claims épuisés, dangers résonants, HECTON-8, lunes de stockage froid et irréguliers externes. HECTON-8 vaut parce qu’elle se tient entre océan vivant et pression orbitale.",
+          "external_site": "L’échelle lunaire d’Aegir inscrit la lune jouable dans un système en mouvement. Les autres lunes façonnent marées, attentes du carrier, ombres relais et coût du départ."
+        },
+        "es_ES": {
+          "title": "Escalera lunar de Aegir",
+          "scanner": "Secuencia de lunas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "El cielo es un mecanismo, no decorado.",
+          "terminal": "HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Rake y la sombra de Pale alteran marea y paquetes.",
+          "audio": "Cuenta las lunas antes de confiar en una ventana.",
+          "in_game_wiki": "La escalera lunar de Aegir reúne marcadores de radiación, relés, claims agotados, peligros resonantes, HECTON-8, lunas de almacenamiento frío e irregulares exteriores. HECTON-8 vale porque queda entre océano vivo y presión orbital.",
+          "external_site": "La escalera lunar de Aegir convierte la luna jugable en parte de un sistema móvil. Otras lunas moldean mareas, esperas del carrier, sombras relé y coste de salida."
+        },
+        "de_DE": {
+          "title": "Aegirs Mondleiter",
+          "scanner": "Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Der Himmel ist Mechanik, keine Kulisse.",
+          "terminal": "HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.",
+          "audio": "Zähle die Monde, bevor du einem Fenster traust.",
+          "in_game_wiki": "Aegirs Mondleiter umfasst Strahlungsmarker, Relaiskörper, ausgebeutete Claims, Resonanzgefahren, HECTON-8, kalte Lagermonde und äußere Irreguläre. HECTON-8 ist wertvoll, weil er zwischen lebendem Ozean und Umlaufdruck liegt.",
+          "external_site": "Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere Monde formen Gezeiten, Carrier-Wartezeiten, Relaisschatten und Abflugkosten."
+        },
+        "pl_PL": {
+          "title": "Drabina księżyców Aegir",
+          "scanner": "Sekwencja księżyców: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Niebo jest mechanizmem, nie tłem.",
+          "terminal": "HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Rake i cień Pale zmieniają pływy i pakiety.",
+          "audio": "Policz księżyce, zanim zaufasz oknu.",
+          "in_game_wiki": "Drabina Aegir obejmuje znaczniki promieniowania, przekaźniki, wyczerpane claimy, zagrożenia rezonansowe, HECTON-8, chłodne magazyny i obiekty zewnętrzne. HECTON-8 jest cenny, bo leży między żywym oceanem a presją orbitalną.",
+          "external_site": "Drabina księżyców Aegir robi z grywalnego księżyca część ruchomego systemu. Inne księżyce kształtują pływy, oczekiwanie carriera, cienie przekaźników i koszt wyjścia."
+        },
+        "uk_UA": {
+          "title": "Місячна драбина Aegir",
+          "scanner": "Послідовність місяців: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Небо тут механізм, а не декорація.",
+          "terminal": "HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Rake і тінь Pale змінюють припливи та пакети.",
+          "audio": "Порахуй місяці, перш ніж вірити вікну.",
+          "in_game_wiki": "Місячна драбина Aegir містить радіаційні маркери, реле, вичерпані claims, резонансні небезпеки, HECTON-8, холодні склади й зовнішні неправильні тіла. HECTON-8 цінний, бо стоїть між живим океаном і орбітальним тиском.",
+          "external_site": "Місячна драбина Aegir робить ігровий місяць частиною рухомої системи. Інші місяці формують припливи, очікування carrier, тіні relay і ціну виходу."
+        },
+        "ar_SA": {
+          "title": "سلم أقمار Aegir",
+          "scanner": "تسلسل الأقمار: Cinder، Hook، Glass، Switch، Drywell، Brinehook، Rake، HECTON-8، Pale، Longmark، Grave، Farline.",
+          "field_note": "السماء آلية وليست خلفية.",
+          "terminal": "HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Rake وظل Pale يغيران المد وجودة الحزم.",
+          "audio": "عد الأقمار قبل أن تثق بنافذة.",
+          "in_game_wiki": "سلم أقمار Aegir يضم علامات إشعاع وأجسام relay وclaims مستنزفة وأخطار رنين وHECTON-8 وأقمار تخزين بارد وأجساماً خارجية. قيمة HECTON-8 أنه بين محيط حي وضغط مداري.",
+          "external_site": "سلم أقمار Aegir يجعل القمر القابل للعب جزءاً من نظام متحرك. الأقمار الأخرى تشكل المد وانتظار carrier وظلال relay وكلفة المغادرة."
+        },
+        "id_ID": {
+          "title": "Tangga Bulan Aegir",
+          "scanner": "Urutan bulan: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "Langit adalah mekanisme, bukan latar.",
+          "terminal": "HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Rake dan bayangan Pale mengubah pasang dan paket.",
+          "audio": "Hitung bulan sebelum percaya pada jendela.",
+          "in_game_wiki": "Tangga bulan Aegir berisi penanda radiasi, tubuh relay, claim habis, bahaya resonansi, HECTON-8, bulan penyimpanan dingin, dan benda luar. HECTON-8 bernilai karena berada di antara toleransi laut hidup dan tekanan orbit.",
+          "external_site": "Tangga bulan Aegir membuat bulan permainan menjadi bagian sistem bergerak. Bulan lain membentuk pasang, tunggu carrier, bayangan relay, dan harga pergi."
+        },
+        "ko_KR": {
+          "title": "Aegir 위성 사다리",
+          "scanner": "위성 순서: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "하늘은 배경이 아니라 장치다.",
+          "terminal": "HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Rake 공명과 Pale 그림자가 조석과 패킷 품질을 바꾼다.",
+          "audio": "창을 믿기 전에 위성을 세어라.",
+          "in_game_wiki": "Aegir의 위성 사다리는 방사선 표지, relay 천체, 고갈된 claim, 공명 위험, HECTON-8, 냉각 저장 위성, 외곽 불규칙체로 이루어진다. HECTON-8은 살아 있는 바다와 궤도 압력 사이에 있어 가치가 있다.",
+          "external_site": "Aegir 위성 사다리는 플레이 가능한 달을 움직이는 시스템의 일부로 만든다. 다른 위성은 조석, carrier 대기, relay 그림자, 탈출 비용을 만든다."
+        },
+        "he_IL": {
+          "title": "סולם הירחים של Aegir",
+          "scanner": "רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "השמים הם מנגנון, לא תפאורה.",
+          "terminal": "HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.",
+          "audio": "ספור את הירחים לפני שאתה סומך על חלון.",
+          "in_game_wiki": "סולם הירחים של Aegir כולל סמני קרינה, גופי relay, claims מותשים, סכנות תהודה, HECTON-8, ירחי אחסון קרים וגופים חיצוניים. HECTON-8 חשוב כי הוא בין אוקיינוס חי ללחץ מסלולי.",
+          "external_site": "סולם הירחים של Aegir הופך את הירח המשחקי לחלק ממערכת נעה. ירחים אחרים מעצבים גאות, המתנת carrier, צללי relay ועלות עזיבה."
+        },
+        "pt_BR": {
+          "title": "Escada lunar de Aegir",
+          "scanner": "Sequência de luas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "O céu é mecanismo, não cenário.",
+          "terminal": "HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Rake e a sombra de Pale alteram maré e pacotes.",
+          "audio": "Conte as luas antes de confiar numa janela.",
+          "in_game_wiki": "A escada lunar de Aegir inclui marcadores de radiação, corpos relay, claims esgotados, perigos ressonantes, HECTON-8, luas de armazenamento frio e irregulares externos. HECTON-8 vale por ficar entre oceano vivo e pressão orbital.",
+          "external_site": "A escada lunar de Aegir torna a lua jogável parte de um sistema em movimento. Outras luas moldam marés, espera do carrier, sombras relay e custo de saída."
+        },
+        "nl_NL": {
+          "title": "Maanladder van Aegir",
+          "scanner": "Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
+          "field_note": "De hemel is een mechanisme, geen decor.",
+          "terminal": "HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.",
+          "audio": "Tel de manen voordat je een venster vertrouwt.",
+          "in_game_wiki": "Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims, resonantiegevaren, HECTON-8, koude opslagmanen en buitenste objecten. HECTON-8 is waardevol omdat hij tussen levende oceaan en baandruk zit.",
+          "external_site": "De maanladder van Aegir maakt de speelbare maan deel van een bewegend systeem. Andere manen vormen getijden, carrier-wachten, relay-schaduwen en de kost van vertrekken."
+        }
+      }
+    },
+    {
+      "packet_id": "P018_HECTON8_DROWNED_GEOLOGY",
+      "article_id": "location.hecton8.drowned_geology",
+      "title_key": "applied_lore.hecton8.drowned_geology.title",
+      "status": "production_facing_draft",
+      "surfaces": [
+        "scanner",
+        "in_game_wiki",
+        "terminal",
+        "audio_subtitle",
+        "external_site",
+        "image_brief"
+      ],
+      "unlock": {
+        "primary": "unlock.first_geology_route_model",
+        "poi_tags": [
+          "poi.geology_scanner",
+          "poi.brine_step",
+          "poi.thermal_route_marker"
+        ],
+        "biome_tags": [
+          "biome.drowned_shelf",
+          "biome.brine_stairs",
+          "biome.thermal_cathedral"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Drowned Geology",
+          "scanner": "Layered shelf, canyon, brine stair and vent geometry. This moon teaches descent through terrain, not level gates.",
+          "field_note": "The safest route is a reading, not a corridor.",
+          "terminal": "Depth forecast: shelf collapse, service canyon funnels, brine density curtains, thermal plumes, abyss silt exposure.",
+          "audio": "Read the rock before you ask the suit to win.",
+          "in_game_wiki": "HECTON-8 geology is gameplay language: shelf survival, drowned rooms, canyon funnels, brine density, thermal routes and abyss exposure. Seeds can move routes without changing that physical truth.",
+          "external_site": "Drowned Geology explains replayability through terrain, brine, heat and pressure rather than arbitrary gates."
+        },
+        "ru_RU": {
+          "title": "Затопленная геология",
+          "scanner": "Слои шельфа, каньоны, brine stairs и вент-поля. Луна учит спуску рельефом, а не level gates.",
+          "field_note": "Самый безопасный маршрут это чтение, а не коридор.",
+          "terminal": "Прогноз глубины: обвал шельфа, воронки каньонов, плотностные завесы brine, тепловые плюмы, ил бездны.",
+          "audio": "Сначала читай породу, потом требуй победы от костюма.",
+          "in_game_wiki": "Геология HECTON-8 это язык геймплея: выживание шельфа, затопленные комнаты, каньоны, плотность brine, тепловые маршруты и бездна. Сиды двигают пути, не физическую правду.",
+          "external_site": "Затопленная геология объясняет реиграбельность через рельеф, brine, тепло и давление, а не произвольные ворота."
+        },
+        "ja_JP": {
+          "title": "沈んだ地質",
+          "scanner": "棚、峡谷、塩水階段、噴出口。月はレベルゲートではなく地形で降下を教える。",
+          "field_note": "最も安全な道は通路ではなく読解だ。",
+          "terminal": "深度予測: 棚崩落、峡谷流路、塩水密度幕、熱プルーム、深淵シルト。",
+          "audio": "スーツに勝たせる前に岩を読め。",
+          "in_game_wiki": "HECTON-8の地質はゲームプレイの言語だ。棚の生存、沈んだ部屋、峡谷、塩水密度、熱経路、深淵。シードは道を動かすが物理的真実は変えない。",
+          "external_site": "沈んだ地質は、任意の門ではなく地形、塩水、熱、圧力で再プレイ性を作る。"
+        },
+        "zh_CN": {
+          "title": "淹没地质",
+          "scanner": "分层陆架、峡谷、盐水阶梯和热液几何。月球用地形教下潜，不用关卡门。",
+          "field_note": "最安全的路线是一种读法，不是一条走廊。",
+          "terminal": "深度预报：陆架坍塌、峡谷漏斗、盐水密度幕、热羽流、深渊淤泥。",
+          "audio": "先读岩层，再让潜服赢。",
+          "in_game_wiki": "HECTON-8的地质是玩法语言：陆架生存、淹没房间、峡谷漏斗、盐水密度、热路线和深渊暴露。种子能移动路线，但不改变物理真相。",
+          "external_site": "淹没地质用地形、盐水、热和压力解释重玩性，而不是任意门。"
+        },
+        "fr_FR": {
+          "title": "Géologie noyée",
+          "scanner": "Plateaux, canyons, escaliers de saumure et évents. La lune enseigne la descente par terrain, pas par portes.",
+          "field_note": "La route sûre est une lecture, pas un couloir.",
+          "terminal": "Prévision: effondrement, canyons, rideaux de densité, panaches thermiques, limon abyssal.",
+          "audio": "Lis la roche avant de demander à la combinaison de gagner.",
+          "in_game_wiki": "La géologie de HECTON-8 est langage de jeu: survie du plateau, pièces noyées, canyons, densité de saumure, routes thermiques et abîme. Les seeds bougent les routes, pas la vérité physique.",
+          "external_site": "La géologie noyée fonde la rejouabilité sur terrain, saumure, chaleur et pression."
+        },
+        "es_ES": {
+          "title": "Geología ahogada",
+          "scanner": "Plataformas, cañones, escaleras de salmuera y ventilas. La luna enseña descenso por terreno, no por puertas.",
+          "field_note": "La ruta segura es una lectura, no un pasillo.",
+          "terminal": "Pronóstico: colapso de plataforma, embudos, cortinas de densidad, plumas térmicas, limo abisal.",
+          "audio": "Lee la roca antes de pedirle al traje que gane.",
+          "in_game_wiki": "La geología de HECTON-8 es lenguaje jugable: supervivencia de plataforma, salas ahogadas, cañones, salmuera, calor y abismo. Las semillas mueven rutas, no verdad física.",
+          "external_site": "La geología ahogada explica rejugabilidad mediante terreno, salmuera, calor y presión."
+        },
+        "de_DE": {
+          "title": "Ertrunkene Geologie",
+          "scanner": "Geschichtete Schelfe, Canyons, Salztreppen und Schlote. Der Mond lehrt Abstieg durch Gelände, nicht Tore.",
+          "field_note": "Der sicherste Weg ist eine Lesart, kein Korridor.",
+          "terminal": "Prognose: Schelfbruch, Canyon-Trichter, Dichteschleier, Thermalfahnen, Abyssalschlick.",
+          "audio": "Lies den Fels, bevor der Anzug gewinnen soll.",
+          "in_game_wiki": "HECTON-8-Geologie ist Gameplay-Sprache: Schelfüberleben, ertrunkene Räume, Canyons, Sole, Hitze und Abyss. Seeds verschieben Wege, nicht Wahrheit.",
+          "external_site": "Ertrunkene Geologie macht Wiederspielbarkeit aus Gelände, Sole, Hitze und Druck."
+        },
+        "pl_PL": {
+          "title": "Zatopiona geologia",
+          "scanner": "Warstwowy szelf, kaniony, schody solanki i kominy. Księżyc uczy zejścia terenem, nie bramami.",
+          "field_note": "Najbezpieczniejsza trasa jest odczytem, nie korytarzem.",
+          "terminal": "Prognoza: zawalenia szelfu, lejki kanionów, kurtyny gęstości, pióropusze termiczne, muł.",
+          "audio": "Czytaj skałę, zanim zażądasz zwycięstwa od skafandra.",
+          "in_game_wiki": "Geologia HECTON-8 to język rozgrywki: szelf, zatopione pokoje, kaniony, solanka, ciepło i otchłań. Seedy przesuwają trasy, nie prawdę fizyczną.",
+          "external_site": "Zatopiona geologia daje regrywalność przez teren, solankę, ciepło i ciśnienie."
+        },
+        "uk_UA": {
+          "title": "Затоплена геологія",
+          "scanner": "Шари шельфу, каньйони, соляні сходи й венти. Місяць навчає спуску рельєфом, а не воротами.",
+          "field_note": "Найбезпечніший маршрут це читання, не коридор.",
+          "terminal": "Прогноз: обвал шельфу, лійки каньйонів, завіси густини, теплові плюми, мул безодні.",
+          "audio": "Читай породу, перш ніж вимагати перемоги від костюма.",
+          "in_game_wiki": "Геологія HECTON-8 це мова геймплею: шельф, затоплені кімнати, каньйони, brine, тепло й безодня. Сіди рухають маршрути, не фізичну правду.",
+          "external_site": "Затоплена геологія дає реіграбельність через рельєф, brine, тепло і тиск."
+        },
+        "ar_SA": {
+          "title": "جيولوجيا غارقة",
+          "scanner": "رفوف ووديان وسلالم محلول وفتحات. القمر يعلّم الهبوط عبر التضاريس لا البوابات.",
+          "field_note": "أأمن طريق هو قراءة، لا ممر.",
+          "terminal": "توقع: انهيار رف، قمع واد، ستائر كثافة، أعمدة حرارية، طمي هاوية.",
+          "audio": "اقرأ الصخر قبل أن تطلب من البدلة أن تفوز.",
+          "in_game_wiki": "جيولوجيا HECTON-8 لغة لعب: رف وغرف غارقة ووديان ومحلول وحرارة وهاوية. البذور تحرك الطرق لا الحقيقة الفيزيائية.",
+          "external_site": "الجيولوجيا الغارقة تصنع إعادة اللعب من التضاريس والمحلول والحرارة والضغط."
+        },
+        "id_ID": {
+          "title": "Geologi Tenggelam",
+          "scanner": "Landas, ngarai, tangga brine, dan ventilasi. Bulan mengajar turun lewat medan, bukan gerbang.",
+          "field_note": "Rute aman adalah pembacaan, bukan koridor.",
+          "terminal": "Prakiraan: runtuh landas, corong ngarai, tirai densitas, plume panas, lumpur abyss.",
+          "audio": "Baca batu sebelum meminta suit menang.",
+          "in_game_wiki": "Geologi HECTON-8 adalah bahasa gameplay: landas, ruang tenggelam, ngarai, brine, panas, dan abyss. Seed memindah rute, bukan kebenaran fisik.",
+          "external_site": "Geologi Tenggelam memberi replayability lewat medan, brine, panas, dan tekanan."
+        },
+        "ko_KR": {
+          "title": "잠긴 지질",
+          "scanner": "층진 대륙붕, 협곡, 염수 계단, 열수 구조. 달은 문이 아니라 지형으로 하강을 가르친다.",
+          "field_note": "가장 안전한 길은 복도가 아니라 해석이다.",
+          "terminal": "예보: 대륙붕 붕괴, 협곡 깔때기, 밀도 장막, 열 플룸, 심해 실트.",
+          "audio": "슈트보다 먼저 암석을 읽어라.",
+          "in_game_wiki": "HECTON-8 지질은 게임플레이 언어다. 대륙붕, 잠긴 방, 협곡, 염수, 열, 심해가 경로를 만든다. 시드는 경로를 바꾸지만 물리 진실은 바꾸지 않는다.",
+          "external_site": "잠긴 지질은 지형, 염수, 열, 압력으로 재플레이성을 만든다."
+        },
+        "he_IL": {
+          "title": "גאולוגיה טבועה",
+          "scanner": "מדפים, קניונים, מדרגות תמלחת ונביעות. הירח מלמד ירידה דרך שטח, לא שערים.",
+          "field_note": "הנתיב הבטוח הוא קריאה, לא מסדרון.",
+          "terminal": "תחזית: קריסת מדף, משפכי קניון, וילונות צפיפות, פלומות חום, סחף תהומי.",
+          "audio": "קרא את הסלע לפני שהחליפה תנצח.",
+          "in_game_wiki": "הגאולוגיה של HECTON-8 היא שפת משחק: מדף, חדרים טבועים, קניונים, תמלחת, חום ותהום. זרעים מזיזים נתיבים, לא אמת פיזית.",
+          "external_site": "גאולוגיה טבועה יוצרת משחק חוזר דרך שטח, תמלחת, חום ולחץ."
+        },
+        "pt_BR": {
+          "title": "Geologia afogada",
+          "scanner": "Plataformas, cânions, escadas de salmoura e ventilas. A lua ensina descida por terreno, não por portões.",
+          "field_note": "A rota segura é uma leitura, não um corredor.",
+          "terminal": "Previsão: colapso de plataforma, funis, cortinas de densidade, plumas térmicas, lodo abissal.",
+          "audio": "Leia a rocha antes de pedir vitória ao traje.",
+          "in_game_wiki": "A geologia de HECTON-8 é linguagem de gameplay: plataforma, salas afogadas, cânions, salmoura, calor e abismo. Seeds movem rotas, não verdade física.",
+          "external_site": "Geologia afogada dá rejogabilidade por terreno, salmoura, calor e pressão."
+        },
+        "nl_NL": {
+          "title": "Verdronken geologie",
+          "scanner": "Gelaagde plateaus, canyons, pekeltrappen en vents. De maan leert afdalen via terrein, niet poorten.",
+          "field_note": "De veilige route is een lezing, geen gang.",
+          "terminal": "Voorspelling: plateau-instorting, canyon-trechters, dichtheidsgordijnen, thermische pluimen, abyssaal slib.",
+          "audio": "Lees de rots voordat je het pak laat winnen.",
+          "in_game_wiki": "HECTON-8-geologie is gameplaytaal: plateau, verdronken kamers, canyons, pekel, hitte en afgrond. Seeds verplaatsen routes, niet fysieke waarheid.",
+          "external_site": "Verdronken geologie maakt herspeelbaarheid uit terrein, pekel, hitte en druk."
+        }
+      }
+    },
+    {
+      "packet_id": "P019_HECTON8_RESOURCE_STACK",
+      "article_id": "location.hecton8.resource_stack",
+      "title_key": "applied_lore.hecton8.resource_stack.title",
+      "status": "production_facing_draft",
+      "surfaces": [
+        "scanner",
+        "in_game_wiki",
+        "terminal",
+        "audio_subtitle",
+        "external_site",
+        "image_brief"
+      ],
+      "unlock": {
+        "primary": "unlock.first_resource_stack_scan",
+        "poi_tags": [
+          "poi.resource_casket",
+          "poi.salvage_cache",
+          "poi.process_stack"
+        ],
+        "biome_tags": [
+          "biome.service_canyons",
+          "biome.industrial_descent",
+          "biome.thermal_cathedral"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Resource Stack",
+          "scanner": "Resource stack: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.",
+          "field_note": "Nothing here is just loot.",
+          "terminal": "Value model: survival biota, human salvage, route hardware, pressure chemistry, blue debt, pressure glass, continuity substrate.",
+          "audio": "If the carrier asks for mass before names, you know who owns the contract.",
+          "in_game_wiki": "HECTON-8 is not a one-resource moon. Early materials keep the player alive, salvage opens routes, brine and vent chemistry teach pressure, and blue debt is only the apex temptation.",
+          "external_site": "The Resource Stack frames HECTON-8 as a pressure economy. Xenon-Omega is the strategic apex, not the whole world."
+        },
+        "ru_RU": {
+          "title": "Стек ресурсов",
+          "scanner": "Стек: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.",
+          "field_note": "Здесь нет просто лута.",
+          "terminal": "Модель ценности: биота выживания, человеческий salvage, route hardware, химия давления, blue debt, pressure glass, continuity substrate.",
+          "audio": "Если carrier просит массу раньше имен, ты знаешь, кто владеет контрактом.",
+          "in_game_wiki": "HECTON-8 не луна одного ресурса. Ранние материалы держат игрока живым, salvage открывает маршруты, brine и vent chemistry учат давлению, а blue debt только вершина соблазна.",
+          "external_site": "Стек ресурсов показывает HECTON-8 как экономику давления. Xenon-Omega это стратегическая вершина, не весь мир."
+        },
+        "ja_JP": {
+          "title": "資源スタック",
+          "scanner": "資源: reef fiber、brine salts、relay cores、pressure valves、blue debt、pressure glass、Atlas lattice。",
+          "field_note": "ここにただの戦利品はない。",
+          "terminal": "価値モデル: 生存生物資源、人間のサルベージ、経路機材、圧力化学、blue debt、pressure glass、continuity substrate。",
+          "audio": "carrierが名前より質量を先に求めるなら、契約の所有者は分かる。",
+          "in_game_wiki": "HECTON-8は一資源の月ではない。初期素材は生存を支え、サルベージは経路を開き、塩水と噴出化学は圧力を教え、blue debtは頂点の誘惑でしかない。",
+          "external_site": "資源スタックはHECTON-8を圧力経済として示す。Xenon-Omegaは戦略的頂点であり、世界全体ではない。"
+        },
+        "zh_CN": {
+          "title": "资源栈",
+          "scanner": "资源栈：reef fiber、brine salts、relay cores、pressure valves、blue debt、pressure glass、Atlas lattice。",
+          "field_note": "这里没有单纯的战利品。",
+          "terminal": "价值模型：生存生物资源、人类salvage、路线硬件、压力化学、blue debt、pressure glass、continuity substrate。",
+          "audio": "如果carrier先问质量而不是姓名，你就知道合同归谁。",
+          "in_game_wiki": "HECTON-8不是单资源月球。早期材料让玩家活下去，salvage打开路线，盐水和热液化学教会压力，而blue debt只是顶端诱惑。",
+          "external_site": "资源栈把HECTON-8定义为压力经济。Xenon-Omega是战略顶点，不是整个世界。"
+        },
+        "fr_FR": {
+          "title": "Pile de ressources",
+          "scanner": "Pile: fibre récifale, sels de saumure, cœurs relais, vannes, blue debt, pressure glass, treillis Atlas.",
+          "field_note": "Rien ici n’est seulement du butin.",
+          "terminal": "Valeur: biote de survie, salvage humain, matériel de route, chimie de pression, blue debt, pressure glass, continuity substrate.",
+          "audio": "Si le carrier demande la masse avant les noms, tu sais qui possède le contrat.",
+          "in_game_wiki": "HECTON-8 n’est pas une lune à ressource unique. Les matériaux précoces gardent le joueur en vie, le salvage ouvre les routes, la saumure enseigne la pression, et blue debt n’est que la tentation apex.",
+          "external_site": "La pile de ressources présente HECTON-8 comme économie de pression. Xenon-Omega est le sommet stratégique, pas le monde entier."
+        },
+        "es_ES": {
+          "title": "Pila de recursos",
+          "scanner": "Pila: fibra de arrecife, sales de salmuera, núcleos relé, válvulas, blue debt, pressure glass, red Atlas.",
+          "field_note": "Nada aquí es solo botín.",
+          "terminal": "Valor: biota de supervivencia, salvage humano, hardware de ruta, química de presión, blue debt, pressure glass, continuity substrate.",
+          "audio": "Si el carrier pide masa antes que nombres, ya sabes quién posee el contrato.",
+          "in_game_wiki": "HECTON-8 no es una luna de un solo recurso. Materiales tempranos sostienen vida, salvage abre rutas, salmuera enseña presión y blue debt es solo la tentación máxima.",
+          "external_site": "La pila de recursos encuadra HECTON-8 como economía de presión. Xenon-Omega es la cima estratégica, no todo el mundo."
+        },
+        "de_DE": {
+          "title": "Ressourcenstapel",
+          "scanner": "Stapel: Rifffaser, Laugensalze, Relaiskerne, Druckventile, blue debt, pressure glass, Atlas-Gitter.",
+          "field_note": "Nichts hier ist nur Beute.",
+          "terminal": "Wertmodell: Überlebensbiota, menschlicher Salvage, Routenhardware, Druckchemie, blue debt, pressure glass, continuity substrate.",
+          "audio": "Wenn der Carrier Masse vor Namen verlangt, weißt du, wem der Vertrag gehört.",
+          "in_game_wiki": "HECTON-8 ist kein Ein-Ressourcen-Mond. Frühe Materialien halten am Leben, Salvage öffnet Routen, Sole lehrt Druck, und blue debt ist nur die höchste Versuchung.",
+          "external_site": "Der Ressourcenstapel zeigt HECTON-8 als Druckökonomie. Xenon-Omega ist der strategische Gipfel, nicht die ganze Welt."
+        },
+        "pl_PL": {
+          "title": "Stos zasobów",
+          "scanner": "Stos: włókno rafowe, sole solanki, rdzenie przekaźników, zawory, blue debt, pressure glass, siatka Atlas.",
+          "field_note": "Nic tu nie jest tylko lootem.",
+          "terminal": "Wartość: biota przetrwania, ludzki salvage, sprzęt tras, chemia ciśnienia, blue debt, pressure glass, continuity substrate.",
+          "audio": "Jeśli carrier pyta o masę przed nazwiskami, wiesz, kto ma kontrakt.",
+          "in_game_wiki": "HECTON-8 nie jest księżycem jednego zasobu. Wczesne materiały trzymają przy życiu, salvage otwiera trasy, solanka uczy ciśnienia, a blue debt jest tylko szczytem pokusy.",
+          "external_site": "Stos zasobów pokazuje HECTON-8 jako gospodarkę ciśnienia. Xenon-Omega jest strategicznym szczytem, nie całym światem."
+        },
+        "uk_UA": {
+          "title": "Стек ресурсів",
+          "scanner": "Стек: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.",
+          "field_note": "Тут немає просто луту.",
+          "terminal": "Цінність: біота виживання, людський salvage, route hardware, хімія тиску, blue debt, pressure glass, continuity substrate.",
+          "audio": "Якщо carrier питає масу раніше за імена, ти знаєш, кому належить контракт.",
+          "in_game_wiki": "HECTON-8 не місяць одного ресурсу. Ранні матеріали тримають гравця живим, salvage відкриває маршрути, brine навчає тиску, а blue debt лише вершина спокуси.",
+          "external_site": "Стек ресурсів показує HECTON-8 як економіку тиску. Xenon-Omega це стратегічна вершина, не весь світ."
+        },
+        "ar_SA": {
+          "title": "حزمة الموارد",
+          "scanner": "الحزمة: ألياف شعاب، أملاح محلول، نوى relay، صمامات ضغط، blue debt، pressure glass، شبكة Atlas.",
+          "field_note": "لا شيء هنا غنيمة فقط.",
+          "terminal": "القيمة: كائنات نجاة، salvage بشري، عتاد طريق، كيمياء ضغط، blue debt، pressure glass، continuity substrate.",
+          "audio": "إذا طلب carrier الكتلة قبل الأسماء، فأنت تعرف من يملك العقد.",
+          "in_game_wiki": "HECTON-8 ليس قمراً ذا مورد واحد. مواد البداية تبقي اللاعب حياً، salvage يفتح الطرق، والمحلول يعلّم الضغط، وblue debt هو الإغراء الأعلى فقط.",
+          "external_site": "حزمة الموارد تعرض HECTON-8 كاقتصاد ضغط. Xenon-Omega هو القمة الاستراتيجية لا العالم كله."
+        },
+        "id_ID": {
+          "title": "Tumpukan Sumber Daya",
+          "scanner": "Tumpukan: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.",
+          "field_note": "Tidak ada yang cuma loot.",
+          "terminal": "Nilai: biota bertahan, salvage manusia, hardware rute, kimia tekanan, blue debt, pressure glass, continuity substrate.",
+          "audio": "Jika carrier meminta massa sebelum nama, kau tahu siapa pemilik kontrak.",
+          "in_game_wiki": "HECTON-8 bukan bulan satu sumber daya. Material awal menjaga hidup, salvage membuka rute, brine mengajarkan tekanan, dan blue debt hanya godaan puncak.",
+          "external_site": "Tumpukan sumber daya membingkai HECTON-8 sebagai ekonomi tekanan. Xenon-Omega adalah puncak strategis, bukan seluruh dunia."
+        },
+        "ko_KR": {
+          "title": "자원 스택",
+          "scanner": "스택: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.",
+          "field_note": "여기엔 단순한 전리품이 없다.",
+          "terminal": "가치: 생존 생물자원, 인간 salvage, 경로 하드웨어, 압력 화학, blue debt, pressure glass, continuity substrate.",
+          "audio": "carrier가 이름보다 질량을 먼저 묻는다면 계약의 주인이 보인다.",
+          "in_game_wiki": "HECTON-8은 단일 자원 달이 아니다. 초기 재료는 생존을 돕고, salvage는 경로를 열며, 염수는 압력을 가르치고, blue debt는 최고 유혹일 뿐이다.",
+          "external_site": "자원 스택은 HECTON-8을 압력 경제로 보여준다. Xenon-Omega는 전략적 정점이지 세계 전체가 아니다."
+        },
+        "he_IL": {
+          "title": "ערימת משאבים",
+          "scanner": "ערימה: סיבי שונית, מלחי תמלחת, ליבות relay, שסתומי לחץ, blue debt, pressure glass, סריג Atlas.",
+          "field_note": "שום דבר כאן אינו שלל בלבד.",
+          "terminal": "ערך: ביוטת הישרדות, salvage אנושי, חומרת נתיב, כימיית לחץ, blue debt, pressure glass, continuity substrate.",
+          "audio": "אם carrier מבקש מסה לפני שמות, אתה יודע מי מחזיק בחוזה.",
+          "in_game_wiki": "HECTON-8 אינו ירח של משאב אחד. חומרים מוקדמים משאירים בחיים, salvage פותח נתיבים, תמלחת מלמדת לחץ, ו-blue debt הוא רק הפיתוי העליון.",
+          "external_site": "ערימת המשאבים מציגה את HECTON-8 ככלכלת לחץ. Xenon-Omega הוא הפסגה האסטרטגית, לא כל העולם."
+        },
+        "pt_BR": {
+          "title": "Pilha de recursos",
+          "scanner": "Pilha: fibra de recife, sais de salmoura, núcleos relay, válvulas, blue debt, pressure glass, rede Atlas.",
+          "field_note": "Nada aqui é só loot.",
+          "terminal": "Valor: biota de sobrevivência, salvage humano, hardware de rota, química de pressão, blue debt, pressure glass, continuity substrate.",
+          "audio": "Se o carrier pede massa antes de nomes, você sabe quem possui o contrato.",
+          "in_game_wiki": "HECTON-8 não é uma lua de um recurso só. Materiais iniciais mantêm vivo, salvage abre rotas, salmoura ensina pressão, e blue debt é só a tentação máxima.",
+          "external_site": "A pilha de recursos enquadra HECTON-8 como economia de pressão. Xenon-Omega é o ápice estratégico, não o mundo inteiro."
+        },
+        "nl_NL": {
+          "title": "Grondstoffenstapel",
+          "scanner": "Stapel: rifvezel, pekelzouten, relay-kernen, drukventielen, blue debt, pressure glass, Atlas-rooster.",
+          "field_note": "Niets hier is alleen buit.",
+          "terminal": "Waarde: overlevingsbiota, menselijke salvage, routehardware, drukchemie, blue debt, pressure glass, continuity substrate.",
+          "audio": "Als de carrier massa vóór namen vraagt, weet je wie het contract bezit.",
+          "in_game_wiki": "HECTON-8 is geen maan met één grondstof. Vroege materialen houden leven, salvage opent routes, pekel leert druk, en blue debt is alleen de hoogste verleiding.",
+          "external_site": "De grondstoffenstapel toont HECTON-8 als drukeconomie. Xenon-Omega is de strategische top, niet de hele wereld."
+        }
+      }
+    },
+    {
+      "packet_id": "P020_HECTON8_ECOLOGY_REGISTRY",
+      "article_id": "location.hecton8.ecology_registry",
+      "title_key": "applied_lore.hecton8.ecology_registry.title",
+      "status": "production_facing_draft",
+      "surfaces": [
+        "scanner",
+        "in_game_wiki",
+        "terminal",
+        "audio_subtitle",
+        "external_site",
+        "image_brief"
+      ],
+      "unlock": {
+        "primary": "unlock.first_ecology_registry_scan",
+        "poi_tags": [
+          "poi.shallow_biota",
+          "poi.cable_flora",
+          "poi.altered_fauna"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.cable_forest",
+          "biome.atlas_bottom"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ecology Registry",
+          "scanner": "Bright shallow ecology confirmed. Deeper traces show cable flora, filter bodies and Atlas repair intrusion.",
+          "field_note": "The world was alive before it was wounded.",
+          "terminal": "Registry split: native pressure ecology, colony-adapted biota, Atlas-altered repair organisms. Do not merge categories.",
+          "audio": "If everything is monster, nothing is violation.",
+          "in_game_wiki": "HECTON-8 needs contrast: bright useful shallows, mid-depth adaptation to human structures, and deep Atlas repair intrusion. Horror works because native life existed before the damage.",
+          "external_site": "The Ecology Registry protects the tone: beauty first, then pressure, then category collapse."
+        },
+        "ru_RU": {
+          "title": "Регистр экологии",
+          "scanner": "Подтверждена яркая мелководная экология. Ниже видны cable flora, filter bodies и вмешательство ремонта Atlas.",
+          "field_note": "Мир был живым до того, как его ранили.",
+          "terminal": "Раздел регистра: родная pressure ecology, биота адаптированная к колонии, Atlas-altered repair organisms. Не смешивать категории.",
+          "audio": "Если все монстр, нарушение исчезает.",
+          "in_game_wiki": "HECTON-8 нужен контраст: яркое полезное мелководье, адаптация к человеческим структурам и глубокое вмешательство ремонта Atlas. Ужас работает, потому что native life существовала до повреждения.",
+          "external_site": "Регистр экологии защищает тон: сначала красота, потом давление, потом распад категорий."
+        },
+        "ja_JP": {
+          "title": "生態レジストリ",
+          "scanner": "明るい浅海生態を確認。深部痕跡はケーブル植物、濾過体、Atlas修復侵入を示す。",
+          "field_note": "世界は傷つく前から生きていた。",
+          "terminal": "登録区分: 在来圧力生態、コロニー適応生物、Atlas改変修復生物。カテゴリを混ぜるな。",
+          "audio": "すべてが怪物なら、侵害は消える。",
+          "in_game_wiki": "HECTON-8には対比が必要だ。明るく有用な浅瀬、人間構造への中層適応、深部のAtlas修復侵入。損傷前に在来生命があったから恐怖が効く。",
+          "external_site": "生態レジストリは、美、圧力、カテゴリ崩壊というトーンを守る。"
+        },
+        "zh_CN": {
+          "title": "生态登记",
+          "scanner": "确认明亮浅层生态。更深处出现电缆植物、过滤体和Atlas修复侵入。",
+          "field_note": "这个世界受伤前就是活的。",
+          "terminal": "登记分组：本土压力生态、殖民地适应生物、Atlas改造修复生物。不要合并类别。",
+          "audio": "如果一切都是怪物，就没有侵犯感。",
+          "in_game_wiki": "HECTON-8需要对比：明亮有用的浅层、适应人类结构的中层、深处Atlas修复侵入。恐怖成立，因为本土生命先于伤害存在。",
+          "external_site": "生态登记保护基调：先是美，再是压力，最后是类别崩塌。"
+        },
+        "fr_FR": {
+          "title": "Registre écologique",
+          "scanner": "Écologie lumineuse confirmée. Plus bas: flore câble, corps filtrants et intrusion de réparation Atlas.",
+          "field_note": "Le monde était vivant avant d’être blessé.",
+          "terminal": "Registre séparé: écologie native sous pression, biote adapté à la colonie, organismes modifiés par Atlas. Ne pas fusionner.",
+          "audio": "Si tout est monstre, rien n’est violation.",
+          "in_game_wiki": "HECTON-8 exige un contraste: faibles profondeurs utiles et belles, adaptation aux structures humaines, puis intrusion Atlas. L’horreur fonctionne parce que la vie native existait avant les dégâts.",
+          "external_site": "Le registre écologique protège le ton: beauté, pression, effondrement des catégories."
+        },
+        "es_ES": {
+          "title": "Registro ecológico",
+          "scanner": "Ecología somera brillante confirmada. Más abajo hay flora de cable, cuerpos filtro e intrusión Atlas.",
+          "field_note": "El mundo estaba vivo antes de ser herido.",
+          "terminal": "Registro dividido: ecología nativa de presión, biota adaptada a colonia, organismos alterados por Atlas. No mezclar.",
+          "audio": "Si todo es monstruo, nada es violación.",
+          "in_game_wiki": "HECTON-8 necesita contraste: aguas someras útiles y bellas, adaptación media a estructuras humanas e intrusión Atlas profunda. El horror funciona porque la vida nativa existía antes del daño.",
+          "external_site": "El registro ecológico protege el tono: belleza, presión y colapso de categorías."
+        },
+        "de_DE": {
+          "title": "Ökologieregister",
+          "scanner": "Helle Flachwasserökologie bestätigt. Tiefer: Kabelflora, Filterkörper und Atlas-Reparatureingriff.",
+          "field_note": "Die Welt lebte, bevor sie verletzt wurde.",
+          "terminal": "Registertrennung: native Druckökologie, kolonienadaptierte Biota, Atlas-veränderte Reparaturorganismen. Nicht mischen.",
+          "audio": "Wenn alles Monster ist, ist nichts Verletzung.",
+          "in_game_wiki": "HECTON-8 braucht Kontrast: helle nützliche Flachzonen, mittlere Anpassung an Menschenstrukturen, tiefe Atlas-Intrusion. Horror wirkt, weil natives Leben vorher existierte.",
+          "external_site": "Das Ökologieregister schützt den Ton: Schönheit, Druck, Kategoriesturz."
+        },
+        "pl_PL": {
+          "title": "Rejestr ekologii",
+          "scanner": "Potwierdzono jasną płytką ekologię. Głębiej widać florę kablową, ciała filtrujące i ingerencję Atlas.",
+          "field_note": "Świat żył, zanim został zraniony.",
+          "terminal": "Podział: natywna ekologia ciśnienia, biota adaptowana do kolonii, organizmy zmienione przez Atlas. Nie mieszać.",
+          "audio": "Jeśli wszystko jest potworem, nic nie jest naruszeniem.",
+          "in_game_wiki": "HECTON-8 potrzebuje kontrastu: jasne użyteczne płycizny, adaptacja do struktur ludzi, a potem głęboka ingerencja Atlas. Groza działa, bo rodzime życie istniało przed raną.",
+          "external_site": "Rejestr ekologii chroni ton: piękno, presja, rozpad kategorii."
+        },
+        "uk_UA": {
+          "title": "Реєстр екології",
+          "scanner": "Підтверджено яскраву мілководну екологію. Глибше видно cable flora, filter bodies і втручання Atlas.",
+          "field_note": "Світ був живим до того, як його поранили.",
+          "terminal": "Розділ: рідна pressure ecology, біота адаптована до колонії, Atlas-altered repair organisms. Не змішувати.",
+          "audio": "Якщо все монстр, порушення зникає.",
+          "in_game_wiki": "HECTON-8 потребує контрасту: яскраве корисне мілководдя, адаптація до людських структур і глибоке втручання Atlas. Жах працює, бо native life існувала до пошкодження.",
+          "external_site": "Реєстр екології береже тон: краса, тиск, розпад категорій."
+        },
+        "ar_SA": {
+          "title": "سجل البيئة",
+          "scanner": "تأكدت بيئة ضحلة مضيئة. في العمق تظهر نباتات كابلات وأجسام مرشحة وتدخل Atlas.",
+          "field_note": "كان العالم حياً قبل أن يجرح.",
+          "terminal": "تقسيم: بيئة ضغط أصلية، كائنات تكيفت مع المستعمرة، كائنات عدلها Atlas. لا تدمج.",
+          "audio": "إذا كان كل شيء وحشاً فلا انتهاك.",
+          "in_game_wiki": "يحتاج HECTON-8 إلى تباين: ضحالة جميلة مفيدة، تكيف مع بنى البشر، ثم تدخل Atlas عميق. الرعب يعمل لأن الحياة الأصلية سبقت الضرر.",
+          "external_site": "سجل البيئة يحمي النغمة: جمال، ضغط، ثم انهيار الفئات."
+        },
+        "id_ID": {
+          "title": "Registri Ekologi",
+          "scanner": "Ekologi dangkal terang terkonfirmasi. Lebih dalam ada flora kabel, tubuh filter, dan intrusi Atlas.",
+          "field_note": "Dunia ini hidup sebelum terluka.",
+          "terminal": "Terbagi: ekologi tekanan asli, biota adaptasi koloni, organisme diubah Atlas. Jangan gabung.",
+          "audio": "Jika semua monster, tidak ada pelanggaran.",
+          "in_game_wiki": "HECTON-8 perlu kontras: dangkal indah dan berguna, adaptasi tengah pada struktur manusia, lalu intrusi Atlas. Horor bekerja karena kehidupan asli ada sebelum kerusakan.",
+          "external_site": "Registri Ekologi menjaga nada: indah, tekanan, lalu runtuh kategori."
+        },
+        "ko_KR": {
+          "title": "생태 등록부",
+          "scanner": "밝은 얕은 생태 확인. 더 깊은 곳은 케이블 식물, 필터 몸체, Atlas 침입을 보인다.",
+          "field_note": "세계는 상처 입기 전부터 살아 있었다.",
+          "terminal": "구분: 토착 압력 생태, 식민지 적응 생물, Atlas 변형 수리 생물. 합치지 말 것.",
+          "audio": "모든 것이 괴물이면 침해는 없다.",
+          "in_game_wiki": "HECTON-8에는 대비가 필요하다. 밝고 유용한 얕은 곳, 인간 구조에 적응한 중층, 깊은 Atlas 침입. 토착 생명이 먼저 있었기에 공포가 작동한다.",
+          "external_site": "생태 등록부는 톤을 지킨다. 아름다움, 압력, 범주 붕괴."
+        },
+        "he_IL": {
+          "title": "מרשם אקולוגי",
+          "scanner": "אקולוגיה בהירה רדודה אושרה. עמוק יותר נראים צמחיית כבלים, גופי סינון וחדירת Atlas.",
+          "field_note": "העולם היה חי לפני שנפצע.",
+          "terminal": "חלוקה: אקולוגיית לחץ מקורית, ביוטה מותאמת מושבה, אורגניזמים ששונו בידי Atlas. לא לאחד.",
+          "audio": "אם הכל מפלצת, אין הפרה.",
+          "in_game_wiki": "HECTON-8 צריך ניגוד: רדודים יפים ושימושיים, הסתגלות למבנים אנושיים, ואז חדירת Atlas עמוקה. האימה עובדת כי חיים מקוריים קדמו לנזק.",
+          "external_site": "המרשם האקולוגי שומר על הטון: יופי, לחץ, ואז קריסת קטגוריות."
+        },
+        "pt_BR": {
+          "title": "Registro ecológico",
+          "scanner": "Ecologia rasa brilhante confirmada. Mais fundo surgem flora de cabos, corpos filtrantes e intrusão Atlas.",
+          "field_note": "O mundo estava vivo antes de ser ferido.",
+          "terminal": "Divisão: ecologia nativa de pressão, biota adaptada à colônia, organismos alterados por Atlas. Não mesclar.",
+          "audio": "Se tudo é monstro, nada é violação.",
+          "in_game_wiki": "HECTON-8 precisa de contraste: águas rasas belas e úteis, adaptação a estruturas humanas, depois intrusão Atlas profunda. O horror funciona porque havia vida nativa antes do dano.",
+          "external_site": "O registro ecológico protege o tom: beleza, pressão, colapso de categorias."
+        },
+        "nl_NL": {
+          "title": "Ecologieregister",
+          "scanner": "Heldere ondiepe ecologie bevestigd. Dieper: kabelflora, filterlichamen en Atlas-intrusie.",
+          "field_note": "De wereld leefde voordat hij gewond raakte.",
+          "terminal": "Scheiding: inheemse drukecologie, kolonie-aangepaste biota, door Atlas veranderde organismen. Niet samenvoegen.",
+          "audio": "Als alles monster is, is niets schending.",
+          "in_game_wiki": "HECTON-8 heeft contrast nodig: mooi nuttig ondiep water, aanpassing aan menselijke structuren, daarna diepe Atlas-intrusie. Horror werkt omdat inheems leven eerst bestond.",
+          "external_site": "Het ecologieregister bewaakt de toon: schoonheid, druk, categorie-instorting."
+        }
+      }
+    }
+  ]
+}

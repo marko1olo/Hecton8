@@ -1,0 +1,30 @@
+---
+packet_id: P026_SIX_DOMAIN_LEDGER
+article_id: humanity.six_domain_ledger
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Libro de seis dominios
+
+En 2190 el espacio humano es disperso pero maduro. Los seis nodos nombrados no son todo el mapa; son marcas que un marauder lee en herramientas, leyes, rutas de paquetes y sellos de claim.
+
+## Scanner
+
+El libro enumera seis nodos humanos: Sol, Centauri, Barnard, Tau Ceti, Luyten y Aegir.
+
+## Terminal
+
+Domain register: ley Sol Core, legitimidad Centauri, astilleros Barnard, arbitraje Tau Ceti, custodia Luyten, claim Aegir.
+
+## Audio
+
+Seis nombres en un libro. Ninguno llegará a esta sala a tiempo.
+
+## Field Note
+
+La civilización está presente. La distancia sigue ganando.
+
+<!-- In-Game Wiki; generated from P026_SIX_DOMAIN_LEDGER/es_ES. -->

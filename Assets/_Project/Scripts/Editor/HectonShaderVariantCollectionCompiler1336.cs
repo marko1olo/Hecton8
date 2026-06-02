@@ -46,6 +46,7 @@ namespace Hecton8.EditorTools
 
         private static readonly string[] DirectShaderReferenceRoots =
         {
+            "Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader",
             "Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader",
             "Assets/_Project/Art/Shaders/SuitVisor.shader",
             "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader",
@@ -55,6 +56,9 @@ namespace Hecton8.EditorTools
 
         private static readonly DirectShaderKeywordEntry[] DirectShaderKeywordManifest =
         {
+            new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader", "INSTANCING_ON"),
+            new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader", "_CASTING_PUNCTUAL_LIGHT_SHADOW"),
+            new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader", "INSTANCING_ON", "_CASTING_PUNCTUAL_LIGHT_SHADOW"),
             new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader", "INSTANCING_ON"),
             new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader", "DOTS_INSTANCING_ON"),
             new DirectShaderKeywordEntry("Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader", "DOTS_INSTANCING_ON", "INSTANCING_ON"),

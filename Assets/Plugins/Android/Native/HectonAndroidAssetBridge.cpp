@@ -12,6 +12,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#if defined(__SSE__) || defined(__x86_64__) || defined(__i386__)
+#include <xmmintrin.h>
+#endif
+
 namespace
 {
     constexpr int32_t H8_ERROR_INVALID_ARGUMENT = -1;
@@ -59,6 +63,75 @@ namespace
         if (attached && vm != nullptr)
             vm->DetachCurrentThread();
     }
+
+    struct H8FloatingPointControlScope
+    {
+#if defined(__aarch64__)
+        uint64_t Fpcr;
+        uint64_t Fpsr;
+
+        H8FloatingPointControlScope()
+            : Fpcr(0)
+            , Fpsr(0)
+        {
+            __asm__ volatile("mrs %0, fpcr" : "=r"(Fpcr));
+            __asm__ volatile("mrs %0, fpsr" : "=r"(Fpsr));
+        }
+
+        ~H8FloatingPointControlScope()
+        {
+            __asm__ volatile("msr fpcr, %0" : : "r"(Fpcr));
+            __asm__ volatile("msr fpsr, %0" : : "r"(Fpsr));
+        }
+#elif defined(__SSE__) || defined(__x86_64__) || defined(__i386__)
+        uint32_t Mxcsr;
+
+        H8FloatingPointControlScope()
+            : Mxcsr(_mm_getcsr())
+        {
+        }
+
+        ~H8FloatingPointControlScope()
+        {
+            _mm_setcsr(Mxcsr);
+        }
+#else
+        H8FloatingPointControlScope() {}
+        ~H8FloatingPointControlScope() {}
+#endif
+
+        H8FloatingPointControlScope(const H8FloatingPointControlScope&) = delete;
+        H8FloatingPointControlScope& operator=(const H8FloatingPointControlScope&) = delete;
+    };
+
+    struct H8JniEnvironmentScope
+    {
+        H8FloatingPointControlScope FloatingPointScope;
+        void* JavaVm;
+        JNIEnv* Environment;
+        bool Attached;
+
+        explicit H8JniEnvironmentScope(void* javaVm)
+            : JavaVm(javaVm)
+            , Environment(nullptr)
+            , Attached(false)
+        {
+            H8_TryAcquireJniEnvironment(JavaVm, &Environment, &Attached);
+        }
+
+        H8JniEnvironmentScope(const H8JniEnvironmentScope&) = delete;
+        H8JniEnvironmentScope& operator=(const H8JniEnvironmentScope&) = delete;
+
+        ~H8JniEnvironmentScope()
+        {
+            H8_ReleaseJniEnvironment(JavaVm, Attached);
+        }
+
+        bool IsValid() const
+        {
+            return Environment != nullptr;
+        }
+    };
 
     AAssetManager* H8_ResolveAssetManager(JNIEnv* environment, void* javaAssetManager)
     {
@@ -249,31 +322,23 @@ extern "C" JNIEXPORT int32_t JNICALL H8_GetAssetSize(void* javaVm, void* assetMa
     if (javaVm == nullptr || assetManager == nullptr || filename == nullptr || filename[0] == '\0')
         return H8_ERROR_INVALID_ARGUMENT;
 
-    JNIEnv* environment = nullptr;
-    bool attached = false;
-    if (!H8_TryAcquireJniEnvironment(javaVm, &environment, &attached))
+    H8JniEnvironmentScope jniScope(javaVm);
+    if (!jniScope.IsValid())
         return H8_ERROR_JNI_ENVIRONMENT;
 
-    AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);
+    AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);
     if (resolvedAssetManager == nullptr)
-    {
-        H8_ReleaseJniEnvironment(javaVm, attached);
         return H8_ERROR_ASSET_MANAGER;
-    }
 
     AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);
     if (asset == nullptr)
-    {
-        H8_ReleaseJniEnvironment(javaVm, attached);
         return H8_ERROR_ASSET_MISSING;
-    }
 
     int32_t length = H8_GetAssetLength(asset);
     if (length >= 0 && !H8_IsFileDescriptorBacked(asset, length))
         length = H8_ERROR_COMPRESSED_ASSET;
 
     AAsset_close(asset);
-    H8_ReleaseJniEnvironment(javaVm, attached);
     return length;
 }
 
@@ -294,24 +359,17 @@ extern "C" JNIEXPORT bool JNICALL H8_LoadAssetToPointer(
         return false;
     }
 
-    JNIEnv* environment = nullptr;
-    bool attached = false;
-    if (!H8_TryAcquireJniEnvironment(javaVm, &environment, &attached))
+    H8JniEnvironmentScope jniScope(javaVm);
+    if (!jniScope.IsValid())
         return false;
 
-    AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(environment, assetManager);
+    AAssetManager* resolvedAssetManager = H8_ResolveAssetManager(jniScope.Environment, assetManager);
     if (resolvedAssetManager == nullptr)
-    {
-        H8_ReleaseJniEnvironment(javaVm, attached);
         return false;
-    }
 
     AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);
     if (asset == nullptr)
-    {
-        H8_ReleaseJniEnvironment(javaVm, attached);
         return false;
-    }
 
     const int32_t assetLength = H8_GetAssetLength(asset);
     if (assetLength < 0 ||
@@ -319,7 +377,6 @@ extern "C" JNIEXPORT bool JNICALL H8_LoadAssetToPointer(
         !H8_IsFileDescriptorBacked(asset, assetLength))
     {
         AAsset_close(asset);
-        H8_ReleaseJniEnvironment(javaVm, attached);
         return false;
     }
 
@@ -333,7 +390,6 @@ extern "C" JNIEXPORT bool JNICALL H8_LoadAssetToPointer(
         if (read <= 0)
         {
             AAsset_close(asset);
-            H8_ReleaseJniEnvironment(javaVm, attached);
             return false;
         }
 
@@ -341,7 +397,6 @@ extern "C" JNIEXPORT bool JNICALL H8_LoadAssetToPointer(
     }
 
     AAsset_close(asset);
-    H8_ReleaseJniEnvironment(javaVm, attached);
     return totalRead == assetLength;
 }
 

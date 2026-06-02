@@ -48,7 +48,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
         _StarTwinkleLUT ("Star Twinkle LUT", 2D) = "white" {}
         _StarSeed ("Star Seed", Float) = 99173
-        _BakedStarCubemap ("Startup Baked Star Cubemap", Cube) = "" {}
+        _BakedStarCubemap ("Startup Baked Star Cubemap", 2DArray) = "" {}
         _BakedStarCubemapReady ("Baked Star Cubemap Ready", Range(0, 1)) = 0.0
         _AtmosphereDensity ("Atmosphere Density", Range(0, 1)) = 0.0
 
@@ -190,7 +190,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
             TEXTURE2D(_StarTwinkleLUT);     SAMPLER(sampler_StarTwinkleLUT);
-            TEXTURECUBE(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
+            TEXTURE2D_ARRAY(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
@@ -365,6 +365,42 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float HectonFastLongitude01(float z, float x)
             {
                 return HectonFastAtan2(z, x) * HECTON_HALF_INV_PI + 0.5;
+            }
+
+            void HectonDirectionToStarArrayUv(float3 direction, out float2 uv, out uint face)
+            {
+                float3 absDirection = abs(direction);
+                if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+                {
+                    face = direction.x >= 0.0 ? 0u : 1u;
+                    uv = direction.x >= 0.0
+                        ? float2(-direction.z, direction.y) / max(absDirection.x, 0.000001)
+                        : float2(direction.z, direction.y) / max(absDirection.x, 0.000001);
+                }
+                else if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
+                {
+                    face = direction.y >= 0.0 ? 2u : 3u;
+                    uv = direction.y >= 0.0
+                        ? float2(direction.x, -direction.z) / max(absDirection.y, 0.000001)
+                        : float2(direction.x, direction.z) / max(absDirection.y, 0.000001);
+                }
+                else
+                {
+                    face = direction.z >= 0.0 ? 4u : 5u;
+                    uv = direction.z >= 0.0
+                        ? float2(direction.x, direction.y) / max(absDirection.z, 0.000001)
+                        : float2(-direction.x, direction.y) / max(absDirection.z, 0.000001);
+                }
+
+                uv = saturate(uv * 0.5 + 0.5);
+            }
+
+            half3 SampleBakedStarArray(float3 direction)
+            {
+                float2 uv;
+                uint face;
+                HectonDirectionToStarArrayUv(SafeNormalizeDir(direction, FALLBACK_AEGIR_DIR), uv, face);
+                return (half3)SAMPLE_TEXTURE2D_ARRAY(_BakedStarCubemap, sampler_BakedStarCubemap, uv, face).rgb;
             }
 
             half ComputeSkyOccluderVisibility(float3 viewDir)
@@ -793,10 +829,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                         + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
                     flicker = saturate(flicker);
 
-                    half3 bakedStarColor = (half3)SAMPLE_TEXTURECUBE(
-                        _BakedStarCubemap,
-                        sampler_BakedStarCubemap,
-                        starLookupDir).rgb;
+                    half3 bakedStarColor = SampleBakedStarArray(starLookupDir);
                     half bakedReady = step(0.5h, _BakedStarCubemapReady);
                     half bakedLuma = dot(bakedStarColor, half3(0.2126h, 0.7152h, 0.0722h));
                     half bakedBrightMask = smoothstep(0.08h, 0.42h, bakedLuma);

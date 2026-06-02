@@ -579,14 +579,18 @@ namespace Hecton8.Gameplay
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            if (handle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out NativeArray<ScannerSettingsDTO> buffer))
-            {
-                return false;
-            }
 
+            bool lockAcquired = false;
             try
             {
+                if (handle.BufferID == 0u ||
+                    !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out NativeArray<ScannerSettingsDTO> buffer))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+
                 if (!buffer.IsCreated || buffer.Length == 0)
                     return false;
 
@@ -597,7 +601,8 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
             }
         }
 
@@ -613,6 +618,7 @@ namespace Hecton8.Gameplay
 
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            ScanEvents.EnsureInitializedCold();
 
             if (!TryInitializeRuntimeState())
                 return;
@@ -1143,6 +1149,15 @@ namespace Hecton8.Gameplay
                 Flags = 0
             };
             SignalBus<ScanCompleteSignal>.TryPushTracked(in scanComplete, ref _signalPushDropCount);
+            LoreFragmentScannedSignal loreFragment = new LoreFragmentScannedSignal
+            {
+                PositionAup = aup,
+                Hash = result.EntityHash,
+                Frame = frame,
+                SourceId = ScannerToolHash,
+                Flags = (byte)(LoreFragmentScannedSignal.FlagPairedScanComplete | LoreFragmentScannedSignal.FlagHasAup)
+            };
+            SignalBus<LoreFragmentScannedSignal>.TryPushTracked(in loreFragment, ref _signalPushDropCount);
             ScanEvents.TryRaiseEntryDiscovered(result.EntityHash, result.EntityHash, 0u, 0u, ScanEntryKind.Scannable);
 
             if ((state.MetadataFlags & MetadataFlagDepletable) != 0u)

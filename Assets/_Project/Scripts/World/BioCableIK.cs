@@ -14,6 +14,9 @@ namespace Hecton8.World
         private const float SegmentDistanceEpsilonSq = 0.00000001f;
         private const float MaximumDeltaTime = 0.1f;
         private const float MaximumCableVelocity = 64f;
+#if UNITY_EDITOR
+        private const string EditorDefaultCableMaterialPath = "Assets/_Project/Art/Materials/Nature/ProceduralOrganicMisc/Mat_Organic_PlantStem.mat";
+#endif
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -372,6 +375,16 @@ namespace Hecton8.World
             SyncRenderer();
         }
 
+        public void SetCableMaterialCold(Material material)
+        {
+            if (material == null)
+                return;
+
+            cableMaterial = material;
+            if (_sparkRenderer != null && _sparkRenderer.sharedMaterial == null)
+                _sparkRenderer.sharedMaterial = material;
+        }
+
         private void ResolveRuntimeWiring()
         {
             _currentCableColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
@@ -681,6 +694,12 @@ namespace Hecton8.World
         {
             if (cableMaterial != null)
                 return cableMaterial;
+
+#if UNITY_EDITOR
+            cableMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultCableMaterialPath);
+            if (cableMaterial != null)
+                return cableMaterial;
+#endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedMissingCableMaterial)

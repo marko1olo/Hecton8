@@ -12,6 +12,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Modding
 {
@@ -549,6 +552,27 @@ namespace Hecton8.Modding
         {
             Shutdown();
         }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InstallEditorLifecycleShutdownHook()
+        {
+            H8Memory.RegisterBeforeShutdownOwnerRelease(Shutdown);
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
+            AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                Shutdown();
+            }
+        }
+#endif
 
         internal static void Initialize()
         {
@@ -2482,11 +2506,20 @@ namespace Hecton8.Modding
 
         private static void ReleaseValidationScratchBuffers()
         {
-            H8Memory.Release(ref _validationScratchState, SystemID.ModSandbox);
-            H8Memory.Release(ref _validationCounterScratch, SystemID.ModSandbox);
-            H8Memory.Release(ref _validationMemoryWriteScratch, SystemID.ModSandbox);
-            H8Memory.Release(ref _validationDevNullScratch, SystemID.ModSandbox);
-            H8Memory.Release(ref _validationCameraImpulseScratch, SystemID.ModSandbox);
+            ReleaseValidationScratchBuffer(ref _validationScratchState);
+            ReleaseValidationScratchBuffer(ref _validationCounterScratch);
+            ReleaseValidationScratchBuffer(ref _validationMemoryWriteScratch);
+            ReleaseValidationScratchBuffer(ref _validationDevNullScratch);
+            ReleaseValidationScratchBuffer(ref _validationCameraImpulseScratch);
+        }
+
+        private static void ReleaseValidationScratchBuffer<T>(ref NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            H8Memory.Release(ref buffer, SystemID.ModSandbox);
+            buffer = default;
         }
 
         private static void ReleaseVaultLane<T>(IDataVault vault, ref VaultLane<T> lane) where T : struct

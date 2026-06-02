@@ -1049,10 +1049,10 @@ namespace Hecton8.UI
         private void TryRegister()
         {
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryRegisterHotSwapListener()
@@ -2137,7 +2137,7 @@ namespace Hecton8.UI
             if (!_registeredSlowTick)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
             _registeredSlowTick = false;
         }
 
@@ -2146,7 +2146,7 @@ namespace Hecton8.UI
             if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrame = false;
         }
 
@@ -2217,7 +2217,7 @@ namespace Hecton8.UI
             if (_registeredLateFrame)
                 return;
 
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void PushShaderGlobals()

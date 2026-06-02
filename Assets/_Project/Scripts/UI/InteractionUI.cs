@@ -1,16 +1,16 @@
 // ============================================================================
-// HECTON-8 â€” InteractionUI.cs
+// HECTON-8 - InteractionUI.cs
 // Context-sensitive interaction prompts for the player.
 //
 // ARCHITECTURE:
-//   â€¢ ITickable for updates (no Update)
-//   â€¢ Zero GC: cached refs, pre-cached strings
-//   â€¢ UnityEvent hooks for designers
+//   - ITickable for updates (no Update)
+//   - Zero GC: cached refs, pre-cached strings
+//   - UnityEvent hooks for designers
 //
 // FEATURES:
-//   â€¢ Shows interaction prompts based on looked-at object
-//   â€¢ Context-sensitive: "Press [E] to Swap Battery" vs "No Battery to Swap"
-//   â€¢ Tool-aware: different prompts based on held tool
+//   - Shows interaction prompts based on looked-at object
+//   - Context-sensitive: "Press [E] to Swap Battery" vs "No Battery to Swap"
+//   - Tool-aware: different prompts based on held tool
 // ============================================================================
 
 namespace Hecton8.UI
@@ -51,11 +51,11 @@ namespace Hecton8.UI
             EmptyCrate = 9
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- References --------------------------------")]
         [Tooltip("Text component for the interaction prompt.")]
         [SerializeField] private TMPro.TMP_Text promptText;
 
@@ -72,7 +72,7 @@ namespace Hecton8.UI
         [Tooltip("Seconds between prompt spatial target probes. Kept short enough for UI feel, but not every render frame.")]
         [SerializeField, Range(0.016666668f, 0.2f)] private float promptProbeIntervalSeconds = 0.05f;
 
-        [Header("â”€â”€ Prompt Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Prompt Templates --------------------------")]
         [Tooltip("Default interaction prompt format. {0}=verb, {1}=name")]
         [SerializeField] private string defaultPromptFormat = "<button:interact> {0} {1}";
 
@@ -94,16 +94,16 @@ namespace Hecton8.UI
         [Tooltip("Prompt for action in progress.")]
         [SerializeField] private string actionInProgressPrompt = "Consuming...";
 
-        [Header("â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Events --------------------------------------")]
         [Tooltip("Fired when the prompt changes.")]
         public UnityEvent<string> OnPromptChanged;
 
         [Tooltip("Fired when prompt visibility changes.")]
         public UnityEvent<bool> OnVisibilityChanged;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PRIVATE STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private Camera _mainCamera;
         private Transform _cachedTransform;
@@ -152,11 +152,11 @@ namespace Hecton8.UI
         private uint _lastInputSchemeHash;
         private bool _promptPresentationDirty;
 
-        // COLD ALLOC: char[256] â€” interaction prompt TMP staging buffer â€” owner: InteractionUI
+        // COLD ALLOC: char[256] - interaction prompt TMP staging buffer - owner: InteractionUI
         private readonly char[] _promptCharBuffer = new char[256];
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         /// <summary>Current interaction prompt text.</summary>
         public string CurrentPrompt => _currentPrompt;
@@ -164,9 +164,9 @@ namespace Hecton8.UI
         /// <summary>Whether the prompt is currently visible.</summary>
         public bool IsVisible => _isVisible;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void Awake()
         {
@@ -216,16 +216,16 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  ITickable
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void SamplePromptState(float deltaTime)
         {
             ConsumeInputStateSignals();
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
-            // â”€â”€ Check if action is in progress â”€â”€
+            // -- Check if action is in progress --
             IPlayerActionInterruptSink actionController = _cachedPlayerActions;
             if (actionController != null && actionController.IsActionInProgress)
             {
@@ -293,9 +293,9 @@ namespace Hecton8.UI
             HphiReactiveUiTelemetry.RecordActiveUiUpdate();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PRIVATE â€” PROMPT BUILDING
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
+        //  PRIVATE - PROMPT BUILDING
+        // --------------------------------------------------------------------------
 
         private bool TryResolveCamera()
         {
@@ -420,7 +420,7 @@ namespace Hecton8.UI
                     hash = hash * 31 + ReferenceHash(item);
                     if (item != null)
                     {
-                        hash = hash * 31 + LocHash.Compute(item.PersistentId);
+                        hash = hash * 31 + item.PersistentHashId;
                         hash = hash * 31 + (item.isConsumable ? 1 : 0);
                         hash = hash * 31 + (int)math.round(item.UseDuration * 10f);
                         hash = hash * 31 + (item.integrityRestore > 0f ? 1 : 0);
@@ -434,11 +434,27 @@ namespace Hecton8.UI
                         pickupTextLength > 0)
                     {
                         int safeLength = math.min(pickupTextLength, _promptCharBuffer.Length);
-                        hash = hash * 31 + LocHash.Compute(_promptCharBuffer.AsSpan(0, safeLength));
+                        hash = hash * 31 + ComputePromptBufferHash(_promptCharBuffer, safeLength);
                     }
                 }
 
                 return hash;
+            }
+        }
+
+        private static int ComputePromptBufferHash(char[] buffer, int length)
+        {
+            if (buffer == null || length <= 0)
+                return 0;
+
+            unchecked
+            {
+                uint hash = 2166136261u;
+                int safeLength = math.min(length, buffer.Length);
+                for (int i = 0; i < safeLength; i++)
+                    hash = (hash ^ buffer[i]) * 16777619u;
+
+                return hash != 0u ? (int)hash : 1;
             }
         }
 
@@ -587,9 +603,9 @@ namespace Hecton8.UI
             return true;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PRIVATE â€” UI UPDATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
+        //  PRIVATE - UI UPDATE
+        // --------------------------------------------------------------------------
 
         private bool TryApplyPromptSource(PromptSource promptSource)
         {
@@ -694,9 +710,9 @@ namespace Hecton8.UI
             OnVisibilityChanged?.Invoke(visible);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PRIVATE â€” REFERENCES
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
+        //  PRIVATE - REFERENCES
+        // --------------------------------------------------------------------------
 
         private void ResolvePlayerReferences()
         {
@@ -728,11 +744,13 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            RefreshLocalizedPromptCache();
             QueuePromptPresentationRefresh(resetPrompt: true);
         }
 
         private void HandleInputDisplayStyleChanged(byte displayStyleCode)
         {
+            RefreshLocalizedPromptCache();
             QueuePromptPresentationRefresh(resetPrompt: true);
         }
 
@@ -755,7 +773,6 @@ namespace Hecton8.UI
 
             _promptPresentationDirty = false;
             ConfigurePromptText();
-            RefreshLocalizedPromptCache();
         }
 
         private void SubscribeInputManagerIfAvailable()
@@ -823,6 +840,9 @@ namespace Hecton8.UI
                 UnsubscribeInputManager();
 
             RefreshCachedRegistryServices();
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime || serviceSlot == GlobalRegistryServiceSlot.Input)
+                RefreshLocalizedPromptCache();
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _mainCamera = null;
@@ -882,31 +902,45 @@ namespace Hecton8.UI
         private void RefreshLocalizedPromptCache()
         {
             _localizedDefaultPromptFormat = ResolveLocalizedExpanded(
-                LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
+                LocKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
                 defaultPromptFormat);
-            _localizedNoBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_NO_BATTERY_TO_SWAP, noBatteryPrompt);
-            _localizedSwapBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_SWAP_BATTERY, swapBatteryPrompt);
-            _localizedDepositFuelPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_DEPOSIT_FUEL, depositFuelPrompt);
-            _localizedTakeItemPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_TAKE_ITEM, takeItemPrompt);
+            _localizedNoBatteryPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_NO_BATTERY_TO_SWAP, noBatteryPrompt);
+            _localizedSwapBatteryPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_SWAP_BATTERY, swapBatteryPrompt);
+            _localizedDepositFuelPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_DEPOSIT_FUEL, depositFuelPrompt);
+            _localizedTakeItemPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_TAKE_ITEM, takeItemPrompt);
             _localizedConsumableWithDurationFormat = ResolveLocalizedExpanded(
-                LocalizationKeys.INTERACT_CONSUMABLE_WITH_DURATION_FORMAT,
+                LocKeys.INTERACT_CONSUMABLE_WITH_DURATION_FORMAT,
                 consumableWithDurationFormat);
-            _localizedActionInProgressPrompt = ResolveLocalizedExpanded(LocalizationKeys.ACTION_USING, actionInProgressPrompt);
-            _localizedInsertBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_INSERT_BATTERY, "Insert Battery");
-            _localizedBioReactorPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_BIO_REACTOR, "Bio Reactor");
-            _localizedOpenCratePrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_OPEN_CRATE, "<button:interact> Open Crate");
-            _localizedEmptyCratePrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_EMPTY_CRATE, "Empty Crate");
-            _localizedVerbApply = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_APPLY, "Apply");
-            _localizedVerbDrink = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_DRINK, "Drink");
-            _localizedVerbEat = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_EAT, "Eat");
-            _localizedVerbInhale = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_INHALE, "Inhale");
-            _localizedVerbUse = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_USE, "Use");
-            _localizedVerbTake = ResolveLocalizedExpanded("ITEM_INTERACT_TAKE", "Take");
+            _localizedActionInProgressPrompt = ResolveLocalizedExpanded(LocKeys.ACTION_USING, actionInProgressPrompt);
+            _localizedInsertBatteryPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_INSERT_BATTERY, "Insert Battery");
+            _localizedBioReactorPrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_BIO_REACTOR, "Bio Reactor");
+            _localizedOpenCratePrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_OPEN_CRATE, "<button:interact> Open Crate");
+            _localizedEmptyCratePrompt = ResolveLocalizedExpanded(LocKeys.INTERACT_EMPTY_CRATE, "Empty Crate");
+            _localizedVerbApply = ResolveLocalizedExpanded(LocKeys.INTERACT_VERB_APPLY, "Apply");
+            _localizedVerbDrink = ResolveLocalizedExpanded(LocKeys.INTERACT_VERB_DRINK, "Drink");
+            _localizedVerbEat = ResolveLocalizedExpanded(LocKeys.INTERACT_VERB_EAT, "Eat");
+            _localizedVerbInhale = ResolveLocalizedExpanded(LocKeys.INTERACT_VERB_INHALE, "Inhale");
+            _localizedVerbUse = ResolveLocalizedExpanded(LocKeys.INTERACT_VERB_USE, "Use");
+            _localizedVerbTake = ResolveLocalizedExpanded(LocKeys.ITEM_INTERACT_TAKE, "Take");
         }
 
-        private string ResolveLocalizedExpanded(string key, string fallback)
+        private string ResolveLocalizedExpanded(int keyHash, string fallback)
         {
-            return fallback ?? string.Empty;
+            fallback ??= string.Empty;
+
+            ILocalizationTextExpansionReadModel localization = _cachedLocalization;
+            ReadOnlySpan<char> fallbackSpan = fallback.AsSpan();
+            ReadOnlySpan<char> source = localization != null && keyHash != 0
+                ? localization.GetRawSpanOrFallback(keyHash, fallbackSpan)
+                : fallbackSpan;
+
+            if (source.IsEmpty)
+                return string.Empty;
+
+            if (localization != null && localization.TryExpandText(source, _promptCharBuffer, out int expandedLength))
+                return new string(_promptCharBuffer, 0, math.min(expandedLength, _promptCharBuffer.Length));
+
+            return source.ToString();
         }
 
         private void RegisterToTick()
@@ -915,7 +949,7 @@ namespace Hecton8.UI
                 return;
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -923,7 +957,7 @@ namespace Hecton8.UI
             if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrame = false;
         }
 

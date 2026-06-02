@@ -345,64 +345,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 return absNormal.x >= absNormal.z ? 0.0h : 2.0h;
             }
 
-            half3 ResolveKelpBiolumGroupTint(int stateIndex)
-            {
-                half3 tint0 = half3(0.18h, 0.88h, 1.00h);
-                half3 tint1 = half3(0.32h, 1.00h, 0.62h);
-                half3 tint2 = half3(0.74h, 0.38h, 1.00h);
-                half3 tint3 = half3(1.00h, 0.72h, 0.32h);
-                half idx = (half)stateIndex;
-                half3 lowPair = lerp(tint0, tint1, step(0.5h, idx));
-                half3 highPair = lerp(tint2, tint3, step(2.5h, idx));
-                return lerp(lowPair, highPair, step(1.5h, idx));
-            }
-
-            half4 ResolveKelpGlobalBiolum(float3 localAupCoord)
-            {
-                if (!all(isfinite(localAupCoord)))
-                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
-
-                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 4);
-                if (activeCount <= 0)
-                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
-
-                float selector = frac(abs(localAupCoord.x * 0.029 + localAupCoord.z * 0.047));
-                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
-                const float invTwoPi = 0.159154943091895;
-                float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
-                float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
-                float frequency = max(abs(state.y), 0.0025);
-                float spatialPhase = dot(localAupCoord, float3(0.029, 0.017, 0.047)) + state.w;
-                half primaryPulse = (half)(1.0 - abs(frac(state.x * invTwoPi + spatialPhase * frequency) * 2.0 - 1.0));
-                half strobe = saturate((half)_GlobalBiolumParams.z);
-                half qualityCurve = saturate((half)_GlobalBiolumParams.y);
-                qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
-                int secondaryIndex = stateIndex + 1;
-                if (secondaryIndex >= activeCount)
-                    secondaryIndex = 0;
-                float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
-                float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
-                float secondaryFrequency = max(abs(secondaryState.y), 0.0025);
-                float secondarySpatialPhase = dot(localAupCoord, float3(0.023, -0.013, 0.039)) + secondaryState.w;
-                half secondaryPulse = (half)(1.0 - abs(frac(secondaryState.x * invTwoPi + secondarySpatialPhase * secondaryFrequency) * 2.0 - 1.0));
-                half overdrive = 0.0h;
-                half godSpark = 0.0h;
-                half godHaze = 0.0h;
-                half overPulse = secondaryPulse;
-                half filament = (half)(1.0 - abs(frac(state.x * invTwoPi + dot(localAupCoord, float3(0.149, 0.071, 0.181)) * frequency + state.w) * 2.0 - 1.0));
-                godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.52h + filament * 0.48h) * qualityCurve;
-                godSpark = smoothstep(0.80h, 0.97h, filament) * overPulse * qualityCurve;
-                overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h) * qualityCurve;
-                half3 color = lerp(ResolveKelpBiolumGroupTint(stateIndex), half3(1.0h, 1.0h, 1.0h), strobe);
-                half amplitude = (half)max(state.z, 0.0) * (0.62h + primaryPulse * 0.38h);
-                half secondaryAmplitude = (half)max(secondaryState.z, 0.0) * (0.62h + secondaryPulse * 0.38h);
-                half intensity = clamp(max(amplitude, strobe * 10.0h), 0.0h, 10.0h);
-                color = lerp(color, ResolveKelpBiolumGroupTint(secondaryIndex), overdrive);
-                color = saturate(color + godHaze * half3(0.05h, 0.18h, 0.20h));
-                intensity = clamp(intensity + secondaryAmplitude * overdrive + godSpark * 0.55h + godHaze * 0.28h, 0.0h, 10.0h);
-                return half4(color, intensity);
-            }
-
             float2 ResolveFloraAxisUv(float3 positionWS, half axis)
             {
                 if (axis < 0.5h)
@@ -451,6 +393,65 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half low = lerp(v, v2, saturate(exponent - 1.0h));
                 half high = lerp(v2, v8, saturate((exponent - 2.0h) * 0.16666667h));
                 return lerp(low, high, step(2.0h, exponent));
+            }
+
+            half3 ResolveKelpBiolumGroupTint(int stateIndex)
+            {
+                half3 tint0 = half3(0.18h, 0.88h, 1.00h);
+                half3 tint1 = half3(0.32h, 1.00h, 0.62h);
+                half3 tint2 = half3(0.74h, 0.38h, 1.00h);
+                half3 tint3 = half3(1.00h, 0.72h, 0.32h);
+                half idx = (half)stateIndex;
+                half3 lowPair = lerp(tint0, tint1, step(0.5h, idx));
+                half3 highPair = lerp(tint2, tint3, step(2.5h, idx));
+                return lerp(lowPair, highPair, step(1.5h, idx));
+            }
+
+            half4 ResolveKelpGlobalBiolum(float3 localAupCoord)
+            {
+                if (!all(isfinite(localAupCoord)))
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
+                int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 4);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(localAupCoord.x * 0.029 + localAupCoord.z * 0.047));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
+                float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                const float invTwoPi = 0.159154943091895;
+                float frequency = max(abs(state.y), 0.0025);
+                float spatialPhase = dot(localAupCoord, float3(0.029, 0.017, 0.047)) + state.w;
+                half primaryPulse = (half)(1.0 - abs(frac(state.x * invTwoPi + spatialPhase * frequency) * 2.0 - 1.0));
+                half strobe = saturate((half)max(safeParams.z, 0.0));
+                half qualityCurve = saturate((half)max(safeParams.y, 0.0));
+                qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
+                int secondaryIndex = stateIndex + 1;
+                if (secondaryIndex >= activeCount)
+                    secondaryIndex = 0;
+                float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
+                float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                float secondaryFrequency = max(abs(secondaryState.y), 0.0025);
+                float secondarySpatialPhase = dot(localAupCoord, float3(0.023, -0.013, 0.039)) + secondaryState.w;
+                half secondaryPulse = (half)(1.0 - abs(frac(secondaryState.x * invTwoPi + secondarySpatialPhase * secondaryFrequency) * 2.0 - 1.0));
+                half overdrive = 0.0h;
+                half godSpark = 0.0h;
+                half godHaze = 0.0h;
+                half overPulse = secondaryPulse;
+                half filament = (half)(1.0 - abs(frac(state.x * invTwoPi + dot(localAupCoord, float3(0.149, 0.071, 0.181)) * frequency + state.w) * 2.0 - 1.0));
+                godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.52h + filament * 0.48h) * qualityCurve;
+                godSpark = smoothstep(0.80h, 0.97h, filament) * overPulse * qualityCurve;
+                overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h) * qualityCurve;
+                half3 color = lerp(ResolveKelpBiolumGroupTint(stateIndex), half3(1.0h, 1.0h, 1.0h), strobe);
+                half amplitude = (half)max(state.z, 0.0) * (0.62h + primaryPulse * 0.38h);
+                half secondaryAmplitude = (half)max(secondaryState.z, 0.0) * (0.62h + secondaryPulse * 0.38h);
+                half intensity = clamp(max(amplitude, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, ResolveKelpBiolumGroupTint(secondaryIndex), overdrive);
+                color = saturate(color + godHaze * half3(0.05h, 0.18h, 0.20h));
+                intensity = clamp(intensity + secondaryAmplitude * overdrive + godSpark * 0.55h + godHaze * 0.28h, 0.0h, 10.0h);
+                return half4(color, intensity);
             }
 
             Varyings Vert(Attributes input)
@@ -585,11 +586,11 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 if (_BiolumStrength > 0.0001h)
                 {
                     float3 biolumLocalAupCoord = input.biolumLocalAupCoord;
+                    half4 globalBiolumState = ResolveKelpGlobalBiolum(biolumLocalAupCoord);
+                    half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(biolumLocalAupCoord.x * 0.043h + biolumLocalAupCoord.z * 0.061h + input.uv.y * 1.7h);
                     half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half4 globalBiolumState = ResolveKelpGlobalBiolum(biolumLocalAupCoord);
-                    half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half masterBiolum = globalBiolumState.w;
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask;
                     authoredBiolumEnergy = clamp(authoredBiolumEnergy, 0.0h, 10.0h);

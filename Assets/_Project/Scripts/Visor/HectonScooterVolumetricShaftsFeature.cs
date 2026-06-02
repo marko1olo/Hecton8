@@ -1492,7 +1492,10 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
             RecreateMaterial(ref _blurVerticalMaterial, shader);
             RecreateMaterial(ref _compositeMaterial, shader);
-            _pass.PrepareResources(settings);
+            if (Application.isPlaying)
+                _pass.PrepareResources(settings);
+            else
+                _pass.Dispose();
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
             _cachedPlayerContext = GlobalRegistry.Player;
@@ -1516,6 +1519,9 @@ namespace Hecton8.Visor
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
+                return;
+
+            if (!_pass.PrepareResources(settings))
                 return;
 
             _pass.Setup(

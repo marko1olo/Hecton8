@@ -67,9 +67,9 @@ namespace Hecton8.UI
         [SerializeField] private Shader radarBlipShader;
         [SerializeField] private Color blipColor = new Color(1f, 0.24f, 0.28f, 0.92f);
 
-        // COLD ALLOC: SpatialQueryHit[64] — fixed hostile radar query buffer — owner: FakeRadarBlipController
+        // COLD ALLOC: SpatialQueryHit[64] - fixed hostile radar query buffer - owner: FakeRadarBlipController
         private readonly SpatialQueryHit[] _queryHits = new SpatialQueryHit[MaxBlips];
-        // COLD ALLOC: Matrix4x4[64] — instanced hostile radar blip matrices — owner: FakeRadarBlipController
+        // COLD ALLOC: Matrix4x4[64] - instanced hostile radar blip matrices - owner: FakeRadarBlipController
         private readonly Matrix4x4[] _blipMatrices = new Matrix4x4[MaxBlips];
 
 #pragma warning disable CS0414
@@ -941,7 +941,7 @@ namespace Hecton8.UI
                 name = "HUD_FakeRadarBlip_Quad"
             }; // COLD ALLOC: Mesh[1] — reusable instanced hostile radar blip quad — owner: FakeRadarBlipController
 
-            // COLD ALLOC: Vector3[4] — one-time quad geometry upload — owner: FakeRadarBlipController
+            // COLD ALLOC: Vector3[4] - one-time quad geometry upload - owner: FakeRadarBlipController
             Vector3[] vertices =
             {
                 new Vector3(-0.5f, -0.5f, 0f),
@@ -949,7 +949,7 @@ namespace Hecton8.UI
                 new Vector3(0.5f, 0.5f, 0f),
                 new Vector3(0.5f, -0.5f, 0f)
             };
-            // COLD ALLOC: Vector2[4] — one-time quad uv upload — owner: FakeRadarBlipController
+            // COLD ALLOC: Vector2[4] - one-time quad uv upload - owner: FakeRadarBlipController
             Vector2[] uvs =
             {
                 new Vector2(0f, 0f),
@@ -957,7 +957,7 @@ namespace Hecton8.UI
                 new Vector2(1f, 1f),
                 new Vector2(1f, 0f)
             };
-            // COLD ALLOC: int[6] — one-time quad index upload — owner: FakeRadarBlipController
+            // COLD ALLOC: int[6] - one-time quad index upload - owner: FakeRadarBlipController
             int[] triangles = { 0, 1, 2, 0, 2, 3 };
             mesh.SetVertices(vertices);
             mesh.SetUVs(0, uvs);
@@ -1010,7 +1010,7 @@ namespace Hecton8.UI
                 return;
 
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
@@ -1038,7 +1038,7 @@ namespace Hecton8.UI
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 

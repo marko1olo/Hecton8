@@ -442,6 +442,7 @@ namespace Hecton8.Core
         private IInputDeterminismService _inputDeterminism;
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureSampleSink _vramPressure;
+        private IVramPressureReadModel _vramPressureReadModel;
         private IMacroDatabaseService _macroDatabase;
         private IPhysicsService _physics;
         private IObjectPoolService _objectPool;
@@ -1249,7 +1250,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(IUpdatable item, PriorityLayer layer)
+        public static bool Register(IUpdatable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1266,7 +1267,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registers a 60 Hz fast-tick owner into a fixed priority lane.
         /// </summary>
-        internal static bool Register(IFastTickable item, PriorityLayer layer)
+        public static bool Register(IFastTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1279,7 +1280,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Fixed-update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(IFixedTickable item, PriorityLayer layer)
+        public static bool Register(IFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1292,7 +1293,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Slow-tick owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(ISlowTickable item, PriorityLayer layer)
+        public static bool Register(ISlowTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1309,7 +1310,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registers a 1 Hz cold-tick owner into a fixed priority lane.
         /// </summary>
-        internal static bool Register(IColdTickable item, PriorityLayer layer)
+        public static bool Register(IColdTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1322,7 +1323,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Frost-tick owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(IFrostTickable item, PriorityLayer layer)
+        public static bool Register(IFrostTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1335,7 +1336,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(ILateFrameTickable item, PriorityLayer layer)
+        public static bool Register(ILateFrameTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1348,7 +1349,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Post-fixed owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static bool Register(IPostFixedTickable item, PriorityLayer layer)
+        public static bool Register(IPostFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1359,7 +1360,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registers an unscaled fast-tick owner into a fixed priority lane.
         /// </summary>
-        internal static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
+        public static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return false;
@@ -1430,7 +1431,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(IUpdatable item, PriorityLayer layer)
+        public static void Unregister(IUpdatable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1444,7 +1445,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Unregisters a fast-tick owner from a fixed priority lane.
         /// </summary>
-        internal static void Unregister(IFastTickable item, PriorityLayer layer)
+        public static void Unregister(IFastTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1457,7 +1458,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Fixed-update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(IFixedTickable item, PriorityLayer layer)
+        public static void Unregister(IFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1470,7 +1471,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Slow-tick owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(ISlowTickable item, PriorityLayer layer)
+        public static void Unregister(ISlowTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1482,7 +1483,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Unregisters a cold-tick owner from a fixed priority lane.
         /// </summary>
-        internal static void Unregister(IColdTickable item, PriorityLayer layer)
+        public static void Unregister(IColdTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1495,7 +1496,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Frost-tick owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(IFrostTickable item, PriorityLayer layer)
+        public static void Unregister(IFrostTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1508,7 +1509,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(ILateFrameTickable item, PriorityLayer layer)
+        public static void Unregister(ILateFrameTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1522,7 +1523,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+        public static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
         {
             Unregister(item, layer);
         }
@@ -1532,7 +1533,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Post-fixed owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+        public static void Unregister(IPostFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -1543,7 +1544,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Unregisters an unscaled fast-tick owner from a fixed priority lane.
         /// </summary>
-        internal static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+        public static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
         {
             if (item == null)
                 return;
@@ -2711,6 +2712,28 @@ namespace Hecton8.Core
             return flags;
         }
 
+        private float ResolveGraphicsUploadPressure01()
+        {
+            IVramPressureReadModel pressureReadModel = _vramPressureReadModel;
+            if (pressureReadModel != null && pressureReadModel.HasSample)
+                return math.saturate(pressureReadModel.PressureFactor);
+
+            IVramBudgetReadModel monitor = _vramMonitor;
+            if (monitor == null)
+                return 0f;
+
+            if (monitor.PressureStateCode == VramPressureStateCodes.Critical || monitor.IsTotalVRAMOverBudget)
+                return 1f;
+            if (monitor.PressureStateCode == VramPressureStateCodes.Warning ||
+                monitor.IsTextureMemoryOverBudget ||
+                monitor.IsRenderTextureMemoryOverBudget)
+            {
+                return 0.72f;
+            }
+
+            return 0f;
+        }
+
         private void RunMasterPreSimulationPhase(in DispatcherTimingDTO timing)
         {
             _masterFrameStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -2720,7 +2743,10 @@ namespace Hecton8.Core
             _masterHealthPressureShedThisFrame = false;
             _masterRollbackFenceFlagsThisFrame = 0u;
             TimeSliceScheduler.BeginFrame(HomeostasisBrain.GlobalQualityWeight, timing.FrameId);
-            GraphicsBufferUploadUtility.BeginUploadBudgetFrame(HomeostasisBrain.GlobalQualityWeight, timing.FrameId);
+            GraphicsBufferUploadUtility.BeginUploadBudgetFrame(
+                HomeostasisBrain.GlobalQualityWeight,
+                timing.FrameId,
+                ResolveGraphicsUploadPressure01());
             SetMasterDispatcherPhase(DispatcherPhase.PreSimulation, in timing);
             TryReloadMasterExecutionPriorityCsv();
             EnsureMasterDispatcherTopology();
@@ -4109,6 +4135,10 @@ namespace Hecton8.Core
             if (vramPressure != null)
                 _vramPressure = vramPressure;
 
+            IVramPressureReadModel vramPressureReadModel = GlobalRegistry.VRAMPressureReadModel;
+            if (vramPressureReadModel != null)
+                _vramPressureReadModel = vramPressureReadModel;
+
             IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
             if (macroDatabase != null)
                 _macroDatabase = macroDatabase;
@@ -4158,6 +4188,7 @@ namespace Hecton8.Core
                     break;
                 case GlobalRegistryServiceSlot.VRAMPressureRuntime:
                     _vramPressure = currentService as IVramPressureSampleSink;
+                    _vramPressureReadModel = currentService as IVramPressureReadModel;
                     break;
                 case GlobalRegistryServiceSlot.MacroDatabase:
                     _macroDatabase = currentService as IMacroDatabaseService;
@@ -6308,6 +6339,8 @@ namespace Hecton8.Core
 
                 using (_coldTickProfilerMarker.Auto())
                 {
+                    PredatorCognitionDomain.DrainPendingBlackBoxDumpsCold();
+
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                     {
                         if (SignalBusRegistry.IsSimulationHalted)
@@ -7000,16 +7033,78 @@ namespace Hecton8.Core
 
         public static void BeginUploadBudgetFrame(float globalQualityWeight01, uint frameId)
         {
+            BeginUploadBudgetFrame(globalQualityWeight01, frameId, 0f);
+        }
+
+        public static void BeginUploadBudgetFrame(float globalQualityWeight01, uint frameId, float pressureFactor01)
+        {
             if (_uploadBudgetActive && _uploadBudgetFrameId == frameId)
                 return;
 
             _uploadBudgetActive = true;
             _uploadBudgetFrameId = frameId;
-            _uploadBudgetBytes = ResolveFrameUploadBudgetBytes(globalQualityWeight01);
+            _uploadBudgetBytes = ResolveFrameUploadBudgetBytes(globalQualityWeight01, pressureFactor01);
             _claimedUploadBytes = 0L;
             _uploadedBytes = 0L;
             _uploadClaimCount = 0;
             _deferredUploadPages = 0;
+        }
+
+        public static long EstimateUploadBytes<T>(int count) where T : struct
+        {
+            return (long)UnsafeUtility.SizeOf<T>() * math.max(0, count);
+        }
+
+        public static bool CanUploadBytesThisFrame(long uploadBytes, bool allowOversizedFirstUpload = true)
+        {
+            long safeBytes = uploadBytes > 0L ? uploadBytes : 0L;
+            if (safeBytes <= 0L || !_uploadBudgetActive)
+                return true;
+
+            if (allowOversizedFirstUpload && _claimedUploadBytes <= 0L)
+                return true;
+
+            return _claimedUploadBytes + safeBytes <= _uploadBudgetBytes;
+        }
+
+        public static bool TryBeginManualUpload(long uploadBytes, bool allowOversizedFirstUpload = true)
+        {
+            long safeBytes = uploadBytes > 0L ? uploadBytes : 0L;
+            if (safeBytes <= 0L || !_uploadBudgetActive)
+                return true;
+
+            if (!CanUploadBytesThisFrame(safeBytes, allowOversizedFirstUpload))
+            {
+                RecordDeferredUploadPages(1);
+                return false;
+            }
+
+            _claimedUploadBytes += safeBytes;
+            _uploadClaimCount++;
+            return true;
+        }
+
+        public static void CompleteManualUpload(long uploadBytes)
+        {
+            if (!_uploadBudgetActive || uploadBytes <= 0L)
+                return;
+
+            _uploadedBytes += uploadBytes;
+        }
+
+        public static void CancelManualUpload(long uploadBytes)
+        {
+            if (!_uploadBudgetActive || uploadBytes <= 0L)
+                return;
+
+            _claimedUploadBytes = Math.Max(0L, _claimedUploadBytes - uploadBytes);
+            if (_uploadClaimCount > 0)
+                _uploadClaimCount--;
+        }
+
+        public static void RecordManualUploadDeferred(int deferredUnits = 1)
+        {
+            RecordDeferredUploadPages(math.max(1, deferredUnits));
         }
 
         /// <summary>
@@ -7061,7 +7156,7 @@ namespace Hecton8.Core
         public static GraphicsBuffer CreateRawIndirectCopyDestinationBuffer(int count, int stride)
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                 math.max(1, count),
                 math.max(4, stride));
         }
@@ -7069,7 +7164,7 @@ namespace Hecton8.Core
         public static GraphicsBuffer CreateRawIndirectUploadStagingBuffer(int count, int stride)
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopySource,
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopySource,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 math.max(1, count),
                 math.max(4, stride));
@@ -7078,6 +7173,167 @@ namespace Hecton8.Core
         /// <summary>
         /// Uploads a blittable native array into a graphics buffer using one memcpy.
         /// </summary>
+        public static bool TryUploadSingle<T>(GraphicsBuffer destination, T value) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, 1, 1);
+            if (safeCount <= 0)
+                return false;
+
+            long uploadedBytes = UnsafeUtility.SizeOf<T>();
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
+            bool bufferLocked = false;
+            bool uploadAccepted = false;
+            bool unlockSucceeded = false;
+            NativeArray<T> mapped = default;
+            try
+            {
+                mapped = destination.LockBufferForWrite<T>(0, 1);
+                bufferLocked = true;
+                mapped[0] = value;
+                uploadAccepted = true;
+            }
+            finally
+            {
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        destination.UnlockBufferAfterWrite<T>(1);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && unlockSucceeded)
+                        CompleteManualUpload(uploadedBytes);
+                    else
+                        CancelManualUpload(uploadedBytes);
+                }
+            }
+
+            return uploadAccepted && unlockSucceeded;
+        }
+
+        public static bool TryClear<T>(GraphicsBuffer destination, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, destination != null ? destination.count : 0, count);
+            if (safeCount <= 0)
+                return false;
+
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
+            bool bufferLocked = false;
+            bool uploadAccepted = false;
+            bool unlockSucceeded = false;
+            NativeArray<T> mapped = default;
+            try
+            {
+                mapped = destination.LockBufferForWrite<T>(0, safeCount);
+                bufferLocked = true;
+                for (int i = 0; i < safeCount; i++)
+                    mapped[i] = default;
+                uploadAccepted = true;
+            }
+            finally
+            {
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        destination.UnlockBufferAfterWrite<T>(safeCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && unlockSucceeded)
+                        CompleteManualUpload(uploadedBytes);
+                    else
+                        CancelManualUpload(uploadedBytes);
+                }
+            }
+
+            return uploadAccepted && unlockSucceeded;
+        }
+
+        public static bool TryUploadNativeArrayRange<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteRangeCount<T>(
+                destination,
+                source.IsCreated ? source.Length : 0,
+                sourceStartIndex,
+                destinationStartIndex,
+                count);
+            if (safeCount <= 0)
+                return false;
+
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
+            bool uploaded = false;
+            try
+            {
+                uploaded = TryCopyNativeArrayRange(destination, source, sourceStartIndex, destinationStartIndex, safeCount);
+            }
+            finally
+            {
+                if (uploaded)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
+
+            return uploaded;
+        }
+
+        public static unsafe bool TryUploadArrayRange<T>(
+            GraphicsBuffer destination,
+            T[] source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : unmanaged
+        {
+            int safeCount = ResolveSafeWriteRangeCount<T>(
+                destination,
+                source != null ? source.Length : 0,
+                sourceStartIndex,
+                destinationStartIndex,
+                count);
+            if (safeCount <= 0)
+                return false;
+
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
+            bool uploaded = false;
+            try
+            {
+                uploaded = TryCopyArrayRange(destination, source, sourceStartIndex, destinationStartIndex, safeCount);
+            }
+            finally
+            {
+                if (uploaded)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
+
+            return uploaded;
+        }
+
         public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
         {
             TryUploadNativeArray(destination, source, count);
@@ -7090,10 +7346,17 @@ namespace Hecton8.Core
                 return false;
 
             long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
             bool copyAccepted = false;
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            bool bufferLocked = false;
+            bool unlockSucceeded = false;
+            NativeArray<T> mapped = default;
             try
             {
+                mapped = destination.LockBufferForWrite<T>(0, safeCount);
+                bufferLocked = true;
                 unsafe
                 {
                     void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
@@ -7107,11 +7370,22 @@ namespace Hecton8.Core
             }
             finally
             {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        destination.UnlockBufferAfterWrite<T>(safeCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (copyAccepted && unlockSucceeded)
+                        CompleteManualUpload(uploadedBytes);
+                    else
+                        CancelManualUpload(uploadedBytes);
+                }
             }
-
-            if (copyAccepted)
-                RecordUploadClaim(uploadedBytes);
 
             return copyAccepted;
         }
@@ -7123,18 +7397,39 @@ namespace Hecton8.Core
                 return;
 
             long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            if (!TryBeginManualUpload(uploadedBytes))
+                return;
+
+            bool uploadCompleted = false;
+            bool bufferLocked = false;
+            bool unlockSucceeded = false;
+            NativeArray<T> mapped = default;
             try
             {
+                mapped = destination.LockBufferForWrite<T>(0, safeCount);
+                bufferLocked = true;
                 for (int i = 0; i < safeCount; i++)
                     mapped[i] = source[i];
+                uploadCompleted = true;
             }
             finally
             {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        destination.UnlockBufferAfterWrite<T>(safeCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadCompleted && unlockSucceeded)
+                        CompleteManualUpload(uploadedBytes);
+                    else
+                        CancelManualUpload(uploadedBytes);
+                }
             }
-
-            RecordUploadClaim(uploadedBytes);
         }
 
         /// <summary>
@@ -7152,10 +7447,17 @@ namespace Hecton8.Core
                 return false;
 
             long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return false;
+
             bool copyAccepted = false;
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            bool bufferLocked = false;
+            bool unlockSucceeded = false;
+            NativeArray<T> mapped = default;
             try
             {
+                mapped = destination.LockBufferForWrite<T>(0, safeCount);
+                bufferLocked = true;
                 fixed (T* sourcePtr = source)
                 {
                     void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
@@ -7168,11 +7470,22 @@ namespace Hecton8.Core
             }
             finally
             {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        destination.UnlockBufferAfterWrite<T>(safeCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (copyAccepted && unlockSucceeded)
+                        CompleteManualUpload(uploadedBytes);
+                    else
+                        CancelManualUpload(uploadedBytes);
+                }
             }
-
-            if (copyAccepted)
-                RecordUploadClaim(uploadedBytes);
 
             return copyAccepted;
         }
@@ -7220,8 +7533,23 @@ namespace Hecton8.Core
             if (safeCount <= 0)
                 return;
 
-            destination.SetData(source, 0, 0, safeCount);
-            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return;
+
+            bool uploadCompleted = false;
+            try
+            {
+                destination.SetData(source, 0, 0, safeCount);
+                uploadCompleted = true;
+            }
+            finally
+            {
+                if (uploadCompleted)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
         }
 
         public static void UploadNativeArraySetDataRange<T>(
@@ -7241,8 +7569,23 @@ namespace Hecton8.Core
             if (safeCount <= 0)
                 return;
 
-            destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
-            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return;
+
+            bool uploadCompleted = false;
+            try
+            {
+                destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
+                uploadCompleted = true;
+            }
+            finally
+            {
+                if (uploadCompleted)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
         }
 
         /// <summary>
@@ -7254,8 +7597,23 @@ namespace Hecton8.Core
             if (safeCount <= 0)
                 return;
 
-            destination.SetData(source, 0, 0, safeCount);
-            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return;
+
+            bool uploadCompleted = false;
+            try
+            {
+                destination.SetData(source, 0, 0, safeCount);
+                uploadCompleted = true;
+            }
+            finally
+            {
+                if (uploadCompleted)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
         }
 
         public static void UploadArraySetDataRange<T>(
@@ -7275,8 +7633,23 @@ namespace Hecton8.Core
             if (safeCount <= 0)
                 return;
 
-            destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
-            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            if (!TryBeginManualUpload(uploadedBytes))
+                return;
+
+            bool uploadCompleted = false;
+            try
+            {
+                destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
+                uploadCompleted = true;
+            }
+            finally
+            {
+                if (uploadCompleted)
+                    CompleteManualUpload(uploadedBytes);
+                else
+                    CancelManualUpload(uploadedBytes);
+            }
         }
 
         public static int ResolveDirtyPageCount(int elementCount, int pageSize)
@@ -7893,14 +8266,31 @@ namespace Hecton8.Core
             if (count <= 0)
                 return false;
 
+            return TryCopyNativeArrayRange(destination, source, startIndex, startIndex, count);
+        }
+
+        private static bool TryCopyNativeArrayRange<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : struct
+        {
+            if (count <= 0)
+                return false;
+
             bool copyAccepted = false;
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(startIndex, count);
+            bool bufferLocked = false;
+            NativeArray<T> mapped = default;
             try
             {
+                mapped = destination.LockBufferForWrite<T>(destinationStartIndex, count);
+                bufferLocked = true;
                 unsafe
                 {
                     int stride = UnsafeUtility.SizeOf<T>();
-                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)startIndex * stride);
+                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)sourceStartIndex * stride);
                     void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
                     long copyBytes = (long)stride * count;
                     long destinationBytes = (long)stride * mapped.Length;
@@ -7911,7 +8301,47 @@ namespace Hecton8.Core
             }
             finally
             {
-                destination.UnlockBufferAfterWrite<T>(count);
+                if (bufferLocked)
+                    destination.UnlockBufferAfterWrite<T>(count);
+            }
+
+            return copyAccepted;
+        }
+
+        private static unsafe bool TryCopyArrayRange<T>(
+            GraphicsBuffer destination,
+            T[] source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : unmanaged
+        {
+            if (count <= 0)
+                return false;
+
+            bool copyAccepted = false;
+            bool bufferLocked = false;
+            NativeArray<T> mapped = default;
+            try
+            {
+                mapped = destination.LockBufferForWrite<T>(destinationStartIndex, count);
+                bufferLocked = true;
+                fixed (T* sourceBase = source)
+                {
+                    int stride = UnsafeUtility.SizeOf<T>();
+                    void* sourcePtr = (byte*)sourceBase + ((long)sourceStartIndex * stride);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)stride * count;
+                    long destinationBytes = (long)stride * mapped.Length;
+                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                    if (!copyAccepted)
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                }
+            }
+            finally
+            {
+                if (bufferLocked)
+                    destination.UnlockBufferAfterWrite<T>(count);
             }
 
             return copyAccepted;
@@ -7967,21 +8397,32 @@ namespace Hecton8.Core
 
         private static long ResolveFrameUploadBudgetBytes(float globalQualityWeight01)
         {
+            return ResolveFrameUploadBudgetBytes(globalQualityWeight01, 0f);
+        }
+
+        private static long ResolveFrameUploadBudgetBytes(float globalQualityWeight01, float pressureFactor01)
+        {
             float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 0f);
+            long qualityBudgetBytes;
             if (quality < 0.5f)
             {
                 float t = quality * 2f;
-                return (long)math.round(math.lerp(MinimumFrameUploadBudgetBytes, MiddleFrameUploadBudgetBytes, t));
+                qualityBudgetBytes = (long)math.round(math.lerp(MinimumFrameUploadBudgetBytes, MiddleFrameUploadBudgetBytes, t));
             }
-
-            if (quality < 0.85f)
+            else if (quality < 0.85f)
             {
                 float t = (quality - 0.5f) / 0.35f;
-                return (long)math.round(math.lerp(MiddleFrameUploadBudgetBytes, HighFrameUploadBudgetBytes, t));
+                qualityBudgetBytes = (long)math.round(math.lerp(MiddleFrameUploadBudgetBytes, HighFrameUploadBudgetBytes, t));
+            }
+            else
+            {
+                float ultraT = (quality - 0.85f) / 0.15f;
+                qualityBudgetBytes = (long)math.round(math.lerp(HighFrameUploadBudgetBytes, UltraFrameUploadBudgetBytes, ultraT));
             }
 
-            float ultraT = (quality - 0.85f) / 0.15f;
-            return (long)math.round(math.lerp(HighFrameUploadBudgetBytes, UltraFrameUploadBudgetBytes, ultraT));
+            float pressure = math.saturate(math.isfinite(pressureFactor01) ? pressureFactor01 : 0f);
+            float pressureCollapse = math.smoothstep(0.55f, 0.98f, pressure);
+            return (long)math.round(math.lerp(qualityBudgetBytes, MinimumFrameUploadBudgetBytes, pressureCollapse));
         }
 
         private static long ResolveAvailableUploadByteBudget(int localMaxBytesThisFrame)

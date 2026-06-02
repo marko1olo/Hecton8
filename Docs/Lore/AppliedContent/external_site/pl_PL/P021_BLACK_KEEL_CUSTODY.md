@@ -1,0 +1,30 @@
+---
+packet_id: P021_BLACK_KEEL_CUSTODY
+article_id: ships.black_keel_custody
+locale: pl_PL
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Nadzór Black Keel
+
+Nadzór Black Keel opisuje wsparcie orbitalne jako użyteczną, skażoną infrastrukturę: ratunek, dług i nacisk Deep Reach.
+
+## Scanner
+
+Nadzór carriera to publiczna infrastruktura odzysku z prywatnymi priorytetami.
+
+## Terminal
+
+Plik nadzoru: właściciel kadłuba ukryty, dług claim-pool aktywny, kanał Deep Reach obecny lecz nieujawniony.
+
+## Audio
+
+Black Keel może cię odzyskać. Może też odzyskać wszystko inne przed tobą.
+
+## Field Note
+
+Lina ratunkowa może być smyczą.
+
+<!-- External Site; generated from P021_BLACK_KEEL_CUSTODY/pl_PL. -->

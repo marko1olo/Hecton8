@@ -1,0 +1,30 @@
+---
+packet_id: P034_ABYSSAL_REPAIR_FAUNA
+article_id: hecton8.abyssal_repair_fauna
+locale: de_DE
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Abyssale Reparaturfauna
+
+Diese Fauna zeigt, dass Atlas-6 Organismus, Werkzeug, Schaden und Reparatur nicht mehr trennt. Überleben enthält Industrieteile.
+
+## Scanner
+
+Fauna trägt Keramikflicken, Kabelnarben und Drohnenschnitt-Symmetrie. Atlas tötet Leben nicht; er editiert es.
+
+## Terminal
+
+Probe: Wundränder maschinenrein geschlossen, druckstabile Einsätze wachsen. Verhalten bleibt unter dem Graft tierisch.
+
+## Audio
+
+Es jagt noch. Die Maschine änderte nur, was überlebte.
+
+## Field Note
+
+Reparatur ist keine Fürsorge.
+
+<!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/de_DE. -->

@@ -15,7 +15,8 @@ Runtime route:
 
 - Completion writes `ScanProgressDTO` and `ScannerEncyclopediaStateDTO` bitmasks through `UpdateScanProgressJob` and `EvaluateScanCompletionJob`.
 
-- PDA/UI continues to receive hash-only signals; no direct concrete PDA runtime dependency was added.
+- PDA/UI receives the first-party `LoreFragmentScannedSignal` lane as a 64-byte hash/AUP payload. `FlagHasAup` is set only by finite-AUP producers; hash-only legacy producers must clear it, and PDA fallback to last-discovery AUP is compatibility-only.
+- Producers that also publish `ScanCompleteSignal` set `FlagPairedScanComplete`; PDA uses that flag only for local duplicate suppression and does not consume or mutate the shared signal snapshot.
 
 - ScannerTool discovery pulses publish only uint FNV-1a hashes from cold-baked numeric identities; no `item.*` or `module.*` strings are constructed or folded during scan processing.
 
@@ -111,6 +112,7 @@ Verification surface:
   - Unity time/random, string formatting/discovery, legacy GetComponent identity;
   - `VaultBufferHandle`, `.Complete(`, `forceComplete:true`, `Pack=1`;
   - Transform hierarchy ownership, direct `GlobalRegistry.ScalabilityTier`, binary minimum-quality helper, discrete tier cadence overloads.
+- Scanner completion prewarms the legacy `ScanEvents` native queues from `ScannerDataMiningRouter.OnEnable`; first-party lore unlock remains `SignalBus<LoreFragmentScannedSignal>` with hash/AUP payload.
 - `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_226.json`:
   - `blocked_findings = 0` after Loop 18.
   - Includes expanded Transform/scalability residual patterns.

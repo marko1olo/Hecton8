@@ -18,17 +18,29 @@ namespace Hecton8.Editor.GeologyForge
             int meshCount = 0;
             int meshFailures = 0;
             int unmanifestedMeshCount = 0;
+            int collisionMeshCount = 0;
+            int collisionMeshFailures = 0;
+            int prefabCount = 0;
+            int prefabFailures = 0;
             StringBuilder failures = new StringBuilder(1024);
             HashSet<string> manifestMeshPaths = new HashSet<string>(256, StringComparer.Ordinal);
             bool manifestValid = TryValidateManifest(manifestMeshPaths, out uint manifestRecords, out long manifestBytes, out string manifestReason);
-            ValidateGeneratedMeshes(manifestMeshPaths, ref meshCount, ref meshFailures, ref unmanifestedMeshCount, failures);
-            bool noOutput = meshCount == 0 || manifestRecords == 0u;
+            ValidateGeneratedMeshes(manifestMeshPaths, ref meshCount, ref meshFailures, ref unmanifestedMeshCount, ref collisionMeshCount, ref collisionMeshFailures, failures);
+            ValidateGeneratedPrefabs(ref prefabCount, ref prefabFailures, failures);
+            bool noOutput = (meshCount - collisionMeshCount) == 0 || manifestRecords == 0u;
             bool manifestFailure = !manifestValid || manifestRecords == 0u;
-            WriteReport(meshCount, meshFailures, unmanifestedMeshCount, manifestMeshPaths.Count, manifestValid, manifestRecords, manifestBytes, manifestReason, manifestFailure, noOutput, failures);
-            Debug.Log($"[SHINOBU_208] Geology layout audit wrote {GeologyForgeConstants.LayoutAuditReportPath} meshes={meshCount} meshFailures={meshFailures} manifestValid={manifestValid} noOutput={noOutput}.");
+            WriteReport(meshCount, meshFailures, unmanifestedMeshCount, collisionMeshCount, collisionMeshFailures, prefabCount, prefabFailures, manifestMeshPaths.Count, manifestValid, manifestRecords, manifestBytes, manifestReason, manifestFailure, noOutput, failures);
+            Debug.Log($"[1606] Geology layout audit wrote {GeologyForgeConstants.LayoutAuditReportPath} meshes={meshCount} meshFailures={meshFailures} collisionMeshes={collisionMeshCount} prefabFailures={prefabFailures} manifestValid={manifestValid} noOutput={noOutput}.");
         }
 
-        private static void ValidateGeneratedMeshes(HashSet<string> manifestMeshPaths, ref int meshCount, ref int meshFailures, ref int unmanifestedMeshCount, StringBuilder failures)
+        private static void ValidateGeneratedMeshes(
+            HashSet<string> manifestMeshPaths,
+            ref int meshCount,
+            ref int meshFailures,
+            ref int unmanifestedMeshCount,
+            ref int collisionMeshCount,
+            ref int collisionMeshFailures,
+            StringBuilder failures)
         {
             if (!Directory.Exists(GeologyForgeConstants.MeshOutputFolder))
                 return;
@@ -46,6 +58,18 @@ namespace Hecton8.Editor.GeologyForge
                 }
 
                 meshCount++;
+                if (IsCollisionProxyPath(path))
+                {
+                    collisionMeshCount++;
+                    if (!ValidateCollisionProxyMesh(path, mesh, failures))
+                    {
+                        meshFailures++;
+                        collisionMeshFailures++;
+                    }
+
+                    continue;
+                }
+
                 if (!manifestMeshPaths.Contains(path))
                 {
                     meshFailures++;
@@ -63,6 +87,310 @@ namespace Hecton8.Editor.GeologyForge
                     AppendFailure(failures, path, ex.Message);
                 }
             }
+        }
+
+        private static bool ValidateCollisionProxyMesh(string path, Mesh mesh, StringBuilder failures)
+        {
+            bool valid = true;
+            if (mesh == null)
+            {
+                AppendFailure(failures, path, "COL_PROXY_MISSING_MESH");
+                return false;
+            }
+
+            if (!mesh.name.StartsWith("COL_", StringComparison.Ordinal))
+            {
+                valid = false;
+                AppendFailure(failures, path, "COL_PROXY_BAD_NAME");
+            }
+
+            long triangleCount = mesh.subMeshCount > 0 ? (long)mesh.GetIndexCount(0) / 3L : 0L;
+            if (triangleCount <= 0L || triangleCount > GeologyForgeConstants.CollisionTriangleBudget)
+            {
+                valid = false;
+                AppendFailure(failures, path, "COL_PROXY_TRIANGLE_BUDGET");
+            }
+
+            Bounds bounds = mesh.bounds;
+            if (!math.all(math.isfinite(new float3(bounds.center.x, bounds.center.y, bounds.center.z))) ||
+                !math.all(math.isfinite(new float3(bounds.extents.x, bounds.extents.y, bounds.extents.z))) ||
+                bounds.extents.x <= 0f ||
+                bounds.extents.y <= 0f ||
+                bounds.extents.z <= 0f)
+            {
+                valid = false;
+                AppendFailure(failures, path, "COL_PROXY_BAD_BOUNDS");
+            }
+
+            return valid;
+        }
+
+        private static void ValidateGeneratedPrefabs(ref int prefabCount, ref int prefabFailures, StringBuilder failures)
+        {
+            if (!Directory.Exists(GeologyForgeConstants.PrefabOutputFolder))
+                return;
+
+            string[] files = Directory.GetFiles(GeologyForgeConstants.PrefabOutputFolder, "*.prefab", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < files.Length; i++)
+            {
+                string path = files[i].Replace('\\', '/');
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                prefabCount++;
+                if (prefab == null)
+                {
+                    prefabFailures++;
+                    AppendFailure(failures, path, "PREFAB_LOAD_FAILED");
+                    continue;
+                }
+
+                if (!ValidateGeneratedPrefab(path, prefab, failures))
+                    prefabFailures++;
+            }
+        }
+
+        private static bool ValidateGeneratedPrefab(string path, GameObject prefab, StringBuilder failures)
+        {
+            bool valid = true;
+            MeshCollider collider = prefab.GetComponent<MeshCollider>();
+            if (collider == null || collider.sharedMesh == null)
+            {
+                AppendFailure(failures, path, "PREFAB_MISSING_COL_MESHCOLLIDER");
+                return false;
+            }
+
+            if (!collider.sharedMesh.name.StartsWith("COL_", StringComparison.Ordinal))
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_COLLIDER_NOT_COL_PROXY");
+            }
+
+            if (!collider.convex)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_COLLIDER_NOT_CONVEX");
+            }
+
+            if ((collider.cookingOptions & MeshColliderCookingOptions.CookForFasterSimulation) == 0 ||
+                (collider.cookingOptions & MeshColliderCookingOptions.EnableMeshCleaning) == 0 ||
+                (collider.cookingOptions & MeshColliderCookingOptions.WeldColocatedVertices) == 0)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_COLLIDER_BAD_COOKING_OPTIONS");
+            }
+
+            long colliderTriangles = collider.sharedMesh.subMeshCount > 0 ? (long)collider.sharedMesh.GetIndexCount(0) / 3L : 0L;
+            if (colliderTriangles <= 0L || colliderTriangles > GeologyForgeConstants.CollisionTriangleBudget)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_COLLIDER_TRIANGLE_BUDGET");
+            }
+
+            LODGroup lodGroup = prefab.GetComponent<LODGroup>();
+            if (lodGroup == null)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_MISSING_LODGROUP");
+            }
+
+            MeshFilter[] filters = prefab.GetComponentsInChildren<MeshFilter>(true);
+            bool hasSeparateVisualMesh = false;
+            bool hasVisualBounds = false;
+            Bounds visualBounds = default;
+            for (int i = 0; i < filters.Length; i++)
+            {
+                Mesh visualMesh = filters[i].sharedMesh;
+                if (visualMesh != null && visualMesh != collider.sharedMesh)
+                {
+                    hasSeparateVisualMesh = true;
+                    if (TryEncapsulateVisualMeshBounds(prefab.transform, filters[i].transform, visualMesh.bounds, ref visualBounds, ref hasVisualBounds))
+                        continue;
+
+                    valid = false;
+                    AppendFailure(failures, path, "PREFAB_VISUAL_BOUNDS_INVALID");
+                }
+            }
+
+            if (!hasSeparateVisualMesh)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_MISSING_SEPARATE_VISUAL_MESH");
+            }
+
+            if (hasVisualBounds && !BoundsContains(collider.sharedMesh.bounds, visualBounds, 0.001f))
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_COLLIDER_BOUNDS_UNDER_VISUAL");
+            }
+
+            if (hasVisualBounds && !ValidateOccluderStaticGate(path, filters, collider.sharedMesh, visualBounds, failures))
+                valid = false;
+
+            return valid;
+        }
+
+        private static bool ValidateOccluderStaticGate(string path, MeshFilter[] filters, Mesh colliderMesh, Bounds visualBounds, StringBuilder failures)
+        {
+            float volume = CalculateBoundsVolume(visualBounds);
+            bool mayOcclude = volume >= GeologyForgeConstants.OccluderStaticMinimumVolumeCubicMeters;
+            bool valid = true;
+            for (int i = 0; i < filters.Length; i++)
+            {
+                MeshFilter filter = filters[i];
+                if (filter == null || filter.sharedMesh == null)
+                    continue;
+                if (filter.sharedMesh == colliderMesh)
+                    continue;
+
+                StaticEditorFlags flags = GameObjectUtility.GetStaticEditorFlags(filter.gameObject);
+                bool isOccluder = (flags & StaticEditorFlags.OccluderStatic) != 0;
+                bool isOccludee = (flags & StaticEditorFlags.OccludeeStatic) != 0;
+                bool isBatchingStatic = (flags & StaticEditorFlags.BatchingStatic) != 0;
+                if (!isOccludee || !isBatchingStatic)
+                {
+                    valid = false;
+                    AppendFailure(failures, path, "PREFAB_RENDERER_STATIC_FLAGS_MISSING");
+                }
+
+                if (!mayOcclude && isOccluder)
+                {
+                    valid = false;
+                    AppendFailure(failures, path, "PREFAB_RENDERER_OCCLUDER_TOO_SMALL");
+                }
+
+                MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
+                if (renderer == null)
+                {
+                    valid = false;
+                    AppendFailure(failures, path, "PREFAB_RENDERER_MISSING");
+                    continue;
+                }
+
+                if (!ValidateStaticRockRenderer(path, renderer, failures))
+                    valid = false;
+            }
+
+            return valid;
+        }
+
+        private static bool ValidateStaticRockRenderer(string path, MeshRenderer renderer, StringBuilder failures)
+        {
+            bool valid = true;
+            if (renderer.shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.On)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_RENDERER_SHADOW_CASTING");
+            }
+
+            if (!renderer.receiveShadows)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_RENDERER_RECEIVE_SHADOWS");
+            }
+
+            if (renderer.motionVectorGenerationMode != MotionVectorGenerationMode.ForceNoMotion)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_RENDERER_MOTION_VECTOR");
+            }
+
+            if (renderer.lightProbeUsage != UnityEngine.Rendering.LightProbeUsage.BlendProbes ||
+                renderer.reflectionProbeUsage != UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes)
+            {
+                valid = false;
+                AppendFailure(failures, path, "PREFAB_RENDERER_PROBE_USAGE");
+            }
+
+            return valid;
+        }
+
+        private static bool TryEncapsulateVisualMeshBounds(
+            Transform root,
+            Transform meshTransform,
+            Bounds meshBounds,
+            ref Bounds combinedBounds,
+            ref bool hasBounds)
+        {
+            if (!IsFiniteBounds(meshBounds))
+                return false;
+
+            Matrix4x4 localToRoot = CalculateLocalToRootMatrix(root, meshTransform);
+            Vector3 min = meshBounds.min;
+            Vector3 max = meshBounds.max;
+            for (int x = 0; x <= 1; x++)
+            {
+                for (int y = 0; y <= 1; y++)
+                {
+                    for (int z = 0; z <= 1; z++)
+                    {
+                        Vector3 corner = new Vector3(
+                            x == 0 ? min.x : max.x,
+                            y == 0 ? min.y : max.y,
+                            z == 0 ? min.z : max.z);
+                        Vector3 transformed = localToRoot.MultiplyPoint3x4(corner);
+                        if (!math.all(math.isfinite(new float3(transformed.x, transformed.y, transformed.z))))
+                            return false;
+
+                        if (!hasBounds)
+                        {
+                            combinedBounds = new Bounds(transformed, Vector3.zero);
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            combinedBounds.Encapsulate(transformed);
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private static Matrix4x4 CalculateLocalToRootMatrix(Transform root, Transform node)
+        {
+            Matrix4x4 matrix = Matrix4x4.identity;
+            Transform current = node;
+            while (current != null && current != root)
+            {
+                matrix = Matrix4x4.TRS(current.localPosition, current.localRotation, current.localScale) * matrix;
+                current = current.parent;
+            }
+
+            return matrix;
+        }
+
+        private static bool BoundsContains(Bounds container, Bounds content, float epsilon)
+        {
+            if (!IsFiniteBounds(container) || !IsFiniteBounds(content))
+                return false;
+
+            Vector3 containerMin = container.min;
+            Vector3 containerMax = container.max;
+            Vector3 contentMin = content.min;
+            Vector3 contentMax = content.max;
+            return containerMin.x <= contentMin.x + epsilon &&
+                   containerMin.y <= contentMin.y + epsilon &&
+                   containerMin.z <= contentMin.z + epsilon &&
+                   containerMax.x >= contentMax.x - epsilon &&
+                   containerMax.y >= contentMax.y - epsilon &&
+                   containerMax.z >= contentMax.z - epsilon;
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            return math.all(math.isfinite(new float3(bounds.center.x, bounds.center.y, bounds.center.z))) &&
+                   math.all(math.isfinite(new float3(bounds.extents.x, bounds.extents.y, bounds.extents.z))) &&
+                   bounds.extents.x >= 0f &&
+                   bounds.extents.y >= 0f &&
+                   bounds.extents.z >= 0f;
+        }
+
+        private static float CalculateBoundsVolume(Bounds bounds)
+        {
+            Vector3 size = bounds.size;
+            if (!math.all(math.isfinite(new float3(size.x, size.y, size.z))))
+                return 0f;
+            return Mathf.Max(0f, size.x) * Mathf.Max(0f, size.y) * Mathf.Max(0f, size.z);
         }
 
         private static bool TryValidateManifest(HashSet<string> manifestMeshPaths, out uint recordCount, out long byteLength, out string reason)
@@ -224,6 +552,12 @@ namespace Hecton8.Editor.GeologyForge
             return path.StartsWith(GeologyForgeConstants.MeshOutputFolder + "/", StringComparison.Ordinal);
         }
 
+        private static bool IsCollisionProxyPath(string path)
+        {
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            return !string.IsNullOrEmpty(fileName) && fileName.StartsWith("COL_GEN_Geology_", StringComparison.Ordinal);
+        }
+
         private static bool ReadExact(FileStream stream, Span<byte> target)
         {
             int read = 0;
@@ -242,6 +576,10 @@ namespace Hecton8.Editor.GeologyForge
             int meshCount,
             int meshFailures,
             int unmanifestedMeshCount,
+            int collisionMeshCount,
+            int collisionMeshFailures,
+            int prefabCount,
+            int prefabFailures,
             int manifestMeshReferenceCount,
             bool manifestValid,
             uint manifestRecords,
@@ -255,18 +593,31 @@ namespace Hecton8.Editor.GeologyForge
             if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
 
+            int visualMeshCount = math.max(0, meshCount - collisionMeshCount);
             long expectedManifestMeshCount = (long)manifestRecords * GeologyForgeConstants.LodCount;
-            bool exactMeshSet = meshCount == manifestMeshReferenceCount && manifestMeshReferenceCount == expectedManifestMeshCount;
-            bool pass = meshCount > 0 && meshFailures == 0 && manifestValid && manifestRecords > 0u && !manifestFailure && exactMeshSet;
+            bool exactMeshSet = visualMeshCount == manifestMeshReferenceCount && manifestMeshReferenceCount == expectedManifestMeshCount;
+            bool collisionProxySetValid = collisionMeshCount == manifestRecords && collisionMeshFailures == 0;
+            bool prefabSetValid = prefabCount == manifestRecords && prefabFailures == 0;
+            bool pass = meshCount > 0 && meshFailures == 0 && manifestValid && manifestRecords > 0u && !manifestFailure && exactMeshSet && collisionProxySetValid && prefabSetValid;
             StringBuilder builder = new StringBuilder(2048);
-            builder.Append("{\n  \"agent\": \"SHINOBU_208\",\n  \"status\": \"");
+            builder.Append("{\n  \"agent\": \"1606\",\n  \"status\": \"");
             builder.Append(pass ? "STATIC_LAYOUT_AUDIT_PASS" : "STATIC_LAYOUT_AUDIT_FAIL");
             builder.Append("\",\n  \"meshCount\": ");
             builder.Append(meshCount);
+            builder.Append(",\n  \"visualMeshCount\": ");
+            builder.Append(visualMeshCount);
             builder.Append(",\n  \"meshFailures\": ");
             builder.Append(meshFailures);
             builder.Append(",\n  \"unmanifestedMeshCount\": ");
             builder.Append(unmanifestedMeshCount);
+            builder.Append(",\n  \"collisionMeshCount\": ");
+            builder.Append(collisionMeshCount);
+            builder.Append(",\n  \"collisionMeshFailures\": ");
+            builder.Append(collisionMeshFailures);
+            builder.Append(",\n  \"prefabCount\": ");
+            builder.Append(prefabCount);
+            builder.Append(",\n  \"prefabFailures\": ");
+            builder.Append(prefabFailures);
             builder.Append(",\n  \"manifestMeshReferenceCount\": ");
             builder.Append(manifestMeshReferenceCount);
             builder.Append(",\n  \"expectedManifestMeshCount\": ");

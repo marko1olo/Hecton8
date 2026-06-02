@@ -206,6 +206,9 @@ namespace Hecton8.Narrative.Campaign
         private bool _evaluationPending;
         private bool _serviceRegistered;
         private bool _serviceReady;
+        private bool _visualStateDirty;
+        private bool _audioBroadcastDirty;
+        private bool _cartographyStateDirty;
         private bool _saveServiceRegistered;
         private bool _registeredHotSwapListener;
         private bool _updatableRegistered;
@@ -218,7 +221,11 @@ namespace Hecton8.Narrative.Campaign
         private int _toxicityLevel;
         private int _baseDeltaDestroyed;
         private byte _leviathanAwakened;
+        private byte _pendingVisualChangeKind;
+        private uint _pendingAudioBroadcastVariableHash;
+        private uint _pendingCartographyFrame;
         private int _blackBoxCursor;
+        private uint _pendingVisualFrame;
         private ushort _sequence;
         private ISaveService _saveService;
         private IEcosystemDirectorService _ecosystemDirector;
@@ -270,7 +277,9 @@ namespace Hecton8.Narrative.Campaign
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             TryRegisterHotSwapListener();
             TryRegisterSaveService();
-            PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            QueueCachedVisualState(
+                GlobalWorldStateSignal.ChangeKindLoad,
+                (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void Start()
@@ -326,10 +335,12 @@ namespace Hecton8.Narrative.Campaign
 
         public void LateFrameTick()
         {
-            if (!_evaluationPending)
-                return;
+            if (_evaluationPending)
+                CompletePendingEvaluation();
 
-            CompletePendingEvaluation();
+            FlushCachedVisualState();
+            FlushCampaignBroadcast();
+            FlushCartographyState();
         }
 
         public bool TryGetGlobalVariable(uint variableHash, out int value)
@@ -534,6 +545,13 @@ namespace Hecton8.Narrative.Campaign
             {
                 _evaluationPending = false;
                 _pendingEvaluationResult = default;
+                _visualStateDirty = false;
+                _audioBroadcastDirty = false;
+                _cartographyStateDirty = false;
+                _pendingVisualChangeKind = 0;
+                _pendingAudioBroadcastVariableHash = 0u;
+                _pendingCartographyFrame = 0u;
+                _pendingVisualFrame = 0u;
                 ReleaseRuntimeState(previousService as IDataVault ?? _dataVault);
                 _dataVault = currentService as IDataVault;
 
@@ -622,6 +640,13 @@ namespace Hecton8.Narrative.Campaign
             ReleaseRuntimeState(_dataVault);
             _evaluationPending = false;
             _pendingEvaluationResult = default;
+            _visualStateDirty = false;
+            _audioBroadcastDirty = false;
+            _cartographyStateDirty = false;
+            _pendingVisualChangeKind = 0;
+            _pendingAudioBroadcastVariableHash = 0u;
+            _pendingCartographyFrame = 0u;
+            _pendingVisualFrame = 0u;
             _shutdown = true;
         }
 
@@ -763,15 +788,35 @@ namespace Hecton8.Narrative.Campaign
             uint frame)
         {
             if ((sideEffectFlags & GlobalWorldStateSignal.FlagVisualRefresh) != 0)
-                PublishCachedVisualState(changeKind, frame);
+                QueueCachedVisualState(changeKind, frame);
 
             if ((sideEffectFlags & GlobalWorldStateSignal.FlagAudioBroadcast) != 0)
-                PublishCampaignBroadcast(broadcastVariableHash);
+                QueueCampaignBroadcast(broadcastVariableHash);
 
             if ((sideEffectFlags & GlobalWorldStateSignal.FlagCartographyRefresh) != 0)
-                PublishCartographyState(frame);
+                QueueCartographyState(frame);
 
             GlobalTelemetryBus.PublishModTelemetry(AgentHash, _currentStageHash, _toxicity01);
+        }
+
+        private void QueueCachedVisualState(byte changeKind, uint frame)
+        {
+            _visualStateDirty = true;
+            _pendingVisualChangeKind = changeKind;
+            _pendingVisualFrame = frame;
+        }
+
+        private void FlushCachedVisualState()
+        {
+            if (!_visualStateDirty)
+                return;
+
+            _visualStateDirty = false;
+            byte changeKind = _pendingVisualChangeKind;
+            uint frame = _pendingVisualFrame;
+            _pendingVisualChangeKind = 0;
+            _pendingVisualFrame = 0u;
+            PublishCachedVisualState(changeKind, frame);
         }
 
         private void PublishCachedVisualState(byte changeKind, uint frame)
@@ -790,6 +835,24 @@ namespace Hecton8.Narrative.Campaign
             WriteBlackBox(frame, ToxicityLevelHash, (int)math.round(_toxicity01 * ToxicityValueMax), changeKind, GlobalWorldStateSignal.FlagVisualRefresh);
         }
 
+        private void QueueCampaignBroadcast(uint variableHash)
+        {
+            _audioBroadcastDirty = true;
+            if (variableHash != 0u || _pendingAudioBroadcastVariableHash == 0u)
+                _pendingAudioBroadcastVariableHash = variableHash;
+        }
+
+        private void FlushCampaignBroadcast()
+        {
+            if (!_audioBroadcastDirty)
+                return;
+
+            _audioBroadcastDirty = false;
+            uint variableHash = _pendingAudioBroadcastVariableHash;
+            _pendingAudioBroadcastVariableHash = 0u;
+            PublishCampaignBroadcast(variableHash);
+        }
+
         private void PublishCampaignBroadcast(uint variableHash)
         {
             float severity01 = math.max(0.1f, _toxicity01);
@@ -802,6 +865,23 @@ namespace Hecton8.Narrative.Campaign
                 Priority = (byte)VocalWarningId.Radiation,
                 Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             }, ref s_x001MetaCampaignServiceSignalPushDropCount);
+        }
+
+        private void QueueCartographyState(uint frame)
+        {
+            _cartographyStateDirty = true;
+            _pendingCartographyFrame = frame;
+        }
+
+        private void FlushCartographyState()
+        {
+            if (!_cartographyStateDirty)
+                return;
+
+            _cartographyStateDirty = false;
+            uint frame = _pendingCartographyFrame;
+            _pendingCartographyFrame = 0u;
+            PublishCartographyState(frame);
         }
 
         private void PublishCampaignStateSnapshot(byte changeKind, byte sideEffectFlags, uint frame)

@@ -418,7 +418,10 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _material, shader);
             _pass ??= new NoirDepthFogPass();
             CacheGraphicsCapabilitiesCold();
-            _pass.PrepareResources();
+            if (Application.isPlaying)
+                _pass.PrepareResources();
+            else
+                _pass.Dispose();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
@@ -439,6 +442,9 @@ namespace Hecton8.Visor
                 settings.nearSurfaceBypassDepthMeters,
                 settings.bypassNearSurface);
             if (surfaceFogWeight01 <= 0.0001f)
+                return;
+
+            if (!_pass.PrepareResources())
                 return;
 
             _pass.Setup(settings, _material, surfaceFogWeight01, ResolveGlobalQualityWeight01());

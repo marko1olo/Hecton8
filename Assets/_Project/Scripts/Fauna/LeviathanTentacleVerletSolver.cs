@@ -1464,7 +1464,7 @@ namespace Hecton8.AI
             {
                 ReleaseGraphicsBuffer(ref _indirectArgsBuffer);
                 _indirectArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect tentacle draw args - owner: LeviathanTentacleVerletSolver

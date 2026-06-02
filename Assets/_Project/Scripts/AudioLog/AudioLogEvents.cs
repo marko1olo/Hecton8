@@ -24,7 +24,47 @@ namespace Hecton8.Narrative
         [FieldOffset(20)] public AudioLogEventType Type;
         [FieldOffset(21)] private byte _pad0;
         [FieldOffset(22)] private ushort _pad1;
-        [FieldOffset(24)] private ulong _pad2;
+        [FieldOffset(24)] public AudioGlitchParametersDTO Glitch;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    public struct AudioGlitchParametersDTO
+    {
+        public const byte FlagBitCrush = 1 << 0;
+        public const byte FlagPitchShift = 1 << 1;
+        public const byte FlagBandPass = 1 << 2;
+        public const byte FlagDepthDerived = 1 << 3;
+        public const byte FlagEncryptedPreview = 1 << 4;
+        public const byte KnownFlagMask =
+            FlagBitCrush |
+            FlagPitchShift |
+            FlagBandPass |
+            FlagDepthDerived |
+            FlagEncryptedPreview;
+        private const ushort MaxPermille = 1000;
+        private const short MinPitchShiftCents = -1200;
+        private const short MaxPitchShiftCents = 1200;
+
+        [FieldOffset(0)] public ushort CorruptionPermille;
+        [FieldOffset(2)] public ushort BitCrushPermille;
+        [FieldOffset(4)] public short PitchShiftCents;
+        [FieldOffset(6)] public byte BandPassByte;
+        [FieldOffset(7)] public byte Flags;
+
+        public static AudioGlitchParametersDTO Sanitize(in AudioGlitchParametersDTO source)
+        {
+            AudioGlitchParametersDTO sanitized = source;
+            if (sanitized.CorruptionPermille > MaxPermille)
+                sanitized.CorruptionPermille = MaxPermille;
+            if (sanitized.BitCrushPermille > MaxPermille)
+                sanitized.BitCrushPermille = MaxPermille;
+            if (sanitized.PitchShiftCents < MinPitchShiftCents)
+                sanitized.PitchShiftCents = MinPitchShiftCents;
+            else if (sanitized.PitchShiftCents > MaxPitchShiftCents)
+                sanitized.PitchShiftCents = MaxPitchShiftCents;
+            sanitized.Flags = (byte)(sanitized.Flags & KnownFlagMask);
+            return sanitized;
+        }
     }
 
     public interface IAudioLogEventListener
@@ -45,6 +85,7 @@ namespace Hecton8.Narrative
         private const uint AudioLogQueueContextHash = 0x414C5155u; // ALQU
         private const uint AudioLogReferenceSlotContextHash = 0x414C5246u; // ALRF
         private const uint AudioLogListenerContextHash = 0x414C4953u; // ALIS
+        private const float MaxEventDurationSeconds = 86400f;
         private struct ListenerSlot
         {
             public IAudioLogEventListener Listener;
@@ -304,7 +345,8 @@ namespace Hecton8.Narrative
 
         public static bool TryRaiseLogDiscovered(uint logHash, AudioLogData data = null)
         {
-            return Enqueue(AudioLogEventType.Discovered, logHash, 0f, data);
+            AudioGlitchParametersDTO glitch = default;
+            return Enqueue(AudioLogEventType.Discovered, logHash, 0f, in glitch, data);
         }
 
         [Obsolete("Use TryRaisePlaybackStarted(uint,float,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
@@ -315,7 +357,17 @@ namespace Hecton8.Narrative
 
         public static bool TryRaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
         {
-            return Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, data);
+            AudioGlitchParametersDTO glitch = default;
+            return Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, in glitch, data);
+        }
+
+        public static bool TryRaisePlaybackStarted(
+            uint logHash,
+            float durationSeconds,
+            in AudioGlitchParametersDTO glitch,
+            AudioLogData data = null)
+        {
+            return Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, in glitch, data);
         }
 
         [Obsolete("Use TryRaisePlaybackStopped(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
@@ -326,7 +378,8 @@ namespace Hecton8.Narrative
 
         public static bool TryRaisePlaybackStopped(uint logHash, AudioLogData data = null)
         {
-            return Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, data);
+            AudioGlitchParametersDTO glitch = default;
+            return Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, in glitch, data);
         }
 
         [Obsolete("Use TryRaisePlaybackCompleted(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
@@ -337,7 +390,8 @@ namespace Hecton8.Narrative
 
         public static bool TryRaisePlaybackCompleted(uint logHash, AudioLogData data = null)
         {
-            return Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, data);
+            AudioGlitchParametersDTO glitch = default;
+            return Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, in glitch, data);
         }
 
         private static void EnsureInitialized()
@@ -367,7 +421,12 @@ namespace Hecton8.Narrative
             }
         }
 
-        private static bool Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
+        private static bool Enqueue(
+            AudioLogEventType type,
+            uint logHash,
+            float durationSeconds,
+            in AudioGlitchParametersDTO glitch,
+            AudioLogData data)
         {
             if (_listeners.Count <= 0)
                 return true;
@@ -397,7 +456,8 @@ namespace Hecton8.Narrative
                 TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
                 LogHash = logHash,
                 ReferenceSlot = referenceSlot,
-                DurationSeconds = durationSeconds
+                DurationSeconds = SanitizeDurationSeconds(durationSeconds),
+                Glitch = AudioGlitchParametersDTO.Sanitize(in glitch)
             };
 
             if (_isDispatching)
@@ -410,6 +470,14 @@ namespace Hecton8.Narrative
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
+        }
+
+        private static float SanitizeDurationSeconds(float durationSeconds)
+        {
+            if (float.IsNaN(durationSeconds) || float.IsInfinity(durationSeconds) || durationSeconds <= 0f)
+                return 0f;
+
+            return durationSeconds > MaxEventDurationSeconds ? MaxEventDurationSeconds : durationSeconds;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

@@ -1,0 +1,289 @@
+# Status 1614 - BATCH_RENDERER_GROUP_SCATTER_POLISHER
+
+Date: 2026-06-01
+Domain: ECHELON 2 / BRG Scatter Director / Offline Scatter Bake Pipeline
+Prompt Source: Docs/Tasks/CURRENT_BATCH.md / AGENT_PROMPT id="1614"
+Status: CODE COMPLETE / RUNTIME BRG DATA VAULT BRIDGE ADDED / QUALITY PREFIX LIVE / COROUTINE-FREE URI LOAD / RUNTIME PAYLOAD CAP / BAKE GRID REFERENCE CAP / CULLING BOUNDS FINITE GATE / BOUNDS CAP SELF-TEST ROUTE / PAYLOAD LENGTH GUARD / GRID REF LONG SUM / SOURCE FOLDER BINDING VERIFIED / CULLING DATASET BOUNDS IMPORT / UNITY EXECUTION BLOCKED BY HOST CONTENTION
+
+## Hygiene
+
+- Fresh ledger: old Status_1614.md absent at session start.
+- Rationale file: Docs/AgentLogs/Rationale_1614.md created for non-trivial decisions.
+- Build policy: no dotnet build unless CPU <= 50% and no compiler process is active; user explicitly forbids build after small edits.
+
+## Mandates Selected
+
+- [x] VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+- [x] REND_Instanced_Flora_Physics.txt
+- [x] REND_GPU_Occlusion_Culling_6000.txt
+- [x] REND_GPU_Sovereignty.txt
+- [x] DATA_Runtime_Struct_Layout_ARM64.txt
+- [x] OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- [x] OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- [x] TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+
+## Task State
+
+- [x] Task 01 - EXHAUSTIVE_SCATTER_SOURCE_INQUISITION
+  - DOD practice: static source scan before assumptions; MapMagic/assets reality first.
+  - Alternative rejected: inventing a scatter schema before reading project files.
+  - Estimate: 120000 microseconds static scan plus ledger drafting.
+  - Result: source scanner implemented in `AbyssalScatterPolisherPipeline.ScanScatterSources`; source archaeology found procedural placement rules, flora proxy prefabs, and MapMagic assets.
+- [x] Task 02 - NORMAL_ALIGNMENT_MATH_MODELING
+  - DOD practice: quaternion edge-case proof before Burst implementation.
+  - Alternative rejected: direct Euler tilt or Transform.LookAt editor-only object mutation.
+  - Estimate: 45000 microseconds math model.
+  - Result: `BuildNormalAlignedRotation` projects a forward seed onto the normal plane and applies yaw around the sampled surface normal before `LookRotationSafe`.
+- [x] Task 03 - SPATIAL_CULLING_ALGORITHM_DESIGN
+  - DOD practice: grid-first culling route, no O(N*M) default.
+  - Alternative rejected: testing every instance against every base/wreck AABB.
+  - Estimate: 60000 microseconds design proof.
+  - Result: cold Editor grid maps bounds to cell ranges and the Burst culler tests only nearby bounds for each instance.
+- [x] Task 04 - BINARY_DATA_LAYOUT_AND_STRIDE_DESIGN
+  - DOD practice: explicit header/stride/offset contract before serialization.
+  - Alternative rejected: JSON/ScriptableObject runtime scatter truth.
+  - Estimate: 50000 microseconds layout proof.
+  - Result: `.brgdata` header is 64 bytes with explicit matrix/metadata/quality offsets and 64-byte matrix/metadata strides.
+- [x] Task 05 - TELEMETRY_AND_REPORTING_ARCHITECTURE
+  - DOD practice: bounded editor-only metrics, no runtime telemetry dependency.
+  - Alternative rejected: bloated proof dumps as success artifact.
+  - Estimate: 30000 microseconds report schema.
+  - Result: bounded telemetry DTO retained for in-memory bake metrics; automatic markdown ledger output removed from bake/scan path; no runtime telemetry dependency added.
+- [x] Task 06 - UNMANAGED_DTO_AND_ALGORITHM_MATERIALIZATION
+  - DOD practice: ARM64-safe unmanaged DTOs and Burst jobs under Editor assembly only.
+  - Alternative rejected: managed classes or GameObject scatter transforms.
+  - Estimate: 180000 microseconds implementation.
+  - Result: `ScatterInstanceDTO`, `CullingBoundsDTO`, `ScatterPolishConfigDTO`, `BrgDataHeaderDTO`, and `BrgInstanceMetadataDTO` use explicit layouts.
+- [x] Task 07 - BURST_COMPILED_SPATIAL_CULLING_JOB
+  - DOD practice: Burst-compatible grid range lookup and deterministic cull flags.
+  - Alternative rejected: LINQ/List/Dictionary inside job core.
+  - Estimate: 160000 microseconds implementation.
+  - Result: `CullScatterInsideBoundsJob` zeroes matrix basis vectors for culled instances and writes a per-instance byte mask.
+- [x] Task 08 - EXPLICIT_GROUND_PENETRATION_OFFSET
+  - DOD practice: normal-space negative offset baked into matrix.
+  - Alternative rejected: runtime shader-only root hiding as sole correction.
+  - Estimate: 60000 microseconds implementation.
+  - Result: `ApplyGroundPenetrationOffsetJob` embeds roots along negative terrain normal before TRS matrix generation.
+- [x] Task 09 - BATCH_DATA_SERIALIZATION_ROUTINE
+  - DOD practice: binary writer path confined to Editor cold bake.
+  - Alternative rejected: scene hierarchy or prefab-per-instance persistence.
+  - Estimate: 140000 microseconds implementation.
+  - Result: `WriteBrgDataAtomic` writes header, matrix block, metadata block, and quality index block through temp/replace.
+- [x] Task 10 - BRG_METADATA_ATLAS_GENERATION
+  - DOD practice: asset-side metadata for GPU binding offsets.
+  - Alternative rejected: runtime reflection/discovery of binary payload fields.
+  - Estimate: 120000 microseconds implementation.
+  - Result: `AbyssalScatterBrgMetadataAsset` stores offsets, strides, counts, content hash, and continuous device draw fractions.
+- [x] Task 11 - CONTINUOUS_QUALITY_DEDUCTION_MAP
+  - DOD practice: sorted draw-index prefix map for GlobalQualityWeight slices.
+  - Alternative rejected: binary low/high density switches.
+  - Estimate: 130000 microseconds implementation.
+  - Result: cold bake now writes a bucketed coprime permutation, validates every quality index exactly once, rejects duplicate/out-of-range prefix entries before `.brgdata` serialization, and runtime bootstrap reorders DataVault matrices/metadata by that prefix map.
+- [x] Task 12 - PREFAB_ASSEMBLY_AND_SCATTER_BONDING
+  - DOD practice: prefab references baked payload and metadata, no instance hierarchy.
+  - Alternative rejected: individual flora GameObjects.
+  - Estimate: 180000 microseconds implementation.
+  - Result: prefab writer validates the `.brgdata` payload exists, creates one root with `GpuScatterLodManager` plus `AbyssalScatterBrgDataVaultBootstrap`, writes capacity/culling/bounds/visual scalar fields, binds per-binary hashes/counts, and creates no per-instance children.
+- [x] Task 13 - BATCH_POLISHER_WINDOW_UI
+  - DOD practice: Editor-only deterministic tool surface.
+  - Alternative rejected: runtime MonoBehaviour UI or custom scene gizmo dependency.
+  - Estimate: 150000 microseconds implementation.
+  - Result: `AbyssalScatterPolisherWindow` exposes source folders, output name, instance count, culling bounds, quality weight, and bake metrics.
+- [x] Task 14 - FAIL_CLOSED_GENERATION_SAFETY
+  - DOD practice: hard capacity and input validation before allocations/writes.
+  - Alternative rejected: partial corrupt binary files.
+  - Estimate: 80000 microseconds implementation.
+  - Result: capacity gate logs exact required string and returns default before allocations/writes when instance count exceeds 1,048,576.
+- [ ] Task 15 - BATCHED_COMPILATION_AND_SYNTAX_ASSERTION [BLOCKED_BY_CONTENTION]
+  - DOD practice: build only after CPU/compiler contention check.
+  - Alternative rejected: repeated dotnet build after small edits.
+  - Estimate: 0 microseconds until explicitly justified.
+  - Result: CPU/compiler gate remains blocked; active `dotnet` process observed. Latest re-check saw PID `28892`. Build was not launched.
+- [x] Task 16 - MOCK_100K_SCATTER_STRESS_TEST
+  - DOD practice: editor NUnit/Burst math harness if test framework exists.
+  - Alternative rejected: claiming 100k capacity from prose.
+  - Estimate: 180000 microseconds implementation.
+  - Result: menu self-test calls 100k/500-bounds bake and enforces 150 ms culling budget when Unity can execute it.
+- [x] Task 17 - TRANSFORMATION_MATRIX_ACCUR_ASSERTION
+  - DOD practice: determinant tolerance proof for TRS matrices.
+  - Alternative rejected: visual-only matrix inspection.
+  - Estimate: 70000 microseconds implementation.
+  - Result: determinant test validates `determinant == scale^3` within `0.0001f`.
+- [x] Task 18 - ZERO_GC_EDITOR_HOT_PATH_VERIFICATION
+  - DOD practice: static text audit of core math/write paths.
+  - Alternative rejected: claiming zero GC without line references.
+  - Estimate: 45000 microseconds audit.
+  - Result: AST/text scan found no `List<T>`, `Dictionary<T>`, LINQ, or managed reference allocation in Burst job core; value-type `new float3/float4/DTO` only.
+- [x] Task 19 - UNCOLLIDED_INSTANCE_AST_AUDIT
+  - DOD practice: deterministic culling fuzzer with known inside-bound fixtures.
+  - Alternative rejected: random-only stress data.
+  - Estimate: 90000 microseconds implementation.
+  - Result: fuzzer route forces 50 instances inside bound zero and asserts at least those 50 are culled after bake execution.
+- [x] Task 20 - AUTOMATED_METRIC_VALIDATOR_REPORT
+  - DOD practice: optional bounded self-control report; final proof remains code/assets.
+  - Alternative rejected: success defined by unread JSON dump.
+  - Estimate: 80000 microseconds report generation.
+  - Result: final report appended to `Docs/AgentLogs/LOG_1614.md`; JSON dump intentionally not emitted per direct user correction.
+
+## Loop Log
+
+- Loop 0: Prompt extracted; status/rationale initialized; mandates read.
+- Loop 1: Existing scatter renderer and data assets scanned; new work confined to Editor generator folder.
+- Loop 2: Explicit DTOs and Burst jobs implemented for mock input, terrain normal sampling, ground penetration, normal alignment, culling, and quality map generation.
+- Loop 3: Editor pipeline implemented for grid build, atomic `.brgdata` serialization, metadata asset, source scanning, and prefab assembly.
+- Loop 4: Parallel non-finite counter rejected; replaced by per-instance byte mask to keep jobs deterministic.
+- Loop 5: Static audits run. Braces balanced; two `.Complete()` calls are documented Editor blocking sync points. Unity console unavailable; CPU above threshold and dotnet active, so build is blocked by policy.
+- Loop 6: APEX integrator verification hardened in source. Automatic markdown source ledger writes were removed from scan/bake path; `AbyssalScatterApexIntegratorVerifier1614` now verifies hot lookup bans, phase route placement, write-lock flattening shape, no report-file writers, and no build-spawn code without launching `dotnet build`.
+- Loop 7: APEX verifier no longer treats control-flow blocks as methods during DataVault lock analysis. Culling-grid cold scratch arrays were kept in `NativeArray<T>` form. Obsolete `ScatterSourceLedger_1614.md` proof artifact was removed.
+- Loop 8: Unsafe pointer writes were removed from 1614 Burst jobs; the Editor asmdef now has `allowUnsafeCode: false`. Runtime BRG metadata ABI is pinned both by cold layout validation and by the APEX verifier against `GpuScatterFloraInstanceData`.
+- Loop 9: Duplicate-prone quality selection was removed. `BuildQualityDeductionMap` now buckets by importance, walks a coprime permutation, and `ValidateQualityDeductionMap` proves the prefix map is a bijection before the binary writer runs.
+- Loop 10: Re-extracted `<AGENT_PROMPT id="1614" ...>` from `Docs/Tasks/CURRENT_BATCH.md` with attribute-tolerant CLI parsing: bytes=19688, tasks=20, SHA-256 `07ea33107530623ae0186397d86e1bd4e312b46637657c6d41e70727e916597f`.
+- Loop 11: Runtime `.brgdata` bridge gap closed. Generated prefab now carries `AbyssalScatterBrgDataVaultBootstrap`; loader validates binary header/hash/counts, supports direct StreamingAssets files and URI StreamingAssets, and writes DataVault matrices/metadata in two non-overlapping write-lock scopes.
+- Loop 12: Runtime density prefix connected. `GpuScatterLodManager.ResolveSafeActiveCount` now applies continuous `GlobalQualityWeight` from 8% minimum survival density to 100% visual overkill; the loader orders matrices/metadata by the baked quality index map so prefix draws preserve high-importance distribution.
+- Loop 13: Runtime bootstrap compile-risk audit. `AbyssalScatterBrgDataVaultBootstrap` has the required single `System` import for `Math`, `Exception`, and `IDisposable`; duplicate import state was checked and removed before final source state. No build was launched because Unity `dotnet` PID `28892` remained active.
+- Loop 14: Runtime `.brgdata` ABI flags made fail-closed. The bootstrap now rejects payloads unless `Flags == HasQualityIndex | HasMetadata`; the APEX verifier now requires that check so future format drift cannot silently bypass the quality-prefix/metadata contract.
+- Loop 15: Runtime URI load path moved off coroutines. `AbyssalScatterBrgDataVaultBootstrap` now implements `ISlowTickable`, starts `UnityWebRequest` cold, polls only while the URI request is active, unregisters immediately after completion, and routes diagnostics through conditional logging.
+- Loop 16: Runtime payload size gate added. `AbyssalScatterBrgDataVaultBootstrap.ValidateHeader` now rejects `.brgdata` payloads above 1,048,576 instances before any `NativeArray` matrix/metadata/quality allocation; the APEX verifier requires this cap.
+- Loop 17: Editor culling-bound batch cap added. `BakeMockScatterChunkBlocking` now rejects more than 4,096 culling bounds before grid construction, and the window slider consumes the same shared cap.
+- Loop 18: Editor culling-grid reference cap added. `BuildCullingGrid` now rejects more than 1,048,576 flat bound-cell references before allocating the flat bound-index list; the APEX verifier requires this cap.
+- Loop 19: Culling-bound finite gate added. `BuildCullingGrid` now rejects non-finite AUP centers, non-finite extents, non-finite padding, and negative extents before `math.floor` cell conversion.
+- Loop 20: Bounds-cap self-test route added. `AbyssalScatterPolisherSelfTests` now validates the shared culling-bound cap through `IsCullingBoundsCountWithinBakeCap` instead of intentionally invoking a failing bake path that would pollute the Unity console with expected errors.
+- Loop 21: BRG writer fail-closed hardening added. `WriteBrgDataAtomic` now rejects mismatched matrix/metadata/quality block lengths before serialization, offset math uses `long` multiplication before `uint` cast, and culling-grid reference totals accumulate in `long` before allocation.
+- Loop 22: Source-folder UI binding fixed. `AbyssalScatterPolisherWindow` now routes MapMagic and culling dataset folder inputs into scan and bake execution, the result exposes resolved folders and validity, and the APEX verifier rejects fake source-folder controls.
+- Loop 23: Culling dataset prefab bounds imported. The bake now loads collider bounds from selected culling prefabs through `PrefabUtility.LoadPrefabContents`, falls back to renderer bounds when colliders are absent, and uses mock bounds only when no valid prefab bound is available.
+
+## APEX Verification Addendum
+
+- [x] Hot dependency audit
+  - DOD practice: source verifier strips comments/strings and scans hot methods for `GlobalRegistry.Get`, `GetComponent`, `TryGetComponent`, scene search, and Resources lookup tokens.
+  - Alternative rejected: manual verbal proof without a repeatable Editor verifier.
+  - Estimate: 40000 microseconds static scan design.
+  - Result: new verifier covers 1614 Editor files plus BRG scatter runtime owners.
+- [x] Phase safety audit
+  - DOD practice: verifier rejects presentation tokens in non-visual hot methods and requires `GpuScatterLodManager.LateFrameTick -> RunScatterVisualTick` and `HectonIndirectVegetationRenderer.LateFrameTick -> RunVisualTick`.
+  - Alternative rejected: moving visual sync into `Update` or `FixedUpdate`.
+  - Estimate: 30000 microseconds static route proof.
+  - Result: visual submission remains late-frame only.
+- [x] DataVault lock flattening audit
+  - DOD practice: verifier rejects more than one direct `TryAcquireWriteLock` per method and requires `finally` release; helper acquire chains must release before the next helper acquire.
+  - Alternative rejected: nested DataVault write locks and unmanaged handoff without try/finally.
+  - Estimate: 50000 microseconds static route proof.
+  - Result: source-level deadlock vector check added.
+- [x] Compilation throttling compliance
+  - DOD practice: no build-spawn code and no `dotnet build` run while host reports active `dotnet`.
+  - Alternative rejected: starting a second compiler process under contention.
+  - Estimate: 0 microseconds compiler CPU spent.
+  - Result: active `dotnet` process observed; latest re-check saw PID `28892`. Validation stayed source-only.
+
+## Static Check 2026-06-01 Final
+
+- [x] 1614 forbidden output scan
+  - DOD practice: targeted `rg` over `Assets/_Project/Editor/Generators/World` excluding the verifier token table.
+  - Alternative rejected: whole-repo whitespace cleanup across other agents' scenes and prefabs.
+  - Estimate: 20000 microseconds source scan.
+  - Result: no `Encoding`, `WriteSourceLedger`, report writer, `.json`, managed collection, or LINQ token found in the 1614 bake path.
+- [x] Hot dependency scan
+  - DOD practice: runtime scatter owners plus 1614 files searched for `GlobalRegistry.Get`, `GetComponent`, `TryGetComponent`, scene search, and Resources lookup tokens.
+  - Alternative rejected: verbal-only dependency proof.
+  - Estimate: 15000 microseconds source scan.
+  - Result: no matching token outside the verifier's static signature table.
+- [x] Local whitespace scan
+  - DOD practice: scope-limited hygiene over 1614 files and required status/log files.
+  - Alternative rejected: editing unrelated Unity YAML whitespace generated by other work.
+  - Estimate: 10000 microseconds source scan.
+  - Result: no trailing whitespace remains in 1614-owned files.
+- [x] Unsafe bypass scan
+  - DOD practice: targeted scan for `unsafe`, `NativeDisableParallelForRestriction`, `NativeDisableContainerSafetyRestriction`, `GetUnsafeBufferPointerWithoutChecks`, and `UnsafeUtility.AsRef` in 1614 bake path.
+  - Alternative rejected: keeping pointer writes with assembly-level unsafe enabled.
+  - Estimate: 12000 microseconds source scan.
+  - Result: no unsafe bypass token remains outside the verifier's stripped token table; `Hecton8.AbyssalScatter1614.Editor.asmdef` has `allowUnsafeCode: false`.
+- [x] Runtime metadata ABI scan
+  - DOD practice: `BrgInstanceMetadataDTO` and `GpuScatterFloraInstanceData` are both asserted at 64 bytes with matching offsets for all runtime metadata lanes.
+  - Alternative rejected: trusting two 64-byte structs without a source-level bridge check.
+  - Estimate: 18000 microseconds source scan.
+  - Result: `AbyssalScatterPolisherPipeline.ValidateLayoutsOrThrow` now asserts runtime stride and every field offset; `AbyssalScatterApexIntegratorVerifier1614` also rejects drift in the runtime source contract.
+- [x] Quality map bijection scan
+  - DOD practice: source verifier rejects obsolete best-of-three candidate selection and requires cold build plus validation before binary serialization.
+  - Alternative rejected: duplicate-prone low-tier draw prefix and managed sort of all scatter instances.
+  - Estimate: 22000 microseconds source scan.
+  - Result: `AbyssalScatterPolisherPipeline` calls `BuildQualityDeductionMap` and `ValidateQualityDeductionMap`; fallback job uses overflow-safe `long` multiplication; old `secondImportance`/`thirdImportance` path is absent.
+- [x] Compilation throttle re-check
+  - DOD practice: process guard before any build command.
+  - Alternative rejected: launching `dotnet build` under another active compiler/runtime process.
+  - Estimate: 0 microseconds compiler CPU spent.
+  - Result: active `dotnet` process `28892` observed; no `dotnet build` was launched.
+- [x] Runtime BRG bootstrap scan
+  - DOD practice: source scan over `AbyssalScatterBrgDataVaultBootstrap.cs`, generated prefab writer, and `GpuScatterLodManager.ResolveSafeActiveCount`.
+  - Alternative rejected: prefab that only references a binary path while relying on an external producer to fill DataVault.
+  - Estimate: 36000 microseconds source scan.
+  - Result: bootstrap validates `.brgdata` header/hash/counts, supports StreamingAssets file and URI paths, applies the quality permutation while writing DataVault matrices/metadata, and uses two separate `try/finally` write locks.
+- [x] Runtime quality prefix scan
+  - DOD practice: source scan for continuous draw fraction in `ResolveSafeActiveCount`.
+  - Alternative rejected: full-density runtime draw regardless of `GlobalQualityWeight`.
+  - Estimate: 12000 microseconds source scan.
+  - Result: active draw count now scales continuously from `0.08f` survival density to full visual-overkill density; no binary tier branch was added.
+- [x] Runtime bootstrap import scan
+  - DOD practice: source-only compile-risk scan over `AbyssalScatterBrgDataVaultBootstrap.cs` after the runtime bridge addition.
+  - Alternative rejected: hiding a missing namespace behind a forbidden `dotnet build` retry.
+  - Estimate: 5000 microseconds source scan.
+  - Result: required `using System;` is present exactly once; `Math`, `Exception`, and `IDisposable` references are now covered without adding hot-path dependencies.
+- [x] Runtime `.brgdata` flags scan
+  - DOD practice: ABI flag validation matched to the Editor writer's metadata/quality-index bits.
+  - Alternative rejected: accepting version-1 payloads that match counts/strides but omit required semantic flags.
+  - Estimate: 7000 microseconds source scan.
+  - Result: `AbyssalScatterBrgDataVaultBootstrap.ValidateHeader` now requires `RequiredFileFlags`; `AbyssalScatterApexIntegratorVerifier1614` rejects runtime bridges that remove this check.
+- [x] Runtime URI coroutine removal scan
+  - DOD practice: cold asynchronous URI load without runtime coroutine allocation.
+  - Alternative rejected: `StartCoroutine`/`IEnumerator` on a runtime component.
+  - Estimate: 9000 microseconds source scan.
+  - Result: bootstrap uses temporary `ISlowTickable` polling for `UnityWebRequestAsyncOperation`, unregisters after completion, and the APEX verifier rejects coroutine regressions.
+- [x] Runtime payload cap scan
+  - DOD practice: fail closed on header counts before cold `NativeArray` payload allocation.
+  - Alternative rejected: trusting a stale or hand-authored StreamingAssets payload to stay inside the Editor bake cap.
+  - Estimate: 6000 microseconds source scan.
+  - Result: runtime bootstrap now enforces `MaxRuntimeInstanceCount = 1048576` before matrix/metadata/quality arrays are allocated; APEX verifier rejects removal of the cap.
+- [x] Editor culling-bound cap scan
+  - DOD practice: public bake API and Editor UI share one culling-bound cap.
+  - Alternative rejected: UI-only limit that script/menu callers could bypass.
+  - Estimate: 5000 microseconds source scan.
+  - Result: `MaxCullingBounds = 4096` gates the bake before spatial-grid reference allocation, and the APEX verifier rejects removal of the fail-fast check.
+- [x] Editor culling-grid reference cap scan
+  - DOD practice: fail closed on pathological bound-cell expansion before flat index allocation.
+  - Alternative rejected: allowing 4,096 huge AABBs to expand into tens of millions of grid references.
+  - Estimate: 7000 microseconds source scan.
+  - Result: `MaxCullingGridReferences = 1048576` gates `BuildCullingGrid` before `NativeArray<int>` allocation for flat bound references; APEX rejects removal.
+- [x] Culling-bound finite gate scan
+  - DOD practice: reject invalid exclusion geometry before grid cell conversion.
+  - Alternative rejected: letting NaN/Inf centers or negative extents flow into `math.floor` and int cell indices.
+  - Estimate: 6000 microseconds source scan.
+  - Result: `ValidateCullingBoundOrThrow` gates every bound in the first grid pass; APEX rejects removal of finite and non-negative checks.
+- [x] Bounds cap self-test scan
+  - DOD practice: validate the public cap predicate directly in Editor self-tests.
+  - Alternative rejected: forcing an expected bake failure and treating an error log as a pass signal.
+  - Estimate: 4000 microseconds source scan.
+  - Result: `RunBoundsCapTest` proves `MaxCullingBounds` is accepted and `MaxCullingBounds + 1` is rejected without allocating the bake grid.
+- [x] Payload length and grid-ref overflow scan
+  - DOD practice: fail closed before binary serialization and before flat culling-index allocation.
+  - Alternative rejected: trusting same-length arrays by caller convention or relying on current caps to keep intermediate `int` products safe forever.
+  - Estimate: 5000 microseconds source scan.
+  - Result: `ValidatePayloadArrayLengthsOrThrow` rejects mismatched `.brgdata` blocks, binary offsets use `long` multiplication, `BuildCullingGrid` sums references in `long`, and APEX now requires the payload-length guard.
+- [x] Source-folder binding scan
+  - DOD practice: UI fields must affect the cold scan/bake path or be removed.
+  - Alternative rejected: keeping visible MapMagic/culling folder fields as dead controls while the pipeline uses hardcoded folders.
+  - Estimate: 8000 microseconds source scan.
+  - Result: `ScanScatterSourcesForFolders` binds user-selected folders to source discovery, `BakeMockScatterChunk` has an explicit folder overload, scan output shows resolved folders, and APEX verifies the UI-to-pipeline route.
+- [x] Culling dataset prefab-bounds scan
+  - DOD practice: selected base/wreck prefab geometry must feed the actual culling job, not just source counts.
+  - Alternative rejected: continuing to use `GenerateMockCullingBoundsJob` for every bake even when a culling dataset folder is selected.
+  - Estimate: 14000 microseconds source scan.
+  - Result: `WritePrefabCullingBounds` imports collider bounds, falls back to renderer bounds, unloads prefab contents in `finally`, writes imported counts into the window, and APEX verifies the prefab-bound path plus mock fallback.
+- [x] Source-only structural scan
+  - DOD practice: in-memory brace/paren/bracket scanner that ignores comments, strings, and escaped C# char literals.
+  - Alternative rejected: launching `dotnet build` under host contention.
+  - Estimate: 9000 microseconds source scan.
+  - Result: `AbyssalScatterPolisherPipeline.cs`, `AbyssalScatterPolisherWindow.cs`, and `AbyssalScatterApexIntegratorVerifier1614.cs` passed structural balance.
+- [x] Compilation throttle re-check 2026-06-01
+  - DOD practice: CPU and compiler process gate before any build attempt.
+  - Alternative rejected: starting a second compiler/runtime process under active Unity compilation/runtime contention.
+  - Estimate: 0 microseconds compiler CPU spent.
+  - Result: CPU remained above threshold (`LoadPercentage=99`); active Unity `dotnet` PID `27484`; no `dotnet build` was launched.

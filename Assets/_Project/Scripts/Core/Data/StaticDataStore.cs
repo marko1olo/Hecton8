@@ -30,6 +30,8 @@ namespace Hecton8.Core.Data
         private const uint ErrorTypeHash = 0x54595045u;
         private const uint ErrorHeaderHash = 0x48445221u;
         private const int FileStreamBufferBytes = 64 * 1024;
+        private const string BlackBoxDumpFileName = "Dump_StaticDataStore_BlackBox.bin";
+        private const string BTreeTelemetryDumpFileName = "Dump_StaticDataStore_BTreeTelemetry.bin";
 
 #if HECTON8_STATICDATA_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
@@ -294,7 +296,7 @@ namespace Hecton8.Core.Data
             }
 
             string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
+                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BlackBoxDumpFileName))
                 : path;
             H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8StaticDataBlackBoxDump.Write(
@@ -316,7 +318,7 @@ namespace Hecton8.Core.Data
             }
 
             string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
+                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BTreeTelemetryDumpFileName))
                 : path;
             BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8BTreeTelemetryDump.Write(

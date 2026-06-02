@@ -513,6 +513,7 @@ namespace Hecton8.Core.Contracts
         public const byte ItemLifecycleSignal = 132;
         public const byte ProgressionMetaSignal = 133;
         public const byte SessionLifecycleSignal = 134;
+        public const byte ReentryAcousticStressSignal = 135;
         public const uint BaseStructuralWarningSignalStableHash = 0x42535744u;
         public const uint PlayerRespawnSignalStableHash = 0x5253504Eu;
         public const uint ScalabilityChangedEventStableHash = 0x53434C54u;

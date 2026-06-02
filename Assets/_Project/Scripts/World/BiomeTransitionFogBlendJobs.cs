@@ -16,6 +16,7 @@ namespace Hecton8.World
         public const int CsvScratchBytes = 65536;
         public const int ShaderPayloadFloat4Count = 8;
         public const int ShaderPayloadStrideBytes = ShaderPayloadFloat4Count * 16;
+        public const int BiomeLightingParametersStrideBytes = 64;
         public const int BiomeStateStrideBytes = 64;
         public const int BiomeCenterStrideBytes = 64;
         public const int CurrentAtmosphereStrideBytes = 128;
@@ -68,7 +69,13 @@ namespace Hecton8.World
                    OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.BiomeHashes)) == 64 &&
                    OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.DitherParams)) == 80 &&
                    OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.FrameFlags)) == 96 &&
-                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.Reserved0)) == 112;
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.Reserved0)) == 112 &&
+                   UnsafeUtility.SizeOf<BiomeLightingParametersDTO>() == BiomeTransitionConstants.BiomeLightingParametersStrideBytes &&
+                   OffsetOf<BiomeLightingParametersDTO>(nameof(BiomeLightingParametersDTO.PrimaryFogColor)) == 0 &&
+                   OffsetOf<BiomeLightingParametersDTO>(nameof(BiomeLightingParametersDTO.SecondaryFogColor)) == 16 &&
+                   OffsetOf<BiomeLightingParametersDTO>(nameof(BiomeLightingParametersDTO.FogDensity)) == 32 &&
+                   OffsetOf<BiomeLightingParametersDTO>(nameof(BiomeLightingParametersDTO.BlendFactor)) == 36 &&
+                   OffsetOf<BiomeLightingParametersDTO>(nameof(BiomeLightingParametersDTO.LightShaftIntensity)) == 40;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
@@ -187,6 +194,21 @@ namespace Hecton8.World
         [FieldOffset(80)] public float4 DitherParams;
         [FieldOffset(96)] public float4 FrameFlags;
         [FieldOffset(112)] public float4 Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = BiomeTransitionConstants.BiomeLightingParametersStrideBytes)]
+    public struct BiomeLightingParametersDTO
+    {
+        [FieldOffset(0)] public float4 PrimaryFogColor;
+        [FieldOffset(16)] public float4 SecondaryFogColor;
+        [FieldOffset(32)] public float FogDensity;
+        [FieldOffset(36)] public float BlendFactor;
+        [FieldOffset(40)] public float LightShaftIntensity;
+        [FieldOffset(44)] public float _pad0;
+        [FieldOffset(48)] public float _pad1;
+        [FieldOffset(52)] public float _pad2;
+        [FieldOffset(56)] public float _pad3;
+        [FieldOffset(60)] public float _pad4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

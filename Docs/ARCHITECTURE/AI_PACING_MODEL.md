@@ -49,7 +49,7 @@ AI pacing is a deterministic pressure budget, not a cinematic script rail.
 
 ## Proof Gates
 
-Before calling this model runtime-ready, provide fresh artifacts for:
+Before calling this model ready in runtime, provide fresh artifacts for:
 
 - Unity import and Console state.
 

@@ -15,6 +15,7 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
 
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Assets/_Project/Art/Shaders/Include/Hecton_DitherFog.hlsl"
 
         TEXTURE2D_X(_HectonVolumetricFogSourceColor);
         TEXTURE2D_X(_HectonVolumetricFogSourceDepth);
@@ -115,8 +116,9 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
 
         float3 ResolveNoirFloorColor(float3 color)
         {
+            float4 biomeFog = H8DitherFogResolveBiomeFogColorAndDensity(_HectonVolumetricFogColorAndDensity);
             float3 floorColor = max(
-                SafeFiniteColor(_HectonVolumetricFogColorAndDensity.rgb, float3(0.0015, 0.0023, 0.0031)),
+                SafeFiniteColor(biomeFog.rgb, float3(0.0015, 0.0023, 0.0031)),
                 float3(0.0015, 0.0023, 0.0031));
             return max(SafeFiniteColor(color, floorColor), floorColor);
         }
@@ -187,35 +189,13 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
         #endif
         }
 
-        int Bayer2(int2 p)
-        {
-            int x = p.x & 1;
-            int y = p.y & 1;
-            return ((x ^ y) << 1) + y;
-        }
-
-        float Bayer4(float2 pixel)
-        {
-            int2 p = int2((int)floor(pixel.x) & 3, (int)floor(pixel.y) & 3);
-            int value = Bayer2(p) * 4 + Bayer2(int2(p.x >> 1, p.y >> 1));
-            return ((float)value + 0.5) * (1.0 / 16.0);
-        }
-
-        float Hash21(float2 value)
-        {
-            value = all(isfinite(value)) ? value : float2(0.0, 0.0);
-            float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
-            hash += dot(hash, hash.yzx + 33.33);
-            return frac((hash.x + hash.y) * hash.z);
-        }
-
         float ResolveProxyDither(float2 uv)
         {
             float2 pixel = uv * max(_HectonVolumetricFogFullSize.xy, float2(1.0, 1.0));
-            float bayer = Bayer4(pixel);
+            float bayer = H8DitherFogBayer8x8(pixel);
             float phase = SafeFiniteScalar(_HectonVolumetricFogCompositeParams.w, 0.0);
-            float stochastic = Hash21(floor(pixel * 0.25) + phase * 0.071);
-            float quality = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.x);
+            float stochastic = H8DitherFogHash21(floor(pixel * 0.25) + phase * 0.071);
+            float quality = H8DitherFogResolveQualityWeight(_HectonVolumetricFogQualityAndLimits.x);
             float stochasticBlend = quality * quality * (3.0 - 2.0 * quality);
             return lerp(bayer, stochastic, stochasticBlend);
         }
@@ -234,15 +214,20 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
             float rawDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, uv, 0).r;
             float validMask = ResolveDepthValidMask(rawDepth);
             float maxRayDistance = max(0.25, SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.z, 70.0));
-            float rayDistance = validMask > 0.5 ? min(ResolveSafeLinearEyeDepth(rawDepth), maxRayDistance) : maxRayDistance;
-            float density = max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0));
+            float rayDistance = lerp(maxRayDistance, min(ResolveSafeLinearEyeDepth(rawDepth), maxRayDistance), validMask);
+            float4 biomeFog = H8DitherFogResolveBiomeFogColorAndDensity(_HectonVolumetricFogColorAndDensity);
+            float density = max(0.0, SafeFiniteScalar(biomeFog.w, 0.0));
             float extinction = max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12));
-            float opacity = SafeFiniteSaturate(1.0 - FastNegativeExp(density * extinction * max(0.0001, rayDistance)));
-            float dither = ResolveProxyDither(uv);
-            opacity = SafeFiniteSaturate(opacity + (dither - 0.5) * SafeFiniteSaturate(_HectonVolumetricFogDebugParams.y) * 0.08);
+            float ditherStrength = H8DitherFogResolveDitherStrength(_HectonVolumetricFogDebugParams.y);
+            float opacity = H8DitherFogAnalyticalFactor(
+                rayDistance,
+                density * extinction,
+                H8DitherFogResolveQualityWeight(_HectonVolumetricFogQualityAndLimits.x),
+                ditherStrength,
+                uv * max(_HectonVolumetricFogFullSize.xy, float2(1.0, 1.0)));
             float2 centeredUv = uv * 2.0 - 1.0;
             float shaftFake = SafeFiniteSaturate(1.0 - dot(centeredUv, centeredUv) * 0.65);
-            float3 fogColor = ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb);
+            float3 fogColor = ResolveNoirFloorColor(biomeFog.rgb);
             float waterline = WaterOpticsWaterlineWeight(uv, rayDistance);
             fogColor = WaterOpticsDearLieTint(fogColor, rayDistance, waterline);
             opacity = SafeFiniteSaturate(opacity + waterline * lerp(0.018, 0.07, WaterOpticsQualityWeight()));
@@ -268,29 +253,15 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
             float2 uv = saturate(ResolveStereoUv(input.screenUV));
             float4 source = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceColor, sampler_LinearClamp, uv, 0);
             float centerDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, uv, 0).r;
-            float centerEyeDepth = ResolveSafeLinearEyeDepth(centerDepth);
-            float depthScale = max(0.01, SafeFiniteScalar(_HectonVolumetricFogCompositeParams.x, 8.0));
-            float4 fogAccum = float4(0.0, 0.0, 0.0, 0.0);
-            float weightSum = 0.0;
-
-            [unroll]
-            for (int y = -1; y <= 1; y++)
-            {
-                [unroll]
-                for (int x = -1; x <= 1; x++)
-                {
-                    float2 offset = float2((float)x, (float)y) * _HectonVolumetricFogHalfSize.zw;
-                    float2 sampleUv = saturate(uv + offset);
-                    float sampleDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, sampleUv, 0).r;
-                    float depthWeight = FastNegativeExp(abs(ResolveSafeLinearEyeDepth(sampleDepth) - centerEyeDepth) * depthScale);
-                    float kernelWeight = (x == 0 && y == 0) ? 1.0 : 0.5;
-                    float weight = depthWeight * kernelWeight;
-                    fogAccum += SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogHalfInput, sampler_LinearClamp, sampleUv, 0) * weight;
-                    weightSum += weight;
-                }
-            }
-
-            fogAccum *= SafeRcp(max(weightSum, 1e-4));
+            float depthValid = ResolveDepthValidMask(centerDepth);
+            float4 fogAccum = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogHalfInput, sampler_LinearClamp, uv, 0);
+            float edgeGuard = H8DitherFogAnalyticalFactor(
+                ResolveSafeLinearEyeDepth(centerDepth),
+                max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)),
+                H8DitherFogResolveQualityWeight(_HectonVolumetricFogQualityAndLimits.x),
+                H8DitherFogResolveDitherStrength(_HectonVolumetricFogDebugParams.y) * 0.35,
+                uv * max(_HectonVolumetricFogFullSize.xy, float2(1.0, 1.0)));
+            fogAccum.a = SafeFiniteSaturate(fogAccum.a * lerp(1.0, edgeGuard, 0.12) * depthValid);
             return (half4)ResolveCompositeWrite(source, fogAccum);
         }
         ENDHLSL

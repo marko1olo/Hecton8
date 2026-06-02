@@ -108,6 +108,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` | Launch/demo/EA role ownership, dry run, timeline, red alerts, holding statements, and first-week digest. |
 | `Legal/COMPLIANCE_AND_DISCLOSURE_PLAYBOOK.md` | Creator disclosure, key distribution, paid placement, and forbidden claim rules. |
 | `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md` | Regional language priority, `localization_public_permission_gate`, asset localization, review gates, and one-pager template. |
+| `Monetization/MONETIZATION_RESEARCH_RU_KZ_CRYPTO_2026-05-31.md` | Non-Steam monetization, Russia/Kazakhstan/crypto payment feasibility, account stack, and hold/advance/kill route map. |
 | `Partnerships/CREATOR_CONTRACT_TERMS_AND_RATE_CARD.md` | Paid creator deal types, `paid_creator_permission_gate`, rough test ranges, contract checklist, and talking-point boundaries. |
 | `Press/PRESS_KIT_AND_MEDIA_PLAN.md` | Press kit shell, factsheet fields, press angles, `press_release_permission_gate`, publish boundary, and embargo/key hygiene. |
 | `Press/PRESS_AND_STEAM_CURATOR_TARGETS.md` | Press, newsletters, showcases, YouTube list channels, and Steam curator target map. |

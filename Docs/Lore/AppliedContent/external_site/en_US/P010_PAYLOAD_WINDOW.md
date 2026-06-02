@@ -1,0 +1,30 @@
+---
+packet_id: P010_PAYLOAD_WINDOW
+article_id: ending.payload_window
+locale: en_US
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Payload Window
+
+Payload Window defines HECTON-8's ending structure. The final question is not only what the player believes, but what the player can carry out of the ocean.
+
+## Scanner
+
+Improvised ascent package. It can leave the ocean if mass, weather, and carrier geometry agree.
+
+## Terminal
+
+PAYLOAD SLOT: limited. WINDOW: open. ROUTE: contested. CLAIM VALUE: variable. EVIDENCE STATE: insufficient for clean dispute.
+
+## Audio
+
+Window is open. It will not stay open for everything.
+
+## Field Note
+
+Getting out is a route. Getting out clean is a myth.
+
+<!-- External Site; generated from P010_PAYLOAD_WINDOW/en_US. -->

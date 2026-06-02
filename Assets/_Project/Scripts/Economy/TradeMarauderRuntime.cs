@@ -635,14 +635,14 @@ namespace Hecton8.Economy
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 #endif
 
     public struct MarauderScarcityMockInventoryJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<uint> InventoryItemHashes;
-        [ReadOnly, NoAlias] public NativeArray<int> InventoryQuantities;
-        [NoAlias] public NativeArray<MarauderEconomyWeightDTO> EconomyWeights;
+        [ReadOnly] public NativeArray<uint> InventoryItemHashes;
+        [ReadOnly] public NativeArray<int> InventoryQuantities;
+        public NativeArray<MarauderEconomyWeightDTO> EconomyWeights;
         public uint HoardedItemHash;
         public int HoardedQuantity;
 
@@ -2047,16 +2047,17 @@ namespace Hecton8.Economy
             if (_searchEpoch > 100000000)
                 _searchEpoch = 1;
 
-            JobHandle handle = new MarauderScarcityMockInventoryJob
+            MarauderScarcityMockInventoryJob scarcityJob = new MarauderScarcityMockInventoryJob
             {
                 InventoryItemHashes = mockInventoryHashes,
                 InventoryQuantities = mockInventoryQuantities,
                 EconomyWeights = weights,
                 HoardedItemHash = tuning.CopperHash,
                 HoardedQuantity = 0
-            }.Schedule();
+            };
+            scarcityJob.Execute();
 
-            handle = new MarauderSupplyChainSolverJob
+            MarauderSupplyChainSolverJob solverJob = new MarauderSupplyChainSolverJob
             {
                 States = states,
                 EconomyWeights = weights,
@@ -2071,9 +2072,10 @@ namespace Hecton8.Economy
                 PlayerAup = playerAup,
                 BaseAup = baseAup,
                 FrameIndex = _frameIndex
-            }.Schedule(handle);
+            };
+            solverJob.Execute();
 
-            handle = new MarauderMacroAStarJob
+            MarauderMacroAStarJob aStarJob = new MarauderMacroAStarJob
             {
                 States = states,
                 RoutePlans = routePlans,
@@ -2091,9 +2093,10 @@ namespace Hecton8.Economy
                 SearchEpoch = searchEpoch,
                 StartMarauder = _routeStartIndex,
                 MaxSolves = maxSolves
-            }.Schedule(handle);
+            };
+            aStarJob.Execute();
 
-            handle = new MarauderOffscreenTheftJob
+            MarauderOffscreenTheftJob theftJob = new MarauderOffscreenTheftJob
             {
                 States = states,
                 Inventories = inventories,
@@ -2104,9 +2107,10 @@ namespace Hecton8.Economy
                 PlayerAup = playerAup,
                 BaseAup = baseAup,
                 FrameIndex = _frameIndex
-            }.Schedule(handle);
+            };
+            theftJob.Execute();
 
-            handle = new MarauderTradeNegotiationJob
+            MarauderTradeNegotiationJob tradeJob = new MarauderTradeNegotiationJob
             {
                 MarauderInventories = inventories,
                 PlayerInventoryHashes = mockInventoryHashes,
@@ -2117,39 +2121,45 @@ namespace Hecton8.Economy
                 RequestedItemHash = tuning.TitaniumHash,
                 OfferedQuantity = 3,
                 MarauderIndex = 0
-            }.Schedule(handle);
+            };
+            tradeJob.Execute();
 
-            handle = new MarauderTacticalInterceptJob
+            MarauderTacticalInterceptJob interceptJob = new MarauderTacticalInterceptJob
             {
                 States = states,
                 RoutePlans = routePlans,
                 PlayerAup = playerAup,
                 PlayerVelocity = playerVelocity,
                 Tuning = tuning
-            }.Schedule(active, 4, handle);
+            };
+            for (int i = 0; i < active; i++)
+                interceptJob.Execute(i);
 
-            handle = new MarauderVisualHydrationJob
+            MarauderVisualHydrationJob visualJob = new MarauderVisualHydrationJob
             {
                 States = states,
                 VisualProxies = visualProxies,
                 Counters = counters,
                 PlayerAup = playerAup,
                 Tuning = tuning
-            }.Schedule(handle);
+            };
+            visualJob.Execute();
 
-            handle = new MarauderAcousticSignatureJob
+            MarauderAcousticSignatureJob acousticJob = new MarauderAcousticSignatureJob
             {
                 States = states,
                 AcousticSignals = acousticScratch,
                 Counters = counters,
                 Tuning = tuning,
                 FrameIndex = _frameIndex
-            }.Schedule(handle);
+            };
+            acousticJob.Execute();
 
-            _activeJobHandle = handle;
-            _jobScheduled = true;
+            _activeJobHandle = default;
+            _jobScheduled = false;
             _frameIndex++;
             _routeStartIndex = active > 0 ? (_routeStartIndex + maxSolves) % active : 0;
+            PublishCompletedSignals();
         }
 
         public void SetPlayerSnapshot(double3 playerAup, float3 velocityMetersPerSecond)

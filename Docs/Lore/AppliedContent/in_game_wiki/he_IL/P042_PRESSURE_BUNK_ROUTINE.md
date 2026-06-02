@@ -1,0 +1,30 @@
+---
+packet_id: P042_PRESSURE_BUNK_ROUTINE
+article_id: hecton8.pressure_bunk_routine
+locale: he_IL
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# שגרת דרגשי לחץ
+
+דרגשי לחץ מראים כיצד הנדסה רגילה הופכת לאימה כשהעדיפויות שגויות.
+
+## Scanner
+
+מערכות החיים מראות שגרה תחת לחץ: שינה, חמצן, עיבוי ואזעקות.
+
+## Terminal
+
+יומן מגורים: השגרה נשארה תקפה בזמן שלוגיקת העדיפות כלאה את הצוות.
+
+## Audio
+
+המערכת המשיכה לעבוד נקי.
+
+## Field Note
+
+השגרה הפכה למלכודת.
+
+<!-- In-Game Wiki; generated from P042_PRESSURE_BUNK_ROUTINE/he_IL. -->

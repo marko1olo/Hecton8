@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS011_COMM_TARIFF_GRAFFITI_MASKS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P051_LIGHT_DELAY_AUTHORITY",
+      "article_id": "hecton8.light_delay_authority",
+      "title_key": "applied_lore.light_delay_authority.title",
+      "unlock": {
+        "primary": "unlock.first_light_delay_authority",
+        "poi_tags": [
+          "poi.relay_mast",
+          "poi.signal_buffer",
+          "poi.storm_window"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.surface_relay",
+          "biome.drowned_infrastructure"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Light-Delay Authority",
+          "scanner": "No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "ru_RU": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft RU localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft RU localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft RU localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft RU localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft RU localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft RU localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "ja_JP": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft JP localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft JP localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft JP localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft JP localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft JP localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft JP localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "zh_CN": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft CN localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft CN localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft CN localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft CN localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft CN localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft CN localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "fr_FR": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft FR localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft FR localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft FR localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft FR localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft FR localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft FR localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "es_ES": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft ES localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft ES localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft ES localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft ES localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft ES localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft ES localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "de_DE": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft DE localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft DE localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft DE localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft DE localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft DE localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft DE localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "pl_PL": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft PL localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft PL localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft PL localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft PL localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft PL localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft PL localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "uk_UA": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft UK localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft UK localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft UK localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft UK localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft UK localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft UK localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "ar_SA": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft AR localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft AR localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft AR localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft AR localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft AR localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft AR localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "id_ID": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft ID localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft ID localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft ID localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft ID localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft ID localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft ID localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "ko_KR": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft KO localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft KO localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft KO localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft KO localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft KO localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft KO localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "he_IL": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft HE localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft HE localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft HE localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft HE localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft HE localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft HE localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "pt_BR": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft PT-BR localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft PT-BR localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft PT-BR localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft PT-BR localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft PT-BR localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        },
+        "nl_NL": {
+          "title": "Light-Delay Authority",
+          "scanner": "Draft NL localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.",
+          "field_note": "Draft NL localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.",
+          "terminal": "Draft NL localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.",
+          "audio": "Draft NL localization pending native pass. Nobody ignored the call fast enough. Distance did it first.",
+          "in_game_wiki": "Draft NL localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.",
+          "external_site": "Draft NL localization pending native pass. Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather."
+        }
+      }
+    },
+    {
+      "packet_id": "P052_BLACK_KEEL_TARIFF_TABLE",
+      "article_id": "hecton8.black_keel_tariff_table",
+      "title_key": "applied_lore.black_keel_tariff_table.title",
+      "unlock": {
+        "primary": "unlock.first_black_keel_tariff_table",
+        "poi_tags": [
+          "poi.tariff_plate",
+          "poi.claim_terminal",
+          "poi.sample_lockbox"
+        ],
+        "biome_tags": [
+          "biome.corporate_wreck",
+          "biome.salvage_route",
+          "biome.service_corridor"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "ru_RU": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft RU localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft RU localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft RU localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft RU localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft RU localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft RU localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "ja_JP": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft JP localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft JP localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft JP localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft JP localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft JP localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "zh_CN": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft CN localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft CN localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft CN localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft CN localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft CN localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "fr_FR": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft FR localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft FR localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft FR localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft FR localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft FR localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "es_ES": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft ES localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft ES localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft ES localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft ES localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft ES localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "de_DE": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft DE localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft DE localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft DE localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft DE localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft DE localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "pl_PL": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft PL localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft PL localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft PL localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft PL localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft PL localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "uk_UA": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft UK localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft UK localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft UK localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft UK localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft UK localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft UK localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "ar_SA": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft AR localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft AR localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft AR localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft AR localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft AR localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "id_ID": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft ID localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft ID localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft ID localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft ID localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft ID localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "ko_KR": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft KO localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft KO localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft KO localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft KO localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft KO localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "he_IL": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft HE localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft HE localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft HE localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft HE localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft HE localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "pt_BR": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft PT-BR localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft PT-BR localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft PT-BR localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft PT-BR localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft PT-BR localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        },
+        "nl_NL": {
+          "title": "Black Keel Tariff Table",
+          "scanner": "Draft NL localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.",
+          "field_note": "Draft NL localization pending native pass. A rescue request and a sample manifest do not enter the same queue.",
+          "terminal": "Draft NL localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.",
+          "audio": "Draft NL localization pending native pass. The table has a price for rescue and a discount for evidence.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.",
+          "external_site": "Draft NL localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency."
+        }
+      }
+    },
+    {
+      "packet_id": "P053_MARAUDER_GRAFFITI_MASKS",
+      "article_id": "hecton8.marauder_graffiti_masks",
+      "title_key": "applied_lore.marauder_graffiti_masks.title",
+      "unlock": {
+        "primary": "unlock.first_marauder_graffiti_masks",
+        "poi_tags": [
+          "poi.graffiti_mask",
+          "poi.pressure_arrow",
+          "poi.noise_mark"
+        ],
+        "biome_tags": [
+          "biome.scrap_canyon",
+          "biome.marauder_route",
+          "biome.drowned_colony"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Bad paint. Good map.",
+          "terminal": "MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "ru_RU": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft RU localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft RU localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft RU localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft RU localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft RU localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft RU localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "ja_JP": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft JP localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft JP localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft JP localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft JP localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft JP localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft JP localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "zh_CN": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft CN localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft CN localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft CN localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft CN localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft CN localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft CN localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "fr_FR": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft FR localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft FR localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft FR localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft FR localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft FR localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft FR localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "es_ES": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft ES localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft ES localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft ES localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft ES localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft ES localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft ES localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "de_DE": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft DE localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft DE localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft DE localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft DE localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft DE localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft DE localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "pl_PL": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft PL localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft PL localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft PL localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft PL localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft PL localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft PL localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "uk_UA": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft UK localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft UK localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft UK localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft UK localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft UK localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft UK localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "ar_SA": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft AR localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft AR localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft AR localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft AR localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft AR localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft AR localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "id_ID": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft ID localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft ID localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft ID localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft ID localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft ID localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft ID localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "ko_KR": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft KO localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft KO localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft KO localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft KO localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft KO localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft KO localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "he_IL": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft HE localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft HE localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft HE localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft HE localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft HE localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft HE localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "pt_BR": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft PT-BR localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft PT-BR localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft PT-BR localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft PT-BR localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft PT-BR localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        },
+        "nl_NL": {
+          "title": "Marauder Graffiti Masks",
+          "scanner": "Draft NL localization pending native pass. The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.",
+          "field_note": "Draft NL localization pending native pass. Bad paint. Good map.",
+          "terminal": "Draft NL localization pending native pass. MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.",
+          "audio": "Draft NL localization pending native pass. They made a language that looks like vandalism to the company.",
+          "in_game_wiki": "Draft NL localization pending native pass. Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.",
+          "external_site": "Draft NL localization pending native pass. Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism."
+        }
+      }
+    },
+    {
+      "packet_id": "P054_RELAY_QUEUE_DRIFT",
+      "article_id": "hecton8.relay_queue_drift",
+      "title_key": "applied_lore.relay_queue_drift.title",
+      "unlock": {
+        "primary": "unlock.first_relay_queue_drift",
+        "poi_tags": [
+          "poi.relay_queue",
+          "poi.timestamp_panel",
+          "poi.decayed_route"
+        ],
+        "biome_tags": [
+          "biome.surface_relay",
+          "biome.service_corridor",
+          "biome.return_route"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Relay Queue Drift",
+          "scanner": "The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "A late truth can still kill.",
+          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "The message is correct. That is the problem.",
+          "in_game_wiki": "Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "ru_RU": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft RU localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft RU localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft RU localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft RU localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft RU localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft RU localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "ja_JP": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft JP localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft JP localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft JP localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft JP localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft JP localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft JP localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "zh_CN": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft CN localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft CN localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft CN localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft CN localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft CN localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft CN localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "fr_FR": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft FR localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft FR localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft FR localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft FR localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft FR localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft FR localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "es_ES": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft ES localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft ES localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft ES localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft ES localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft ES localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft ES localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "de_DE": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft DE localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft DE localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft DE localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft DE localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft DE localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft DE localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "pl_PL": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft PL localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft PL localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft PL localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft PL localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft PL localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft PL localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "uk_UA": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft UK localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft UK localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft UK localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft UK localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft UK localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft UK localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "ar_SA": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft AR localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft AR localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft AR localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft AR localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft AR localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft AR localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "id_ID": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft ID localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft ID localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft ID localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft ID localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft ID localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft ID localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "ko_KR": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft KO localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft KO localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft KO localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft KO localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft KO localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft KO localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "he_IL": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft HE localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft HE localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft HE localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft HE localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft HE localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft HE localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "pt_BR": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft PT-BR localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft PT-BR localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft PT-BR localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft PT-BR localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft PT-BR localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        },
+        "nl_NL": {
+          "title": "Relay Queue Drift",
+          "scanner": "Draft NL localization pending native pass. The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.",
+          "field_note": "Draft NL localization pending native pass. A late truth can still kill.",
+          "terminal": "Draft NL localization pending native pass. QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.",
+          "audio": "Draft NL localization pending native pass. The message is correct. That is the problem.",
+          "in_game_wiki": "Draft NL localization pending native pass. Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.",
+          "external_site": "Draft NL localization pending native pass. Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable."
+        }
+      }
+    },
+    {
+      "packet_id": "P055_CORPORATE_RESPONSE_LEDGER",
+      "article_id": "hecton8.corporate_response_ledger",
+      "title_key": "applied_lore.corporate_response_ledger.title",
+      "unlock": {
+        "primary": "unlock.first_corporate_response_ledger",
+        "poi_tags": [
+          "poi.response_ledger",
+          "poi.liability_seal",
+          "poi.operator_recovery"
+        ],
+        "biome_tags": [
+          "biome.corporate_wreck",
+          "biome.return_route",
+          "biome.deep_salvage"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Immediate response is not immediate rescue.",
+          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "ru_RU": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft RU localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft RU localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft RU localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft RU localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft RU localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft RU localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "ja_JP": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft JP localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft JP localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft JP localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft JP localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft JP localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft JP localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "zh_CN": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft CN localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft CN localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft CN localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft CN localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft CN localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft CN localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "fr_FR": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft FR localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft FR localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft FR localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft FR localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft FR localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft FR localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "es_ES": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft ES localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft ES localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft ES localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft ES localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft ES localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft ES localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "de_DE": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft DE localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft DE localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft DE localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft DE localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft DE localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft DE localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "pl_PL": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft PL localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft PL localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft PL localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft PL localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft PL localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft PL localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "uk_UA": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft UK localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft UK localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft UK localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft UK localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft UK localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft UK localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "ar_SA": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft AR localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft AR localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft AR localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft AR localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft AR localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft AR localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "id_ID": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft ID localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft ID localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft ID localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft ID localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft ID localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft ID localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "ko_KR": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft KO localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft KO localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft KO localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft KO localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft KO localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft KO localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "he_IL": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft HE localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft HE localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft HE localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft HE localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft HE localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft HE localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "pt_BR": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft PT-BR localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft PT-BR localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft PT-BR localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft PT-BR localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft PT-BR localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        },
+        "nl_NL": {
+          "title": "Corporate Response Ledger",
+          "scanner": "Draft NL localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.",
+          "field_note": "Draft NL localization pending native pass. Immediate response is not immediate rescue.",
+          "terminal": "Draft NL localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.",
+          "audio": "Draft NL localization pending native pass. The reply was automatic. The rescue was conditional.",
+          "in_game_wiki": "Draft NL localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.",
+          "external_site": "Draft NL localization pending native pass. Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority."
+        }
+      }
+    }
+  ]
+}

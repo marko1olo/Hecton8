@@ -1,0 +1,30 @@
+---
+packet_id: P036_RETURN_VECTOR_WINDOW
+article_id: hecton8.return_vector_window
+locale: fr_FR
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Fenêtre de vecteur retour
+
+Les fenêtres de retour transforment l'évasion en chaîne hard-sf: géométrie, météo, signal et matériel.
+
+## Scanner
+
+La géométrie orbitale n'est pas un bouton de secours. Le Black Keel n'entend qu'à travers de rares fenêtres d'Aegir.
+
+## Terminal
+
+Prévision comm: transporteur haut au-dessus d'Aegir. Montée capsule exige trou de tempête, accalmie particulaire et relais net.
+
+## Audio
+
+Le Black Keel est assez vivant pour répondre. Pas assez proche pour sauver.
+
+## Field Note
+
+Une réponse tient du timing, pas de la pitié.
+
+<!-- In-Game Wiki; generated from P036_RETURN_VECTOR_WINDOW/fr_FR. -->

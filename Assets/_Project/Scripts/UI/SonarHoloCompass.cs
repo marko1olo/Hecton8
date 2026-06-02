@@ -309,9 +309,9 @@ namespace Hecton8.UI
 
         private void CreateDots()
         {
-            // COLD ALLOC: RectTransform[16] — prebuilt acoustic-radar marker pool — owner: SonarHoloCompass
+            // COLD ALLOC: RectTransform[16] - prebuilt acoustic-radar marker pool - owner: SonarHoloCompass
             _dotRects = new RectTransform[MaxDots];
-            // COLD ALLOC: Image[16] — prebuilt acoustic-radar marker visuals — owner: SonarHoloCompass
+            // COLD ALLOC: Image[16] - prebuilt acoustic-radar marker visuals - owner: SonarHoloCompass
             _dotImages = new Image[MaxDots];
             // COLD ALLOC: Vector2[16] - acoustic-radar marker position cache for Canvas dirty-write suppression - owner: SonarHoloCompass
             _lastDotAnchoredPositions = new Vector2[MaxDots];
@@ -645,14 +645,14 @@ namespace Hecton8.UI
             if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 

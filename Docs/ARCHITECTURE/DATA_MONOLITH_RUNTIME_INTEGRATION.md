@@ -2,12 +2,21 @@
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-05-26 |
+| Date | 2026-06-02 |
 | Status | CORE BLOB BAKED; CORRUPTION STRESS PASS; FAIL-CLOSED RUNTIME SIM PASS; NATIVE READ ZERO-GC TARGET PASS |
 | Gates | RELEASE STATIC-CONFIG PASS; PLAYER CSV STAGING FENCE PASS; DIRECT FILESTREAM READBYTE PASS |
 | Pending | UNITY PROFILER PROOF |
 | Owner | X_002 DATA_MONOLITH_ARCHITECT |
 | Evidence | STATIC_DOC / STATIC_SOURCE / CLI_BAKE_HEADER_PROOF / CLI_CORRUPTION_FUZZER / CLI_RESIDENT_LOAD_STRESS / CLI_FAIL_CLOSED_RUNTIME_SIM / SOURCE_INVENTORY / RELEASE_BUILD_GATE_SOURCE / FILESTREAM_READBYTE_SCAN / PLAYER_CSV_STAGING_SCAN |
+
+## Current Short Read
+
+- Runtime loader source exists: `H8StaticDataArena`.
+- Editor compiler source exists: `H8DataMonolithCompiler`.
+- Current payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
+- Current static file identity: `1,804,864` bytes, SHA-256 `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`.
+- Historical CLI stress/fail-closed reports are retained below as evidence snapshots.
+- Unity import, player boot, profiler, GCMonitor, device, and save/load route proof remain pending unless a newer artifact is cited.
 
 ## Runtime Contract
 
@@ -27,14 +36,15 @@ Binary contract after X_002 pass:
 Current artifact:
 
 - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
-- bytes: `1064384`
+- bytes: `1804864`
+- SHA-256 on 2026-06-02 static file check: `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`
 - magic: `0x4D443848`
 - version: `2`
 - header bytes: `64`
-- checksum64: `0x19D880780D6E1B46`
+- checksum64: `0xA85210353432862A`
 - data start offset: `576`
-- section count: `26`
-- schema hash: `0x33313331`
+- section count: `28`
+- schema hash: `0x33313332`
 
 Data Monolith readiness:
 
@@ -54,7 +64,7 @@ Resident load stress evidence:
 - `Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json`
 - Release CLI status: `PASS_NATIVE_READ_ZERO_GC_TARGET_TIME`
 - Scope: native file read plus resident pointer validation in CLI; not a real Unity player profiler trace.
-- Blob bytes: `1064384`
+- Historical report blob bytes: `1064384`; current 2026-06-01 blob is `1804864`, so load timing must be rerun before citing it as current.
 - Native file read: `276.300 us`, heap `0 bytes`
 - Full resident validation mean across `1024` iterations: `601.928 us`, heap `0 bytes`
 - Native read+validate estimate: `878.228 us`, heap `0 bytes`
@@ -67,11 +77,11 @@ Fail-closed resident publish evidence:
 - `Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_X_002.json`
 - Release CLI status: `PASS_FAIL_CLOSED_NO_POISON_PUBLISH`
 - Scope: resident-pointer simulation of the `H8StaticDataArena` publish gate; not a real Unity player profiler trace.
-- Baseline checksum: `0x19D880780D6E1B46`
+- Historical baseline checksum: `0x19D880780D6E1B46`; current 2026-06-01 blob checksum is `0xA85210353432862A`, so this simulation must be rerun before citing it as current.
 - Baseline publish count: `1`
 - Corrupt candidates rejected before publish: bad stored checksum, bad payload checksum, section range out of bounds, unaligned section offset, section table pointing into void, truncated blob.
 - Final publish count after all corrupt candidates: `1`
-- Final checksum after all corrupt candidates: `0x19D880780D6E1B46`
+- Historical final checksum after all corrupt candidates: `0x19D880780D6E1B46`
 - Resident validation: `256/256`, mean `382.461 us`, heap `0 bytes`
 
 Binary layout evidence:

@@ -210,6 +210,22 @@ namespace Hecton8.World
         private int _signalPushDropCount;
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeActiveRuntimeForEditorReload;
+        }
+
+        private static void DisposeActiveRuntimeForEditorReload()
+        {
+            EcosystemDirector runtime = ActiveRuntimeInstance;
+            if (runtime != null)
+                runtime.ShutdownServiceState();
+        }
+#endif
+
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const float FrostTickIntervalSeconds = 5f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
@@ -4161,6 +4177,9 @@ namespace Hecton8.World
             _apexTerritoryTargets = new IFaunaPredationTarget[ApexTerritoryOverlapCandidateCapacity];
             // COLD ALLOC: float4[32] - flora predator AUP GPU upload snapshot copied under DataVault lock and consumed after release - owner: EcosystemDirector
             _floraPredatorAupUploadSnapshot = new float4[FloraPredatorAupBufferCapacity];
+            ReleaseBuffer(ref _floraPredatorAupBufferA);
+            ReleaseBuffer(ref _floraPredatorAupBufferB);
+            _activeFloraPredatorAupBuffer = null;
             _floraPredatorAupBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer A - owner: EcosystemDirector
             _floraPredatorAupBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer B - owner: EcosystemDirector
             _activeFloraPredatorAupBuffer = _floraPredatorAupBufferA;

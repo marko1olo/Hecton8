@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Narrative.Prologue;
 using Hecton8.Prologue.VFX;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Hecton8.Prologue.Space
@@ -19,14 +21,34 @@ namespace Hecton8.Prologue.Space
         private const string RuntimeRootName = "__HECTON_PROLOGUE_ORBIT_RUNTIME";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const string MainCameraName = "Main Camera";
+        private const string DirectionalLightName = "Directional Light";
         private const string HectonSurfaceName = "Hecton8_Surface";
         private const string AegirName = "GasGiant_Aegir";
         private const string HectonCloudsName = "\u043E\u0431\u043B\u0430\u043A\u0430 \u0433\u0435\u043A\u0442\u043E\u043D8";
         private const string PlasmaOverlayName = "__HECTON_REENTRY_PLASMA_OVERLAY";
+        private const string OrbitVolumeProfileName = "__H8_Orbit_OpticalProfile";
         private const int SceneRootScratchCapacity = 16;
+        private const int SceneTransformScratchCapacity = 64;
         private const float OrbitCameraFarClipMeters = 360000f;
         private const float PlasmaOverlayLocalDistanceMeters = 0.35f;
         private const float PlasmaOverlayNearClipPaddingMeters = 0.03f;
+        private const float StandaloneOrbitStartDistanceMeters = 62000f;
+        private const float StandaloneOrbitReentryStartMeters = 50000f;
+        private const float StandaloneOrbitWhiteoutMeters = 5200f;
+        private const float StandaloneOrbitPassiveSpeedMetersPerSecond = 1600f;
+        private const float StandaloneOrbitBurnAccelerationMetersPerSecondSq = 720f;
+        private const float StandaloneOrbitMaxSpeedMetersPerSecond = 7200f;
+        private const float OrbitKeyLightIntensity = 5.5f;
+        private const float OrbitBloomMinimumThreshold = 16f;
+        private const float OrbitBloomFullThreshold = 0.86f;
+        private const float OrbitBloomFullIntensity = 0.46f;
+        private const float OrbitBloomMinimumScatter = 0.05f;
+        private const float OrbitBloomFullScatter = 0.84f;
+        private const float OrbitOpticalMinimumWeight = 0.08f;
+
+        private static readonly Color OrbitCameraBackground = new Color(0.012f, 0.026f, 0.048f, 1f);
+        private static readonly Color OrbitAmbientColor = new Color(0.018f, 0.032f, 0.052f, 1f);
+        private static readonly Color OrbitKeyLightColor = new Color(0.74f, 0.9f, 1f, 1f);
 
         // COLD ALLOC: Vector3[4] - one domain-load mesh vertex seed for the camera-local plasma fake - owner: PrologueOrbitSceneBootstrap.
         private static readonly Vector3[] s_overlayVertices =
@@ -50,10 +72,14 @@ namespace Hecton8.Prologue.Space
         private static readonly int[] s_overlayTriangles = { 0, 1, 2, 0, 2, 3 };
 
         // COLD ALLOC: List<GameObject>[16] - one-shot 01_ORBIT root traversal scratch - owner: PrologueOrbitSceneBootstrap.
+        // COLD ALLOC: List<GameObject>[16] - reusable scene-root traversal buffer during scene bootstrap - owner: PrologueOrbitSceneBootstrap.
         private static readonly List<GameObject> s_sceneRootScratch = new List<GameObject>(SceneRootScratchCapacity);
+        // COLD ALLOC: List<Transform>[64] - one-shot loaded-scene listener traversal scratch - owner: PrologueOrbitSceneBootstrap.
+        private static readonly List<Transform> s_sceneTransformScratch = new List<Transform>(SceneTransformScratchCapacity);
         private static Mesh s_plasmaOverlayMesh;
 
         [SerializeField] private Material orbitPlasmaMaterial;
+        [SerializeField] private Material orbitSkyboxMaterial;
 
         private void Awake()
         {
@@ -70,13 +96,21 @@ namespace Hecton8.Prologue.Space
         private static void EnsurePrologueRuntime(Scene scene)
         {
             Transform camera = FindSceneTransform(scene, MainCameraName);
+            Transform keyLight = FindSceneTransform(scene, DirectionalLightName);
             Transform hectonSurface = FindSceneTransform(scene, HectonSurfaceName);
             Transform aegir = FindSceneTransform(scene, AegirName);
             Transform clouds = FindSceneTransform(scene, HectonCloudsName);
-            ConfigureCameraForOrbitWindow(camera);
+            PrologueOrbitSceneBootstrap bootstrap = null;
+            if (camera != null)
+                camera.TryGetComponent(out bootstrap);
+            Material skyboxMaterial = bootstrap != null ? bootstrap.orbitSkyboxMaterial : null;
+            ConfigureCameraForOrbitWindow(camera, skyboxMaterial != null);
+            ConfigureOrbitLighting(keyLight, skyboxMaterial);
+            EnsureSingleOrbitAudioListener(camera);
 
             GameObject runtimeRoot = ResolveOrCreateRuntimeRoot(scene);
             runtimeRoot.SetActive(false);
+            ConfigureOrbitPostProcessing(runtimeRoot, camera);
 
             OrbitalRelativityDirector orbital = EnsureComponent<OrbitalRelativityDirector>(runtimeRoot);
             AwaitableDropSequenceDirector sequence = EnsureComponent<AwaitableDropSequenceDirector>(runtimeRoot);
@@ -87,11 +121,11 @@ namespace Hecton8.Prologue.Space
             Renderer hectonRenderer = ResolveRenderer(hectonSurface);
             Renderer aegirRenderer = ResolveRenderer(aegir);
             Renderer cloudRenderer = ResolveRenderer(clouds);
+            Light orbitKeyLight = null;
+            if (keyLight != null)
+                keyLight.TryGetComponent(out orbitKeyLight);
             Transform plasmaOverlay = null;
             Renderer plasmaOverlayRenderer = null;
-            PrologueOrbitSceneBootstrap bootstrap = null;
-            if (camera != null)
-                camera.TryGetComponent(out bootstrap);
             if (bootstrap != null)
                 EnsureCameraLocalPlasmaOverlay(
                     camera,
@@ -99,6 +133,13 @@ namespace Hecton8.Prologue.Space
                     out plasmaOverlay,
                     out plasmaOverlayRenderer);
 
+            orbital.ConfigureStandaloneOrbitPacing(
+                StandaloneOrbitStartDistanceMeters,
+                StandaloneOrbitReentryStartMeters,
+                StandaloneOrbitWhiteoutMeters,
+                StandaloneOrbitPassiveSpeedMetersPerSecond,
+                StandaloneOrbitBurnAccelerationMetersPerSecondSq,
+                StandaloneOrbitMaxSpeedMetersPerSecond);
             orbital.ConfigureSceneBindings(
                 camera,
                 hectonSurface,
@@ -108,6 +149,7 @@ namespace Hecton8.Prologue.Space
                 null,
                 cloudRenderer);
             orbital.ConfigureAegirBackdrop(aegir, aegirRenderer);
+            orbital.ConfigureOrbitKeyLight(orbitKeyLight, OrbitKeyLightIntensity);
             reentryVfx.ConfigureSceneBindings(
                 camera,
                 plasmaOverlay,
@@ -192,6 +234,7 @@ namespace Hecton8.Prologue.Space
                 overlayRenderer = overlayObject.AddComponent<MeshRenderer>();
 
             overlayRenderer.sharedMaterial = plasmaMaterial;
+            overlayRenderer.enabled = false;
             overlayRenderer.shadowCastingMode = ShadowCastingMode.Off;
             overlayRenderer.receiveShadows = false;
             overlayRenderer.lightProbeUsage = LightProbeUsage.Off;
@@ -233,7 +276,7 @@ namespace Hecton8.Prologue.Space
             return Mathf.Max(distance, PlasmaOverlayLocalDistanceMeters);
         }
 
-        private static void ConfigureCameraForOrbitWindow(Transform cameraTransform)
+        private static void ConfigureCameraForOrbitWindow(Transform cameraTransform, bool useSkybox)
         {
             if (cameraTransform == null)
                 return;
@@ -242,7 +285,142 @@ namespace Hecton8.Prologue.Space
                 Vector3.zero,
                 Quaternion.LookRotation(Vector3.down, Vector3.forward));
             if (cameraTransform.TryGetComponent(out Camera camera))
-                camera.farClipPlane = Mathf.Max(camera.farClipPlane, OrbitCameraFarClipMeters);
+            {
+                camera.farClipPlane = OrbitCameraFarClipMeters;
+                camera.clearFlags = useSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+                camera.backgroundColor = OrbitCameraBackground;
+                camera.allowHDR = true;
+            }
+        }
+
+        private static void ConfigureOrbitLighting(Transform keyLightTransform, Material skyboxMaterial)
+        {
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = OrbitAmbientColor;
+            RenderSettings.ambientSkyColor = OrbitAmbientColor;
+            RenderSettings.ambientEquatorColor = OrbitAmbientColor;
+            RenderSettings.ambientGroundColor = OrbitAmbientColor;
+            if (skyboxMaterial != null)
+                RenderSettings.skybox = skyboxMaterial;
+
+            if (keyLightTransform == null)
+                return;
+
+            keyLightTransform.rotation = Quaternion.Euler(42f, -28f, 18f);
+            if (keyLightTransform.TryGetComponent(out Light light))
+            {
+                light.type = LightType.Directional;
+                light.intensity = OrbitKeyLightIntensity;
+                light.color = OrbitKeyLightColor;
+                light.shadows = LightShadows.Hard;
+                light.shadowStrength = 1f;
+                light.bounceIntensity = 0f;
+            }
+        }
+
+        private static void EnsureSingleOrbitAudioListener(Transform orbitCamera)
+        {
+            if (orbitCamera == null)
+                return;
+
+            if (!orbitCamera.TryGetComponent(out AudioListener orbitListener))
+                orbitListener = orbitCamera.gameObject.AddComponent<AudioListener>();
+
+            if (orbitListener != null)
+                orbitListener.enabled = true;
+
+            int sceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(sceneIndex);
+                if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+                    continue;
+
+                s_sceneRootScratch.Clear();
+                s_sceneTransformScratch.Clear();
+                loadedScene.GetRootGameObjects(s_sceneRootScratch);
+
+                for (int i = 0; i < s_sceneRootScratch.Count; i++)
+                {
+                    GameObject root = s_sceneRootScratch[i];
+                    if (root != null)
+                        s_sceneTransformScratch.Add(root.transform);
+                }
+
+                while (s_sceneTransformScratch.Count > 0)
+                {
+                    int lastIndex = s_sceneTransformScratch.Count - 1;
+                    Transform current = s_sceneTransformScratch[lastIndex];
+                    s_sceneTransformScratch.RemoveAt(lastIndex);
+                    if (current == null)
+                        continue;
+
+                    if (!ReferenceEquals(current, orbitCamera) &&
+                        current.TryGetComponent(out AudioListener listener) &&
+                        listener != null &&
+                        listener.enabled)
+                    {
+                        listener.enabled = false;
+                    }
+
+                    int childCount = current.childCount;
+                    for (int childIndex = 0; childIndex < childCount; childIndex++)
+                        s_sceneTransformScratch.Add(current.GetChild(childIndex));
+                }
+            }
+
+            s_sceneRootScratch.Clear();
+            s_sceneTransformScratch.Clear();
+        }
+
+        private static void ConfigureOrbitPostProcessing(GameObject runtimeRoot, Transform cameraTransform)
+        {
+            if (runtimeRoot == null)
+                return;
+
+            UniversalAdditionalCameraData cameraData = null;
+            if (cameraTransform != null)
+                cameraTransform.TryGetComponent(out cameraData);
+
+            Volume volume = EnsureComponent<Volume>(runtimeRoot);
+            volume.isGlobal = true;
+            volume.priority = 1601f;
+            volume.blendDistance = 0f;
+            volume.weight = 0f;
+
+            VolumeProfile profile = volume.sharedProfile;
+            if (profile == null)
+            {
+                // COLD ALLOC: VolumeProfile[1] - scene-local orbit optical stack, not a gameplay hot path object.
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                profile.name = OrbitVolumeProfileName;
+                profile.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+                volume.sharedProfile = profile;
+            }
+
+            if (!profile.TryGet(out Bloom bloom))
+                bloom = profile.Add<Bloom>(true);
+
+            float quality = ResolveQuality01();
+            float bloomWeight = math.lerp(OrbitOpticalMinimumWeight, 1f, quality * quality);
+            bool postProcessingEnabled = bloomWeight > 0f;
+            volume.enabled = postProcessingEnabled;
+            volume.weight = bloomWeight;
+            bloom.active = postProcessingEnabled;
+            bloom.threshold.Override(math.lerp(OrbitBloomMinimumThreshold, OrbitBloomFullThreshold, bloomWeight));
+            bloom.intensity.Override(OrbitBloomFullIntensity * bloomWeight);
+            bloom.scatter.Override(math.lerp(OrbitBloomMinimumScatter, OrbitBloomFullScatter, bloomWeight));
+            bloom.clamp.Override(65472f);
+            bloom.highQualityFiltering.Override(false);
+            bloom.maxIterations.Override((int)math.round(math.lerp(2f, 7f, bloomWeight)));
+            if (cameraData != null)
+                cameraData.renderPostProcessing = postProcessingEnabled;
+        }
+
+        private static float ResolveQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private static Transform FindSceneTransform(Scene scene, string targetName)

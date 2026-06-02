@@ -13,9 +13,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/UI Particle Effect")]
     public sealed class UIParticleEffect : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [Header("=== PARTICLE PREFAB ===")]
         [SerializeField] private GameObject particlePrefab;
@@ -26,9 +26,9 @@ namespace Hecton8.UI
         [SerializeField] private float particleSpeed = 100f;
         [SerializeField] private Color particleColor = Color.white;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private ParticleSystem _particleSystem;
         private ParticleSystem.MainModule _mainModule;
@@ -40,9 +40,9 @@ namespace Hecton8.UI
         private IObjectPoolService _particlePoolOwner;
         private bool _hotSwapListenerRegistered;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -76,9 +76,9 @@ namespace Hecton8.UI
             _particleInstanceOwnedByPool = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // IPOOLABLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void OnSpawn()
         {
@@ -92,9 +92,9 @@ namespace Hecton8.UI
                 _particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Play particle effect at position.
@@ -120,9 +120,9 @@ namespace Hecton8.UI
             Play(worldPosition);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Initialize()
         {

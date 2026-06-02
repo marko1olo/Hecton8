@@ -469,7 +469,10 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _compositeMaterial, shader);
             _pass ??= new HalfResParticlesPass();
             CacheGraphicsCapabilitiesCold();
-            _pass.PrepareResources();
+            if (Application.isPlaying)
+                _pass.PrepareResources();
+            else
+                _pass.Dispose();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -487,6 +490,12 @@ namespace Hecton8.Visor
             }
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
+            {
+                SetGlobalActive(0f);
+                return;
+            }
+
+            if (!_pass.PrepareResources())
             {
                 SetGlobalActive(0f);
                 return;

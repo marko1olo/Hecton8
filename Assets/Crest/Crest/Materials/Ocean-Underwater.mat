@@ -195,12 +195,12 @@ Material:
     - _WaveFoamStrength: 1.25
     m_Colors:
     - _DepthFogDensity: {r: 0.03, g: 0.03, b: 0.026635999, a: 0}
-    - _Diffuse: {r: 0.15514292, g: 0.25467464, b: 0.300048, a: 1}
+    - _Diffuse: {r: 0.1491131, g: 0.22524673, b: 0.24578543, a: 1}
     - _DiffuseGrazing: {r: 0.5733176, g: 0.57345146, b: 0.55580646, a: 1}
-    - _DiffuseShadow: {r: 0.22219586, g: 0.38760248, b: 0.43372405, a: 1}
+    - _DiffuseShadow: {r: 0.22219539, g: 0.38760203, b: 0.43372357, a: 1}
     - _FoamBubbleColor: {r: 0, g: 0, b: 0, a: 1}
     - _FoamWhiteColor: {r: 1, g: 0.99634784, b: 0.97199994, a: 0.6862745}
-    - _SkyAwayFromSun: {r: 0.41732684, g: 0.5259722, b: 0.66449934, a: 1}
+    - _SkyAwayFromSun: {r: 0.39893147, g: 0.4361955, b: 0.49895874, a: 1}
     - _SkyBase: {r: 0.6664, g: 0.7356, b: 0.8, a: 1}
     - _SkyTowardsSun: {r: 0.81534445, g: 0.5707411, b: 0.24460335, a: 1}
     - _SubSurface: {r: 0.06, g: 0.34, b: 0.55, a: 1}

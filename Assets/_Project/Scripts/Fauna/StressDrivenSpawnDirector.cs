@@ -345,18 +345,19 @@ namespace Hecton8.AI
         private const BufferID MesofaunaStateDTOsBufferId = BufferID.ShinobuMesofaunaStates;
         private const BufferID MesofaunaMockPreyTargetsBufferId = BufferID.ShinobuMesofaunaMockPreyTargets;
         private const BufferID MesofaunaVisualSyncBufferId = BufferID.ShinobuMesofaunaVisualSync;
-        private const uint JobPinRules = 1u << 0;
-        private const uint JobPinRuleLinks = 1u << 1;
-        private const uint JobPinCandidates = 1u << 2;
-        private const uint JobPinSelection = 1u << 3;
-        private const uint JobPinInput = 1u << 4;
-        private const uint JobPinTuning = 1u << 5;
-        private const uint JobPinTelemetry = 1u << 6;
-        private const uint JobPinCounters = 1u << 7;
-        private const uint JobPinFrustumPlanes = 1u << 8;
-        private const uint JobPinOwnedSlots = 1u << 9;
-        private const uint JobPinInventoryTickets = 1u << 10;
-        private const uint JobPinSpawnDebug = 1u << 11;
+        private static readonly ulong JobBufferMutationGuardMask =
+            StressDirectorMutationGuardBit(RulesBufferId) |
+            StressDirectorMutationGuardBit(RuleLinksBufferId) |
+            StressDirectorMutationGuardBit(CandidatesBufferId) |
+            StressDirectorMutationGuardBit(SelectionBufferId) |
+            StressDirectorMutationGuardBit(InputBufferId) |
+            StressDirectorMutationGuardBit(TuningBufferId) |
+            StressDirectorMutationGuardBit(TelemetryBufferId) |
+            StressDirectorMutationGuardBit(CountersBufferId) |
+            StressDirectorMutationGuardBit(FrustumPlanesBufferId) |
+            StressDirectorMutationGuardBit(OwnedSlotsBufferId) |
+            StressDirectorMutationGuardBit(InventoryTicketsBufferId) |
+            StressDirectorMutationGuardBit(SpawnDebugBufferId);
 #if UNITY_EDITOR
         private static readonly ulong ReloadMutationGuardMask =
             StressDirectorMutationGuardBit(RulesBufferId) |
@@ -408,8 +409,8 @@ namespace Hecton8.AI
         private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _activeHandle;
-        private IDataVault _jobPinVault;
-        private uint _jobPinMask;
+        private IDataVault _jobBufferGuardVault;
+        private bool _jobBufferGuardHeld;
         private bool _registeredCold;
         private bool _registeredLate;
         private bool _registeredHotSwap;
@@ -662,7 +663,7 @@ namespace Hecton8.AI
 #if UNITY_EDITOR
             TryLoadRulesCsvCold(vault, forceReload: false, locksHeld: false);
 #endif
-            if (!TryPinJobBuffers(vault) ||
+            if (!TryGuardJobBuffers(vault) ||
                 !TryResolveJobBuffers(
                     vault,
                     out NativeArray<SpawnRuleDTO> rules,
@@ -792,7 +793,7 @@ namespace Hecton8.AI
             if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: false))
                 return;
 
-            IDataVault lockedVault = _jobPinVault;
+            IDataVault lockedVault = _jobBufferGuardVault;
             bool canCommit = lockedVault != null && ReferenceEquals(lockedVault, _vault);
             string pendingDumpPath = null;
             NativeArray<byte> pendingDumpPayload = default;
@@ -957,7 +958,7 @@ namespace Hecton8.AI
 
             if (counters[CounterInitialized] != CounterInitializedMagic)
             {
-                if (!TryPinJobBuffers(vault) ||
+                if (!TryGuardJobBuffers(vault) ||
                     !TryResolveJobBuffers(
                         vault,
                         out rules,
@@ -1489,7 +1490,7 @@ namespace Hecton8.AI
                 out _);
         }
 
-        private bool TryPinJobBuffers(IDataVault vault)
+        private bool TryGuardJobBuffers(IDataVault vault)
         {
             ReleaseJobBufferPins();
             if (vault == null || vault.IsCompactionFenceActive || !TryValidateJobBuffers(vault))
@@ -1498,22 +1499,8 @@ namespace Hecton8.AI
             bool pinned = false;
             try
             {
-                _jobPinVault = vault;
-                if (!TryLockJobBuffer(vault, RulesBufferId, JobPinRules) ||
-                    !TryLockJobBuffer(vault, RuleLinksBufferId, JobPinRuleLinks) ||
-                    !TryLockJobBuffer(vault, CandidatesBufferId, JobPinCandidates) ||
-                    !TryLockJobBuffer(vault, SelectionBufferId, JobPinSelection) ||
-                    !TryLockJobBuffer(vault, InputBufferId, JobPinInput) ||
-                    !TryLockJobBuffer(vault, TuningBufferId, JobPinTuning) ||
-                    !TryLockJobBuffer(vault, TelemetryBufferId, JobPinTelemetry) ||
-                    !TryLockJobBuffer(vault, CountersBufferId, JobPinCounters) ||
-                    !TryLockJobBuffer(vault, FrustumPlanesBufferId, JobPinFrustumPlanes) ||
-                    !TryLockJobBuffer(vault, OwnedSlotsBufferId, JobPinOwnedSlots) ||
-                    !TryLockJobBuffer(vault, InventoryTicketsBufferId, JobPinInventoryTickets) ||
-                    !TryLockJobBuffer(vault, SpawnDebugBufferId, JobPinSpawnDebug))
-                {
+                if (!TryAcquireJobBufferMutationGuard(vault))
                     return false;
-                }
 
                 if (!TryValidateJobBuffers(vault))
                     return false;
@@ -1533,60 +1520,36 @@ namespace Hecton8.AI
         {
             if (!_jobBuffersPinned)
             {
-                if (_jobPinVault != null && _jobPinMask != 0u)
-                    ReleaseJobBufferPins(_jobPinVault, _jobPinMask);
-                _jobPinVault = null;
-                _jobPinMask = 0u;
+                ReleaseJobBufferGuard();
                 return;
             }
 
-            IDataVault vault = _jobPinVault;
-            uint pinMask = _jobPinMask;
-            if (vault != null && pinMask != 0u)
-                ReleaseJobBufferPins(vault, pinMask);
-
-            _jobPinVault = null;
-            _jobPinMask = 0u;
+            ReleaseJobBufferGuard();
             _jobBuffersPinned = false;
         }
 
-        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        private bool TryAcquireJobBufferMutationGuard(IDataVault vault)
         {
-            if ((_jobPinMask & pinBit) != 0u)
-                return true;
+            if (_jobBufferGuardHeld)
+                return ReferenceEquals(_jobBufferGuardVault, vault);
 
-            if (vault == null ||
-                (_jobPinVault != null && !ReferenceEquals(_jobPinVault, vault)) ||
-                !vault.TryLockBuffer(bufferId, SystemID.AIEcology))
-            {
+            if (vault == null || !vault.TryAcquireMutationGuard(JobBufferMutationGuardMask))
                 return false;
-            }
 
-            _jobPinVault = vault;
-            _jobPinMask |= pinBit;
+            _jobBufferGuardVault = vault;
+            _jobBufferGuardHeld = true;
             return true;
         }
 
-        private static void ReleaseJobBufferPins(IDataVault vault, uint pinMask)
+        private void ReleaseJobBufferGuard()
         {
-            TryUnlockJobBuffer(vault, pinMask, JobPinSpawnDebug, SpawnDebugBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinInventoryTickets, InventoryTicketsBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinOwnedSlots, OwnedSlotsBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinFrustumPlanes, FrustumPlanesBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinCounters, CountersBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetry, TelemetryBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinTuning, TuningBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinInput, InputBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinSelection, SelectionBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinCandidates, CandidatesBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinRuleLinks, RuleLinksBufferId);
-            TryUnlockJobBuffer(vault, pinMask, JobPinRules, RulesBufferId);
-        }
+            IDataVault vault = _jobBufferGuardVault;
+            bool held = _jobBufferGuardHeld;
+            _jobBufferGuardVault = null;
+            _jobBufferGuardHeld = false;
 
-        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
-        {
-            if (vault != null && (pinMask & pinBit) != 0u)
-                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
+            if (held && vault != null)
+                vault.ReleaseMutationGuard(JobBufferMutationGuardMask);
         }
 
 #if UNITY_EDITOR

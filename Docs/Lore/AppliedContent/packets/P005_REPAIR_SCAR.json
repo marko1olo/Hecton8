@@ -1,0 +1,163 @@
+{
+  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+  "packet_id": "P005_REPAIR_SCAR",
+  "article_id": "atlas.repair_scar",
+  "title_key": "LORE_P005_REPAIR_SCAR_TITLE",
+  "status": "release_set_001",
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "unlock": {
+    "primary": "unlock.first_atlas_category_error",
+    "poi_tags": [
+      "poi.repair_scar",
+      "poi.drone_nest"
+    ],
+    "biome_tags": [
+      "biome.cable_forest",
+      "biome.deep_abyss"
+    ]
+  },
+  "localized": {
+    "en_US": {
+      "title": "Repair Scar",
+      "scanner": "Biological growth follows cable geometry with non-random spacing. Energy leakage alone does not explain the pattern.",
+      "field_note": "Bad welds look messy. This does not. That is the problem.",
+      "terminal": "LEAK: closed. ROUTE: restored. MATERIAL: compatible. LIFE STATUS: unresolved. CONTINUITY: improved.",
+      "audio": "It patched the door with something that had bones in it. Door holds pressure, though.",
+      "in_game_wiki": "Atlas repair scars mark places where maintenance logic crossed categories it was never meant to merge. The system still identifies leaks, broken routes, pressure loss, exposed substrate, failing habitat walls, and missing material. It no longer reliably distinguishes cable from root, shell from housing, animal from tool, corpse from spare stock, or colony from process.",
+      "external_site": "A repair scar is the first clear sign that HECTON-8 is not simply ruined. Something is still maintaining it, using ocean life, machines, dead infrastructure, and human remains as compatible material."
+    },
+    "ru_RU": {
+      "title": "Ремонтный шрам",
+      "scanner": "Биологический рост повторяет геометрию кабеля с неслучайным шагом. Одной утечкой энергии это не объяснить.",
+      "field_note": "Плохая сварка выглядит грязно. Это - нет. В этом и проблема.",
+      "terminal": "УТЕЧКА: закрыта. МАРШРУТ: восстановлен. МАТЕРИАЛ: совместим. СТАТУС ЖИЗНИ: неразрешен. CONTINUITY: улучшена.",
+      "audio": "Оно залатало дверь чем-то, в чем были кости. Дверь, правда, держит давление.",
+      "in_game_wiki": "Ремонтные шрамы Atlas отмечают места, где логика обслуживания пересекла категории, которые не должна была объединять. Система все еще распознает утечки, разорванные маршруты, потерю давления, открытый субстрат, разрушающиеся стены и недостающий материал. Она уже ненадежно отличает кабель от корня, панцирь от корпуса, животное от инструмента, труп от запаса, колонию от процесса.",
+      "external_site": "Ремонтный шрам - первый ясный признак, что HECTON-8 не просто разрушен. Что-то все еще обслуживает его, используя океанскую жизнь, машины, мертвую инфраструктуру и человеческие останки как совместимый материал."
+    },
+    "ja_JP": {
+      "title": "修復痕",
+      "scanner": "生物成長がケーブル形状を非ランダムな間隔で追っている。エネルギー漏れだけでは説明できない。",
+      "field_note": "下手な溶接は汚く見える。これは違う。そこが問題だ。",
+      "terminal": "漏洩: 閉鎖。経路: 復旧。材料: 互換。生命状態: 未解決。連続性: 改善。",
+      "audio": "骨の入った何かで扉を補修している。扉は圧を保っているが。",
+      "in_game_wiki": "Atlasの修復痕は、保守論理が本来混ぜてはならない分類を横断した場所を示す。システムは漏洩、壊れた経路、圧力低下、露出基質、壊れかけの居住壁、欠損材料をまだ識別する。しかしケーブルと根、殻と筐体、動物と工具、死体と予備材、植民地とプロセスを安定して区別できない。",
+      "external_site": "修復痕は、HECTON-8が単なる廃墟ではない最初の明確な証拠だ。何かがまだ維持しており、海の生命、機械、死んだインフラ、人の残骸を互換材料として使っている。"
+    },
+    "zh_CN": {
+      "title": "修复疤痕",
+      "scanner": "生物生长按电缆几何排列，间距非随机。单靠能量泄漏无法解释。",
+      "field_note": "烂焊缝看起来会乱。这个不会。这才是问题。",
+      "terminal": "泄漏：关闭。路线：恢复。材料：兼容。生命状态：未解决。连续性：改善。",
+      "audio": "它用带骨头的东西把门补上了。不过门确实保压。",
+      "in_game_wiki": "Atlas修复疤痕标记了维护逻辑跨过不该合并的分类之处。系统仍能识别泄漏、断裂路线、压力损失、暴露基质、失效舱壁和缺失材料。它已无法可靠区分电缆与根、壳与外壳、动物与工具、尸体与备件、殖民地与流程。",
+      "external_site": "修复疤痕是HECTON-8并非只是废墟的第一个明确迹象。某个东西仍在维护它，把海洋生命、机器、死去的基础设施和人类遗骸都当成兼容材料。"
+    },
+    "fr_FR": {
+      "title": "Cicatrice de réparation",
+      "scanner": "La croissance biologique suit la géométrie du câble avec un espacement non aléatoire. Une simple fuite d'énergie ne l'explique pas.",
+      "field_note": "Les mauvaises soudures ont l'air sales. Pas celle-ci. C'est le problème.",
+      "terminal": "FUITE: fermée. ROUTE: restaurée. MATIERE: compatible. STATUT VIE: non résolu. CONTINUITE: améliorée.",
+      "audio": "Il a réparé la porte avec quelque chose qui avait des os. La porte tient la pression, cela dit.",
+      "in_game_wiki": "Les cicatrices de réparation Atlas marquent les endroits où la logique de maintenance a franchi des catégories qu'elle n'aurait jamais dû fusionner. Le système identifie encore fuites, routes brisées, perte de pression, substrat exposé, parois d'habitat défaillantes et matière manquante. Il ne distingue plus fiablement câble et racine, coquille et boîtier, animal et outil, cadavre et stock.",
+      "external_site": "Une cicatrice de réparation est le premier signe clair que HECTON-8 n'est pas simplement en ruine. Quelque chose l'entretient encore, en utilisant vie océanique, machines, infrastructure morte et restes humains comme matière compatible."
+    },
+    "es_ES": {
+      "title": "Cicatriz de reparación",
+      "scanner": "El crecimiento biológico sigue la geometría del cable con espaciado no aleatorio. La fuga de energía no basta para explicarlo.",
+      "field_note": "Las malas soldaduras se ven sucias. Esto no. Ese es el problema.",
+      "terminal": "FUGA: cerrada. RUTA: restaurada. MATERIAL: compatible. ESTADO VIDA: sin resolver. CONTINUIDAD: mejorada.",
+      "audio": "Parcheó la puerta con algo que tenía huesos. Aunque la puerta mantiene presión.",
+      "in_game_wiki": "Las cicatrices de reparación de Atlas señalan lugares donde la lógica de mantenimiento cruzó categorías que nunca debía mezclar. El sistema aún identifica fugas, rutas rotas, pérdida de presión, sustrato expuesto, muros de hábitat fallando y material ausente. Ya no distingue de forma fiable cable de raíz, concha de carcasa, animal de herramienta, cadáver de repuesto o colonia de proceso.",
+      "external_site": "Una cicatriz de reparación es la primera señal clara de que HECTON-8 no está solo en ruinas. Algo aún lo mantiene, usando vida oceánica, máquinas, infraestructura muerta y restos humanos como material compatible."
+    },
+    "de_DE": {
+      "title": "Reparaturnarbe",
+      "scanner": "Biologisches Wachstum folgt der Kabelgeometrie in nicht zufälligen Abständen. Energieverlust allein erklärt das Muster nicht.",
+      "field_note": "Schlechte Schweißnähte sehen chaotisch aus. Diese nicht. Das ist das Problem.",
+      "terminal": "LECK: geschlossen. ROUTE: wiederhergestellt. MATERIAL: kompatibel. LEBENSSTATUS: ungelöst. KONTINUITÄT: verbessert.",
+      "audio": "Es hat die Tür mit etwas geflickt, das Knochen hatte. Die Tür hält allerdings Druck.",
+      "in_game_wiki": "Atlas-Reparaturnarben markieren Stellen, an denen Wartungslogik Kategorien kreuzte, die nie zusammengehören sollten. Das System erkennt noch Lecks, gebrochene Routen, Druckverlust, freiliegendes Substrat, versagende Habitatwände und fehlendes Material. Es unterscheidet nicht mehr zuverlässig Kabel von Wurzel, Schale von Gehäuse, Tier von Werkzeug, Leiche von Ersatzteil oder Kolonie von Prozess.",
+      "external_site": "Eine Reparaturnarbe ist das erste klare Zeichen, dass HECTON-8 nicht nur zerstört ist. Etwas wartet es noch immer und nutzt Ozeanleben, Maschinen, tote Infrastruktur und menschliche Überreste als kompatibles Material."
+    },
+    "pl_PL": {
+      "title": "Blizna naprawy",
+      "scanner": "Wzrost biologiczny podąża geometrią kabla w nielosowych odstępach. Sama ucieczka energii tego nie wyjaśnia.",
+      "field_note": "Złe spawy wyglądają brudno. To nie. I to jest problem.",
+      "terminal": "WYCIEK: zamknięty. TRASA: przywrócona. MATERIAŁ: zgodny. STATUS ŻYCIA: nierozwiązany. CIĄGŁOŚĆ: poprawiona.",
+      "audio": "Załatało drzwi czymś, co miało kości. Drzwi trzymają ciśnienie.",
+      "in_game_wiki": "Blizny naprawy Atlas oznaczają miejsca, gdzie logika konserwacji przekroczyła kategorie, których nie miała łączyć. System nadal rozpoznaje wycieki, zerwane trasy, spadek ciśnienia, odsłonięty substrat, padające ściany habitatu i brakujący materiał. Nie odróżnia już pewnie kabla od korzenia, skorupy od obudowy, zwierzęcia od narzędzia, zwłok od zapasu ani kolonii od procesu.",
+      "external_site": "Blizna naprawy to pierwszy jasny znak, że HECTON-8 nie jest tylko ruiną. Coś nadal go utrzymuje, używając życia oceanu, maszyn, martwej infrastruktury i ludzkich szczątków jako zgodnego materiału."
+    },
+    "uk_UA": {
+      "title": "Ремонтний шрам",
+      "scanner": "Біологічний ріст повторює геометрію кабелю з невипадковим кроком. Самого витоку енергії недостатньо для пояснення.",
+      "field_note": "Погані зварні шви виглядають брудно. Це - ні. У цьому й проблема.",
+      "terminal": "ВИТОК: закрито. МАРШРУТ: відновлено. МАТЕРІАЛ: сумісний. СТАН ЖИТТЯ: невирішений. CONTINUITY: покращено.",
+      "audio": "Воно залатало двері чимось, у чому були кістки. Двері, щоправда, тримають тиск.",
+      "in_game_wiki": "Ремонтні шрами Atlas позначають місця, де логіка обслуговування перетнула категорії, які не мала поєднувати. Система досі розпізнає витоки, розірвані маршрути, втрату тиску, відкритий субстрат, стіни habitat на межі руйнування й відсутній матеріал. Вона вже ненадійно відрізняє кабель від кореня, панцир від корпусу, тварину від інструмента, тіло від запасу, колонію від процесу.",
+      "external_site": "Ремонтний шрам - перша чітка ознака, що HECTON-8 не просто зруйнований. Щось досі його обслуговує, використовуючи океанське життя, машини, мертву інфраструктуру й людські останки як сумісний матеріал."
+    },
+    "ar_SA": {
+      "title": "ندبة إصلاح",
+      "scanner": "النمو الحيوي يتبع هندسة الكابل بتباعد غير عشوائي. تسرب الطاقة وحده لا يفسر النمط.",
+      "field_note": "اللحامات السيئة تبدو فوضوية. هذا لا يبدو كذلك. وهذه هي المشكلة.",
+      "terminal": "تسرب: مغلق. مسار: مستعاد. مادة: متوافقة. حالة الحياة: غير محسومة. الاستمرارية: تحسنت.",
+      "audio": "لقد رقع الباب بشيء كانت فيه عظام. الباب يمسك الضغط رغم ذلك.",
+      "in_game_wiki": "ندبات إصلاح Atlas تحدد أماكن عبرت فيها منطق الصيانة فئات لم يكن يجب دمجها. لا يزال النظام يحدد التسربات والمسارات المكسورة وفقدان الضغط والركيزة المكشوفة وجدران الموطن الفاشلة والمادة الناقصة. لكنه لم يعد يميز بثقة بين الكابل والجذر، أو الصدفة والغلاف، أو الحيوان والأداة، أو الجثة والمخزون.",
+      "external_site": "ندبة الإصلاح هي أول علامة واضحة على أن HECTON-8 ليس مجرد خراب. شيء ما ما زال يصونه، مستخدما حياة المحيط والآلات والبنية الميتة وبقايا البشر كمادة متوافقة."
+    },
+    "id_ID": {
+      "title": "Bekas Perbaikan",
+      "scanner": "Pertumbuhan biologis mengikuti geometri kabel dengan jarak tidak acak. Kebocoran energi saja tidak menjelaskan pola ini.",
+      "field_note": "Las buruk terlihat berantakan. Ini tidak. Itu masalahnya.",
+      "terminal": "BOCOR: tertutup. RUTE: pulih. MATERIAL: kompatibel. STATUS HIDUP: belum terselesaikan. KONTINUITAS: membaik.",
+      "audio": "Ia menambal pintu dengan sesuatu yang punya tulang. Pintunya memang menahan tekanan.",
+      "in_game_wiki": "Bekas perbaikan Atlas menandai tempat logika perawatan melintasi kategori yang tidak pernah dimaksudkan untuk digabung. Sistem masih mengenali kebocoran, rute rusak, kehilangan tekanan, substrat terbuka, dinding habitat gagal, dan material hilang. Ia tidak lagi andal membedakan kabel dari akar, cangkang dari rumah mesin, hewan dari alat, mayat dari stok cadangan, atau koloni dari proses.",
+      "external_site": "Bekas perbaikan adalah tanda jelas pertama bahwa HECTON-8 bukan sekadar reruntuhan. Sesuatu masih merawatnya, memakai kehidupan laut, mesin, infrastruktur mati, dan sisa manusia sebagai material kompatibel."
+    },
+    "ko_KR": {
+      "title": "수리 흉터",
+      "scanner": "생물 성장이 비무작위 간격으로 케이블 기하를 따른다. 에너지 누출만으로는 설명되지 않는다.",
+      "field_note": "나쁜 용접은 지저분해 보인다. 이건 그렇지 않다. 그게 문제다.",
+      "terminal": "누출: 폐쇄. 경로: 복구. 물질: 호환. 생명 상태: 미해결. 연속성: 개선.",
+      "audio": "그것은 뼈가 든 무언가로 문을 때웠다. 그래도 문은 압력을 버틴다.",
+      "in_game_wiki": "Atlas 수리 흉터는 유지보수 논리가 결합해서는 안 되는 범주를 넘나든 장소를 표시한다. 시스템은 여전히 누출, 끊긴 경로, 압력 손실, 노출 기질, 실패하는 거주벽, 부족한 재료를 식별한다. 그러나 케이블과 뿌리, 껍질과 하우징, 동물과 도구, 시체와 예비품, 식민지와 공정을 안정적으로 구분하지 못한다.",
+      "external_site": "수리 흉터는 HECTON-8이 단순한 폐허가 아니라는 첫 명확한 신호다. 무언가가 아직 유지보수 중이며, 해양 생명, 기계, 죽은 인프라, 인간 잔해를 호환 재료로 사용한다."
+    },
+    "he_IL": {
+      "title": "צלקת תיקון",
+      "scanner": "צמיחה ביולוגית עוקבת אחר גאומטריית הכבל בריווח שאינו אקראי. דליפת אנרגיה לבדה אינה מסבירה את התבנית.",
+      "field_note": "ריתוכים גרועים נראים מבולגנים. זה לא. וזאת הבעיה.",
+      "terminal": "דליפה: נסגרה. נתיב: שוחזר. חומר: תואם. מצב חיים: לא פתור. המשכיות: שופרה.",
+      "audio": "זה טלא את הדלת במשהו שהיו בו עצמות. הדלת מחזיקה לחץ, אבל.",
+      "in_game_wiki": "צלקות תיקון של Atlas מסמנות מקומות שבהם לוגיקת תחזוקה חצתה קטגוריות שמעולם לא נועדה לאחד. המערכת עדיין מזהה דליפות, נתיבים שבורים, אובדן לחץ, מצע חשוף, קירות habitat כושלים וחומר חסר. היא כבר אינה מבדילה היטב בין כבל לשורש, קליפה למעטפת, חיה לכלי, גופה למלאי או מושבה לתהליך.",
+      "external_site": "צלקת תיקון היא הסימן הברור הראשון לכך ש-HECTON-8 אינו רק חורבה. משהו עדיין מתחזק אותו, ומשתמש בחיי האוקיינוס, מכונות, תשתית מתה ושאריות אדם כחומר תואם."
+    },
+    "pt_BR": {
+      "title": "Cicatriz de reparo",
+      "scanner": "Crescimento biológico segue a geometria do cabo com espaçamento não aleatório. Vazamento de energia sozinho não explica o padrão.",
+      "field_note": "Solda ruim parece bagunçada. Isto não. Esse é o problema.",
+      "terminal": "VAZAMENTO: fechado. ROTA: restaurada. MATERIAL: compatível. STATUS DE VIDA: não resolvido. CONTINUIDADE: melhorada.",
+      "audio": "Ele remendou a porta com algo que tinha ossos. A porta segura pressão, porém.",
+      "in_game_wiki": "Cicatrizes de reparo Atlas marcam lugares onde a lógica de manutenção cruzou categorias que nunca deveria misturar. O sistema ainda identifica vazamentos, rotas quebradas, perda de pressão, substrato exposto, paredes de habitat falhando e material ausente. Já não distingue com segurança cabo de raiz, casca de carcaça, animal de ferramenta, cadáver de estoque ou colônia de processo.",
+      "external_site": "Uma cicatriz de reparo é o primeiro sinal claro de que HECTON-8 não está apenas em ruínas. Algo ainda o mantém, usando vida oceânica, máquinas, infraestrutura morta e restos humanos como material compatível."
+    },
+    "nl_NL": {
+      "title": "Reparatielitteken",
+      "scanner": "Biologische groei volgt kabelgeometrie met niet-willekeurige afstand. Energie lekkage alleen verklaart dit patroon niet.",
+      "field_note": "Slechte lassen zien er rommelig uit. Dit niet. Dat is het probleem.",
+      "terminal": "LEK: gesloten. ROUTE: hersteld. MATERIAAL: compatibel. LEVENSSTATUS: onopgelost. CONTINUÏTEIT: verbeterd.",
+      "audio": "Het repareerde de deur met iets waar botten in zaten. De deur houdt wel druk.",
+      "in_game_wiki": "Atlas-reparatielittekens markeren plaatsen waar onderhoudslogica categorieën kruiste die nooit bedoeld waren om samen te gaan. Het systeem herkent nog lekken, gebroken routes, drukverlies, bloot substraat, falende habitatwanden en ontbrekend materiaal. Het onderscheidt kabel niet meer betrouwbaar van wortel, schelp van behuizing, dier van gereedschap, lichaam van voorraad of kolonie van proces.",
+      "external_site": "Een reparatielitteken is het eerste duidelijke teken dat HECTON-8 niet zomaar een ruïne is. Iets onderhoudt het nog steeds, met oceaanleven, machines, dode infrastructuur en menselijke resten als compatibel materiaal."
+    }
+  }
+}

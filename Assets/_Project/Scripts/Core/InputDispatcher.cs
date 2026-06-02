@@ -2,6 +2,7 @@
 #define HECTON8_MMF_AVAILABLE
 #endif
 using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using System;
 using System.IO;
@@ -13,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Interaction;
 using Hecton8.Tools;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -86,6 +88,8 @@ namespace Hecton8.Core
         private const int InputStateDtoSizeBytes = 24;
         private const int HapticCommandDtoSizeBytes = 16;
         private const int XRInputStateSizeBytes = 64;
+        private const int ReplayFrameDtoSizeBytes = 80;
+        private const int ReplayTelemetryEntrySizeBytes = 64;
         private const int InputReplayHeaderBytes = 16;
         private const int InputReplayPayloadBytes = StandardInputRingCapacity * InputStateSizeBytes;
         private const int InputReplayMappedBytes = InputReplayHeaderBytes + InputReplayPayloadBytes;
@@ -128,6 +132,8 @@ namespace Hecton8.Core
             MutationGuardBit(BufferID.ShinobuInputProfile) |
             MutationGuardBit(BufferID.ShinobuInputTelemetryRing) |
             MutationGuardBit(BufferID.ShinobuInputReplaySnapshot) |
+            MutationGuardBit(BufferID.ShinobuInputReplayFrames) |
+            MutationGuardBit(BufferID.ShinobuInputReplayTelemetry) |
             MutationGuardBit(BufferID.ShinobuInputHapticCommands) |
             MutationGuardBit(BufferID.ShinobuInputXRInputStates)
 #if UNITY_EDITOR
@@ -218,6 +224,8 @@ namespace Hecton8.Core
         private VaultGenerationHandle<InputProfileDTO> _inputProfileHandle;
         private VaultGenerationHandle<InputTelemetryEntryDTO> _inputTelemetryHandle;
         private VaultGenerationHandle<InputState> _inputReplaySnapshotHandle;
+        private VaultGenerationHandle<ReplayFrameDTO> _inputReplayFrameHandle;
+        private VaultGenerationHandle<MemoryStateTelemetryEntry> _inputReplayTelemetryHandle;
         private VaultGenerationHandle<HapticCommandDTO> _hapticCommandDtoHandle;
         private VaultGenerationHandle<XRInputState> _xrInputStatesHandle;
 #if UNITY_EDITOR
@@ -333,8 +341,8 @@ namespace Hecton8.Core
 
         // COLD ALLOC: BufferedActionEntry[10] - fixed player action buffering ring for pre-commit intent capture - owner: InputDispatcher
         private readonly BufferedActionEntry[] _bufferedActions = new BufferedActionEntry[BufferedActionCapacity];
-        // COLD ALLOC: object[1] - deterministic input replay writer gate - owner: InputDispatcher
-        private readonly object _inputReplayGate = new object();
+        // Zero-alloc CAS gate for deterministic input replay MMF copy/flush handoff - owner: InputDispatcher
+        private int _inputReplaySnapshotGate;
 #if UNITY_EDITOR
         // COLD ALLOC: object[1] - CSV profile stage gate; file I/O happens outside PRE_SIMULATION - owner: InputDispatcher
         private readonly object _inputProfileCsvStageGate = new object();
@@ -663,6 +671,7 @@ namespace Hecton8.Core
             if (!TryAcquireInputMutationGuard())
                 return;
 
+            bool stageReplaySnapshot = false;
             try
             {
                 if (!TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out NativeArray<InputStateDTO> inputJournal) ||
@@ -709,6 +718,7 @@ namespace Hecton8.Core
                 _currentInputState = resolvedState;
                 ApplyResolvedInputStateToPlayerSnapshot(resolvedState);
                 WriteCurrentInputDto(BuildInputStateDtoFromResolvedState(in resolvedState));
+                WriteReplayFrameDto(currentFrame, in resolvedState);
 
                 InputStateSignal signal = default;
                 signal.State = resolvedState;
@@ -721,12 +731,15 @@ namespace Hecton8.Core
                 _previousButtonMask = resolvedState.ButtonsBitmask;
                 WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
                 if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
-                    StageInputReplaySnapshot();
+                    stageReplaySnapshot = true;
             }
             finally
             {
                 ReleaseInputMutationGuard();
             }
+
+            if (stageReplaySnapshot)
+                StageInputReplaySnapshot();
         }
 
         private static InputStateDTO BuildInputStateDto(in PlayerInputState source)
@@ -761,6 +774,143 @@ namespace Hecton8.Core
                 return;
 
             currentInputDto[0] = inputStateDto;
+        }
+
+        private void WriteReplayFrameDto(uint currentFrame, in InputState resolvedState)
+        {
+            if (!IsInputReplayRecordingActive())
+                return;
+
+            if (!TryResolveInputBuffer(in _inputReplayFrameHandle, DeterministicInputRingCapacity, out NativeArray<ReplayFrameDTO> replayFrames))
+                return;
+
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) ||
+                !TryResolveReplayAup(in pose, out double3 recordedAup))
+            {
+                return;
+            }
+
+            float3 velocity = float3.zero;
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                velocity = SanitizeReplayFloat3(movementState.Velocity);
+
+            float3 moveAxis = ResolveReplayMoveAxis(in resolvedState);
+            uint inputFlags = (uint)resolvedState.Flags;
+            uint inputHash = HashReplayInput(in resolvedState, in moveAxis, currentFrame);
+            uint stateHash = HashReplayState(in recordedAup, in velocity, currentFrame, inputFlags);
+            int ringIndex = (int)(currentFrame % DeterministicInputRingCapacity);
+            ReplayFrameDTO frame = default;
+            frame.RecordedAup = recordedAup;
+            frame.Tick = currentFrame;
+            frame.InputMoveAxis = moveAxis;
+            frame.Velocity = velocity;
+            frame.DeltaTime = (float)StandardInputTickIntervalSeconds;
+            frame.Frame = currentFrame;
+            frame.InputFlags = inputFlags;
+            frame.StateHash = stateHash;
+            frame.InputHash = inputHash;
+            replayFrames[ringIndex] = frame;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsInputReplayRecordingActive()
+        {
+            return _inputReplaySignal != null &&
+                   _inputReplayThread != null &&
+                   Volatile.Read(ref _inputReplayStopRequested) == 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveReplayAup(in PlayerRuntimePoseSnapshot pose, out double3 recordedAup)
+        {
+            recordedAup = double3.zero;
+            AbsoluteUniversePosition aup = pose.Aup;
+            if (!aup.IsFinite())
+                return false;
+
+            double3 candidate = aup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(candidate)))
+                return false;
+
+            recordedAup = default;
+            recordedAup.x = CanonicalizeReplayDouble(candidate.x);
+            recordedAup.y = CanonicalizeReplayDouble(candidate.y);
+            recordedAup.z = CanonicalizeReplayDouble(candidate.z);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveReplayMoveAxis(in InputState state)
+        {
+            float3 moveAxis = default;
+            moveAxis.x = state.MoveX * InputState.AxisInvQuantizeScale;
+            moveAxis.y = state.Vertical * InputState.AxisInvQuantizeScale;
+            moveAxis.z = state.MoveY * InputState.AxisInvQuantizeScale;
+            return SanitizeReplayFloat3(moveAxis);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeReplayFloat3(float3 value)
+        {
+            float3 sanitized = default;
+            sanitized.x = CanonicalizeReplayFloat(value.x);
+            sanitized.y = CanonicalizeReplayFloat(value.y);
+            sanitized.z = CanonicalizeReplayFloat(value.z);
+            return sanitized;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float CanonicalizeReplayFloat(float value)
+        {
+            return math.isfinite(value) && value != 0f ? value : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double CanonicalizeReplayDouble(double value)
+        {
+            return math.isfinite(value) && value != 0d ? value : 0d;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashReplayInput(in InputState state, in float3 moveAxis, uint currentFrame)
+        {
+            uint hash = 2166136261u;
+            hash = MixReplayHash(hash, currentFrame);
+            hash = MixReplayHash(hash, state.Frame);
+            hash = MixReplayHash(hash, state.Sequence);
+            hash = MixReplayHash(hash, state.ButtonsBitmask);
+            hash = MixReplayHash(hash, (uint)state.Flags);
+            hash = MixReplayHash(hash, math.asuint(moveAxis.x));
+            hash = MixReplayHash(hash, math.asuint(moveAxis.y));
+            return MixReplayHash(hash, math.asuint(moveAxis.z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashReplayState(in double3 recordedAup, in float3 velocity, uint currentFrame, uint flags)
+        {
+            uint hash = 0x811C9DC5u ^ 0x1626A11Cu;
+            hash = MixReplayHash(hash, currentFrame);
+            hash = MixReplayHash(hash, flags);
+            hash = MixReplayHash(hash, FoldReplayHash(math.asulong(recordedAup.x)));
+            hash = MixReplayHash(hash, FoldReplayHash(math.asulong(recordedAup.y)));
+            hash = MixReplayHash(hash, FoldReplayHash(math.asulong(recordedAup.z)));
+            hash = MixReplayHash(hash, math.asuint(velocity.x));
+            hash = MixReplayHash(hash, math.asuint(velocity.y));
+            return MixReplayHash(hash, math.asuint(velocity.z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MixReplayHash(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint FoldReplayHash(ulong value)
+        {
+            return (uint)value ^ (uint)(value >> 32);
         }
 
         private void WriteButtonMaskWindow(uint buttonMask)
@@ -902,6 +1052,10 @@ namespace Hecton8.Core
                 Hecton8.Core.H8Debug.LogError("[InputDispatcher] XRInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
             if (UnsafeUtility.SizeOf<BufferedActionEntry>() != BufferedActionEntrySizeBytes)
                 Hecton8.Core.H8Debug.LogError("[InputDispatcher] BufferedActionEntry ABI violation; expected 16 bytes with natural ARM64 alignment.");
+            if (UnsafeUtility.SizeOf<ReplayFrameDTO>() != ReplayFrameDtoSizeBytes)
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] ReplayFrameDTO ABI violation; expected 80 bytes.");
+            if (UnsafeUtility.SizeOf<MemoryStateTelemetryEntry>() != ReplayTelemetryEntrySizeBytes)
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] MemoryStateTelemetryEntry ABI violation; expected 64 bytes.");
 #endif
             if (_deterministicVaultBuffersReady && ValidateDeterministicInputBuffers())
                 return;
@@ -972,6 +1126,18 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
                 OpenOrAcquireInputBufferForOwnerRoute(
+                    ref _inputReplayFrameHandle,
+                    BufferID.ShinobuInputReplayFrames,
+                    DeterministicInputRingCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                OpenOrAcquireInputBufferForOwnerRoute(
+                    ref _inputReplayTelemetryHandle,
+                    BufferID.ShinobuInputReplayTelemetry,
+                    InputBlackBoxCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticCommandDtoHandle,
                     BufferID.ShinobuInputHapticCommands,
                     HapticCommandDtoCapacity,
@@ -1008,6 +1174,8 @@ namespace Hecton8.Core
                 ClearVaultBuffer(ref _inputBlockMaskHandle);
                 ClearVaultBuffer(ref _inputTelemetryHandle);
                 ClearVaultBuffer(ref _inputReplaySnapshotHandle);
+                ClearVaultBuffer(ref _inputReplayFrameHandle);
+                ClearVaultBuffer(ref _inputReplayTelemetryHandle);
                 ClearVaultBuffer(ref _hapticCommandDtoHandle);
 #if UNITY_EDITOR
                 ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
@@ -1042,6 +1210,8 @@ namespace Hecton8.Core
                    TryResolveInputBuffer(in _inputProfileHandle, 1, out _) &&
                    TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out _) &&
                    TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputReplayFrameHandle, DeterministicInputRingCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputReplayTelemetryHandle, InputBlackBoxCapacity, out _) &&
                    TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out _)
 #if UNITY_EDITOR
                    && TryResolveInputBuffer(in _inputProfileCsvScratchHandle, 4096, out _)
@@ -1242,6 +1412,8 @@ namespace Hecton8.Core
             ReleaseVaultHandle(vault, ref _inputProfileHandle);
             ReleaseVaultHandle(vault, ref _inputTelemetryHandle);
             ReleaseVaultHandle(vault, ref _inputReplaySnapshotHandle);
+            ReleaseVaultHandle(vault, ref _inputReplayFrameHandle);
+            ReleaseVaultHandle(vault, ref _inputReplayTelemetryHandle);
             ReleaseVaultHandle(vault, ref _hapticCommandDtoHandle);
             ReleaseVaultHandle(vault, ref _xrInputStatesHandle);
 #if UNITY_EDITOR
@@ -1663,15 +1835,38 @@ namespace Hecton8.Core
                    ((uint)(ushort)state.MoveY << 16);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryAcquireInputReplaySnapshotGate()
+        {
+            return Interlocked.CompareExchange(ref _inputReplaySnapshotGate, 1, 0) == 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ReleaseInputReplaySnapshotGate()
+        {
+            Volatile.Write(ref _inputReplaySnapshotGate, 0);
+        }
+
         private void StageInputReplaySnapshot()
         {
-            if (!TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing) ||
-                !TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputReplaySnapshot) ||
-                _inputReplaySignal == null)
+            AutoResetEvent signal = _inputReplaySignal;
+            if (signal == null)
                 return;
 
-            lock (_inputReplayGate)
+            if (!TryAcquireInputMutationGuard())
+                return;
+
+            bool replayGateTaken = false;
+            try
             {
+                if (!TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing) ||
+                    !TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputReplaySnapshot))
+                    return;
+
+                if (!TryAcquireInputReplaySnapshotGate())
+                    return;
+
+                replayGateTaken = true;
                 for (int i = 0; i < DeterministicInputRingCapacity; i++)
                     inputReplaySnapshot[i] = inputStateRing[i];
 
@@ -1690,9 +1885,15 @@ namespace Hecton8.Core
                 }
 #endif
             }
+            finally
+            {
+                if (replayGateTaken)
+                    ReleaseInputReplaySnapshotGate();
+                ReleaseInputMutationGuard();
+            }
 
             Interlocked.Exchange(ref _inputReplayWritePending, 1);
-            _inputReplaySignal.Set();
+            signal.Set();
         }
 
         private void EnsureInputReplayWriterCold()
@@ -1789,10 +1990,12 @@ namespace Hecton8.Core
 
         private void ReleaseInputReplayMap()
         {
+            Volatile.Write(ref _inputReplaySnapshotGate, 0);
 #if HECTON8_MMF_AVAILABLE
-            if (_inputReplayPointer != null && _inputReplayAccessor != null)
+            if (_inputReplayPointer != null)
             {
-                _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                if (_inputReplayAccessor != null)
+                    _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
                 _inputReplayPointer = null;
             }
 
@@ -1833,13 +2036,28 @@ namespace Hecton8.Core
                         continue;
 
                     MemoryMappedViewAccessor accessor = _inputReplayAccessor;
-                    lock (_inputReplayGate)
+                    bool replayGateTaken = false;
+                    try
                     {
+                        if (!TryAcquireInputReplaySnapshotGate())
+                        {
+                            Interlocked.Exchange(ref _inputReplayWritePending, 1);
+                            signal.Set();
+                            Thread.Yield();
+                            continue;
+                        }
+
+                        replayGateTaken = true;
                         if (_inputReplayPointer == null)
                             continue;
-                    }
 
-                    accessor?.Flush();
+                        accessor?.Flush();
+                    }
+                    finally
+                    {
+                        if (replayGateTaken)
+                            ReleaseInputReplaySnapshotGate();
+                    }
                 }
             }
             catch (Exception)
@@ -4108,6 +4326,8 @@ namespace Hecton8.Core
                 ClearVaultBuffer(ref _inputBlockMaskHandle);
                 ClearVaultBuffer(ref _inputTelemetryHandle);
                 ClearVaultBuffer(ref _inputReplaySnapshotHandle);
+                ClearVaultBuffer(ref _inputReplayFrameHandle);
+                ClearVaultBuffer(ref _inputReplayTelemetryHandle);
                 ClearVaultBuffer(ref _hapticCommandDtoHandle);
 #if UNITY_EDITOR
                 ClearVaultBuffer(ref _inputProfileCsvScratchHandle);

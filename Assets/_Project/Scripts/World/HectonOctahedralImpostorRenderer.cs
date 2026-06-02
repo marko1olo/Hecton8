@@ -302,9 +302,18 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            NativeArray<OctahedralImpostorInstance> upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, hlodCount);
+            long uploadBytes = GraphicsBufferUploadUtility.EstimateUploadBytes<OctahedralImpostorInstance>(hlodCount);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return;
+
+            bool bufferLocked = false;
+            bool uploadAccepted = false;
+            bool unlockSucceeded = false;
+            NativeArray<OctahedralImpostorInstance> upload = default;
             try
             {
+                upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, hlodCount);
+                bufferLocked = true;
                 for (int i = 0; i < hlodCount; i++)
                 {
                     HLODData entry = hlodEntries[i];
@@ -330,10 +339,26 @@ namespace Hecton8.World
                         hasCombinedBounds = true;
                     }
                 }
+
+                uploadAccepted = true;
             }
             finally
             {
-                instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(hlodCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(hlodCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && unlockSucceeded)
+                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                    else
+                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
+                }
             }
 
             _activeInstanceBuffer = instanceWriteBuffer;
@@ -359,9 +384,18 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            NativeArray<OctahedralImpostorInstance> upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, instanceCount);
+            long uploadBytes = GraphicsBufferUploadUtility.EstimateUploadBytes<OctahedralImpostorInstance>(instanceCount);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return;
+
+            bool bufferLocked = false;
+            bool uploadAccepted = false;
+            bool unlockSucceeded = false;
+            NativeArray<OctahedralImpostorInstance> upload = default;
             try
             {
+                upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, instanceCount);
+                bufferLocked = true;
                 for (int i = 0; i < instanceCount; i++)
                 {
                     float4x4 matrix = matrices[i];
@@ -389,10 +423,26 @@ namespace Hecton8.World
                         hasCombinedBounds = true;
                     }
                 }
+
+                uploadAccepted = true;
             }
             finally
             {
-                instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(instanceCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(instanceCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && unlockSucceeded)
+                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                    else
+                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
+                }
             }
 
             _activeInstanceBuffer = instanceWriteBuffer;
@@ -620,23 +670,16 @@ namespace Hecton8.World
                 return;
 
             int safeSubMesh = Mathf.Clamp(_subMeshIndex, 0, Mathf.Max(0, mesh.subMeshCount - 1));
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            try
+            GraphicsBuffer.IndirectDrawIndexedArgs args = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = mesh.GetIndexCount(safeSubMesh),
-                    instanceCount = unchecked((uint)Mathf.Max(0, _instanceCount)),
-                    startIndex = mesh.GetIndexStart(safeSubMesh),
-                    baseVertexIndex = unchecked((uint)Mathf.Max(0, mesh.GetBaseVertex(safeSubMesh))),
-                    startInstance = 0u
-                };
-            }
-            finally
-            {
-                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-            }
+                indexCountPerInstance = mesh.GetIndexCount(safeSubMesh),
+                instanceCount = unchecked((uint)Mathf.Max(0, _instanceCount)),
+                startIndex = mesh.GetIndexStart(safeSubMesh),
+                baseVertexIndex = unchecked((uint)Mathf.Max(0, mesh.GetBaseVertex(safeSubMesh))),
+                startInstance = 0u
+            };
+            if (!GraphicsBufferUploadUtility.TryUploadSingle(_argsBuffer, args))
+                return;
 
             _argsMesh = mesh;
             _lastArgsInstanceCount = _instanceCount;

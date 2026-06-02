@@ -14,7 +14,7 @@ namespace Hecton8.UI
     [RequireComponent(typeof(TMP_Text))]
     public sealed class HectonTextNode : MonoBehaviour
     {
-        [Header("── Localization Registry ──────────────────")]
+        [Header("-- Localization Registry ------------------")]
         [Tooltip("Deterministic hierarchy hash baked in the editor. Runtime-created texts fall back to an instance hash.")]
         [SerializeField, HideInInspector] private int _bakedHierarchyHash;
 

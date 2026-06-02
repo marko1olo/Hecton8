@@ -33,6 +33,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.SaveSystem
 {
@@ -514,6 +517,61 @@ namespace Hecton8.SaveSystem
 
         }
 
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InstallEditorNativeBufferShutdownHooks()
+        {
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChangedForNativeBuffers;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChangedForNativeBuffers;
+            AssemblyReloadEvents.beforeAssemblyReload -= DisposeEditorNativeBuffersForLifecycle;
+            AssemblyReloadEvents.beforeAssemblyReload += DisposeEditorNativeBuffersForLifecycle;
+        }
+
+        private static void HandleEditorPlayModeStateChangedForNativeBuffers(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                DisposeEditorNativeBuffersForLifecycle();
+            }
+        }
+
+        private static void DisposeEditorNativeBuffersForLifecycle()
+        {
+            Exception firstException = null;
+            SaveManager[] managers = UnityEngine.Object.FindObjectsByType<SaveManager>(FindObjectsInactive.Include);
+            for (int i = 0; i < managers.Length; i++)
+            {
+                SaveManager manager = managers[i];
+                if (manager == null)
+                    continue;
+
+                try
+                {
+                    manager.ShutdownServiceState();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+            }
+
+            try
+            {
+                StaticNativeBuffers.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+
+            if (firstException != null)
+                Debug.LogWarning("[SaveManager] Editor lifecycle native buffer shutdown fault: " + firstException.Message);
+        }
+#endif
+
         private ref NativeArray<byte> _savePayloadBuffer => ref _nativeBuffers.SavePayloadBuffer;
         private ref NativeArray<byte> _compressedSaveBuffer => ref _nativeBuffers.CompressedSaveBuffer;
         private ref NativeArray<byte> _saveStagingBuffer => ref _nativeBuffers.SaveStagingBuffer;
@@ -880,12 +938,30 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
+            if (TryDeactivateDuplicateRuntimeOwner())
+                return;
+
             _sessionStartTime = Time.realtimeSinceStartupAsDouble;
             CachePersistentDataPathRoot();
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
             EnsureWorldPagerCold();
             EnsureWorldPagerInitialized();
+        }
+
+        private bool TryDeactivateDuplicateRuntimeOwner()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            if ((GlobalRegistry.Save != null && !ReferenceEquals(GlobalRegistry.Save, this)) ||
+                (GlobalRegistry.SaveRuntime != null && !ReferenceEquals(GlobalRegistry.SaveRuntime, this)))
+            {
+                enabled = false;
+                return true;
+            }
+
+            return false;
         }
 
         private void OnEnable()

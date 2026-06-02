@@ -43,7 +43,7 @@ namespace Hecton8.Core
             RegisterLegacyLane<AupPreShiftSignal>(AupPreShiftSignalCapacity, nameof(AupPreShiftSignal));
             RegisterLegacyLane<AupShiftSignal>(AupShiftSignalCapacity, nameof(AupShiftSignal));
             RegisterLegacyLane<BrownoutSignal>(BrownoutSignalCapacity, nameof(BrownoutSignal));
-            RegisterLegacyLane<DebrisSpawnSignal>(DebrisSpawnSignalCapacity, nameof(DebrisSpawnSignal));
+            RegisterLegacyLane<DebrisSpawnSignal>(DebrisSpawnSignalCapacity, nameof(DebrisSpawnSignal), 16);
             RegisterLegacyLane<DeflectSignal>(DeflectSignalCapacity, nameof(DeflectSignal));
             RegisterLegacyLane<EntityDeathSignal>(EntityDeathSignalCapacity, nameof(EntityDeathSignal));
             RegisterLegacyLane<RebaseSignal>(RebaseSignalCapacity, nameof(RebaseSignal));
@@ -78,7 +78,7 @@ namespace Hecton8.Core
             RegisterLegacyLane<ToolStateChangedSignal>(ToolStateChangedSignalCapacity, nameof(ToolStateChangedSignal));
             RegisterLegacyLane<PowerDrainSignal>(PowerDrainSignalCapacity, nameof(PowerDrainSignal));
             RegisterLegacyLane<ToolTriggerSignal>(ToolTriggerSignalCapacity, nameof(ToolTriggerSignal));
-            RegisterLegacyLane<HUDNotificationSignal>(HUDNotificationSignalCapacity, nameof(HUDNotificationSignal));
+            RegisterLegacyLane<HUDNotificationSignal>(HUDNotificationSignalCapacity, nameof(HUDNotificationSignal), 64);
             RegisterLegacyLane<SaveLifecycleSignal>(SaveLifecycleSignalCapacity, nameof(SaveLifecycleSignal));
             RegisterLegacyLane<ComplianceViolationSignal>(ComplianceViolationSignalCapacity, nameof(ComplianceViolationSignal));
             RegisterLegacyLane<GlobalTimeSyncSignal>(GlobalTimeSyncSignalCapacity, nameof(GlobalTimeSyncSignal));
@@ -90,7 +90,7 @@ namespace Hecton8.Core
             RegisterLegacyLane<ResourceDepletionDeltaSignal>(ResourceDepletionDeltaSignalCapacity, nameof(ResourceDepletionDeltaSignal));
             RegisterLegacyLane<LightLevelSignal>(LightLevelSignalCapacity, nameof(LightLevelSignal));
             RegisterLegacyLane<FaunaStateChangedSignal>(FaunaStateChangedSignalCapacity, nameof(FaunaStateChangedSignal));
-            RegisterLegacyLane<PlayerStressSignal>(PlayerStressSignalCapacity, nameof(PlayerStressSignal));
+            RegisterLegacyLane<PlayerStressSignal>(PlayerStressSignalCapacity, nameof(PlayerStressSignal), 32);
             RegisterLegacyLane<TraumaSignal>(TraumaSignalCapacity, nameof(TraumaSignal));
             RegisterLegacyLane<GlobalWorldStateSignal>(GlobalWorldStateSignalCapacity, nameof(GlobalWorldStateSignal));
             RegisterLegacyLane<BiomeChangedSignal>(BiomeChangedSignalCapacity, nameof(BiomeChangedSignal));
@@ -172,7 +172,7 @@ namespace Hecton8.Core
             ValidateSignalSize<RigidbodySleepSignal>(64);
             ValidateSignalSize<ScannerToolActiveSignal>(32);
             ValidateSignalPayload<ScanCompleteSignal>(64);
-            ValidateSignalSize<LoreFragmentScannedSignal>(32);
+            ValidateSignalSize<LoreFragmentScannedSignal>(64);
             ValidateSignalSize<BlueprintUnlockedSignal>(32);
             ValidateSignalSize<CraftingStartedSignal>(32);
             ValidateSignalSize<CraftingCompletedSignal>(32);
@@ -252,6 +252,7 @@ namespace Hecton8.Core
             ValidateSignalSize<StorageDebtSignal>(32);
             ValidateSignalSize<StreamingTurbulenceSignal>(32);
             ValidateSignalSize<AtmosphericReentrySignal>(64);
+            ValidateSignalSize<ReentryAcousticStressSignal>(32);
             ValidateSignalSize<PrologueCompleteSignal>(64);
             ValidateSignalSize<ManualOverridePulledSignal>(64);
             ValidateSignalSize<CullingOverloadSignal>(32);
@@ -366,6 +367,29 @@ namespace Hecton8.Core
             Application.quitting -= DisposeAllQueues;
             Application.quitting += DisposeAllQueues;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorSignalTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeAllQueues;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeAllQueues;
+            UnityEditor.EditorApplication.quitting -= DisposeAllQueues;
+            UnityEditor.EditorApplication.quitting += DisposeAllQueues;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange)
+        {
+            if (stateChange == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                stateChange == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                DisposeAllQueues();
+            }
+        }
+#endif
 
         private static void EnsureInitialized()
         {
@@ -728,6 +752,12 @@ namespace Hecton8.Core
             SignalBus<StreamingTurbulenceSignal>.EnsureInitialized();
             SignalBus<AtmosphericReentrySignal>.Configure(AtmosphericReentrySignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AtmosphericReentrySignal)));
             SignalBus<AtmosphericReentrySignal>.EnsureInitialized();
+            SignalBus<ReentryAcousticStressSignal>.Configure(
+                ReentryAcousticStressSignalCapacity,
+                maxFrameSignals: ReentryAcousticStressSignal.MaxFrameSignals,
+                lowTierFrameSignals: ReentryAcousticStressSignal.LowTierFrameSignals,
+                laneHash: ReentryAcousticStressSignal.LaneHash);
+            SignalBus<ReentryAcousticStressSignal>.EnsureInitialized();
             SignalBus<PrologueCompleteSignal>.Configure(PrologueCompleteSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PrologueCompleteSignal)));
             SignalBus<PrologueCompleteSignal>.EnsureInitialized();
             SignalBus<ManualOverridePulledSignal>.Configure(ManualOverridePulledSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ManualOverridePulledSignal)));
@@ -872,11 +902,13 @@ namespace Hecton8.Core
             SignalBus<DebugSignal>.EnsureInitialized();
         }
 
-        private static void RegisterLegacyLane<T>(int expectedCapacity, string label)
+        private static void RegisterLegacyLane<T>(int expectedCapacity, string label, int lowTierFrameSignalsOverride = 0)
             where T : unmanaged, ISignal
         {
             int maxFrameSignals = Math.Max(1, expectedCapacity);
-            int lowTierFrameSignals = ResolveLegacyLowTierFrameSignals(maxFrameSignals);
+            int lowTierFrameSignals = lowTierFrameSignalsOverride > 0
+                ? Math.Min(maxFrameSignals, lowTierFrameSignalsOverride)
+                : ResolveLegacyLowTierFrameSignals(maxFrameSignals);
             SignalBus<T>.Configure(
                 expectedCapacity,
                 maxFrameSignals: maxFrameSignals,

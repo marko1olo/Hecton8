@@ -3,6 +3,14 @@
 Status: working structure.
 Purpose: keep massive lore usable for game codex, terminals, PDA entries, website articles, and writer reference.
 
+## Content Rule
+
+We are not producing documentation for its own sake.
+
+Every mature lore file is a future content packet. It must be suitable for at least one real delivery target: in-game codex, scanner note, terminal document, audio transcript, website article, wiki page, contract dossier, or writer-side canon reference.
+
+If a lore unit cannot define Article ID, source voice, spoiler level, unlock route, related articles, and localization path, it remains a draft note.
+
 ## Content Layers
 
 Canon Lock:
@@ -51,11 +59,16 @@ Clean, civic, sanitized. Uses dates and institutions. Avoids body count unless f
 Every mature article should eventually define:
 
 - Article ID.
+- Loc namespace.
 - Canon status.
+- Canon owner.
+- Runtime layer: Core, World, or Narrative.
 - Spoiler level.
 - Source voice options.
 - In-game category.
 - First unlock route.
+- Content targets.
+- Localization status.
 - Website-safe summary.
 - Related articles.
 - Open questions.
@@ -113,6 +126,54 @@ Example:
 - Corrupted interpretation: Atlas fragment.
 
 If an article needs a contradiction, label the source voice instead of making canon ambiguous.
+
+## Localization Contract
+
+Localization is part of lore structure, not a late pass.
+
+- Article IDs and LocIDs are stable across all languages.
+- Translation changes text only.
+- LocIDs are never translated.
+- Runtime lookup must use baked hashes and existing string-pool layers.
+- Long codex, terminal, and transcript text belongs in `Narrative`.
+- Scanner/entity names and short facts belong in `World`.
+- Category/UI labels belong in `Core`.
+- Website/wiki exports must keep the same Article ID and canon owner as the in-game version.
+
+Target locale roster:
+
+- `en_US`: English source locale for current data.
+- `ru_RU`: Russian.
+- `ja_JP`: Japanese.
+- `zh_CN`: Simplified Chinese. User alias: `cn`.
+- `fr_FR`: French.
+- `es_ES`: Spanish.
+- `de_DE`: German.
+- `pl_PL`: Polish.
+- `uk_UA`: Ukrainian. User alias: `ua`.
+- `ar_SA`: Arabic, RTL.
+- `id_ID`: Indonesian. User alias: `in`.
+- `ko_KR`: Korean. User alias: `kr`.
+- `he_IL`: Hebrew, RTL. User alias: `jewish`.
+- `pt_BR`: Portuguese default.
+- `nl_NL`: Dutch.
+
+See `Lore_Localization_Model.md` for LocID shape, website export rules, and QA notes.
+
+## Runtime Data Contract
+
+Lore docs are authoring input. The game should consume baked data.
+
+Runtime should receive numeric IDs, enums, offsets, and localized string hashes, not free-form markdown. Content can be rich in the editor, website, wiki, and writer docs, but gameplay delivery must remain event-driven and static-data based.
+
+Required separation:
+
+- authoring: markdown/article packets for humans;
+- bake: validation, ID generation, string extraction, relationship tables;
+- runtime: immutable records, unlock flags, localized string-pool lookup;
+- presentation: PDA, scanner, terminal, audio subtitles, ending dossier.
+
+The runtime never becomes a lore interpreter.
 
 ## Current Priority Topics
 

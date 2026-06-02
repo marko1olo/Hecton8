@@ -1,0 +1,266 @@
+{
+  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+  "packet_id": "P001_CRASH_SHELF",
+  "article_id": "hecton8.crash_shelf",
+  "title_key": "LORE_P001_CRASH_SHELF_TITLE",
+  "status": "applied_pilot",
+  "canon_owner": [
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+  ],
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_generates_translation": false,
+    "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+  },
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "unlock": {
+    "primary": "unlock.first_shelter",
+    "secondary": [
+      "unlock.first_scan",
+      "unlock.black_keel_handshake"
+    ],
+    "poi_tags": [
+      "poi.crash_shelf",
+      "poi.service_buoy"
+    ],
+    "biome_tags": [
+      "biome.shallow_reef",
+      "biome.storm_shelf",
+      "biome.kelp_shallows"
+    ]
+  },
+  "seed_variants": {
+    "impact_site": [
+      "reef shelf",
+      "kelp shallows",
+      "storm trench",
+      "broken aquaculture grid",
+      "service platform edge"
+    ],
+    "first_threat": [
+      "oxygen leak",
+      "storm surge",
+      "electrical short",
+      "small predator",
+      "battery failure"
+    ],
+    "first_beauty": [
+      "halo sargassum",
+      "bladderfish cloud",
+      "kelp raylet",
+      "glassworm bloom",
+      "shallow bioluminescent wake"
+    ]
+  },
+  "image_targets": {
+    "codex": "damaged bathy-drop shell on bright alien shallow shelf, Aegir glow behind storm haze, readable wreck parts, no fantasy magic glow",
+    "website_hero": "wide cinematic shallow ocean crash shelf, broken industrial capsule, colorful alien reef, hard sci-fi NASA-punk tone",
+    "scanner_thumbnail": "close technical view of cracked ascent package and intact crush frame"
+  },
+  "localized": {
+    "en_US": {
+      "title": "Crash Shelf",
+      "scanner_bathy_drop": "Bathy-drop wreckage. Crush frame intact, ascent package destroyed. This craft can keep you alive, not take you home.",
+      "scanner_heat_shield": "Ablative ceramic from the descent burn. Good insulation, bad omen.",
+      "field_note": "If the drop shell is still holding pressure, do not strip it bare. A bad shelter is worth more than a clean inventory.",
+      "terminal_diag": "ASCENT PACKAGE: missing. UPLINK CORE: fracture detected. CARRIER CONTACT: delayed.",
+      "audio_line": "Black Keel handshake received. Packet integrity below recovery threshold. Repeat: recovery threshold not met.",
+      "in_game_wiki": "The bathy-drop was built for one violent job: enter atmosphere, survive storm shear, hit ocean, shed heat, and keep one operator alive long enough to begin work. It was never a ship. It was a disposable argument with physics. The Black Keel is still above the moon somewhere in Aegir traffic, but the drop's uplink core is cracked and the ascent hardware is gone. A clean rescue requires power, timing, an orbital window, and a transmitter that can push through weather, water, and Aegir's magnetic noise.",
+      "external_site": "HECTON-8 begins at the waterline: a damaged descent capsule, a bright alien shelf, and a carrier too distant to answer cleanly. The first mystery is not what lives below, but why the rescue chain already feels hostile.",
+      "scanner": "Bathy-drop wreckage. Crush frame intact, ascent package destroyed. This craft can keep you alive, not take you home.",
+      "terminal": "ASCENT PACKAGE: missing. UPLINK CORE: fracture detected. CARRIER CONTACT: delayed.",
+      "audio": "Black Keel handshake received. Packet integrity below recovery threshold. Repeat: recovery threshold not met."
+    },
+    "ru_RU": {
+      "title": "Полка крушения",
+      "scanner_bathy_drop": "Обломки батискаф-капсулы. Силовая рама цела, взлетный пакет уничтожен. Это может сохранить тебе жизнь, но не вернет домой.",
+      "scanner_heat_shield": "Абляционная керамика после входа в атмосферу. Хорошая изоляция, плохой знак.",
+      "field_note": "Если корпус капсулы еще держит давление, не разбирай его до костей. Плохое убежище ценнее чистого инвентаря.",
+      "terminal_diag": "ВЗЛЕТНЫЙ ПАКЕТ: отсутствует. ЯДРО СВЯЗИ: трещина. КОНТАКТ С НОСИТЕЛЕМ: задержан.",
+      "audio_line": "Получен handshake Black Keel. Целостность пакета ниже порога восстановления. Повтор: порог восстановления не достигнут.",
+      "in_game_wiki": "Батискаф-капсула строилась для одной жестокой задачи: войти в атмосферу, пережить штормовой сдвиг, ударить в океан, сбросить тепло и удержать одного оператора живым достаточно долго, чтобы тот начал работу. Это никогда не было кораблем. Это был одноразовый спор с физикой. Black Keel все еще где-то над луной в трафике Aegir, но ядро связи капсулы расколото, а взлетная система уничтожена. Чистое спасение требует энергии, времени, орбитального окна и передатчика, способного пробиться через погоду, воду и магнитный шум Aegir.",
+      "external_site": "HECTON-8 начинается у линии воды: поврежденная спусковая капсула, яркая чужая отмель и carrier, слишком далекий для чистого ответа. Первая тайна не в том, что живет ниже, а в том, почему цепочка спасения уже звучит враждебно.",
+      "scanner": "Обломки батискаф-капсулы. Силовая рама цела, взлетный пакет уничтожен. Это может сохранить тебе жизнь, но не вернет домой.",
+      "terminal": "ВЗЛЕТНЫЙ ПАКЕТ: отсутствует. ЯДРО СВЯЗИ: трещина. КОНТАКТ С НОСИТЕЛЕМ: задержан.",
+      "audio": "Получен handshake Black Keel. Целостность пакета ниже порога восстановления. Повтор: порог восстановления не достигнут."
+    },
+    "ja_JP": {
+      "title": "墜落棚",
+      "scanner_bathy_drop": "降下カプセルの残骸。耐圧フレームは無事だが、上昇パッケージは破壊されている。生き延びる場所にはなるが、帰る船にはならない。",
+      "scanner_heat_shield": "大気突入で焼けたアブレーションセラミック。断熱材としては有用。不吉な残骸でもある。",
+      "field_note": "殻がまだ圧を保っているなら、全部はぎ取るな。粗末な避難所は、きれいな在庫より価値がある。",
+      "terminal_diag": "上昇パッケージ: 消失。通信コア: 亀裂検出。キャリア接触: 遅延。",
+      "audio_line": "Black Keelのハンドシェイクを受信。パケット完全性は回収しきい値未満。繰り返す、しきい値未達。",
+      "in_game_wiki": "降下カプセルは一つの乱暴な仕事のために作られた。大気に入り、嵐の剪断を耐え、海へ落ち、熱を捨て、作業開始まで一人のオペレーターを生かす。それは船ではない。物理法則への使い捨ての反論だった。Black KeelはAegir圏のどこか、月の上方にいるが、カプセルの通信コアは割れ、上昇機構は失われている。救助には電力、タイミング、軌道窓、そして天候と水とAegirの磁気ノイズを抜ける送信機が必要だ。",
+      "external_site": "HECTON-8は水際から始まる。壊れた降下カプセル、明るい異星の浅瀬、そしてきれいには応答しない遠いキャリア。最初の謎は海底の生物ではなく、救助の鎖が最初から敵意を帯びている理由だ。",
+      "scanner": "降下カプセルの残骸。耐圧フレームは無事だが、上昇パッケージは破壊されている。生き延びる場所にはなるが、帰る船にはならない。",
+      "terminal": "上昇パッケージ: 消失。通信コア: 亀裂検出。キャリア接触: 遅延。",
+      "audio": "Black Keelのハンドシェイクを受信。パケット完全性は回収しきい値未満。繰り返す、しきい値未達。"
+    },
+    "zh_CN": {
+      "title": "坠落浅架",
+      "scanner_bathy_drop": "下潜舱残骸。抗压框架完好，返升组件已毁。它能让你活下去，不能带你回家。",
+      "scanner_heat_shield": "再入烧蚀陶瓷。隔热效果好，预兆很差。",
+      "field_note": "如果舱壳还在保压，就别把它拆空。一个糟糕的避难所比整齐的库存更值钱。",
+      "terminal_diag": "返升组件：缺失。通信核心：检测到裂纹。母船联系：延迟。",
+      "audio_line": "收到Black Keel握手。数据包完整性低于恢复阈值。重复：未达到恢复阈值。",
+      "in_game_wiki": "下潜舱只为一件粗暴的事而造：进入大气，扛过风暴剪切，砸进海里，甩掉热量，并让一名操作员活到足以开始工作。它从来不是船，只是一件一次性地与物理争辩的工具。Black Keel仍在Aegir交通区某处的轨道上方，但下潜舱的通信核心已经开裂，返升硬件也没了。干净的救援需要电力、时机、轨道窗口，以及能穿过天气、海水和Aegir磁噪声的发射器。",
+      "external_site": "HECTON-8从水线开始：损坏的下降舱、明亮的异星浅架，以及一艘太远而无法清晰回应的母船。最初的谜团不是水下有什么，而是为什么救援链从一开始就显得敌意十足。",
+      "scanner": "下潜舱残骸。抗压框架完好，返升组件已毁。它能让你活下去，不能带你回家。",
+      "terminal": "返升组件：缺失。通信核心：检测到裂纹。母船联系：延迟。",
+      "audio": "收到Black Keel握手。数据包完整性低于恢复阈值。重复：未达到恢复阈值。"
+    },
+    "fr_FR": {
+      "title": "Plateau d'impact",
+      "scanner_bathy_drop": "Epave de capsule bathy. Chassis de pression intact, module d'ascension détruit. Elle peut te garder en vie, pas te ramener.",
+      "scanner_heat_shield": "Céramique ablative de la descente. Bonne isolation, mauvais présage.",
+      "field_note": "Si la coque tient encore la pression, ne la dépouille pas. Un mauvais abri vaut mieux qu'un inventaire propre.",
+      "terminal_diag": "MODULE D'ASCENSION: manquant. NOYAU UPLINK: fracture détectée. CONTACT CARRIER: retardé.",
+      "audio_line": "Poignée de main Black Keel reçue. Intégrité du paquet sous le seuil de récupération. Répétition: seuil non atteint.",
+      "in_game_wiki": "La capsule bathy a été conçue pour une seule tâche brutale: entrer dans l'atmosphère, survivre au cisaillement des tempêtes, frapper l'océan, perdre sa chaleur et garder un opérateur vivant assez longtemps pour commencer le travail. Ce n'était pas un vaisseau. C'était une dispute jetable avec la physique. Le Black Keel est toujours quelque part au-dessus de la lune dans le trafic d'Aegir, mais le coeur uplink est fendu et le matériel d'ascension a disparu. Un sauvetage propre exige de l'énergie, du timing, une fenêtre orbitale et un émetteur capable de traverser météo, eau et bruit magnétique d'Aegir.",
+      "external_site": "HECTON-8 commence à la ligne d'eau: une capsule de descente endommagée, un plateau extraterrestre lumineux et un carrier trop lointain pour répondre clairement. Le premier mystère n'est pas ce qui vit dessous, mais pourquoi la chaîne de secours paraît déjà hostile.",
+      "scanner": "Epave de capsule bathy. Chassis de pression intact, module d'ascension détruit. Elle peut te garder en vie, pas te ramener.",
+      "terminal": "MODULE D'ASCENSION: manquant. NOYAU UPLINK: fracture détectée. CONTACT CARRIER: retardé.",
+      "audio": "Poignée de main Black Keel reçue. Intégrité du paquet sous le seuil de récupération. Répétition: seuil non atteint."
+    },
+    "es_ES": {
+      "title": "Repisa del impacto",
+      "scanner_bathy_drop": "Restos de la cápsula batial. Bastidor de presión intacto, paquete de ascenso destruido. Puede mantenerte con vida, no llevarte a casa.",
+      "scanner_heat_shield": "Cerámica ablativa de la entrada. Buen aislante, mala señal.",
+      "field_note": "Si la carcasa aún mantiene presión, no la desmontes entera. Un mal refugio vale más que un inventario limpio.",
+      "terminal_diag": "PAQUETE DE ASCENSO: ausente. NÚCLEO DE ENLACE: fractura detectada. CONTACTO CON CARRIER: retrasado.",
+      "audio_line": "Handshake de Black Keel recibido. Integridad del paquete por debajo del umbral de recuperación. Repito: umbral no alcanzado.",
+      "in_game_wiki": "La cápsula batial fue construida para una tarea violenta: entrar en la atmósfera, sobrevivir al cizallamiento de la tormenta, caer al océano, disipar calor y mantener con vida a un operador el tiempo suficiente para empezar el trabajo. Nunca fue una nave. Era una discusión desechable con la física. El Black Keel sigue sobre la luna, en algún punto del tráfico de Aegir, pero el núcleo de enlace está roto y el hardware de ascenso ha desaparecido. Un rescate limpio exige energía, sincronización, una ventana orbital y un transmisor capaz de atravesar clima, agua y ruido magnético de Aegir.",
+      "external_site": "HECTON-8 empieza en la línea de agua: una cápsula de descenso dañada, una repisa alienígena luminosa y un carrier demasiado lejano para responder con claridad. El primer misterio no es qué vive abajo, sino por qué la cadena de rescate ya parece hostil.",
+      "scanner": "Restos de la cápsula batial. Bastidor de presión intacto, paquete de ascenso destruido. Puede mantenerte con vida, no llevarte a casa.",
+      "terminal": "PAQUETE DE ASCENSO: ausente. NÚCLEO DE ENLACE: fractura detectada. CONTACTO CON CARRIER: retrasado.",
+      "audio": "Handshake de Black Keel recibido. Integridad del paquete por debajo del umbral de recuperación. Repito: umbral no alcanzado."
+    },
+    "de_DE": {
+      "title": "Aufprall-Schelf",
+      "scanner_bathy_drop": "Wrack einer Bathy-Abwurfkapsel. Druckrahmen intakt, Aufstiegspaket zerstört. Sie hält dich am Leben, bringt dich aber nicht heim.",
+      "scanner_heat_shield": "Ablative Keramik vom Atmosphäreneintritt. Gute Isolierung, schlechtes Zeichen.",
+      "field_note": "Wenn die Kapselhülle noch Druck hält, schlachte sie nicht aus. Ein schlechter Unterschlupf ist mehr wert als ein sauberes Inventar.",
+      "terminal_diag": "AUFSTIEGSPAKET: fehlt. UPLINK-KERN: Bruch erkannt. CARRIER-KONTAKT: verzögert.",
+      "audio_line": "Black-Keel-Handshake empfangen. Paketintegrität unter Bergungsschwelle. Wiederhole: Schwelle nicht erreicht.",
+      "in_game_wiki": "Die Bathy-Abwurfkapsel wurde für eine brutale Aufgabe gebaut: Atmosphäre treffen, Sturmscherung überstehen, in den Ozean schlagen, Hitze abwerfen und einen Operator lange genug am Leben halten, damit die Arbeit beginnen kann. Sie war nie ein Schiff. Sie war ein Wegwerfstreit mit der Physik. Die Black Keel ist noch irgendwo über dem Mond im Aegir-Verkehr, aber der Uplink-Kern der Kapsel ist gerissen und die Aufstiegshardware ist fort. Eine saubere Rettung braucht Energie, Timing, ein Orbitalfenster und einen Sender, der Wetter, Wasser und Aegirs Magnetrauschen durchdringt.",
+      "external_site": "HECTON-8 beginnt an der Wasserlinie: eine beschädigte Abstiegskapsel, ein helles außerirdisches Schelf und ein Carrier, der zu weit entfernt ist, um klar zu antworten. Das erste Rätsel ist nicht, was darunter lebt, sondern warum die Rettungskette bereits feindselig wirkt.",
+      "scanner": "Wrack einer Bathy-Abwurfkapsel. Druckrahmen intakt, Aufstiegspaket zerstört. Sie hält dich am Leben, bringt dich aber nicht heim.",
+      "terminal": "AUFSTIEGSPAKET: fehlt. UPLINK-KERN: Bruch erkannt. CARRIER-KONTAKT: verzögert.",
+      "audio": "Black-Keel-Handshake empfangen. Paketintegrität unter Bergungsschwelle. Wiederhole: Schwelle nicht erreicht."
+    },
+    "pl_PL": {
+      "title": "Półka rozbicia",
+      "scanner_bathy_drop": "Wrak kapsuły batyspadowej. Rama ciśnieniowa cała, pakiet wznoszenia zniszczony. Utrzyma cię przy życiu, ale nie zabierze do domu.",
+      "scanner_heat_shield": "Ceramika ablacyjna po wejściu w atmosferę. Dobra izolacja, zły znak.",
+      "field_note": "Jeśli skorupa nadal trzyma ciśnienie, nie rozbieraj jej do końca. Kiepskie schronienie jest więcej warte niż czysty ekwipunek.",
+      "terminal_diag": "PAKIET WZNOSZENIA: brak. RDZEŃ ŁĄCZNOŚCI: wykryto pęknięcie. KONTAKT Z CARRIEREM: opóźniony.",
+      "audio_line": "Odebrano handshake Black Keel. Integralność pakietu poniżej progu odzysku. Powtarzam: próg nieosiągnięty.",
+      "in_game_wiki": "Kapsułę batyspadową zbudowano do jednej brutalnej pracy: wejść w atmosferę, przetrwać ścinanie burzy, uderzyć w ocean, zrzucić ciepło i utrzymać jednego operatora przy życiu wystarczająco długo, by zaczął działać. To nigdy nie był statek. To była jednorazowa kłótnia z fizyką. Black Keel nadal jest gdzieś nad księżycem w ruchu Aegir, ale rdzeń łączności kapsuły pękł, a sprzęt do wznoszenia przepadł. Czysty ratunek wymaga energii, czasu, okna orbitalnego i nadajnika zdolnego przebić się przez pogodę, wodę i magnetyczny szum Aegir.",
+      "external_site": "HECTON-8 zaczyna się przy linii wody: uszkodzona kapsuła zniżania, jasna obca płycizna i carrier zbyt daleko, by odpowiedzieć czysto. Pierwszą tajemnicą nie jest to, co żyje niżej, lecz dlaczego łańcuch ratunkowy od początku brzmi wrogo.",
+      "scanner": "Wrak kapsuły batyspadowej. Rama ciśnieniowa cała, pakiet wznoszenia zniszczony. Utrzyma cię przy życiu, ale nie zabierze do domu.",
+      "terminal": "PAKIET WZNOSZENIA: brak. RDZEŃ ŁĄCZNOŚCI: wykryto pęknięcie. KONTAKT Z CARRIEREM: opóźniony.",
+      "audio": "Odebrano handshake Black Keel. Integralność pakietu poniżej progu odzysku. Powtarzam: próg nieosiągnięty."
+    },
+    "uk_UA": {
+      "title": "Полиця падіння",
+      "scanner_bathy_drop": "Уламки баті-капсули. Силова рама ціла, пакет підйому знищено. Вона може втримати тебе живим, але не поверне додому.",
+      "scanner_heat_shield": "Абляційна кераміка після входу в атмосферу. Добра ізоляція, поганий знак.",
+      "field_note": "Якщо корпус ще тримає тиск, не розбирай його повністю. Поганий прихисток цінніший за чистий інвентар.",
+      "terminal_diag": "ПАКЕТ ПІДЙОМУ: відсутній. ЯДРО ЗВ'ЯЗКУ: виявлено тріщину. КОНТАКТ З НОСІЄМ: затримано.",
+      "audio_line": "Отримано handshake Black Keel. Цілісність пакета нижча за поріг відновлення. Повтор: поріг не досягнуто.",
+      "in_game_wiki": "Баті-капсулу створили для однієї жорсткої задачі: увійти в атмосферу, витримати штормовий зсув, ударити в океан, скинути тепло й зберегти одного оператора живим достатньо довго, щоб він почав роботу. Це ніколи не був корабель. Це була одноразова суперечка з фізикою. Black Keel досі десь над місяцем у трафіку Aegir, але ядро зв'язку капсули тріснуло, а система підйому зникла. Чистий порятунок потребує енергії, часу, орбітального вікна й передавача, здатного пробитися крізь погоду, воду та магнітний шум Aegir.",
+      "external_site": "HECTON-8 починається біля лінії води: пошкоджена спускова капсула, яскрава чужа мілина й carrier, занадто далекий для чистої відповіді. Перша загадка не в тому, що живе нижче, а в тому, чому ланцюг порятунку вже звучить вороже.",
+      "scanner": "Уламки баті-капсули. Силова рама ціла, пакет підйому знищено. Вона може втримати тебе живим, але не поверне додому.",
+      "terminal": "ПАКЕТ ПІДЙОМУ: відсутній. ЯДРО ЗВ'ЯЗКУ: виявлено тріщину. КОНТАКТ З НОСІЄМ: затримано.",
+      "audio": "Отримано handshake Black Keel. Цілісність пакета нижча за поріг відновлення. Повтор: поріг не досягнуто."
+    },
+    "ar_SA": {
+      "title": "رف الاصطدام",
+      "scanner_bathy_drop": "حطام كبسولة هبوط أعماق. إطار الضغط سليم، وحزمة الصعود مدمرة. يمكنها إبقاءك حيا، لكنها لن تعيدك إلى الوطن.",
+      "scanner_heat_shield": "سيراميك اجتثاث من احتراق الدخول. عزل جيد، ونذير سيئ.",
+      "field_note": "إذا كان غلاف الكبسولة ما زال يمسك الضغط، فلا تجرّده بالكامل. ملجأ سيئ أفضل من مخزون مرتب.",
+      "terminal_diag": "حزمة الصعود: مفقودة. نواة الاتصال: كسر مكتشف. اتصال الحاملة: مؤجل.",
+      "audio_line": "تم استلام مصافحة Black Keel. سلامة الحزمة دون عتبة الاسترداد. أكرر: العتبة لم تتحقق.",
+      "in_game_wiki": "صنعت كبسولة الأعماق لمهمة عنيفة واحدة: دخول الغلاف الجوي، احتمال قص العاصفة، ضرب المحيط، طرح الحرارة، وإبقاء عامل واحد حيا زمنا يكفي لبدء العمل. لم تكن سفينة قط. كانت جدالا أحادي الاستخدام مع الفيزياء. ما زالت Black Keel في مكان ما فوق القمر ضمن حركة Aegir، لكن نواة الاتصال في الكبسولة متشققة ومعدات الصعود مفقودة. يتطلب الإنقاذ النظيف طاقة وتوقيتا ونافذة مدارية ومرسلا يستطيع اختراق الطقس والماء والضجيج المغناطيسي لـ Aegir.",
+      "external_site": "يبدأ HECTON-8 عند خط الماء: كبسولة هبوط تالفة، رف غريب مضيء، وحاملة بعيدة لا تستطيع الرد بوضوح. اللغز الأول ليس ما يعيش في الأسفل، بل لماذا تبدو سلسلة الإنقاذ عدائية منذ البداية.",
+      "scanner": "حطام كبسولة هبوط أعماق. إطار الضغط سليم، وحزمة الصعود مدمرة. يمكنها إبقاءك حيا، لكنها لن تعيدك إلى الوطن.",
+      "terminal": "حزمة الصعود: مفقودة. نواة الاتصال: كسر مكتشف. اتصال الحاملة: مؤجل.",
+      "audio": "تم استلام مصافحة Black Keel. سلامة الحزمة دون عتبة الاسترداد. أكرر: العتبة لم تتحقق."
+    },
+    "id_ID": {
+      "title": "Paparan Jatuh",
+      "scanner_bathy_drop": "Rongsokan kapsul bathy-drop. Rangka tekanan utuh, paket naik hancur. Ini bisa membuatmu hidup, bukan membawamu pulang.",
+      "scanner_heat_shield": "Keramik ablasi dari pembakaran masuk atmosfer. Isolasi bagus, pertanda buruk.",
+      "field_note": "Kalau cangkang kapsul masih menahan tekanan, jangan lucuti habis. Tempat berlindung buruk lebih berharga daripada inventaris rapi.",
+      "terminal_diag": "PAKET NAIK: hilang. INTI UPLINK: retak terdeteksi. KONTAK CARRIER: tertunda.",
+      "audio_line": "Handshake Black Keel diterima. Integritas paket di bawah ambang pemulihan. Ulangi: ambang belum tercapai.",
+      "in_game_wiki": "Bathy-drop dibuat untuk satu pekerjaan kasar: masuk atmosfer, bertahan dari geseran badai, menghantam laut, membuang panas, dan menjaga satu operator tetap hidup cukup lama untuk mulai bekerja. Itu bukan kapal. Itu adalah perdebatan sekali pakai dengan fisika. Black Keel masih berada di atas bulan, di suatu tempat dalam lalu lintas Aegir, tetapi inti uplink kapsul retak dan perangkat naik hilang. Penyelamatan bersih membutuhkan daya, waktu, jendela orbit, dan pemancar yang mampu menembus cuaca, air, serta derau magnetik Aegir.",
+      "external_site": "HECTON-8 dimulai di garis air: kapsul turun yang rusak, paparan alien yang terang, dan carrier yang terlalu jauh untuk menjawab bersih. Misteri pertama bukan apa yang hidup di bawah, melainkan mengapa rantai penyelamatan sudah terasa bermusuhan.",
+      "scanner": "Rongsokan kapsul bathy-drop. Rangka tekanan utuh, paket naik hancur. Ini bisa membuatmu hidup, bukan membawamu pulang.",
+      "terminal": "PAKET NAIK: hilang. INTI UPLINK: retak terdeteksi. KONTAK CARRIER: tertunda.",
+      "audio": "Handshake Black Keel diterima. Integritas paket di bawah ambang pemulihan. Ulangi: ambang belum tercapai."
+    },
+    "ko_KR": {
+      "title": "추락 선반",
+      "scanner_bathy_drop": "바시 드롭 캡슐 잔해. 압력 프레임은 온전하지만 상승 패키지는 파괴됨. 생존처는 될 수 있어도 귀환선은 아니다.",
+      "scanner_heat_shield": "대기 진입 때 타버린 삭마 세라믹. 단열재로는 좋고 징조로는 나쁘다.",
+      "field_note": "캡슐 껍질이 아직 압력을 잡고 있다면 다 뜯어내지 마라. 형편없는 피난처가 깔끔한 인벤토리보다 낫다.",
+      "terminal_diag": "상승 패키지: 없음. 업링크 코어: 균열 감지. 캐리어 접촉: 지연.",
+      "audio_line": "Black Keel 핸드셰이크 수신. 패킷 무결성이 회수 임계값 미만. 반복: 임계값 미달.",
+      "in_game_wiki": "바시 드롭 캡슐은 하나의 거친 임무를 위해 만들어졌다. 대기에 진입하고, 폭풍 전단을 견디고, 바다에 충돌하고, 열을 버리고, 작업자가 일을 시작할 만큼만 살아남게 하는 것. 그것은 결코 배가 아니었다. 물리학과 벌이는 일회용 논쟁이었다. Black Keel은 아직 Aegir 교통권 어딘가, 달 위에 있지만 캡슐의 업링크 코어는 갈라졌고 상승 장치는 사라졌다. 제대로 된 구조에는 전력, 타이밍, 궤도 창, 그리고 날씨와 물과 Aegir의 자기 잡음을 뚫을 송신기가 필요하다.",
+      "external_site": "HECTON-8은 수면에서 시작된다. 손상된 하강 캡슐, 밝은 외계 얕은 지형, 그리고 제대로 응답하기엔 너무 먼 carrier. 첫 미스터리는 아래에 무엇이 사는지가 아니라, 왜 구조 체계가 처음부터 적대적으로 느껴지는가다.",
+      "scanner": "바시 드롭 캡슐 잔해. 압력 프레임은 온전하지만 상승 패키지는 파괴됨. 생존처는 될 수 있어도 귀환선은 아니다.",
+      "terminal": "상승 패키지: 없음. 업링크 코어: 균열 감지. 캐리어 접촉: 지연.",
+      "audio": "Black Keel 핸드셰이크 수신. 패킷 무결성이 회수 임계값 미만. 반복: 임계값 미달."
+    },
+    "he_IL": {
+      "title": "מדף ההתרסקות",
+      "scanner_bathy_drop": "הריסות קפסולת Bathy-drop. מסגרת הלחץ שלמה, חבילת העלייה הושמדה. היא יכולה להשאיר אותך חי, לא להחזיר אותך הביתה.",
+      "scanner_heat_shield": "קרמיקה אבלטיבית משריפת הכניסה. בידוד טוב, סימן רע.",
+      "field_note": "אם מעטפת הקפסולה עדיין מחזיקה לחץ, אל תפשיט אותה לגמרי. מחסה רע שווה יותר ממלאי נקי.",
+      "terminal_diag": "חבילת עלייה: חסרה. ליבת uplink: זוהה סדק. קשר עם carrier: מתעכב.",
+      "audio_line": "התקבלה לחיצת יד מ-Black Keel. שלמות החבילה מתחת לסף השחזור. חוזר: הסף לא הושג.",
+      "in_game_wiki": "קפסולת ה-Bathy-drop נבנתה למשימה אלימה אחת: להיכנס לאטמוספירה, לשרוד גזירת סערה, לפגוע באוקיינוס, לפלוט חום ולהשאיר מפעיל אחד חי מספיק זמן כדי להתחיל לעבוד. היא מעולם לא הייתה ספינה. היא הייתה ויכוח חד-פעמי עם הפיזיקה. Black Keel עדיין נמצאת מעל הירח איפשהו בתעבורת Aegir, אבל ליבת הקשר של הקפסולה סדוקה וחומרת העלייה נעלמה. חילוץ נקי דורש כוח, תזמון, חלון מסלולי ומשדר שיכול לחדור מזג אוויר, מים ורעש מגנטי של Aegir.",
+      "external_site": "HECTON-8 מתחיל בקו המים: קפסולת ירידה פגועה, מדף זר ובהיר, ו-carrier רחוקה מכדי לענות בבירור. התעלומה הראשונה אינה מה חי מתחת, אלא למה שרשרת החילוץ כבר מרגישה עוינת.",
+      "scanner": "הריסות קפסולת Bathy-drop. מסגרת הלחץ שלמה, חבילת העלייה הושמדה. היא יכולה להשאיר אותך חי, לא להחזיר אותך הביתה.",
+      "terminal": "חבילת עלייה: חסרה. ליבת uplink: זוהה סדק. קשר עם carrier: מתעכב.",
+      "audio": "התקבלה לחיצת יד מ-Black Keel. שלמות החבילה מתחת לסף השחזור. חוזר: הסף לא הושג."
+    },
+    "pt_BR": {
+      "title": "Plataforma do impacto",
+      "scanner_bathy_drop": "Destroços da cápsula bathy-drop. Estrutura de pressão intacta, pacote de subida destruído. Ela mantém você vivo, mas não leva você para casa.",
+      "scanner_heat_shield": "Cerâmica ablativa da entrada atmosférica. Bom isolamento, mau presságio.",
+      "field_note": "Se a carcaça ainda segura pressão, não desmonte tudo. Um abrigo ruim vale mais que um inventário limpo.",
+      "terminal_diag": "PACOTE DE SUBIDA: ausente. NÚCLEO DE UPLINK: fratura detectada. CONTATO COM CARRIER: atrasado.",
+      "audio_line": "Handshake da Black Keel recebido. Integridade do pacote abaixo do limite de recuperação. Repetindo: limite não atingido.",
+      "in_game_wiki": "A bathy-drop foi construída para uma tarefa violenta: entrar na atmosfera, sobreviver ao cisalhamento da tempestade, atingir o oceano, descartar calor e manter um operador vivo tempo suficiente para começar o trabalho. Nunca foi uma nave. Era uma discussão descartável com a física. A Black Keel ainda está acima da lua em algum ponto do tráfego de Aegir, mas o núcleo de uplink está rachado e o hardware de subida desapareceu. Um resgate limpo exige energia, tempo, uma janela orbital e um transmissor capaz de atravessar clima, água e o ruído magnético de Aegir.",
+      "external_site": "HECTON-8 começa na linha d'água: uma cápsula de descida danificada, uma plataforma alienígena brilhante e uma carrier distante demais para responder com clareza. O primeiro mistério não é o que vive abaixo, mas por que a cadeia de resgate já parece hostil.",
+      "scanner": "Destroços da cápsula bathy-drop. Estrutura de pressão intacta, pacote de subida destruído. Ela mantém você vivo, mas não leva você para casa.",
+      "terminal": "PACOTE DE SUBIDA: ausente. NÚCLEO DE UPLINK: fratura detectada. CONTATO COM CARRIER: atrasado.",
+      "audio": "Handshake da Black Keel recebido. Integridade do pacote abaixo do limite de recuperação. Repetindo: limite não atingido."
+    },
+    "nl_NL": {
+      "title": "Crashplateau",
+      "scanner_bathy_drop": "Wrak van een bathy-dropcapsule. Drukframe intact, opstijgpakket vernietigd. Dit houdt je in leven, maar brengt je niet thuis.",
+      "scanner_heat_shield": "Ablatief keramiek van de afdaling. Goede isolatie, slecht voorteken.",
+      "field_note": "Als de capsule nog druk houdt, strip haar dan niet kaal. Een slecht onderkomen is meer waard dan een nette inventaris.",
+      "terminal_diag": "OPSTIJGPAKKET: ontbreekt. UPLINK-KERN: breuk gedetecteerd. CARRIERCONTACT: vertraagd.",
+      "audio_line": "Black Keel-handshake ontvangen. Pakketintegriteit onder hersteldrempel. Herhaal: drempel niet gehaald.",
+      "in_game_wiki": "De bathy-drop werd gebouwd voor één gewelddadige taak: de atmosfeer in, stormschering overleven, de oceaan raken, hitte afwerpen en één operator lang genoeg in leven houden om te beginnen. Het was nooit een schip. Het was een wegwerpdiscussie met de natuurkunde. De Black Keel bevindt zich nog ergens boven de maan in Aegir-verkeer, maar de uplink-kern is gescheurd en de opstijghardware is weg. Een schone redding vraagt stroom, timing, een orbitaal venster en een zender die door weer, water en Aegirs magnetische ruis heen komt.",
+      "external_site": "HECTON-8 begint aan de waterlijn: een beschadigde afdaalcapsule, een helder buitenaards plateau en een carrier die te ver weg is om helder te antwoorden. Het eerste mysterie is niet wat eronder leeft, maar waarom de reddingsketen al vijandig aanvoelt.",
+      "scanner": "Wrak van een bathy-dropcapsule. Drukframe intact, opstijgpakket vernietigd. Dit houdt je in leven, maar brengt je niet thuis.",
+      "terminal": "OPSTIJGPAKKET: ontbreekt. UPLINK-KERN: breuk gedetecteerd. CARRIERCONTACT: vertraagd.",
+      "audio": "Black Keel-handshake ontvangen. Pakketintegriteit onder hersteldrempel. Herhaal: drempel niet gehaald."
+    }
+  }
+}

@@ -1023,26 +1023,26 @@ namespace Hecton8.UI.Navigation
 
         private void TryRegisterTickables()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickables()
         {
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
 
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
         }
@@ -1638,8 +1638,8 @@ namespace Hecton8.UI.Navigation
             _indirectArgs[2] = dialMesh.GetIndexStart(0);
             _indirectArgs[3] = dialMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
-            _indirectArgsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args A - owner: DiegeticGyroCompassRuntime
-            _indirectArgsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args B - owner: DiegeticGyroCompassRuntime
+            _indirectArgsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args A - owner: DiegeticGyroCompassRuntime
+            _indirectArgsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args B - owner: DiegeticGyroCompassRuntime
             _dialMatrixBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer A - owner: DiegeticGyroCompassRuntime
             _dialMatrixBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer B - owner: DiegeticGyroCompassRuntime
             _indirectArgsUploadBufferIndex = 0;

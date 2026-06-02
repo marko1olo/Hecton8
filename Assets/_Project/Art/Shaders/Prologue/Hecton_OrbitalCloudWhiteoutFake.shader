@@ -68,14 +68,15 @@ Shader "Hecton/Prologue/Orbital Cloud Whiteout Fake"
 
                 half whiteout = saturate(_H8OrbitalCloudWhiteout);
                 half speedNoise = saturate(_H8OrbitalUniverseSpeed * 0.0002h);
-                half noise = 0.92h;
-                if (_H8OrbitalMathLod >= 0.5)
-                {
-                    half n0 = saturate(sin((input.uv.x + _Time.y * 0.14h) * _NoiseScale * 19.1h) * 0.5h + 0.5h);
-                    half n1 = saturate(sin((input.uv.y - _Time.y * 0.19h) * _NoiseScale * 13.7h) * 0.5h + 0.5h);
-                    noise = lerp(0.72h, 1.0h, n0 * n1);
-                }
-                half overkill = _H8OrbitalMathLod > 2.5 ? 1.08h : 1.0h;
+                half mathLod = (half)(isfinite(_H8OrbitalMathLod) ? _H8OrbitalMathLod : 1.0);
+                half mathLod01 = saturate(mathLod * 0.33333334h);
+                half detailWeight = smoothstep(0.16h, 0.82h, mathLod01);
+                half overkillWeight = smoothstep(0.82h, 1.0h, mathLod01);
+                half n0 = saturate(sin((input.uv.x + _Time.y * 0.14h) * _NoiseScale * 19.1h) * 0.5h + 0.5h);
+                half n1 = saturate(sin((input.uv.y - _Time.y * 0.19h) * _NoiseScale * 13.7h) * 0.5h + 0.5h);
+                half detailedNoise = lerp(0.72h, 1.0h, n0 * n1);
+                half noise = lerp(0.92h, detailedNoise, detailWeight);
+                half overkill = lerp(1.0h, 1.08h, overkillWeight);
                 half alpha = saturate(whiteout * _Alpha * lerp(0.84h, 1.0h, speedNoise) * noise * overkill);
                 return half4(_CloudColor.rgb, alpha);
             }

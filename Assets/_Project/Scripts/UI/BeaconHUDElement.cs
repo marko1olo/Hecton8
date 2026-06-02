@@ -1,16 +1,16 @@
 // ============================================================================
-// HECTON-8 â€” BeaconHUDElement.cs
+// HECTON-8 - BeaconHUDElement.cs
 // HUD element for displaying deployed beacons on screen.
 //
 // ARCHITECTURE:
-//   â€¢ ITickable for updates (no Update)
-//   â€¢ Zero GC: cached camera via GlobalRegistry, pre-allocated arrays
-//   â€¢ World-to-screen conversion for icon positioning
+//   - ITickable for updates (no Update)
+//   - Zero GC: cached camera via GlobalRegistry, pre-allocated arrays
+//   - World-to-screen conversion for icon positioning
 //
 // FEATURES:
-//   â€¢ Displays beacon icons at world positions
-//   â€¢ Shows distance in meters
-//   â€¢ Fades out when behind camera or too far
+//   - Displays beacon icons at world positions
+//   - Shows distance in meters
+//   - Fades out when behind camera or too far
 // ============================================================================
 
 namespace Hecton8.UI
@@ -35,18 +35,18 @@ namespace Hecton8.UI
         private const int DistanceTextCapacity = 32;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- References --------------------------------")]
         [Tooltip("Icon prefab to instantiate for each beacon.")]
         [SerializeField] private GameObject beaconIconPrefab;
 
         [Tooltip("Parent transform for beacon icons.")]
         [SerializeField] private Transform iconContainer;
 
-        [Header("â”€â”€ Display Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Display Settings --------------------------")]
         [Tooltip("Maximum distance to show beacons (meters).")]
         [SerializeField] private float maxDisplayDistance = 200f;
 
@@ -62,13 +62,13 @@ namespace Hecton8.UI
         [Tooltip("Show beacon labels when the icon prefab provides a dedicated TMP child named Label.")]
         [SerializeField] private bool showLabel = true;
 
-        [Header("â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Colors -------------------------------------")]
         [SerializeField] private Color normalColor = new Color(0f, 0.9f, 1f, 1f);
         [SerializeField] private Color distantColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PRIVATE STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private Camera _mainCamera;
         private Transform _cachedTransform;
@@ -86,7 +86,7 @@ namespace Hecton8.UI
         private float _screenHeightSnapshot = 1f;
         private const float CameraRetryInterval = 2f;
         private const float IdlePollInterval = 0.25f;
-        // COLD ALLOC: char[24] — localized distance pattern cache — owner: BeaconHUDElement
+        // COLD ALLOC: char[24] - localized distance pattern cache - owner: BeaconHUDElement
         private readonly char[] _distancePatternBuffer = new char[24];
         private int _distancePatternLength = 6;
 
@@ -94,9 +94,9 @@ namespace Hecton8.UI
         private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: BeaconIconDisplay[16] — max visible beacon icon slots — owner: BeaconHUDElement
         private int _activeIconCount;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private void Awake()
         {
@@ -113,7 +113,7 @@ namespace Hecton8.UI
                     GameObject icon = Instantiate(beaconIconPrefab, iconContainer);
                     if (!icon.TryGetComponent(out CanvasGroup canvasGroup))
                     {
-                        // COLD ALLOC: CanvasGroup[1] — missing beacon icon visibility proxy — owner: BeaconHUDElement
+                        // COLD ALLOC: CanvasGroup[1] - missing beacon icon visibility proxy - owner: BeaconHUDElement
                         canvasGroup = icon.AddComponent<CanvasGroup>();
                     }
                     DisableGraphicRaycasts(icon);
@@ -153,9 +153,9 @@ namespace Hecton8.UI
             HideAllIcons();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  ITickable
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         public void LateFrameTick()
         {
@@ -247,9 +247,9 @@ namespace Hecton8.UI
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  PRIVATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
@@ -626,27 +626,24 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registered)
-                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
         {
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registered = false;
             }
         }
@@ -760,9 +757,9 @@ namespace Hecton8.UI
             return null;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
         //  INNER CLASS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // --------------------------------------------------------------------------
 
         private class BeaconIconDisplay
         {

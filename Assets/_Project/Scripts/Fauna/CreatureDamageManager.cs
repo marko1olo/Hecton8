@@ -16,6 +16,7 @@ namespace Hecton8.AI
         private static readonly int WoundsId = Shader.PropertyToID("_HectonCreatureWounds");
         private static readonly int WoundOwnerWorldToLocalId = Shader.PropertyToID("_HectonCreatureWoundOwnerWorldToLocal");
         private static readonly int WoundOwnerSphereId = Shader.PropertyToID("_HectonCreatureWoundOwnerSphere");
+        private static readonly ShaderClearLateFrameProxy s_shaderClearProxy = new ShaderClearLateFrameProxy();
 
         [Header("Wound Projection")]
         [Tooltip("Maximum number of persistent wound stamps kept on the active leviathan shader owner.")]
@@ -33,6 +34,8 @@ namespace Hecton8.AI
         private readonly System.Collections.Generic.List<Renderer> _rendererScratch = new System.Collections.Generic.List<Renderer>(8);
 
         private static CreatureDamageManager s_activeOwner;
+        private static bool s_shaderClearPending;
+        private static bool s_shaderClearProxyRegistered;
 
         private Transform _cachedTransform;
         private FaunaBrain _faunaBrain;
@@ -43,6 +46,14 @@ namespace Hecton8.AI
         private int _woundCount;
         private int _nextWoundIndex;
         private bool _woundsDirty;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeOwner = null;
+            s_shaderClearPending = false;
+            s_shaderClearProxyRegistered = false;
+        }
 
         private void Awake()
         {
@@ -66,27 +77,33 @@ namespace Hecton8.AI
                 s_activeOwner = this;
                 _woundsDirty = true;
                 _tickSleeping = false;
-                PublishShaderGlobals();
                 TryRegisterLateFrame();
             }
         }
 
         private void OnDisable()
         {
-            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
 
             if (ReferenceEquals(s_activeOwner, this))
             {
                 s_activeOwner = null;
-                ClearShaderGlobals();
+                QueueShaderClearGlobalsForLateFrame();
             }
+
+            TryUnregisterLateFrame();
         }
 
         private void OnDestroy()
         {
-            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
+            if (ReferenceEquals(s_activeOwner, this))
+            {
+                s_activeOwner = null;
+                QueueShaderClearGlobalsForLateFrame();
+            }
+
+            TryUnregisterLateFrame();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -96,6 +113,10 @@ namespace Hecton8.AI
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
+
+            s_shaderClearProxyRegistered = false;
+            if (s_shaderClearPending)
+                QueueShaderClearGlobalsForLateFrame();
 
             TryUnregisterLateFrame();
             if (_woundCount > 0 && !_tickSleeping && ReferenceEquals(s_activeOwner, this))
@@ -279,6 +300,31 @@ namespace Hecton8.AI
         {
             Shader.SetGlobalFloat(WoundCountId, 0f);
             Shader.SetGlobalVector(WoundOwnerSphereId, Vector4.zero);
+        }
+
+        private static void QueueShaderClearGlobalsForLateFrame()
+        {
+            if (!Application.isPlaying)
+            {
+                s_shaderClearPending = false;
+                return;
+            }
+
+            s_shaderClearPending = true;
+            bool accepted = GlobalRegistry.TryRegisterLateFrameTickable(s_shaderClearProxy, PriorityLayer.Environment);
+            s_shaderClearProxyRegistered = s_shaderClearProxyRegistered || accepted;
+        }
+
+        private sealed class ShaderClearLateFrameProxy : ILateFrameTickable
+        {
+            public void LateFrameTick()
+            {
+                if (!s_shaderClearPending)
+                    return;
+
+                ClearShaderGlobals();
+                s_shaderClearPending = false;
+            }
         }
     }
 }

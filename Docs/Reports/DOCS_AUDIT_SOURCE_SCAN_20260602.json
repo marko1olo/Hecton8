@@ -1,0 +1,4563 @@
+{
+  "date": "2026-06-02",
+  "evidence_class": "STATIC_SOURCE/STATIC_DOC",
+  "cs_file_count": 2509,
+  "active_md_file_count": 2090,
+  "script_domain_count": 57,
+  "domains": [
+    {
+      "domain": "Editor",
+      "files": 398,
+      "public_types": 297,
+      "tick_participant_files": 4,
+      "global_registry_refs": 176,
+      "signalbus_refs": 24,
+      "global_signals_refs": 11,
+      "eventbus_refs": 2,
+      "datavault_refs": 96,
+      "nativearray_refs": 1204,
+      "structlayout_refs": 137,
+      "update_methods": 5,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 54,
+      "find_object": 4,
+      "resources_load": 2,
+      "complete_calls": 68,
+      "toarray_calls": 42,
+      "hot_risk_text_hits": 175,
+      "examples": []
+    },
+    {
+      "domain": "_root",
+      "files": 339,
+      "public_types": 724,
+      "tick_participant_files": 102,
+      "global_registry_refs": 2455,
+      "signalbus_refs": 222,
+      "global_signals_refs": 2,
+      "eventbus_refs": 0,
+      "datavault_refs": 19,
+      "nativearray_refs": 3172,
+      "structlayout_refs": 265,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AcousticZoneController:MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarP",
+        "AmbientWaterMotionManager:MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener",
+        "AsyncLoadHelper:MonoBehaviour, ITickable",
+        "BaseModule:MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ILateFr",
+        "BeaconNetworkSystem:MonoBehaviour, ISaveable, IBeaconNetworkService, IGlobalRegistryHotSwapListener",
+        "BeaconRuntime:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "BiomeMatrixDirector:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "BiomeSamplerCache:MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "World",
+      "files": 277,
+      "public_types": 826,
+      "tick_participant_files": 52,
+      "global_registry_refs": 1158,
+      "signalbus_refs": 111,
+      "global_signals_refs": 0,
+      "eventbus_refs": 2,
+      "datavault_refs": 20,
+      "nativearray_refs": 4483,
+      "structlayout_refs": 468,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 39,
+      "toarray_calls": 2,
+      "hot_risk_text_hits": 41,
+      "examples": [
+        "AbyssalFluidDecalManager:MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IFluidDecalPresentationSink, IGlobalRegistryHotSwapListener",
+        "AbyssalThermalManager:MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsServic",
+        "BasePollutionManager:MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener",
+        "ChemicalInfluenceGrid:MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IChemicalInfluenceReadMode",
+        "CullingManager:MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "DepthZoneDirector:MonoBehaviour, ISlowTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IDepthZoneReadModel, IGlobalRegi",
+        "DestructibleOrganicManager:MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IOrga",
+        "DynamicResolutionScaler:MonoBehaviour, ILateFrameTickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Core",
+      "files": 267,
+      "public_types": 1233,
+      "tick_participant_files": 22,
+      "global_registry_refs": 1370,
+      "signalbus_refs": 767,
+      "global_signals_refs": 20,
+      "eventbus_refs": 0,
+      "datavault_refs": 57,
+      "nativearray_refs": 1752,
+      "structlayout_refs": 573,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 4,
+      "toarray_calls": 2,
+      "hot_risk_text_hits": 6,
+      "examples": [
+        "ConnectionSplineBatchRenderer:MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ISlowTickable, ILateFrameTick",
+        "DodReplayRecorder:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "EnvironmentRuntimeContextService:MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListen",
+        "GCMonitor:MonoBehaviour, IPostFixedTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener",
+        "InputDispatcher:MonoBehaviour, IInputService, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHot",
+        "InstanceCullingServiceRegistryBridge:MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener",
+        "OceanKinematicsRuntimeService:MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapLis",
+        "PlayerInventoryManager:MonoBehaviour, IPlayerInventoryService, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListen"
+      ]
+    },
+    {
+      "domain": "Gameplay",
+      "files": 165,
+      "public_types": 399,
+      "tick_participant_files": 60,
+      "global_registry_refs": 1184,
+      "signalbus_refs": 154,
+      "global_signals_refs": 3,
+      "eventbus_refs": 0,
+      "datavault_refs": 9,
+      "nativearray_refs": 1236,
+      "structlayout_refs": 158,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "BaseAirlock:MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener",
+        "BatteryCharger:MonoBehaviour, IPowerComponent, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalR",
+        "BioReactor:MonoBehaviour, IPowerComponent, ITickable, IUpdatable, ILateFrameTickable, IInteractable, IInteractableTextProvider, ILo",
+        "CelestialCataclysmSystem:MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener, IGlobalRegistryHotSwapListener",
+        "DataArchaeologyRuntime:MonoBehaviour, ISaveable, IRenderable, IColdTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable",
+        "DebrisManager:MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown",
+        "DeployableBeacon:MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, ILoc",
+        "DirectorMissionBridge:MonoBehaviour, IDirectorAIEventListener, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "UI",
+      "files": 146,
+      "public_types": 265,
+      "tick_participant_files": 68,
+      "global_registry_refs": 838,
+      "signalbus_refs": 109,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 5,
+      "nativearray_refs": 529,
+      "structlayout_refs": 94,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AcousticEcholocationTranslator:MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILoca",
+        "TerminalBootSequence:MonoBehaviour, ILateFrameTickable, ISonarPingEventListener",
+        "AudioCaptionOverlay:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "AcousticRadarSphereRenderer:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ActionProgressHUD:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "AnalogGaugeNeedle3D:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ARWaypointOverlay:MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IARWaypointService, IGlobalRegistryHotSwapListen",
+        "AudioWaveformAnimator:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Physics",
+      "files": 85,
+      "public_types": 430,
+      "tick_participant_files": 11,
+      "global_registry_refs": 196,
+      "signalbus_refs": 95,
+      "global_signals_refs": 2,
+      "eventbus_refs": 0,
+      "datavault_refs": 28,
+      "nativearray_refs": 1707,
+      "structlayout_refs": 196,
+      "update_methods": 4,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 1,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 5,
+      "examples": [
+        "HabitatFluidIncursionDirector:MonoBehaviour, IFixedTickable, IPostFixedTickable, IRenderable, IGlobalRegistryHotSwapListener",
+        "AnalyticalGerstnerWaveRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener, IOriginShiftListener",
+        "BuoyancyDisplacementRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IOriginShiftListe",
+        "AbyssalCavitationRuntimeHost:MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "ExosuitKinematicsRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "HydrodynamicKccRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "SeaglideHydrodynamicsRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "SubmarineDynamicsRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSign"
+      ]
+    },
+    {
+      "domain": "Construction",
+      "files": 65,
+      "public_types": 210,
+      "tick_participant_files": 16,
+      "global_registry_refs": 269,
+      "signalbus_refs": 49,
+      "global_signals_refs": 1,
+      "eventbus_refs": 0,
+      "datavault_refs": 3,
+      "nativearray_refs": 1488,
+      "structlayout_refs": 141,
+      "update_methods": 2,
+      "fixedupdate_methods": 2,
+      "lateupdate_methods": 1,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 5,
+      "examples": [
+        "AutonomousExtractorSystem:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "BotanyPlanterModule:MonoBehaviour, ISlowTickable, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener",
+        "BulkheadContainmentRuntime:MonoBehaviour, IColdTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener",
+        "CultivationManager:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "DeepDrillModule:MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener",
+        "FluidPipeGraphRuntime:MonoBehaviour, IFluidPipeGraphService, ISlowTickable, ILateFrameTickable, IServiceShutdown, IGlobalRegistryHotSwapListen",
+        "FoundationPylonGpuBatch:MonoBehaviour, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener",
+        "HectonBlueprintPreviewBatch:MonoBehaviour, IRenderable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Audio",
+      "files": 53,
+      "public_types": 163,
+      "tick_participant_files": 9,
+      "global_registry_refs": 339,
+      "signalbus_refs": 81,
+      "global_signals_refs": 4,
+      "eventbus_refs": 0,
+      "datavault_refs": 10,
+      "nativearray_refs": 528,
+      "structlayout_refs": 121,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 3,
+      "find_object": 7,
+      "resources_load": 3,
+      "complete_calls": 3,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 16,
+      "examples": [
+        "AcousticReverbPresetTrigger:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "DeepPsychosisController:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistry",
+        "HectonMusicDirector:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "PlayerCriticalProceduralAudioRenderer:MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IPhysicsImpactEventListener, ISonarPingEventLis",
+        "VocalWarningSystem:MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRef",
+        "AdaptiveStemAudioMixer:MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "PrologueAcousticOrchestrator:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener",
+        "VocalBankPlaybackRuntime:MonoBehaviour, IColdTickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Visor",
+      "files": 46,
+      "public_types": 78,
+      "tick_participant_files": 16,
+      "global_registry_refs": 271,
+      "signalbus_refs": 30,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 191,
+      "structlayout_refs": 38,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "DeferredDecalPass:ScriptableRendererFeature, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "DiegeticVisorLensRuntime:MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "HectonRetinaDistortionFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable",
+        "HectonSonarPointCloudFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable",
+        "HectonVisorFluidDistortionFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable",
+        "HectonVisorUberPostFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable",
+        "HectonVolumetricParticulateFogFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable",
+        "HectonVRBrownoutFeature:ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable"
+      ]
+    },
+    {
+      "domain": "AI",
+      "files": 39,
+      "public_types": 169,
+      "tick_participant_files": 5,
+      "global_registry_refs": 94,
+      "signalbus_refs": 27,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 38,
+      "nativearray_refs": 875,
+      "structlayout_refs": 99,
+      "update_methods": 2,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 6,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 8,
+      "examples": [
+        "AmbientBiotaDirector:MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IAmbientBiotaService, IGlobalRegistryHotSwapListener",
+        "EcosystemPopulationBalancer:MonoBehaviour, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuEcosystemBalancer:ITickable, IColdTickable, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable",
+        "ShinobuFloraFaunaSymbiosisSolver:IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable",
+        "PathFunnelNavmeshRuntime:MonoBehaviour, IColdTickable, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Physiology",
+      "files": 39,
+      "public_types": 138,
+      "tick_participant_files": 6,
+      "global_registry_refs": 115,
+      "signalbus_refs": 79,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 15,
+      "nativearray_refs": 470,
+      "structlayout_refs": 55,
+      "update_methods": 1,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 1,
+      "examples": [
+        "PlayerStressMetricsRuntime:MonoBehaviour, ISlowTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener",
+        "ShinobuMetabolismRuntime:MonoBehaviour, IColdTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable",
+        "ShinobuPhysiologyRuntime:MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuRadiationMutationRuntime:MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuSensoryImpairmentRuntime:MonoBehaviour, IColdTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuSuitIntegrityRuntime:MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "VFX",
+      "files": 35,
+      "public_types": 128,
+      "tick_participant_files": 9,
+      "global_registry_refs": 233,
+      "signalbus_refs": 24,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 9,
+      "nativearray_refs": 500,
+      "structlayout_refs": 73,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "CameraJuiceSystem:MonoBehaviour, ICameraJuiceSystem, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpa",
+        "JacobianFoamGpuRuntime:MonoBehaviour, ILateFrameTickable, IColdTickable, IGlobalRegistryHotSwapListener",
+        "ParasiteSwarmGpuRuntime:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuPlasmaBeamRuntime:IGlobalRegistryHotSwapListener, IColdTickable"
+      ]
+    },
+    {
+      "domain": "Tools",
+      "files": 32,
+      "public_types": 120,
+      "tick_participant_files": 7,
+      "global_registry_refs": 122,
+      "signalbus_refs": 28,
+      "global_signals_refs": 19,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 337,
+      "structlayout_refs": 55,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "PauseSystemVerifier:MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener",
+        "PerformanceBudgetController:MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener",
+        "PerformanceMonitor:MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener",
+        "ToolDurabilitySystem:MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, IToolDurabilityService, IGlobalRegistryHotSwapL",
+        "ToolHapticsRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ToolKinematicsRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Optimization",
+      "files": 30,
+      "public_types": 34,
+      "tick_participant_files": 10,
+      "global_registry_refs": 226,
+      "signalbus_refs": 5,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 174,
+      "structlayout_refs": 7,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AssetLifecycleGovernor:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHot",
+        "AssetLoadDispatcher:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "CameraRTManager:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "PostFXRTManager:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "RenderTextureLifecycleTracker:MonoBehaviour, IRenderTextureLifecycleService, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "RenderTexturePool:MonoBehaviour, IRenderTexturePoolService, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "UIRTManager:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "VisorRTManager:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Plugins",
+      "files": 30,
+      "public_types": 49,
+      "tick_participant_files": 3,
+      "global_registry_refs": 63,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 224,
+      "structlayout_refs": 10,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 1,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 1,
+      "examples": [
+        "HectonCrestOceanDepthCacheBootstrap:MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener",
+        "MapMagicRuntimeBridge:MapMagicBridge, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "SteamManager:MonoBehaviour, IFrostTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Fauna",
+      "files": 29,
+      "public_types": 52,
+      "tick_participant_files": 7,
+      "global_registry_refs": 125,
+      "signalbus_refs": 26,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 3,
+      "nativearray_refs": 645,
+      "structlayout_refs": 66,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "CreatureDamageManager:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "FaunaBrain:MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IBucketedSlowTickable, ILateFrameTickable, IPoolabl",
+        "FaunaSimulationEngine:IFaunaSim, IServiceHeartbeat, IServiceShutdown",
+        "StressDrivenSpawnDirector:IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IOriginShiftListener, IDisposable"
+      ]
+    },
+    {
+      "domain": "Rendering",
+      "files": 27,
+      "public_types": 71,
+      "tick_participant_files": 7,
+      "global_registry_refs": 121,
+      "signalbus_refs": 4,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 43,
+      "nativearray_refs": 303,
+      "structlayout_refs": 30,
+      "update_methods": 1,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 1,
+      "examples": [
+        "GlobalShaderDispatcher:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "HectonUberNoirRuntimeBridge:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "AbyssalDeferredCausticsRuntime:MonoBehaviour, ICausticsService, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalR",
+        "HectonBilateralDrsUpscalerRuntime:MonoBehaviour, IDispatcherSystem, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "AbyssalScatterBrgDataVaultBootstrap:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener",
+        "WaterOpticsRuntime:MonoBehaviour, IDispatcherSystem, IServiceShutdown, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Atmosphere",
+      "files": 26,
+      "public_types": 78,
+      "tick_participant_files": 7,
+      "global_registry_refs": 160,
+      "signalbus_refs": 33,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 6,
+      "nativearray_refs": 772,
+      "structlayout_refs": 49,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "BaseAtmosphereEngine:MonoBehaviour, IColdTickable, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener",
+        "BaseAtmosphereLogisticsRuntime:IGlobalRegistryHotSwapListener, IColdTickable",
+        "GasDynamicsSolver:MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable, IFrostTickable, ILateFrameTickable, IGlobalRegist",
+        "HectonSurfaceWeatherDirector:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, ISurfaceWeatherReadModel,",
+        "ShinobuOceanSurfaceAtmosphereRuntime:MonoBehaviour, IHectonOceanKinematics, IUpdatable, ISlowTickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotS",
+        "ToxicOutgassingChemistryRuntime:MonoBehaviour, ISlowTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Interaction",
+      "files": 26,
+      "public_types": 70,
+      "tick_participant_files": 11,
+      "global_registry_refs": 210,
+      "signalbus_refs": 7,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 54,
+      "structlayout_refs": 17,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "EquipmentInteractionHandler:MonoBehaviour, IInteractionSignalService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwa",
+        "KinematicTerminalInteractionBridge:MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "LifePodSeatStrapCoordinator:MonoBehaviour, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "LifePodSeatStrapLatch:MonoBehaviour, IInteractable, IInteractableTextProvider, IPhysicalPanelButtonReceiver, IUpdatable, ILateFrameTickable, I",
+        "PhysicalBatteryCompartment:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "PhysicalInteractionHandler:MonoBehaviour, ITickable, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "PhysicalSnapSwitch:MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener",
+        "PlayerInteraction:MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "ModdingAPI",
+      "files": 26,
+      "public_types": 51,
+      "tick_participant_files": 2,
+      "global_registry_refs": 67,
+      "signalbus_refs": 49,
+      "global_signals_refs": 1,
+      "eventbus_refs": 50,
+      "datavault_refs": 0,
+      "nativearray_refs": 130,
+      "structlayout_refs": 40,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 2,
+      "hot_risk_text_hits": 2,
+      "examples": []
+    },
+    {
+      "domain": "Ecosystem",
+      "files": 23,
+      "public_types": 76,
+      "tick_participant_files": 4,
+      "global_registry_refs": 100,
+      "signalbus_refs": 2,
+      "global_signals_refs": 1,
+      "eventbus_refs": 0,
+      "datavault_refs": 3,
+      "nativearray_refs": 214,
+      "structlayout_refs": 30,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "EcosystemHealthDirector:MonoBehaviour, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener",
+        "MacroEcosystemMathematicianRuntime:IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable",
+        "MigrationDirector:MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener",
+        "NutrientDriftRuntime:IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable"
+      ]
+    },
+    {
+      "domain": "Graphics",
+      "files": 22,
+      "public_types": 90,
+      "tick_participant_files": 5,
+      "global_registry_refs": 121,
+      "signalbus_refs": 7,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 47,
+      "nativearray_refs": 369,
+      "structlayout_refs": 58,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AbyssalShadowCullingRuntime:MonoBehaviour, IDisposable, ISlowTickable, IGlobalRegistryHotSwapListener",
+        "InstanceCullingService:MonoBehaviour, IInstanceCullingService, IGlobalRegistryHotSwapListener",
+        "ProceduralFloraBiomeTintBridge:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "ShinobuMaterialResponseRuntime:IGlobalRegistryHotSwapListener, IColdTickable"
+      ]
+    },
+    {
+      "domain": "Power",
+      "files": 22,
+      "public_types": 113,
+      "tick_participant_files": 4,
+      "global_registry_refs": 68,
+      "signalbus_refs": 19,
+      "global_signals_refs": 2,
+      "eventbus_refs": 0,
+      "datavault_refs": 2,
+      "nativearray_refs": 621,
+      "structlayout_refs": 45,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "PowerRelayNode:MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "BatteryChargerLogisticsRuntime:IBatteryChargerLogisticsService, IColdTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "QA",
+      "files": 15,
+      "public_types": 59,
+      "tick_participant_files": 6,
+      "global_registry_refs": 120,
+      "signalbus_refs": 16,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 7,
+      "nativearray_refs": 264,
+      "structlayout_refs": 31,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "QAWatchdogGcAllocationFuzzer1524:MonoBehaviour, IFastTickable, IGlobalRegistryHotSwapListener",
+        "HeadlessSimulationRunner:MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHo",
+        "HeadlessStressFractureBot:MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener",
+        "Shinobu38QaWatchdogRuntime:MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "SaveSystem",
+      "files": 15,
+      "public_types": 23,
+      "tick_participant_files": 0,
+      "global_registry_refs": 27,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 3,
+      "nativearray_refs": 487,
+      "structlayout_refs": 58,
+      "update_methods": 3,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 3,
+      "examples": []
+    },
+    {
+      "domain": "Thermodynamics",
+      "files": 15,
+      "public_types": 68,
+      "tick_participant_files": 2,
+      "global_registry_refs": 29,
+      "signalbus_refs": 26,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 4,
+      "nativearray_refs": 195,
+      "structlayout_refs": 28,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AbyssalThermodynamicsSolver:MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener",
+        "ThermodynamicsHazardGridRuntime:MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Animation",
+      "files": 14,
+      "public_types": 78,
+      "tick_participant_files": 3,
+      "global_registry_refs": 42,
+      "signalbus_refs": 4,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 272,
+      "structlayout_refs": 37,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "ProceduralBoneBlenderRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable",
+        "KineticCharacterAnimatorRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IKineticCharacterPresentationSink, IDispo"
+      ]
+    },
+    {
+      "domain": "Inventory",
+      "files": 14,
+      "public_types": 115,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 28,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 9,
+      "nativearray_refs": 538,
+      "structlayout_refs": 46,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Narrative",
+      "files": 14,
+      "public_types": 43,
+      "tick_participant_files": 4,
+      "global_registry_refs": 96,
+      "signalbus_refs": 13,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 89,
+      "structlayout_refs": 12,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "CorporateOrderSystem:MonoBehaviour, ISaveable, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener",
+        "LoreEncyclopediaLazyProxy:IServiceShutdown, IDisposable",
+        "ProceduralLoreDirector:MonoBehaviour, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener",
+        "MetaCampaignService:MonoBehaviour, IMetaCampaignService, IUpdatable, ILateFrameTickable, ISaveable, IServiceHeartbeat, IServiceShutdown, IGl",
+        "AwaitableDropSequenceDirector:MonoBehaviour, IPrologueSequenceService, IUpdatable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Lighting",
+      "files": 13,
+      "public_types": 57,
+      "tick_participant_files": 4,
+      "global_registry_refs": 66,
+      "signalbus_refs": 5,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 289,
+      "structlayout_refs": 27,
+      "update_methods": 1,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 1,
+      "examples": [
+        "HectonGIRelaySystem:MonoBehaviour, IGIRelaySystem, ISlowTickable, ILateFrameTickable, IWeatherEventListener, IGlobalRegistryHotSwapListener",
+        "InteriorGIProbeVolumeRuntime:MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener",
+        "DynamicPointLightCullingDirector:MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener",
+        "ScreenSpaceLightShaftRuntime:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable"
+      ]
+    },
+    {
+      "domain": "Global",
+      "files": 12,
+      "public_types": 38,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 17,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Habitat",
+      "files": 12,
+      "public_types": 53,
+      "tick_participant_files": 2,
+      "global_registry_refs": 31,
+      "signalbus_refs": 28,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 1,
+      "nativearray_refs": 383,
+      "structlayout_refs": 39,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 2,
+      "toarray_calls": 6,
+      "hot_risk_text_hits": 8,
+      "examples": [
+        "HullIntegrityRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable",
+        "StructuralIntegrityCalculatorRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Quest",
+      "files": 12,
+      "public_types": 40,
+      "tick_participant_files": 0,
+      "global_registry_refs": 31,
+      "signalbus_refs": 18,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 4,
+      "nativearray_refs": 97,
+      "structlayout_refs": 17,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Dev",
+      "files": 11,
+      "public_types": 11,
+      "tick_participant_files": 2,
+      "global_registry_refs": 48,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 139,
+      "structlayout_refs": 1,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "CelestialTimeLapseDebugger:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Vehicles",
+      "files": 11,
+      "public_types": 18,
+      "tick_participant_files": 6,
+      "global_registry_refs": 74,
+      "signalbus_refs": 16,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 7,
+      "structlayout_refs": 4,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "DropPodDashboardTextRenderer:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "DropPodEmergencyLightingController:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "HullDentShaderController:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Bootstrap",
+      "files": 9,
+      "public_types": 17,
+      "tick_participant_files": 1,
+      "global_registry_refs": 438,
+      "signalbus_refs": 10,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 9,
+      "nativearray_refs": 6,
+      "structlayout_refs": 3,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "GameBootstrapper:MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Data",
+      "files": 9,
+      "public_types": 62,
+      "tick_participant_files": 0,
+      "global_registry_refs": 5,
+      "signalbus_refs": 4,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 52,
+      "structlayout_refs": 37,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Economy",
+      "files": 9,
+      "public_types": 41,
+      "tick_participant_files": 3,
+      "global_registry_refs": 63,
+      "signalbus_refs": 7,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 152,
+      "structlayout_refs": 20,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "ResourceRecyclerModule:MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapL",
+        "ResourceScarcityDirector:MonoBehaviour, ISaveable, ISlowTickable, IResourceScarcityReadModel, IInteractionEventListener, IGlobalRegistryHotSwapLi",
+        "TradeMarauderDirector:MonoBehaviour, ISlowTickable, IFrostTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Environment",
+      "files": 9,
+      "public_types": 45,
+      "tick_participant_files": 2,
+      "global_registry_refs": 60,
+      "signalbus_refs": 34,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 5,
+      "nativearray_refs": 106,
+      "structlayout_refs": 31,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "GlobalWeatherDirector:MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IWeatherService, IGlobalRegistr",
+        "HectonSeismicTideDirector:MonoBehaviour, ISeismicDirector, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGl"
+      ]
+    },
+    {
+      "domain": "Meta",
+      "files": 9,
+      "public_types": 12,
+      "tick_participant_files": 3,
+      "global_registry_refs": 62,
+      "signalbus_refs": 6,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 1,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "DynamicDifficultyDirector:MonoBehaviour, ISlowTickable, IUpdatable, IGlobalRegistryHotSwapListener",
+        "GlobalProfileManager:MonoBehaviour, ISlowTickable, IUpdatable, IProfileService, IGlobalRegistryHotSwapListener",
+        "RunModifierController:MonoBehaviour, ISaveable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "PDA",
+      "files": 8,
+      "public_types": 43,
+      "tick_participant_files": 3,
+      "global_registry_refs": 87,
+      "signalbus_refs": 6,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 147,
+      "structlayout_refs": 14,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "PDALogbookManager:MonoBehaviour, ISaveable, IPDALogbookService, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "PDAMarkerHUDElement:MonoBehaviour, ISlowTickable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener",
+        "PlayerExplorationTracker:MonoBehaviour, ITickable, ISlowTickable, ISaveable, IMapMagicBiomeEventListener, ISonarPingEventListener, IPlayerExplora"
+      ]
+    },
+    {
+      "domain": "Input",
+      "files": 7,
+      "public_types": 28,
+      "tick_participant_files": 2,
+      "global_registry_refs": 10,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 14,
+      "structlayout_refs": 12,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AccessibilitySettings:MonoBehaviour, IDispatcherSystem, IServiceShutdown, IGlobalRegistryHotSwapListener",
+        "InputManager:MonoBehaviour, INativeInputManagerRuntime",
+        "UserOptionsPersistence:MonoBehaviour, IServiceHeartbeat, IServiceShutdown, IPlatformIntegration"
+      ]
+    },
+    {
+      "domain": "Equipment",
+      "files": 6,
+      "public_types": 29,
+      "tick_participant_files": 1,
+      "global_registry_refs": 15,
+      "signalbus_refs": 24,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 53,
+      "structlayout_refs": 15,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AuxiliaryEquipmentRouterRuntime:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "AtlasSignal",
+      "files": 5,
+      "public_types": 16,
+      "tick_participant_files": 4,
+      "global_registry_refs": 97,
+      "signalbus_refs": 1,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 4,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "Atlas6DirectiveSystem:MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, INarrativeEventListener, IAtlas6EventListener, IAtlas6Direc",
+        "AtlasSignalDecoder:MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener",
+        "AtlasSignalSystem:MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalReadModel, IAtlasSignalDecodeSink, IGlobalRegis",
+        "SignalBeacon:MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "AudioLog",
+      "files": 5,
+      "public_types": 11,
+      "tick_participant_files": 1,
+      "global_registry_refs": 42,
+      "signalbus_refs": 1,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 20,
+      "structlayout_refs": 3,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "AudioLogSystem:MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAudioLogRuntime, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Player",
+      "files": 4,
+      "public_types": 17,
+      "tick_participant_files": 1,
+      "global_registry_refs": 23,
+      "signalbus_refs": 4,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 205,
+      "structlayout_refs": 10,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "ZeroGMovementRuntime:MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Progression",
+      "files": 4,
+      "public_types": 4,
+      "tick_participant_files": 2,
+      "global_registry_refs": 46,
+      "signalbus_refs": 3,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 1,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "PDAContextualAdvisorySystem:MonoBehaviour, ISlowTickable, ISaveable, IInventoryEventListener, IBaseIntegrityEventListener, IGlobalRegistryHotSwapLis",
+        "PlayerAchievementRegistry:MonoBehaviour, ITickable, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerAchievementRegistryRuntime"
+      ]
+    },
+    {
+      "domain": "Prologue",
+      "files": 4,
+      "public_types": 9,
+      "tick_participant_files": 3,
+      "global_registry_refs": 55,
+      "signalbus_refs": 16,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 14,
+      "structlayout_refs": 5,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "OrbitalRelativityDirector:MonoBehaviour, IOrbitalDirector, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable",
+        "PrologueWorldHandoffSceneLoader:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener",
+        "OrbitalDropReentryVfxController:MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener"
+      ]
+    },
+    {
+      "domain": "Scavenging",
+      "files": 4,
+      "public_types": 29,
+      "tick_participant_files": 0,
+      "global_registry_refs": 16,
+      "signalbus_refs": 14,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 62,
+      "structlayout_refs": 11,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Networking",
+      "files": 3,
+      "public_types": 41,
+      "tick_participant_files": 1,
+      "global_registry_refs": 13,
+      "signalbus_refs": 8,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 187,
+      "structlayout_refs": 20,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "HectonRollbackNetcodeRuntime:MonoBehaviour, IDispatcherFixedSystem, IDispatcherFenceDomainProvider, ILateFrameTickable, IGlobalRegistryHotSwapListene"
+      ]
+    },
+    {
+      "domain": "Build",
+      "files": 2,
+      "public_types": 2,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 0,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Cartography",
+      "files": 2,
+      "public_types": 2,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 2,
+      "nativearray_refs": 1,
+      "structlayout_refs": 0,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Compatibility",
+      "files": 2,
+      "public_types": 1,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 0,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "BuildTools",
+      "files": 1,
+      "public_types": 2,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 0,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    },
+    {
+      "domain": "Items",
+      "files": 1,
+      "public_types": 1,
+      "tick_participant_files": 1,
+      "global_registry_refs": 23,
+      "signalbus_refs": 1,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 0,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": [
+        "PickupItem:MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInvento"
+      ]
+    },
+    {
+      "domain": "Logistics",
+      "files": 1,
+      "public_types": 5,
+      "tick_participant_files": 0,
+      "global_registry_refs": 0,
+      "signalbus_refs": 0,
+      "global_signals_refs": 0,
+      "eventbus_refs": 0,
+      "datavault_refs": 0,
+      "nativearray_refs": 0,
+      "structlayout_refs": 2,
+      "update_methods": 0,
+      "fixedupdate_methods": 0,
+      "lateupdate_methods": 0,
+      "gameobject_find": 0,
+      "find_object": 0,
+      "resources_load": 0,
+      "complete_calls": 0,
+      "toarray_calls": 0,
+      "hot_risk_text_hits": 0,
+      "examples": []
+    }
+  ],
+  "missing_path_refs_count": 1006,
+  "missing_path_refs": [
+    {
+      "file": "Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md",
+      "line": 13,
+      "path": "Assets/_Project/BakedGeometry/Textures/"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BASE_MODULE_CATALOG_SHINOBU_216.md",
+      "line": 74,
+      "path": "Assets/_Project/Data/Construction/BaseModuleCatalog.h8bin"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md",
+      "line": 21,
+      "path": "Assets/_Project/BakedGeometry/Splatmaps/TX_BiomeWeightMap_SHINOBU_243.asset"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 255,
+      "path": "Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json(.meta"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 255,
+      "path": "Assets/_Project/Data/CrestMigration.meta"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 256,
+      "path": "Assets/_Project/Data/CrestMigration/"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 304,
+      "path": "Assets/_Project/Data/Ocean/*.asset"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 304,
+      "path": "Assets/_Project/crest/*.asset"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 357,
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 365,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysics.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 367,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 369,
+      "path": "Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md",
+      "line": 269,
+      "path": "Tools/Hecton-8/Procedural"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BURN_DOWN_PLAN.md",
+      "line": 201,
+      "path": "Tools/LaserCutterDodJobs.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_1419_WORLD_SPATIAL_ACOUSTIC_DENSITY.md",
+      "line": 23,
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs:1382"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_1419_WORLD_SPATIAL_ACOUSTIC_DENSITY.md",
+      "line": 24,
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs:1804"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_1419_WORLD_SPATIAL_ACOUSTIC_DENSITY.md",
+      "line": 25,
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs:2125"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_1419_WORLD_SPATIAL_ACOUSTIC_DENSITY.md",
+      "line": 27,
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs:2167"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "line": 368,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:907"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "line": 370,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3129"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "line": 372,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3341"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "line": 374,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:2234"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "line": 376,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs:1896"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HABITAT_INTERIOR_CLUTTER_FORGE.md",
+      "line": 9,
+      "path": "Assets/_Project/BakedGeometry/HabitatInteriors"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
+      "line": 24,
+      "path": "Assets/_Project/Scripts/**/*.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md",
+      "line": 21,
+      "path": "Assets/_Project/Scripts/**/*.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HYDRAULIC_EROSION_BAKER_SHINOBU_242.md",
+      "line": 15,
+      "path": "Assets/_Project/Data/Terrain/terrain_weathering_profiles.csv"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "line": 31,
+      "path": "Assets/_Project/Data/macro_ecosystem_coefficients.csv"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "line": 187,
+      "path": "Assets/_Project/Data/macro_ecosystem_coefficients.csv"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/AI/Ecology/Migration/MacroSwarm.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "line": 61,
+      "path": "Assets/_Project/BakedGeometry/Optimized/"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "line": 94,
+      "path": "Assets/_Project/BakedGeometry/Optimized/offline_lod_manifest.h8lod"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 308,
+      "path": "Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 313,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysics.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 317,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "line": 323,
+      "path": "Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "line": 323,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysics.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "line": 323,
+      "path": "Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/IBuildPlacementRule.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Core/DispatcherJobFence.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_41_Geological_Synthesis.md",
+      "line": 17,
+      "path": "Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_41_Geological_Synthesis.md",
+      "line": 70,
+      "path": "Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SOA_INVENTORY_ROUTING_NETWORK_SHINOBU_141.md",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/Inventory/Routing/Hecton8.Inventory.Routing.Runtime.asmdef"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 626,
+      "path": "Assets/_Project/Scripts/Gameplay/HectonScannerProjectionState.cs"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/VOXEL_TERRAIN_SEAM_BINDER_SHINOBU_246.md",
+      "line": 22,
+      "path": "Assets/_Project/BakedGeometry/Stitched/"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
+      "line": 289,
+      "path": "Assets/_Project/Scripts/Editor/WorldProceduralGeologyFinalAuthoring.cs(235,17"
+    },
+    {
+      "file": "Docs/Design/Snell_Refraction_LUT_Shader_Mapping.md",
+      "line": 227,
+      "path": "Tools/SnellBaker.py"
+    },
+    {
+      "file": "Docs/Design/Snell_Refraction_LUT_Shader_Mapping.md",
+      "line": 228,
+      "path": "Tools/SnellBaker.py"
+    },
+    {
+      "file": "Docs/Design/Snell_Refraction_LUT_Shader_Mapping.md",
+      "line": 229,
+      "path": "Tools/test_snell_baker.py"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:875"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:842"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/Audio/Editor/ShinobuAcousticDspSmokeTester.cs:111"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs:664"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/FaunaDirector.cs:1043"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/HectonBoidController.cs:2403"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs:249"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs:6266"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1895"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4810"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6791"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 420,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:5752"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 421,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:734"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 421,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:481"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 421,
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:1538"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 422,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:525"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 422,
+      "path": "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:989"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 423,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:510"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 424,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:217"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 425,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:515"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 426,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:457"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 427,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1366"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 427,
+      "path": "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs:220"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 427,
+      "path": "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:218"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 427,
+      "path": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs:424"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 428,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:724"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 428,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:265"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 428,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6463"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 429,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:69"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 429,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2817"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:79"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs:1100"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:997"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1371"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs:377"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:918"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs:4175"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:726"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:495"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:1025"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1765"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1799"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 430,
+      "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs:1120"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 431,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs:231"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 432,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs:245"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 433,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs:260"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 434,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs:59"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 435,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1796"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 436,
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:207"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 436,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AbyssalDspTunerWindow.cs:131"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 436,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AbyssalDspTunerWindow.cs:258"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 436,
+      "path": "Assets/_Project/Scripts/Audio/Editor/Shinobu351HullStressDspSmokeTester.cs:58"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 436,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6470"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 437,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:144"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:230"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:898"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:1126"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/Graphics/Materials/ProceduralFloraBiomeTintBridge.cs:111"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs:4809"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs:1691"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:241"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:1520"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs:882"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1550"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs:2182"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 440,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1192"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 441,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs:21"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 441,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs:234"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 442,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:372"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 442,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs:9851"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 443,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:130"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 444,
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:359"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 445,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1640"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 445,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:979"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 445,
+      "path": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1647"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 446,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:934"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 447,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1628"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 447,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2233"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 447,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:674"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 447,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:966"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 448,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyData.cs:752"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 449,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:486"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 449,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:2020"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 450,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:963"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1656"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs:82"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:1112"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:1264"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:950"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs:711"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:1108"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs:893"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1126"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:701"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs:263"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:239"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 451,
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1752"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 452,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1921"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 453,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:568"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 453,
+      "path": "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:1002"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 454,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:287"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 455,
+      "path": "Assets/_Project/Scripts/Construction/ConstructionSignals.cs:20"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 455,
+      "path": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs:546"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 455,
+      "path": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:483"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 456,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:496"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 457,
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1554"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 458,
+      "path": "Assets/_Project/Scripts/Core/Contracts/SeedShipAnomalySignals.cs:49"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 458,
+      "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs:1009"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 459,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:860"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 460,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1222"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 460,
+      "path": "Assets/_Project/Scripts/PDA/PDALogbookManager.cs:596"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 461,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1207"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 462,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:607"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 463,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:698"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 464,
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:247"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 465,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:763"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 466,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:304"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 467,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:5725"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 468,
+      "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:301"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 469,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:387"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 469,
+      "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:942"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 470,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:397"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 470,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:749"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 471,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:636"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 472,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:652"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 473,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:1201"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 473,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:958"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 473,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs:3633"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 474,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:407"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 475,
+      "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs:37"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 476,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:591"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 477,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:50"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 478,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:546"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 478,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:485"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 478,
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:1553"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 479,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:821"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 479,
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1233"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 480,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:842"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 481,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:800"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 481,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:4224"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 482,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs:1000"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 483,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs:989"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 483,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:5661"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 484,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs:978"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 485,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:89"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 485,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:2037"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 486,
+      "path": "Assets/_Project/Scripts/Core/Contracts/Signals/DynamicMusicScalarSignal.cs:14"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 486,
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:1246"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 487,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:5704"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 488,
+      "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:249"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 489,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:301"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 490,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:434"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 490,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1663"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 490,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:314"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 490,
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs:949"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 490,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs:6084"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 491,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:315"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 492,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:450"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 493,
+      "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:267"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 494,
+      "path": "Assets/_Project/Scripts/Tools/EquipmentThermalBatteryContracts.cs:101"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 495,
+      "path": "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsContracts.cs:84"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 496,
+      "path": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs:72"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 497,
+      "path": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs:88"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 498,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1539"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 498,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2251"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 498,
+      "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs:4592"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 498,
+      "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1533"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 499,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs:58"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 499,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs:159"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 500,
+      "path": "Assets/_Project/Scripts/Construction/ConstructionSignals.cs:72"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 501,
+      "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeContracts.cs:639"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 502,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1094"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 502,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:927"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 503,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:111"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 504,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1053"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 504,
+      "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs:828"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 504,
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs:594"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 505,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:301"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 506,
+      "path": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:202"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 507,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1898"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 508,
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:145"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 508,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1709"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 508,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1513"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 508,
+      "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1878"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 509,
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:68"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 509,
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:721"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 510,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:5779"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 511,
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:315"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 511,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs:2068"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 512,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:209"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 513,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs:35"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 514,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:623"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 515,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:78"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 516,
+      "path": "Assets/_Project/Scripts/Core/Contracts/Signals/HapticPulseSignal.cs:10"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 517,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:80"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 518,
+      "path": "Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs:30"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 518,
+      "path": "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1232"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 519,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs:64"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 519,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs:124"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:32"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs:69"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:259"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4471"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2880"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs:865"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs:2106"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 520,
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1716"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 521,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1746"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 521,
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:1273"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 521,
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1541"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 521,
+      "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs:2089"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 522,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1775"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 522,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1171"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 523,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:991"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 524,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:10"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 524,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs:792"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 525,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:525"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:990"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:802"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:766"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1873"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/UI/InteractionUI.cs:896"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:6098"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 527,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs:1021"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:308"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/Editor/SoaInventoryXRayWindow_SHINOBU316.cs:125"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:734"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:1045"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs:4731"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/PDAInventoryTab.cs:567"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:906"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/PlayerToolManager.cs:2234"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2911"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:300"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/UI/PDAConstructionTab.cs:424"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/UI/PDALoadoutTab.cs:410"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 528,
+      "path": "Assets/_Project/Scripts/UI/PDAShellChrome.cs:600"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 529,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:226"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 529,
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs:2502"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 530,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:262"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 530,
+      "path": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs:706"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 530,
+      "path": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs:723"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 531,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:242"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 531,
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs:2636"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 532,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:290"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 532,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1144"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 533,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs:372"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 533,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1674"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 533,
+      "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:2080"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 533,
+      "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:2102"
+    },
+    {
+      "file": "Docs/Generated/DEPENDENCY_GRAPH.md",
+      "line": 533,
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs:4823"
+    }
+  ],
+  "claim_hits_count": 1303,
+  "claim_hits": [
+    {
+      "file": "Docs/DEPENDENCY_GRAPH.md",
+      "line": 26,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/DOC_GOVERNANCE.md",
+      "line": 58,
+      "text": "green build"
+    },
+    {
+      "file": "Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md",
+      "line": 47,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/PROCEDURAL_ASSET_PIPELINE.md",
+      "line": 44,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/PROJECT_BASELINE.md",
+      "line": 42,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 21,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 21,
+      "text": "COMPLETE"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 21,
+      "text": "PRODUCTION READY"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 53,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 61,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 69,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/QUALITY_GATES.md",
+      "line": 83,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ROOT_DOCS_REFERENCE.md",
+      "line": 53,
+      "text": "green build"
+    },
+    {
+      "file": "Docs/SYSTEMS_CONTRACTS.md",
+      "line": 47,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/SYSTEMS_CONTRACTS.md",
+      "line": 190,
+      "text": "production ready"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md",
+      "line": 150,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md",
+      "line": 54,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "line": 240,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "line": 258,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ASYNC_BUOYANCY_READBACK_SHINOBU_264.md",
+      "line": 18,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ASYNC_BUOYANCY_READBACK_SHINOBU_264.md",
+      "line": 22,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ASYNC_BUOYANCY_READBACK_SHINOBU_264.md",
+      "line": 55,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md",
+      "line": 108,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BASE_ATMOSPHERE_LOGISTICS_ROUTE_CARD_SHINOBU_221.md",
+      "line": 75,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BASE_ATMOSPHERE_LOGISTICS_ROUTE_CARD_SHINOBU_221.md",
+      "line": 163,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md",
+      "line": 65,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md",
+      "line": 33,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "line": 247,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "line": 282,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "line": 295,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "line": 364,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "line": 59,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "line": 66,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "line": 137,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "line": 140,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "line": 140,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "line": 134,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md",
+      "line": 192,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md",
+      "line": 240,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DECOMPRESSION_SICKNESS_SHINOBU_321.md",
+      "line": 22,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 32,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 33,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 52,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 67,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 131,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 133,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 153,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 173,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 175,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 187,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 189,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 197,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 201,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 201,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 223,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 249,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 249,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 253,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 253,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 253,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 351,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 365,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 401,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 403,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "line": 413,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 142,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "line": 347,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ECS_DOTS_ADOPTION_PLAN.md",
+      "line": 173,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md",
+      "line": 59,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md",
+      "line": 95,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md",
+      "line": 103,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/FOUNDATION_SNAPPING_CALCULATOR_SHINOBU_252.md",
+      "line": 74,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GEOGRAPHY_SANITY_CHECKER_SHINOBU_247.md",
+      "line": 166,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GEOGRAPHY_SANITY_CHECKER_SHINOBU_247.md",
+      "line": 243,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md",
+      "line": 41,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md",
+      "line": 59,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "line": 23,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "line": 43,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "line": 126,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "line": 136,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md",
+      "line": 75,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md",
+      "line": 106,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md",
+      "line": 132,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md",
+      "line": 456,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 77,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 79,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 145,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 185,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 299,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
+      "line": 299,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_BTREE_TELEMETRY_SHINOBU_207.md",
+      "line": 124,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md",
+      "line": 105,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md",
+      "line": 191,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md",
+      "line": 49,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_REGISTRY_SERVICE_LOCATOR.md",
+      "line": 105,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
+      "line": 56,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
+      "line": 102,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
+      "line": 201,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HABITAT_FLUID_INCURSION.md",
+      "line": 129,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HABITAT_FLUID_INCURSION.md",
+      "line": 167,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HABITAT_INTERIOR_CLUTTER_FORGE.md",
+      "line": 159,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HABITAT_INTERIOR_CLUTTER_FORGE.md",
+      "line": 165,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 225,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 234,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 245,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 461,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 484,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 495,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 506,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+      "line": 517,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
+      "line": 48,
+      "text": "COMPLETE"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
+      "line": 48,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
+      "line": 48,
+      "text": "PRODUCTION READY"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/KINETIC_ENTANGLEMENT.md",
+      "line": 15,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/LOCALIZATION_SUBTITLE_SYNC_ENGINE.md",
+      "line": 133,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/LOCALIZATION_SUBTITLE_SYNC_ENGINE.md",
+      "line": 133,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "line": 308,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/OFFLINE_HADAL_ARCH_BAKER_SHINOBU_215.md",
+      "line": 34,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md",
+      "line": 115,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md",
+      "line": 119,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md",
+      "line": 441,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
+      "line": 62,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
+      "line": 74,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
+      "line": 74,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md",
+      "line": 49,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md",
+      "line": 52,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md",
+      "line": 52,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md",
+      "line": 342,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md",
+      "line": 344,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md",
+      "line": 151,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md",
+      "line": 51,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md",
+      "line": 55,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md",
+      "line": 67,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md",
+      "line": 71,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md",
+      "line": 142,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
+      "line": 68,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
+      "line": 190,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
+      "line": 208,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
+      "line": 331,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
+      "line": 343,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/RADIATION_MUTATION_LINK_SHINOBU_324.md",
+      "line": 39,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 69,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 230,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 230,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "line": 230,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 44,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 320,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 325,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 333,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 334,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
+      "line": 335,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SEAGLIDE_HYDRODYNAMICS_SHINOBU_227.md",
+      "line": 163,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SEAGLIDE_HYDRODYNAMICS_SHINOBU_227.md",
+      "line": 181,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SEAGLIDE_HYDRODYNAMICS_SHINOBU_227.md",
+      "line": 211,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_113_HYDRODYNAMIC_KCC_ROUTE_CARD.md",
+      "line": 70,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_113_HYDRODYNAMIC_KCC_ROUTE_CARD.md",
+      "line": 140,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_138_CHEMICAL_INFLUENCE_GRID_ROUTE_CARD.md",
+      "line": 75,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_149_DYNAMIC_DECALS.md",
+      "line": 82,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_149_DYNAMIC_DECALS.md",
+      "line": 187,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_149_DYNAMIC_DECALS.md",
+      "line": 205,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
+      "line": 252,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
+      "line": 364,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 93,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 95,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 155,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 157,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 159,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "line": 160,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md",
+      "line": 109,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md",
+      "line": 109,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md",
+      "line": 145,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md",
+      "line": 151,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_ROUTE_CARD.md",
+      "line": 61,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 19,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 19,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 29,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 34,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 63,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 103,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 107,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 107,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 113,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "line": 113,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
+      "line": 82,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
+      "line": 128,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
+      "line": 137,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
+      "line": 153,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_235_DEEP_SEA_NOIR_ROUTE_CARD.md",
+      "line": 93,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
+      "line": 26,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD.md",
+      "line": 58,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD.md",
+      "line": 87,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_249_BUOYANCY_SLEEP_ROUTE_CARD.md",
+      "line": 79,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_249_BUOYANCY_SLEEP_ROUTE_CARD.md",
+      "line": 121,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "line": 110,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_266_JACOBIAN_FOAM_ROUTE_CARD.md",
+      "line": 151,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+      "line": 36,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+      "line": 52,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+      "line": 104,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
+      "line": 5,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 22,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 37,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 41,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 42,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 62,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
+      "line": 63,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_275_SCREEN_SPACE_VISOR_WOUNDS_ROUTE_CARD.md",
+      "line": 84,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_275_SCREEN_SPACE_VISOR_WOUNDS_ROUTE_CARD.md",
+      "line": 172,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "line": 100,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_302_UTILITY_AI_COGNITION_ROUTE.md",
+      "line": 72,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
+      "line": 22,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
+      "line": 15,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+      "line": 8,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+      "line": 59,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+      "line": 59,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+      "line": 59,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+      "line": 60,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_ROUTE_CARD.md",
+      "line": 13,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_ROUTE_CARD.md",
+      "line": 20,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md",
+      "line": 5,
+      "text": "VERIFIED"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md",
+      "line": 26,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_331_TERMINAL_PROJECTION_ROUTE_CARD.md",
+      "line": 97,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 43,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 43,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 43,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 68,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 72,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "line": 152,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "line": 19,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "line": 45,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "line": 82,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md",
+      "line": 48,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md",
+      "line": 98,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md",
+      "line": 83,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md",
+      "line": 114,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md",
+      "line": 80,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md",
+      "line": 80,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md",
+      "line": 112,
+      "text": "green build"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md",
+      "line": 26,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md",
+      "line": 37,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md",
+      "line": 132,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_355_HEADLESS_KCC_SMOKE_ROUTE_CARD.md",
+      "line": 57,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_355_HEADLESS_KCC_SMOKE_ROUTE_CARD.md",
+      "line": 57,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_355_HEADLESS_KCC_SMOKE_ROUTE_CARD.md",
+      "line": 104,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 25,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 25,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 26,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 26,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 58,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 67,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 73,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 75,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 75,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_356_CORE_MEMORY_DISPATCHER_FENCE_BLOCKER_ROUTE_CARD.md",
+      "line": 99,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SHINOBU_41_Geological_Synthesis.md",
+      "line": 66,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SOA_INVENTORY_QUERY_ENGINE.md",
+      "line": 53,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "line": 155,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "line": 182,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "line": 238,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md",
+      "line": 298,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md",
+      "line": 298,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md",
+      "line": 65,
+      "text": "Verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md",
+      "line": 209,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md",
+      "line": 119,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md",
+      "line": 262,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 35,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 50,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 244,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 244,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 341,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "line": 497,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
+      "line": 40,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md",
+      "line": 39,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md",
+      "line": 40,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md",
+      "line": 65,
+      "text": "verified"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 120,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 120,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 120,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 122,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 140,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 150,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 152,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 224,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 272,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 272,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 274,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "line": 276,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/TERRESTRIAL_HEIGHTMAP_REFORMATTER_SHINOBU_240.md",
+      "line": 263,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
+      "line": 41,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
+      "line": 101,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
+      "line": 105,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
+      "line": 179,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
+      "line": 201,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/Vehicle_Component_Damage_Router_SHINOBU_152.md",
+      "line": 82,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/VOXEL_TERRAIN_SEAM_BINDER_SHINOBU_246.md",
+      "line": 75,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
+      "line": 204,
+      "text": "complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
+      "line": 207,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
+      "line": 207,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
+      "line": 74,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
+      "line": 74,
+      "text": "Complete"
+    },
+    {
+      "file": "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
+      "line": 75,
+      "text": "Complete"
+    }
+  ],
+  "pentarchy_hits_count": 0,
+  "pentarchy_hits": [],
+  "notes": "Text hits only. Not compile/runtime/profiler proof."
+}

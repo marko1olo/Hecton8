@@ -66,12 +66,14 @@ Shader "Hecton/Prologue/Orbital Planet Relativity Fake"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                float lod = _H8OrbitalMathLod;
+                float mathLod = isfinite(_H8OrbitalMathLod) ? _H8OrbitalMathLod : 1.0;
+                float mathLod01 = saturate(mathLod * 0.33333334);
+                float curvatureDetail = smoothstep(0.12, 0.82, mathLod01);
                 float fakeRadius = max(_H8OrbitalFakeRadiusMeters, 5000.0);
                 float distanceFade = saturate(1.0 - _H8OrbitalPlanetDistanceMeters * 0.00008333333);
                 float cheapBulge = fakeRadius * 0.00002 * distanceFade;
                 float logBulge = log2(1.0 + fakeRadius * 0.0001) * 32.0 * distanceFade;
-                logBulge = lod < 0.5 ? cheapBulge : logBulge;
+                logBulge = lerp(cheapBulge, logBulge, curvatureDetail);
                 float3 positionOS = input.positionOS.xyz + input.normalOS * logBulge;
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(positionOS);
@@ -91,19 +93,20 @@ Shader "Hecton/Prologue/Orbital Planet Relativity Fake"
                 half3 viewDirWS = input.viewDirWS;
                 half rimBase = saturate(1.0h - dot(normalWS, viewDirWS));
 
-                if (_H8OrbitalMathLod < 0.5)
-                {
-                    half3 lowColor = lerp(_OceanColor.rgb, _AtmosphereColor.rgb, rimBase * 0.45h);
-                    return half4(lowColor, 1.0h);
-                }
-
-                half rim = pow(rimBase, _RimPower);
+                half mathLod = (half)(isfinite(_H8OrbitalMathLod) ? _H8OrbitalMathLod : 1.0);
+                half mathLod01 = saturate(mathLod * 0.33333334h);
+                half detailWeight = smoothstep(0.16h, 0.82h, mathLod01);
+                half overkillWeight = smoothstep(0.82h, 1.0h, mathLod01);
+                half3 lowColor = lerp(_OceanColor.rgb, _AtmosphereColor.rgb, rimBase * 0.45h);
+                half rim = pow(rimBase, lerp(1.45h, _RimPower, detailWeight));
                 half bands = saturate(sin((input.positionWS.x + input.positionWS.z) * 0.0017h) * 0.5h + 0.5h);
                 half continent = saturate(sin(input.positionWS.x * 0.0007h + input.positionWS.y * 0.0011h) * 0.5h + 0.5h);
-                half clouds = smoothstep(0.48h, 0.72h, bands) * _CloudStrength;
-                half3 baseColor = lerp(_OceanColor.rgb, _GroundColor.rgb, continent);
+                half clouds = smoothstep(0.48h, 0.72h, bands) * _CloudStrength * detailWeight;
+                half continentWeight = lerp(0.18h, continent, detailWeight);
+                half3 baseColor = lerp(_OceanColor.rgb, _GroundColor.rgb, continentWeight);
                 baseColor = lerp(baseColor, half3(0.92h, 0.95h, 0.93h), clouds);
-                half overkill = _H8OrbitalMathLod > 2.5 ? 1.35h : 1.0h;
+                baseColor = lerp(lowColor, baseColor, detailWeight);
+                half overkill = lerp(1.0h, 1.35h, overkillWeight);
                 baseColor += _AtmosphereColor.rgb * rim * (1.0h + saturate(_H8OrbitalUniverseSpeed * 0.00025h) * overkill);
                 return half4(baseColor, 1.0h);
             }

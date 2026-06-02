@@ -30,9 +30,11 @@ namespace Hecton8.EditorValidation
         internal const string SourceFolder = "Assets/_SourceData/DataMonolith";
         internal const string BalanceSourceFolder = "Data/Balance";
         internal const string OutputAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
+        private const string AppliedLoreImporterPath = "Tools/AppliedLoreImporter.py";
+        private const string AppliedLoreRouteCardExporterPath = "Tools/AppliedLoreRouteCardExporter.py";
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
         private const int InitialBlobCapacity = 128 * 1024;
-        private const int Utf8ScratchBytes = 2048;
+        private const int Utf8ScratchBytes = 16384;
         private const string TempOutputSuffix = ".tmp";
         private const string BackupOutputSuffix = ".bak";
         private const int MoveFileReplaceExisting = 0x1;
@@ -67,7 +69,9 @@ namespace Hecton8.EditorValidation
             H8DataSectionId.LocalizationUtf8,
             H8DataSectionId.SectorPageDirectory,
             H8DataSectionId.Economy,
-            H8DataSectionId.PhysicsConstants
+            H8DataSectionId.PhysicsConstants,
+            H8DataSectionId.AppliedLorePackets,
+            H8DataSectionId.AppliedLoreRoutes
         };
 
         [MenuItem(MenuPath)]
@@ -109,6 +113,20 @@ namespace Hecton8.EditorValidation
                 Directory.CreateDirectory(BalanceSourceFolder);
                 Directory.CreateDirectory(Path.GetDirectoryName(OutputAssetPath));
 
+                if (!TryRunAppliedLoreImporter(out string importerSummary))
+                {
+                    LastError = importerSummary;
+                    Debug.LogError("[H8DataMonolithCompiler] " + LastError + " Bake aborted.");
+                    return false;
+                }
+
+                if (!TryRunAppliedLoreRouteCardExporter(out string routeExporterSummary))
+                {
+                    LastError = routeExporterSummary;
+                    Debug.LogError("[H8DataMonolithCompiler] " + LastError + " Bake aborted.");
+                    return false;
+                }
+
                 LocalizationPool localizationPool = new LocalizationPool();
                 DataSet dataSet = BuildDataSetFromSources(localizationPool, out _, out _);
                 FinalizeGeneratedTables(dataSet);
@@ -141,8 +159,16 @@ namespace Hecton8.EditorValidation
                         dataSet.Economy.Count +
                         ", physics=" +
                         dataSet.PhysicsConstants.Count +
+                        ", appliedLore=" +
+                        dataSet.AppliedLorePackets.Count +
+                        ", appliedLoreRoutes=" +
+                        dataSet.AppliedLoreRoutes.Count +
                         ", sections=" +
                         SectionOrder.Length +
+                        ", import=" +
+                        importerSummary +
+                        ", routes=" +
+                        routeExporterSummary +
                         ".");
                 }
 
@@ -169,12 +195,30 @@ namespace Hecton8.EditorValidation
         {
             try
             {
+                if (!TryRunAppliedLoreImporter(out string importerSummary))
+                {
+                    missingCount = -1;
+                    report = "applied-lore-import-failed: " + importerSummary;
+                    return false;
+                }
+
+                if (!TryRunAppliedLoreRouteCardExporter(out string routeExporterSummary))
+                {
+                    missingCount = -1;
+                    report = "applied-lore-route-export-failed: " + routeExporterSummary;
+                    return false;
+                }
+
                 LocalizationPool localizationPool = new LocalizationPool();
                 DataSet dataSet = BuildDataSetFromSources(localizationPool, out int csvFileCount, out int jsonFileCount);
                 FinalizeGeneratedTables(dataSet);
                 ValidateCrossReferences(dataSet);
                 string coverageError = BuildProductionCoverageError(dataSet, out missingCount);
                 report = BuildProductionCoverageReport(dataSet, csvFileCount, jsonFileCount, missingCount, coverageError);
+                if (!string.IsNullOrEmpty(importerSummary))
+                    report += "applied-lore-import=" + importerSummary + System.Environment.NewLine;
+                if (!string.IsNullOrEmpty(routeExporterSummary))
+                    report += "applied-lore-routes=" + routeExporterSummary + System.Environment.NewLine;
                 return missingCount == 0;
             }
             catch (IOException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
@@ -192,6 +236,61 @@ namespace Hecton8.EditorValidation
             missingCount = -1;
             report = "coverage-analysis-failed: " + ex.Message;
             return false;
+        }
+
+        private static bool TryRunAppliedLoreImporter(out string summary)
+        {
+            return TryRunPythonProjectTool(AppliedLoreImporterPath, "Applied lore importer", out summary);
+        }
+
+        private static bool TryRunAppliedLoreRouteCardExporter(out string summary)
+        {
+            return TryRunPythonProjectTool(AppliedLoreRouteCardExporterPath, "Applied lore route-card exporter", out summary);
+        }
+
+        private static bool TryRunPythonProjectTool(string relativeToolPath, string label, out string summary)
+        {
+            summary = string.Empty;
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string toolPath = Path.Combine(projectRoot, relativeToolPath);
+            if (!File.Exists(toolPath))
+            {
+                summary = label + " missing: " + toolPath;
+                return false;
+            }
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "python",
+                Arguments = QuoteArg(toolPath) + " --root " + QuoteArg(projectRoot),
+                WorkingDirectory = projectRoot,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using Process process = Process.Start(startInfo);
+            if (process == null)
+            {
+                summary = label + " failed to start.";
+                return false;
+            }
+
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            summary = output.Trim();
+            if (process.ExitCode == 0)
+                return true;
+
+            summary = label + " exit=" + process.ExitCode + " stdout=" + output.Trim() + " stderr=" + error.Trim();
+            return false;
+        }
+
+        private static string QuoteArg(string value)
+        {
+            return "\"" + value.Replace("\"", "\\\"") + "\"";
         }
 
         private static DataSet BuildDataSetFromSources(LocalizationPool localizationPool, out int csvFileCount, out int jsonFileCount)
@@ -1537,6 +1636,12 @@ namespace Hecton8.EditorValidation
                     case H8DataSectionId.PhysicsConstants:
                         entries[i] = AppendSection(stream, sectionId, dataSet.PhysicsConstants, H8DataLayoutConstants.PhysicsConstantsRecordSize);
                         break;
+                    case H8DataSectionId.AppliedLorePackets:
+                        entries[i] = AppendSection(stream, sectionId, dataSet.AppliedLorePackets, H8DataLayoutConstants.AppliedLorePacketRecordSize);
+                        break;
+                    case H8DataSectionId.AppliedLoreRoutes:
+                        entries[i] = AppendSection(stream, sectionId, dataSet.AppliedLoreRoutes, H8DataLayoutConstants.AppliedLoreRouteRecordSize);
+                        break;
                 }
             }
 
@@ -1644,6 +1749,8 @@ namespace Hecton8.EditorValidation
             dataSet.PhysicsMaterials.Sort(ComparePhysicsMaterialRecords);
             dataSet.Economy.Sort(CompareEconomyRecords);
             dataSet.PhysicsConstants.Sort(ComparePhysicsConstantsRecords);
+            dataSet.AppliedLorePackets.Sort(CompareAppliedLoreRecords);
+            dataSet.AppliedLoreRoutes.Sort(CompareAppliedLoreRouteRecords);
 
             for (int i = 1; i < dataSet.Economy.Count; i++)
                 if (dataSet.Economy[i - 1].HashId == dataSet.Economy[i].HashId)
@@ -1652,6 +1759,28 @@ namespace Hecton8.EditorValidation
             for (int i = 1; i < dataSet.PhysicsConstants.Count; i++)
                 if (dataSet.PhysicsConstants[i - 1].HashId == dataSet.PhysicsConstants[i].HashId)
                     throw new InvalidOperationException("[H8DataMonolithCompiler] Duplicate physics constant hash detected: 0x" + dataSet.PhysicsConstants[i].HashId.ToString("X8"));
+
+            for (int i = 0; i < dataSet.AppliedLorePackets.Count; i++)
+            {
+                H8AppliedLorePacketRecord record = dataSet.AppliedLorePackets[i];
+                record.RecordIndex = (uint)i;
+                dataSet.AppliedLorePackets[i] = record;
+                if (i > 0 &&
+                    dataSet.AppliedLorePackets[i - 1].PacketHash == record.PacketHash &&
+                    dataSet.AppliedLorePackets[i - 1].LocaleHash == record.LocaleHash)
+                {
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Duplicate applied lore packet/locale detected: packet=0x" + record.PacketHash.ToString("X8") + " locale=0x" + record.LocaleHash.ToString("X8"));
+                }
+            }
+
+            for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
+            {
+                H8AppliedLoreRouteRecord record = dataSet.AppliedLoreRoutes[i];
+                record.RecordIndex = (uint)i;
+                dataSet.AppliedLoreRoutes[i] = record;
+                if (i > 0 && dataSet.AppliedLoreRoutes[i - 1].RouteCardHash == record.RouteCardHash)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Duplicate applied lore route detected: route=0x" + record.RouteCardHash.ToString("X8"));
+            }
         }
 
         private static void ValidateCrossReferences(DataSet dataSet)
@@ -1684,6 +1813,10 @@ namespace Hecton8.EditorValidation
             for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
                 physicsSurfaceHashes.Add(dataSet.PhysicsMaterials[i].SurfaceHash);
 
+            HashSet<uint> appliedLorePacketHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[applied lore packet count] - editor-only route validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.AppliedLorePackets.Count; i++)
+                appliedLorePacketHashes.Add(dataSet.AppliedLorePackets[i].PacketHash);
+
             for (int i = 0; i < dataSet.RawItemRows.Count; i++)
                 ValidatePackedItemReferences(dataSet.RawItemRows[i], "item.recipe", "recipe", Get(dataSet.RawItemRows[i], "recipe", string.Empty), itemHashes);
 
@@ -1699,7 +1832,7 @@ namespace Hecton8.EditorValidation
             for (int i = 0; i < dataSet.RawEconomyRows.Count; i++)
                 ValidateEconomyItemReferences(dataSet.RawEconomyRows[i], itemHashes);
 
-            ValidateSemanticRecordReferences(dataSet, itemHashes, creatureHashes, biomeHashes, recipeOutputHashes, voxelMaterialHashes, physicsSurfaceHashes);
+            ValidateSemanticRecordReferences(dataSet, itemHashes, creatureHashes, biomeHashes, recipeOutputHashes, voxelMaterialHashes, physicsSurfaceHashes, appliedLorePacketHashes);
         }
 
         private static void ValidateRequiredRecordIdentities(DataSet dataSet)
@@ -1784,6 +1917,23 @@ namespace Hecton8.EditorValidation
 
             for (int i = 0; i < dataSet.PhysicsConstants.Count; i++)
                 RequireNonZeroRecordValue(dataSet.PhysicsConstants[i].HashId, "PhysicsConstants", i, "HashId");
+
+            for (int i = 0; i < dataSet.AppliedLorePackets.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.AppliedLorePackets[i].PacketHash, "AppliedLorePackets", i, "PacketHash");
+                RequireNonZeroRecordValue(dataSet.AppliedLorePackets[i].LocaleHash, "AppliedLorePackets", i, "LocaleHash");
+                RequireNonZeroRecordValue(dataSet.AppliedLorePackets[i].TitleUtf8ByteLength, "AppliedLorePackets", i, "TitleUtf8ByteLength");
+                RequireNonZeroRecordValue(dataSet.AppliedLorePackets[i].WikiUtf8ByteLength, "AppliedLorePackets", i, "WikiUtf8ByteLength");
+            }
+
+            for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.AppliedLoreRoutes[i].RouteCardHash, "AppliedLoreRoutes", i, "RouteCardHash");
+                RequireNonZeroRecordValue(dataSet.AppliedLoreRoutes[i].PhaseHash, "AppliedLoreRoutes", i, "PhaseHash");
+                RequireNonZeroRecordValue(dataSet.AppliedLoreRoutes[i].PrimarySurfaceMask, "AppliedLoreRoutes", i, "PrimarySurfaceMask");
+                RequireNonZeroRecordValue(dataSet.AppliedLoreRoutes[i].EndingPressureHash, "AppliedLoreRoutes", i, "EndingPressureHash");
+                RequireNonZeroRecordValue(dataSet.AppliedLoreRoutes[i].PacketCount, "AppliedLoreRoutes", i, "PacketCount");
+            }
         }
 
         private static void ValidateUniqueProductionHashes(DataSet dataSet)
@@ -1831,6 +1981,10 @@ namespace Hecton8.EditorValidation
             seen.Clear();
             for (int i = 0; i < dataSet.SectorPages.Count; i++)
                 RequireUniqueHash(seen, dataSet.SectorPages[i].SectorHash, "SectorPageDirectory", i, "SectorHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
+                RequireUniqueHash(seen, dataSet.AppliedLoreRoutes[i].RouteCardHash, "AppliedLoreRoutes", i, "RouteCardHash");
         }
 
         private static void ValidateProductionNumericRanges(DataSet dataSet)
@@ -1979,6 +2133,16 @@ namespace Hecton8.EditorValidation
                 RequirePositiveRecordValue(physics.MaxWorldBoundsMeters, "PhysicsConstants", i, "MaxWorldBoundsMeters");
                 RequireNonNegativeRecordValue(physics.AccessFrequency, "PhysicsConstants", i, "AccessFrequency");
             }
+
+            for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
+            {
+                H8AppliedLoreRouteRecord route = dataSet.AppliedLoreRoutes[i];
+                RequireDepthRange(route.DepthMinMeters, route.DepthMaxMeters, "AppliedLoreRoutes", i, "DepthRange");
+                if (route.PacketCount > H8DataLayoutConstants.AppliedLoreRoutePacketCapacity)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] AppliedLoreRoutes packet count exceeds capacity: record_index=" + i);
+                if (route.RequiredPacketCount > H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] AppliedLoreRoutes prerequisite count exceeds capacity: record_index=" + i);
+            }
         }
 
         private static void ValidateSemanticRecordReferences(
@@ -1988,7 +2152,8 @@ namespace Hecton8.EditorValidation
             HashSet<uint> biomeHashes,
             HashSet<uint> recipeOutputHashes,
             HashSet<uint> voxelMaterialHashes,
-            HashSet<uint> physicsSurfaceHashes)
+            HashSet<uint> physicsSurfaceHashes,
+            HashSet<uint> appliedLorePacketHashes)
         {
             for (int i = 0; i < dataSet.Biomes.Count; i++)
                 RequireHashReference(dataSet.Biomes[i].SurfaceId, voxelMaterialHashes, "Biomes", i, "SurfaceId", "VoxelMaterials.VoxelHash");
@@ -2010,6 +2175,139 @@ namespace Hecton8.EditorValidation
 
             for (int i = 0; i < dataSet.SectorPages.Count; i++)
                 RequireHashReference(dataSet.SectorPages[i].BiomeHash, biomeHashes, "SectorPageDirectory", i, "BiomeHash", "Biomes.BiomeHash");
+
+            for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
+                ValidateAppliedLoreRoutePacketReferences(dataSet.AppliedLoreRoutes[i], i, appliedLorePacketHashes);
+
+            ValidateAppliedLorePrerequisiteGraph(dataSet.AppliedLoreRoutes);
+        }
+
+        private static void ValidateAppliedLoreRoutePacketReferences(H8AppliedLoreRouteRecord route, int recordIndex, HashSet<uint> appliedLorePacketHashes)
+        {
+            uint packetCount = math.min(route.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+            for (uint i = 0u; i < packetCount; i++)
+                RequireHashReference(GetAppliedLoreRoutePacketHash(in route, i), appliedLorePacketHashes, "AppliedLoreRoutes", recordIndex, "PacketHash" + i, "AppliedLorePackets.PacketHash");
+
+            uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+            for (uint i = 0u; i < requiredCount; i++)
+                RequireHashReference(GetAppliedLoreRouteRequiredPacketHash(in route, i), appliedLorePacketHashes, "AppliedLoreRoutes", recordIndex, "RequiredPacketHash" + i, "AppliedLorePackets.PacketHash");
+        }
+
+        private static void ValidateAppliedLorePrerequisiteGraph(List<H8AppliedLoreRouteRecord> routes)
+        {
+            Dictionary<uint, List<uint>> prerequisitesByPacket =
+                new Dictionary<uint, List<uint>>(Math.Max(32, routes.Count * 2));
+
+            for (int routeIndex = 0; routeIndex < routes.Count; routeIndex++)
+            {
+                H8AppliedLoreRouteRecord route = routes[routeIndex];
+                uint packetCount = math.min(route.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+                uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+                for (uint packetIndex = 0u; packetIndex < packetCount; packetIndex++)
+                {
+                    uint packetHash = GetAppliedLoreRoutePacketHash(in route, packetIndex);
+                    if (packetHash == 0u)
+                        continue;
+
+                    for (uint requiredIndex = 0u; requiredIndex < requiredCount; requiredIndex++)
+                    {
+                        uint requiredHash = GetAppliedLoreRouteRequiredPacketHash(in route, requiredIndex);
+                        if (requiredHash == 0u)
+                            continue;
+
+                        AddAppliedLorePrerequisiteEdge(prerequisitesByPacket, packetHash, requiredHash);
+                    }
+                }
+            }
+
+            HashSet<uint> visiting = new HashSet<uint>();
+            HashSet<uint> visited = new HashSet<uint>();
+            foreach (uint packetHash in prerequisitesByPacket.Keys)
+                ValidateAppliedLorePrerequisiteNode(packetHash, prerequisitesByPacket, visiting, visited);
+        }
+
+        private static void AddAppliedLorePrerequisiteEdge(
+            Dictionary<uint, List<uint>> prerequisitesByPacket,
+            uint packetHash,
+            uint requiredHash)
+        {
+            if (!prerequisitesByPacket.TryGetValue(packetHash, out List<uint> prerequisites))
+            {
+                prerequisites = new List<uint>(H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+                prerequisitesByPacket.Add(packetHash, prerequisites);
+            }
+
+            for (int i = 0; i < prerequisites.Count; i++)
+            {
+                if (prerequisites[i] == requiredHash)
+                    return;
+            }
+
+            prerequisites.Add(requiredHash);
+        }
+
+        private static void ValidateAppliedLorePrerequisiteNode(
+            uint packetHash,
+            Dictionary<uint, List<uint>> prerequisitesByPacket,
+            HashSet<uint> visiting,
+            HashSet<uint> visited)
+        {
+            if (visited.Contains(packetHash))
+                return;
+
+            if (!visiting.Add(packetHash))
+            {
+                throw new InvalidOperationException(
+                    "[H8DataMonolithCompiler] FatalArchitectureException: Applied lore prerequisite cycle detected at packet=0x" +
+                    packetHash.ToString("X8"));
+            }
+
+            if (prerequisitesByPacket.TryGetValue(packetHash, out List<uint> prerequisites))
+            {
+                for (int i = 0; i < prerequisites.Count; i++)
+                {
+                    uint requiredHash = prerequisites[i];
+                    if (requiredHash == packetHash)
+                    {
+                        throw new InvalidOperationException(
+                            "[H8DataMonolithCompiler] FatalArchitectureException: Applied lore self-prerequisite detected at packet=0x" +
+                            packetHash.ToString("X8"));
+                    }
+
+                    ValidateAppliedLorePrerequisiteNode(requiredHash, prerequisitesByPacket, visiting, visited);
+                }
+            }
+
+            visiting.Remove(packetHash);
+            visited.Add(packetHash);
+        }
+
+        private static uint GetAppliedLoreRoutePacketHash(in H8AppliedLoreRouteRecord route, uint index)
+        {
+            switch (index)
+            {
+                case 0u: return route.PacketHash0;
+                case 1u: return route.PacketHash1;
+                case 2u: return route.PacketHash2;
+                case 3u: return route.PacketHash3;
+                case 4u: return route.PacketHash4;
+                case 5u: return route.PacketHash5;
+                case 6u: return route.PacketHash6;
+                case 7u: return route.PacketHash7;
+                default: return 0u;
+            }
+        }
+
+        private static uint GetAppliedLoreRouteRequiredPacketHash(in H8AppliedLoreRouteRecord route, uint index)
+        {
+            switch (index)
+            {
+                case 0u: return route.RequiredPacketHash0;
+                case 1u: return route.RequiredPacketHash1;
+                case 2u: return route.RequiredPacketHash2;
+                case 3u: return route.RequiredPacketHash3;
+                default: return 0u;
+            }
         }
 
         private static void RequireNonZeroRecordValue(uint value, string sectionName, int recordIndex, string fieldName)
@@ -2181,6 +2479,8 @@ namespace Hecton8.EditorValidation
             AppendMissingSection(missing, ref missingCount, "SectorPageDirectory", dataSet.SectorPages.Count);
             AppendMissingSection(missing, ref missingCount, "Economy", dataSet.Economy.Count);
             AppendMissingSection(missing, ref missingCount, "PhysicsConstants", dataSet.PhysicsConstants.Count);
+            AppendMissingSection(missing, ref missingCount, "AppliedLorePackets", dataSet.AppliedLorePackets.Count);
+            AppendMissingSection(missing, ref missingCount, "AppliedLoreRoutes", dataSet.AppliedLoreRoutes.Count);
 
             AppendMissingExactCountSection(missing, ref missingCount, "BiomeHeatmap", dataSet.BiomeHeatmap.Count, 256 * 256);
 
@@ -2219,6 +2519,8 @@ namespace Hecton8.EditorValidation
             AppendCoverageCount(builder, "SectorPageDirectory", dataSet.SectorPages.Count);
             AppendCoverageCount(builder, "Economy", dataSet.Economy.Count);
             AppendCoverageCount(builder, "PhysicsConstants", dataSet.PhysicsConstants.Count);
+            AppendCoverageCount(builder, "AppliedLorePackets", dataSet.AppliedLorePackets.Count);
+            AppendCoverageCount(builder, "AppliedLoreRoutes", dataSet.AppliedLoreRoutes.Count);
             builder.Append("production-coverage=").Append(missingCount == 0 ? "PASS" : "FAIL").Append(" missing=").Append(missingCount).AppendLine();
             if (!string.IsNullOrEmpty(coverageError))
                 builder.Append("coverage-error=").Append(coverageError).AppendLine();
@@ -2428,6 +2730,10 @@ namespace Hecton8.EditorValidation
                 case "hudlayout":
                 case "sector_pages":
                 case "sectorpages":
+                case "applied_lore_packets":
+                case "appliedlorepackets":
+                case "applied_lore_route_cards":
+                case "appliedloreroutecards":
                     return true;
                 default:
                     return false;
@@ -2590,7 +2896,129 @@ namespace Hecton8.EditorValidation
                 case "sectorpages":
                     dataSet.SectorPages.Add(ParseSectorPage(row));
                     break;
+                case "applied_lore_packets":
+                case "appliedlorepackets":
+                    dataSet.AppliedLorePackets.Add(ParseAppliedLorePacket(row, localizationPool));
+                    break;
+                case "applied_lore_route_cards":
+                case "appliedloreroutecards":
+                    dataSet.AppliedLoreRoutes.Add(ParseAppliedLoreRoute(row));
+                    break;
             }
+        }
+
+        private static H8AppliedLoreRouteRecord ParseAppliedLoreRoute(CsvRow row)
+        {
+            uint packetHash0;
+            uint packetHash1;
+            uint packetHash2;
+            uint packetHash3;
+            uint packetHash4;
+            uint packetHash5;
+            uint packetHash6;
+            uint packetHash7;
+            uint packetCount = ParseAppliedLoreRoutePacketHashes(
+                Get(row, "packet_ids", string.Empty),
+                out packetHash0,
+                out packetHash1,
+                out packetHash2,
+                out packetHash3,
+                out packetHash4,
+                out packetHash5,
+                out packetHash6,
+                out packetHash7);
+
+            uint requiredHash0;
+            uint requiredHash1;
+            uint requiredHash2;
+            uint requiredHash3;
+            uint requiredCount = ParseAppliedLoreRoutePrerequisiteHashes(
+                Get(row, "required_packet_ids", string.Empty),
+                out requiredHash0,
+                out requiredHash1,
+                out requiredHash2,
+                out requiredHash3);
+
+            return new H8AppliedLoreRouteRecord
+            {
+                RouteCardHash = Hash(Get(row, "route_card_id", string.Empty)),
+                PhaseHash = Hash(Get(row, "phase_id", string.Empty)),
+                DepthMinMeters = ParseFloat(row, "depth_min_m", 0f),
+                DepthMaxMeters = ParseFloat(row, "depth_max_m", 0f),
+                PrimarySurfaceMask = ParseUInt(row, "primary_surface_mask", 0u),
+                EndingPressureHash = Hash(Get(row, "ending_pressure", string.Empty)),
+                PacketCount = packetCount,
+                RequiredPacketCount = requiredCount,
+                PacketHash0 = packetHash0,
+                PacketHash1 = packetHash1,
+                PacketHash2 = packetHash2,
+                PacketHash3 = packetHash3,
+                PacketHash4 = packetHash4,
+                PacketHash5 = packetHash5,
+                PacketHash6 = packetHash6,
+                PacketHash7 = packetHash7,
+                RequiredPacketHash0 = requiredHash0,
+                RequiredPacketHash1 = requiredHash1,
+                RequiredPacketHash2 = requiredHash2,
+                RequiredPacketHash3 = requiredHash3,
+                Flags = ParseUInt(row, "flags", 0u)
+            };
+        }
+
+        private static H8AppliedLorePacketRecord ParseAppliedLorePacket(CsvRow row, LocalizationPool localizationPool)
+        {
+            string packetId = Get(row, "packet_id", string.Empty);
+            string locale = Get(row, "locale", "en_US");
+            string title = Get(row, "title", packetId);
+            string scanner = Get(row, "scanner", string.Empty);
+            string terminal = Get(row, "terminal", string.Empty);
+            string audio = Get(row, "audio", string.Empty);
+            string wiki = Get(row, "in_game_wiki", string.Empty);
+            string site = Get(row, "external_site", string.Empty);
+            string fieldNote = Get(row, "field_note", string.Empty);
+
+            uint titleOffset = localizationPool.Add(title, out int titleBytes);
+            uint scannerOffset = localizationPool.Add(scanner, out int scannerBytes);
+            uint terminalOffset = localizationPool.Add(terminal, out int terminalBytes);
+            uint audioOffset = localizationPool.Add(audio, out int audioBytes);
+            uint wikiOffset = localizationPool.Add(wiki, out int wikiBytes);
+            uint siteOffset = localizationPool.Add(site, out int siteBytes);
+            uint fieldNoteOffset = localizationPool.Add(fieldNote, out int fieldNoteBytes);
+            uint poiHash0 = 0u;
+            uint poiHash1 = 0u;
+            uint biomeHash0 = 0u;
+            uint biomeHash1 = 0u;
+            ParseFirstTwoHashList(Get(row, "poi_tags", string.Empty), out poiHash0, out poiHash1);
+            ParseFirstTwoHashList(Get(row, "biome_tags", string.Empty), out biomeHash0, out biomeHash1);
+
+            return new H8AppliedLorePacketRecord
+            {
+                PacketHash = Hash(packetId),
+                LocaleHash = Hash(locale),
+                ArticleHash = Hash(Get(row, "article_id", string.Empty)),
+                UnlockHash = Hash(Get(row, "unlock_id", string.Empty)),
+                SurfaceMask = ParseUInt(row, "surface_mask", 0x7Fu),
+                ReleaseSetHash = Hash(Get(row, "release_set_id", string.Empty)),
+                TitleUtf8Offset = titleOffset,
+                ScannerUtf8Offset = scannerOffset,
+                TerminalUtf8Offset = terminalOffset,
+                AudioUtf8Offset = audioOffset,
+                WikiUtf8Offset = wikiOffset,
+                SiteUtf8Offset = siteOffset,
+                FieldNoteUtf8Offset = fieldNoteOffset,
+                TitleUtf8ByteLength = (uint)titleBytes,
+                ScannerUtf8ByteLength = (uint)scannerBytes,
+                TerminalUtf8ByteLength = (uint)terminalBytes,
+                AudioUtf8ByteLength = (uint)audioBytes,
+                WikiUtf8ByteLength = (uint)wikiBytes,
+                SiteUtf8ByteLength = (uint)siteBytes,
+                FieldNoteUtf8ByteLength = (uint)fieldNoteBytes,
+                PoiTagHash0 = poiHash0,
+                PoiTagHash1 = poiHash1,
+                BiomeTagHash0 = biomeHash0,
+                BiomeTagHash1 = biomeHash1,
+                Flags = ParseUInt(row, "flags", 0u)
+            };
         }
 
         private static H8ItemRecord ParseItem(CsvRow row, LocalizationPool localizationPool)
@@ -3598,6 +4026,134 @@ namespace Hecton8.EditorValidation
             return count;
         }
 
+        private static void ParseFirstTwoHashList(string packedIds, out uint hash0, out uint hash1)
+        {
+            hash0 = 0u;
+            hash1 = 0u;
+            if (string.IsNullOrWhiteSpace(packedIds))
+                return;
+
+            int count = 0;
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length && count < 2)
+            {
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
+                if (token.Length == 0)
+                    continue;
+
+                if (count == 0)
+                    hash0 = Hash(token);
+                else
+                    hash1 = Hash(token);
+
+                count++;
+            }
+        }
+
+        private static uint ParseAppliedLoreRoutePacketHashes(
+            string packedIds,
+            out uint hash0,
+            out uint hash1,
+            out uint hash2,
+            out uint hash3,
+            out uint hash4,
+            out uint hash5,
+            out uint hash6,
+            out uint hash7)
+        {
+            hash0 = 0u;
+            hash1 = 0u;
+            hash2 = 0u;
+            hash3 = 0u;
+            hash4 = 0u;
+            hash5 = 0u;
+            hash6 = 0u;
+            hash7 = 0u;
+            if (string.IsNullOrWhiteSpace(packedIds))
+                return 0u;
+
+            uint count = 0u;
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length)
+            {
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
+                if (token.Length == 0)
+                    continue;
+
+                if (count >= H8DataLayoutConstants.AppliedLoreRoutePacketCapacity)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Applied lore route packet list exceeds capacity=" + H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+
+                uint hash = Hash(token);
+                switch (count)
+                {
+                    case 0u: hash0 = hash; break;
+                    case 1u: hash1 = hash; break;
+                    case 2u: hash2 = hash; break;
+                    case 3u: hash3 = hash; break;
+                    case 4u: hash4 = hash; break;
+                    case 5u: hash5 = hash; break;
+                    case 6u: hash6 = hash; break;
+                    case 7u: hash7 = hash; break;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private static uint ParseAppliedLoreRoutePrerequisiteHashes(
+            string packedIds,
+            out uint hash0,
+            out uint hash1,
+            out uint hash2,
+            out uint hash3)
+        {
+            hash0 = 0u;
+            hash1 = 0u;
+            hash2 = 0u;
+            hash3 = 0u;
+            if (string.IsNullOrWhiteSpace(packedIds))
+                return 0u;
+
+            uint count = 0u;
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length)
+            {
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
+                if (token.Length == 0)
+                    continue;
+
+                if (count >= H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Applied lore route prerequisite list exceeds capacity=" + H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+
+                uint hash = Hash(token);
+                switch (count)
+                {
+                    case 0u: hash0 = hash; break;
+                    case 1u: hash1 = hash; break;
+                    case 2u: hash2 = hash; break;
+                    case 3u: hash3 = hash; break;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
         private static string Get(CsvRow row, string key, string fallback)
         {
             return row.Fields.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value) ? value : fallback;
@@ -3717,6 +4273,17 @@ namespace Hecton8.EditorValidation
         private static int ComparePhysicsConstantsRecords(H8PhysicsConstantsRecord left, H8PhysicsConstantsRecord right)
         {
             return left.HashId.CompareTo(right.HashId);
+        }
+
+        private static int CompareAppliedLoreRecords(H8AppliedLorePacketRecord left, H8AppliedLorePacketRecord right)
+        {
+            int packetCompare = left.PacketHash.CompareTo(right.PacketHash);
+            return packetCompare != 0 ? packetCompare : left.LocaleHash.CompareTo(right.LocaleHash);
+        }
+
+        private static int CompareAppliedLoreRouteRecords(H8AppliedLoreRouteRecord left, H8AppliedLoreRouteRecord right)
+        {
+            return left.RouteCardHash.CompareTo(right.RouteCardHash);
         }
 
         private static H8ItemRecord ToItemRecord(JsonItem item, LocalizationPool localizationPool)
@@ -3843,7 +4410,7 @@ namespace Hecton8.EditorValidation
         {
             private readonly Dictionary<string, uint> _offsetByValue = new Dictionary<string, uint>(StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,uint>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
             private readonly MemoryStream _bytes = new MemoryStream(4096); // COLD ALLOC: MemoryStream[4KB] - editor-only UTF-8 string block writer - owner: H8DataMonolithCompiler
-            private readonly byte[] _scratch = new byte[Utf8ScratchBytes]; // COLD ALLOC: byte[2048] - editor-only UTF-8 encoding scratch - owner: H8DataMonolithCompiler
+            private readonly byte[] _scratch = new byte[Utf8ScratchBytes]; // COLD ALLOC: byte[16KB] - editor-only UTF-8 encoding scratch - owner: H8DataMonolithCompiler
 
             internal uint Add(string value)
             {
@@ -3940,6 +4507,8 @@ namespace Hecton8.EditorValidation
             internal readonly List<H8SectorPageRecord> SectorPages = new List<H8SectorPageRecord>(64);
             internal readonly List<H8EconomyRecord> Economy = new List<H8EconomyRecord>(128);
             internal readonly List<H8PhysicsConstantsRecord> PhysicsConstants = new List<H8PhysicsConstantsRecord>(64);
+            internal readonly List<H8AppliedLorePacketRecord> AppliedLorePackets = new List<H8AppliedLorePacketRecord>(256);
+            internal readonly List<H8AppliedLoreRouteRecord> AppliedLoreRoutes = new List<H8AppliedLoreRouteRecord>(32);
         }
 
         // Assigned by Unity JsonUtility during editor/offline bake.
@@ -3995,10 +4564,27 @@ namespace Hecton8.EditorValidation
                 return false;
 
             for (int i = 0; i < paths.Length; i++)
+            {
+                if (IsGeneratedAppliedLoreSourcePath(paths[i]))
+                    continue;
+
                 if (H8DataMonolithCompiler.IsSourcePath(paths[i]))
                     return true;
+            }
 
             return false;
+        }
+
+        private static bool IsGeneratedAppliedLoreSourcePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string normalized = path.Replace('\\', '/');
+            return normalized.EndsWith("/Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.EndsWith("/Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv", StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -4095,6 +4681,9 @@ namespace Hecton8.EditorValidation
             if (Volatile.Read(ref _pendingBake) == 0)
                 return;
 
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (EditorApplication.isCompiling)
                 return;
 
@@ -4148,7 +4737,7 @@ namespace Hecton8.EditorValidation
 
         internal static void NotifyBake(string outputAssetPath)
         {
-            if (!EditorApplication.isPlaying)
+            if (!EditorApplication.isPlaying || !H8StaticDataArena.IsLoaded)
                 return;
 
             string absolutePath = Path.GetFullPath(outputAssetPath);
@@ -4339,6 +4928,13 @@ namespace Hecton8.EditorValidation
         {
             if (!EditorApplication.isPlaying)
                 return;
+
+            if (!H8StaticDataArena.IsLoaded)
+            {
+                lock (QueueLock)
+                    _pendingPath = null;
+                return;
+            }
 
             string path;
             lock (QueueLock)

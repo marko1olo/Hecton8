@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -26,6 +26,8 @@ namespace Hecton8.UI
         private const byte PauseMenuCommandCancel = 1 << 1;
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
+        private const uint DiegeticPauseHapticSourceHash = 0x504D3131u; // PM11
+        private const float MaxPauseMenuPresentationDeltaSeconds = 0.1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveRuntimeForSubsystemRegistration()
@@ -52,6 +54,13 @@ namespace Hecton8.UI
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
         private static readonly Action<AsyncOperation> _onMainMenuCleanupCompleted = HandleMainMenuCleanupCompleted;
         private const uint PauseMenuSignalSourceHash = 0x50415553u; // PAUS
+        private static readonly int SettingsLanguageHintKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_LANGUAGE_HINT.AsSpan());
+        private static readonly int SettingsCycleLanguageKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE.AsSpan());
+        private static readonly int ErrorSaveManagerUnavailableKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE.AsSpan());
+        private static readonly int ErrorSaveCrashedMessageKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE.AsSpan());
+        private static readonly int ErrorSaveFailedMessageKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE.AsSpan());
+        private static readonly int SettingsLanguageOwnerUnavailableKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE.AsSpan());
+        private static readonly int SettingsCurrentLanguageKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_CURRENT_LANGUAGE.AsSpan());
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -94,9 +103,21 @@ namespace Hecton8.UI
         private ISaveService _cachedSaveService;
         private ILocalizationLanguageControl _cachedLocalization;
         private EventSystem _cachedEventSystem;
+        private string _pendingRetrySaveSlotName = string.Empty;
+        private bool _pauseVisualStyleDirty;
+        private bool _pauseVisualConceptDirty;
+        private int _pendingMenuVisualStyleIndex = -1;
+        private int _pendingMenuVisualConceptIndex = -1;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         private RectTransform _root;
+        private Canvas _diegeticCanvas;
+        private RectTransform _diegeticCanvasRoot;
+        private BoxCollider _diegeticPanelCollider;
+        private DiegeticPanelController _diegeticPanelController;
+        private DiegeticMenuRaycastReceiver _diegeticRaycastReceiver;
+        private MenuCameraController _pauseMenuCameraController;
+        private float _pauseMenuPresentationDeltaTime;
         private CanvasGroup _canvasGroup;
         private Image _background;
         private TextMeshProUGUI _headerTitle;
@@ -113,6 +134,10 @@ namespace Hecton8.UI
         private CanvasGroup _savesPanelCanvasGroup;
         private CanvasGroup _helpPanelCanvasGroup;
         private CanvasGroup _settingsPanelCanvasGroup;
+        private bool _pauseSectionInteractionGateActive;
+        private bool _hasPendingPauseSelectionClear;
+        private bool _hasPendingDefaultSelection;
+        private PauseSection _pendingDefaultSelectionSection;
         private TextMeshProUGUI _saveStatus;
         private PauseControlsPanel _controlsPanel;
         private Button _mainResumeButton;
@@ -133,17 +158,17 @@ namespace Hecton8.UI
         private MenuVisualConceptDecorApplier _visualConceptDecorApplier;
         private SettingsManager _cachedSettings;
         private CharBufferPool.Lease _saveStatusBufferLease;
-        // COLD ALLOC: char[128] — pause-menu save status fallback buffer when transient pool leases are exhausted — owner: PauseMenuController
+        // COLD ALLOC: char[128] - pause-menu save status fallback buffer when transient pool leases are exhausted - owner: PauseMenuController
         private readonly char[] _saveStatusFallbackBuffer = new char[128];
-        // COLD ALLOC: char[96] — settings language status staging buffer — owner: PauseMenuController
+        // COLD ALLOC: char[96] - settings language status staging buffer - owner: PauseMenuController
         private readonly char[] _settingsLanguageBuffer = new char[96];
-        // COLD ALLOC: char[128] — settings menu style status staging buffer — owner: PauseMenuController
+        // COLD ALLOC: char[128] - settings menu style status staging buffer - owner: PauseMenuController
         private readonly char[] _settingsMenuStyleBuffer = new char[128];
-        // COLD ALLOC: char[128] — settings menu concept status staging buffer — owner: PauseMenuController
+        // COLD ALLOC: char[128] - settings menu concept status staging buffer - owner: PauseMenuController
         private readonly char[] _settingsMenuConceptBuffer = new char[128];
-        // COLD ALLOC: char[64] — save slot button label staging buffer — owner: PauseMenuController
+        // COLD ALLOC: char[64] - save slot button label staging buffer - owner: PauseMenuController
         private readonly char[] _saveSlotLabelBuffer = new char[64];
-        // COLD ALLOC: char[192] — modal save-error staging buffer copied directly into TMP — owner: PauseMenuController
+        // COLD ALLOC: char[192] - modal save-error staging buffer copied directly into TMP - owner: PauseMenuController
         private readonly char[] _modalMessageBuffer = new char[192];
 
         public bool IsOpen => _isOpen;
@@ -186,9 +211,9 @@ namespace Hecton8.UI
             _visualConceptDecorApplier?.ForceNextApply();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         // CACHED STRINGS (zero-GC)
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void PublishPauseState(bool paused, float restoreScalar = 0f)
         {
@@ -233,25 +258,22 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
+            _registered = SystemDispatcher.Register((IUnscaledFastTickable)this, PriorityLayer.UI);
             if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((IUnscaledFastTickable)this, PriorityLayer.UI);
                 _registered = false;
             }
         }
@@ -327,6 +349,7 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
 
             TryUnregister();
+            CommitPauseVisualSelectionIfNeeded();
             ReleaseSaveStatusBuffer();
             CacheSettingsManagerCold(null);
 
@@ -347,6 +370,7 @@ namespace Hecton8.UI
 
             TryUnregister();
             TryUnregisterHotSwapListener();
+            CommitPauseVisualSelectionIfNeeded();
             ReleaseSaveStatusBuffer();
             CacheSettingsManagerCold(null);
         }
@@ -461,14 +485,45 @@ namespace Hecton8.UI
 
         public void UnscaledFastTick(float unscaledDeltaTime)
         {
+            if (math.isfinite(unscaledDeltaTime) && unscaledDeltaTime > 0f)
+            {
+                _pauseMenuPresentationDeltaTime = math.min(
+                    MaxPauseMenuPresentationDeltaSeconds,
+                    _pauseMenuPresentationDeltaTime + unscaledDeltaTime);
+            }
+
             AdvancePauseInputState(unscaledDeltaTime);
             ProcessPendingPauseMenuCommands();
         }
 
         public void LateFrameTick()
         {
+            float presentationDeltaTime = _pauseMenuPresentationDeltaTime;
+            _pauseMenuPresentationDeltaTime = 0f;
+            if (presentationDeltaTime <= 0f)
+                presentationDeltaTime = ResolveCurrentUnscaledFrameDeltaTime();
+
+            if (presentationDeltaTime > 0f)
+                _pauseMenuCameraController?.Advance(presentationDeltaTime);
+
+            RefreshPauseSectionInteractionGate();
+            FlushPendingPauseSelectionClear();
+            FlushPendingDefaultSelection();
             SyncVisualStyleLateFrame();
             SyncVisualConceptLateFrame();
+            _diegeticRaycastReceiver?.FlushPendingSelection();
+        }
+
+        private static float ResolveCurrentUnscaledFrameDeltaTime()
+        {
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            return math.isfinite(deltaTime) ? math.min(MaxPauseMenuPresentationDeltaSeconds, math.max(0f, deltaTime)) : 0f;
+        }
+
+        private static float ResolveCurrentUnscaledTimeSeconds()
+        {
+            float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            return math.isfinite(currentTime) && currentTime >= 0f ? currentTime : 0f;
         }
 
         private void ProcessPendingPauseMenuCommands()
@@ -567,6 +622,8 @@ namespace Hecton8.UI
         {
             if (!_isOpen)
                 return;
+
+            CommitPauseVisualSelectionIfNeeded();
 
             // Audio feedback for pause menu close
             UIAudioFeedback.PlayPanelClose();
@@ -717,32 +774,9 @@ namespace Hecton8.UI
 
             Stretch(_root, 0f, 0f, 0f, 0f);
 
-            Canvas canvas = null;
-            for (Transform current = transform; current != null; current = current.parent)
-            {
-                if (current.TryGetComponent(out canvas))
-                    break;
-            }
-
-            if (canvas == null)
-            {
-                if (!TryGetComponent(out canvas))
-                    canvas = gameObject.AddComponent<Canvas>();
-
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.sortingOrder = 1000; // High order to appear on top
-
-                if (!TryGetComponent(out UnityEngine.UI.CanvasScaler scaler))
-                    scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
-
-                scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920f, 1080f);
-                scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 0.5f;
-
-                if (!TryGetComponent(out UnityEngine.UI.GraphicRaycaster _))
-                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-            }
+            if (!TryGetComponent(out Canvas canvas))
+                canvas = gameObject.AddComponent<Canvas>(); // COLD ALLOC: pause menu private world-space canvas.
+            ConfigureDiegeticPauseRuntimeCold(canvas);
 
             if (!_root.TryGetComponent(out _canvasGroup))
                 _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
@@ -815,9 +849,58 @@ namespace Hecton8.UI
             _footerHint.color = DimLow;
             TmpTextNoAlloc.Set(_footerHint, "ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
+            _diegeticRaycastReceiver?.RebuildButtonCache();
             RebuildVisualStyleCacheCold();
             RebuildVisualConceptCacheCold();
             _built = true;
+        }
+
+        private void ConfigureDiegeticPauseRuntimeCold(Canvas canvas)
+        {
+            _diegeticCanvas = canvas;
+            Camera camera = null;
+            if (_cachedPlayerContext != null)
+                camera = _cachedPlayerContext.PlayerCamera;
+            camera = DiegeticMenuCanvasUtility.ResolveCamera(camera);
+
+            if (!DiegeticMenuCanvasUtility.ApplyWorldSpaceCanvas(
+                    _diegeticCanvas,
+                    camera,
+                    out _diegeticCanvasRoot,
+                    out _diegeticPanelCollider))
+            {
+                return;
+            }
+
+            if (_diegeticPanelController == null && !TryGetComponent(out _diegeticPanelController))
+                _diegeticPanelController = gameObject.AddComponent<DiegeticPanelController>(); // COLD ALLOC: pause-menu diegetic panel projection owner.
+
+            if (_diegeticRaycastReceiver == null && !TryGetComponent(out _diegeticRaycastReceiver))
+                _diegeticRaycastReceiver = gameObject.AddComponent<DiegeticMenuRaycastReceiver>(); // COLD ALLOC: pause-menu fixed button receiver.
+
+            if (_diegeticRaycastReceiver != null)
+                _diegeticRaycastReceiver.Configure(_diegeticCanvasRoot, _cachedEventSystem ?? EventSystem.current, DiegeticPauseHapticSourceHash);
+
+            if (_diegeticPanelController != null)
+            {
+                _diegeticPanelController.OverrideRenderTexturePresentation(false);
+                _diegeticPanelController.OverrideInteractionMode(DiegeticPanelController.PanelInteractionMode.RaycastOnly);
+                _diegeticPanelController.OverrideInteractionCamera(camera);
+                _diegeticPanelController.OverrideReferenceResolution(
+                    DiegeticMenuCanvasUtility.ReferenceWidth,
+                    DiegeticMenuCanvasUtility.ReferenceHeight);
+                _diegeticPanelController.OverrideMaxInteractionDistance(2f);
+                _diegeticPanelController.OverridePanelInteractable(_diegeticRaycastReceiver);
+            }
+
+            if (camera == null)
+                return;
+
+            if (_pauseMenuCameraController == null && !camera.TryGetComponent(out _pauseMenuCameraController))
+                _pauseMenuCameraController = camera.gameObject.AddComponent<MenuCameraController>(); // COLD ALLOC: pause menu local camera drift controller.
+
+            if (_pauseMenuCameraController != null)
+                _pauseMenuCameraController.Configure(camera);
         }
 
         private void RebuildVisualStyleCacheCold()
@@ -851,7 +934,7 @@ namespace Hecton8.UI
             if (_visualStyleApplier == null)
                 return;
 
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float now = ResolveCurrentUnscaledTimeSeconds();
             _visualStyleApplier.ApplyIfNeeded(visualStyle, ResolveMenuVisualQualityWeight(), now);
         }
 
@@ -860,7 +943,7 @@ namespace Hecton8.UI
             if (_visualConceptApplier == null)
                 return;
 
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float now = ResolveCurrentUnscaledTimeSeconds();
             float quality = ResolveMenuVisualConceptQualityWeight();
             _visualConceptApplier.ApplyIfNeeded(visualConcept, quality, now);
             _visualConceptDecorApplier?.ApplyIfNeeded(visualConcept, visualStyle, quality, now);
@@ -924,37 +1007,31 @@ namespace Hecton8.UI
             TextMeshProUGUI title = CreateSectionTitle(panel, "MISSION CONTROL");
             TmpTextNoAlloc.Set(title, "MISSION CONTROL");
 
-            string[] labels =
-            {
-                "RESUME EXPEDITION",
-                "SAVE STATION",
-                "FIELD GUIDE",
-                "SETTINGS",
-                "EXIT TO MAIN MENU",
-                "QUIT APPLICATION"
-            };
+            RectTransform resumeButton = CreateButton(panel, "ResumeButton", "RESUME EXPEDITION",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -88f), new Vector2(420f, 42f), Close);
+            resumeButton.TryGetComponent(out _mainResumeButton);
+            TmpTextNoAlloc.Set(GetText(resumeButton, "Label"), "RESUME EXPEDITION");
 
-            Action[] actions =
-            {
-                Close,
-                () => ShowSection(PauseSection.Saves),
-                () => ShowSection(PauseSection.Help),
-                () => ShowSection(PauseSection.Settings),
-                ExitToMainMenu,
-                QuitApplication
-            };
+            CreateButton(panel, "SaveStationButton", "SAVE STATION",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -146f), new Vector2(420f, 42f), ShowSavesSection);
 
-            for (int i = 0; i < labels.Length; i++)
-            {
-                RectTransform btn = CreateButton(panel, "MainButton", labels[i], new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                    new Vector2(0f, -88f - i * 58f), new Vector2(420f, 42f), actions[i]);
+            CreateButton(panel, "FieldGuideButton", "FIELD GUIDE",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -204f), new Vector2(420f, 42f), ShowHelpSection);
 
-                if (i == 0)
-                {
-                    btn.TryGetComponent(out _mainResumeButton);
-                    TmpTextNoAlloc.Set(GetText(btn, "Label"), "RESUME EXPEDITION");
-                }
-            }
+            CreateButton(panel, "SettingsButton", "SETTINGS",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -262f), new Vector2(420f, 42f), ShowSettingsSection);
+
+            CreateButton(panel, "ExitMainMenuButton", "EXIT TO MAIN MENU",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -320f), new Vector2(420f, 42f), ExitToMainMenu);
+
+            CreateButton(panel, "QuitApplicationButton", "QUIT APPLICATION",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -378f), new Vector2(420f, 42f), QuitApplication);
         }
 
         private void BuildSavesPanel(RectTransform panel)
@@ -967,11 +1044,10 @@ namespace Hecton8.UI
             _saveSlotButtonLabels = new TextMeshProUGUI[SaveEvents.ManualSlotCount];
             for (int i = 0; i < SaveEvents.ManualSlotCount; i++)
             {
-                string slotName = ResolveConfiguredSaveSlotName(i);
-                RectTransform btn = CreateButton(panel, "SaveSlot", "WRITE SLOT",
+                RectTransform btn = CreateButton(panel, ResolveSaveSlotButtonName(i), "WRITE SLOT",
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
-                    () => SaveSlot(slotName));
+                    ResolveSaveSlotAction(i));
                 btn.TryGetComponent(out Button slotButton);
                 _saveSlotButtons[i] = slotButton;
 
@@ -991,7 +1067,7 @@ namespace Hecton8.UI
             _saveStatus.color = Dim;
             ApplySaveStatusLiteral(_cachedAwaitingSaveCommand);
 
-            _savesBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _savesBackButton = CreateBackButton(panel, ShowMainSection);
             RefreshSaveSectionState();
         }
 
@@ -1005,18 +1081,18 @@ namespace Hecton8.UI
             body.textWrappingMode = TextWrappingModes.Normal;
             TmpTextNoAlloc.Set(body, "CORE INPUTS\nTAB  // PDA shell\nI    // inventory direct open\n1-4  // quick slot arm/swap\nLMB/RMB // primary / secondary tool action\n\nMISSION RHYTHM\n1. Scan and classify unknowns.\n2. Repair and stabilize critical infrastructure.\n3. Keep loadout aligned with cargo before committing to depth.\n4. Save before hazardous traversal, fauna contact, or base edits.");
 
-            _helpBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _helpBackButton = CreateBackButton(panel, ShowMainSection);
         }
 
         private void BuildSettingsPanel(RectTransform panel)
         {
             TmpTextNoAlloc.Set(CreateSectionTitle(panel, "SETTINGS"), "SETTINGS");
-            CreateSectionSub(panel, ResolveLocalizedSpan(LocalizationKeys.SETTINGS_LANGUAGE_HINT,
+            CreateSectionSub(panel, ResolveLocalizedSpan(SettingsLanguageHintKeyHash,
                 "Controls were moved out of the PDA. Rebind them here. Language cycling is also available."))
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
             RectTransform languageButton = CreateButton(panel, "LanguageButton",
-                ResolveLocalizedSpan(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE, "CYCLE LANGUAGE"),
+                ResolveLocalizedSpan(SettingsCycleLanguageKeyHash, "CYCLE LANGUAGE"),
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -98f), new Vector2(420f, 38f), CycleLanguage);
             languageButton.TryGetComponent(out _settingsLanguageButton);
@@ -1051,16 +1127,75 @@ namespace Hecton8.UI
             controls.Configure(this, labelFont, labelFont);
             _controlsPanel = controls;
 
-            _settingsBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _settingsBackButton = CreateBackButton(panel, ShowMainSection);
             RefreshLanguageSettingsStatus();
             RefreshMenuVisualStyleStatus();
             RefreshMenuVisualConceptStatus();
         }
 
+        private void ShowMainSection()
+        {
+            ShowSection(PauseSection.Main);
+        }
+
+        private void ShowSavesSection()
+        {
+            ShowSection(PauseSection.Saves);
+        }
+
+        private void ShowHelpSection()
+        {
+            ShowSection(PauseSection.Help);
+        }
+
+        private void ShowSettingsSection()
+        {
+            ShowSection(PauseSection.Settings);
+        }
+
+        private Action ResolveSaveSlotAction(int slotIndex)
+        {
+            return slotIndex switch
+            {
+                0 => SaveSlot0,
+                1 => SaveSlot1,
+                _ => SaveSlot2
+            };
+        }
+
+        private static string ResolveSaveSlotButtonName(int slotIndex)
+        {
+            return slotIndex switch
+            {
+                0 => "SaveSlot0Button",
+                1 => "SaveSlot1Button",
+                _ => "SaveSlot2Button"
+            };
+        }
+
+        private void SaveSlot0()
+        {
+            SaveSlot(ResolveConfiguredSaveSlotName(0));
+        }
+
+        private void SaveSlot1()
+        {
+            SaveSlot(ResolveConfiguredSaveSlotName(1));
+        }
+
+        private void SaveSlot2()
+        {
+            SaveSlot(ResolveConfiguredSaveSlotName(2));
+        }
+
         private void ShowSection(PauseSection section)
         {
             PauseSection previousSection = _activeSection;
+            if (previousSection == PauseSection.Settings && section != PauseSection.Settings)
+                CommitPauseVisualSelectionIfNeeded();
+
             _activeSection = section;
+            bool gateInteraction = BeginPauseCameraRoute(section);
 
             // Audio feedback for section transitions (not on initial open)
             if (previousSection != section && _isOpen)
@@ -1072,6 +1207,8 @@ namespace Hecton8.UI
             SetPanelVisible(_savesPanelCanvasGroup, section == PauseSection.Saves);
             SetPanelVisible(_helpPanelCanvasGroup, section == PauseSection.Help);
             SetPanelVisible(_settingsPanelCanvasGroup, section == PauseSection.Settings);
+            if (gateInteraction)
+                ApplyPauseSectionInteractionGate(locked: true);
 
             if (_headerSub == null)
                 return;
@@ -1095,7 +1232,110 @@ namespace Hecton8.UI
                     break;
             }
 
+            QueueDefaultSelectionForSection(section, gateInteraction);
+        }
+
+        private bool BeginPauseCameraRoute(PauseSection section)
+        {
+            if (_pauseMenuCameraController == null)
+                return false;
+
+            MenuCameraController.MenuCameraRoute route = MenuCameraController.MenuCameraRoute.Main;
+            if (section == PauseSection.Saves || section == PauseSection.Help)
+                route = MenuCameraController.MenuCameraRoute.Saves;
+            else if (section == PauseSection.Settings)
+                route = MenuCameraController.MenuCameraRoute.Settings;
+
+            _pauseMenuCameraController.BeginRoute(route, 0.48f);
+            return true;
+        }
+
+        private void RefreshPauseSectionInteractionGate()
+        {
+            if (!_pauseSectionInteractionGateActive)
+                return;
+
+            if (_pauseMenuCameraController != null && _pauseMenuCameraController.IsActive)
+                return;
+
+            ApplyPauseSectionInteractionGate(locked: false);
+        }
+
+        private void ApplyPauseSectionInteractionGate(bool locked)
+        {
+            CanvasGroup group = ResolveActiveSectionGroup();
+            if (group == null)
+            {
+                _pauseSectionInteractionGateActive = false;
+                return;
+            }
+
+            _pauseSectionInteractionGateActive = locked;
+            group.interactable = !locked && group.alpha > 0.01f;
+            group.blocksRaycasts = !locked && group.alpha > 0.01f;
+        }
+
+        private void QueueDefaultSelectionForSection(PauseSection section, bool gateInteraction)
+        {
+            if (gateInteraction && _pauseMenuCameraController != null && _pauseMenuCameraController.IsActive)
+            {
+                _pendingDefaultSelectionSection = section;
+                _hasPendingDefaultSelection = true;
+                return;
+            }
+
+            _pendingDefaultSelectionSection = section;
+            _hasPendingDefaultSelection = true;
+        }
+
+        private void FlushPendingDefaultSelection()
+        {
+            if (!_hasPendingDefaultSelection)
+                return;
+
+            if (_pauseSectionInteractionGateActive)
+                return;
+
+            PauseSection section = _pendingDefaultSelectionSection;
+            _hasPendingDefaultSelection = false;
+            if (section != _activeSection)
+                return;
+
             SelectDefaultButtonForSection(section);
+        }
+
+        private void FlushPendingPauseSelectionClear()
+        {
+            if (!_hasPendingPauseSelectionClear)
+                return;
+
+            _hasPendingPauseSelectionClear = false;
+
+            EventSystem eventSystem = _cachedEventSystem;
+            if (eventSystem == null)
+                return;
+
+            GameObject selected = eventSystem.currentSelectedGameObject;
+            if (selected == null || _root == null)
+                return;
+
+            if (selected.transform.IsChildOf(_root))
+                eventSystem.SetSelectedGameObject(null);
+        }
+
+        private CanvasGroup ResolveActiveSectionGroup()
+        {
+            switch (_activeSection)
+            {
+                case PauseSection.Saves:
+                    return _savesPanelCanvasGroup;
+                case PauseSection.Help:
+                    return _helpPanelCanvasGroup;
+                case PauseSection.Settings:
+                    return _settingsPanelCanvasGroup;
+                default:
+                    return _mainPanelCanvasGroup;
+            }
         }
 
         /// <summary>
@@ -1131,7 +1371,7 @@ namespace Hecton8.UI
                     ApplySaveStatusLiteral(_cachedSaveServiceUnavailable);
 
                 int messageLength = CopyLocalizedSpanToModalBuffer(
-                    LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE,
+                    ErrorSaveManagerUnavailableKeyHash,
                     "Save system is unavailable. Cannot save game.");
 
                 ModalWindow.ShowWithCustomLabels(
@@ -1163,7 +1403,7 @@ namespace Hecton8.UI
                     ApplySaveStatusText(string.Empty, upperSlotName, _cachedFailedTerminal);
 
                 int messageLength = BuildSaveModalMessage(
-                    LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE,
+                    ErrorSaveCrashedMessageKeyHash,
                     "Save operation crashed.",
                     slotName,
                     default,
@@ -1173,7 +1413,7 @@ namespace Hecton8.UI
                     "Save Error",
                     _modalMessageBuffer,
                     messageLength,
-                    () => SaveSlot(slotName), // Retry
+                    CacheRetrySaveSlot(slotName),
                     null, // Cancel just closes modal
                     "Retry",
                     "Cancel");
@@ -1309,6 +1549,7 @@ namespace Hecton8.UI
                 return;
 
             EnsureBuilt();
+            CommitPauseVisualSelectionIfNeeded();
 
             if (pauseTimeScale)
             {
@@ -1464,6 +1705,8 @@ namespace Hecton8.UI
 
         private void QuitApplication()
         {
+            CommitPauseVisualSelectionIfNeeded();
+
             // TASK 33: Ensure all settings are saved before Application.Quit()
             // Save UserOptions (input overrides, etc.)
             if (Hecton8.Core.GlobalRegistry.UserOptions != null)
@@ -1704,17 +1947,33 @@ namespace Hecton8.UI
                 return;
 
             Button target = GetDefaultButtonForSection(section);
-            if (target == null)
+            if (!IsDefaultSelectionTargetEligible(section, target))
                 return;
 
             GameObject targetObject = target.gameObject;
-            if (targetObject == null || !targetObject.activeInHierarchy)
-                return;
-
             if (eventSystem.currentSelectedGameObject == targetObject)
                 return;
 
             eventSystem.SetSelectedGameObject(targetObject);
+        }
+
+        private bool IsDefaultSelectionTargetEligible(PauseSection section, Button target)
+        {
+            if (target == null || !target.interactable || !target.gameObject.activeInHierarchy)
+                return false;
+
+            CanvasGroup sectionGroup = ResolveSectionGroup(section);
+            if (sectionGroup == null ||
+                !sectionGroup.interactable ||
+                !sectionGroup.blocksRaycasts ||
+                sectionGroup.alpha < 0.999f)
+            {
+                return false;
+            }
+
+            Transform targetTransform = target.transform;
+            Transform groupTransform = sectionGroup.transform;
+            return targetTransform != null && groupTransform != null && targetTransform.IsChildOf(groupTransform);
         }
 
         private Button GetDefaultButtonForSection(PauseSection section)
@@ -1731,6 +1990,21 @@ namespace Hecton8.UI
                     return _settingsLanguageButton != null ? _settingsLanguageButton : _settingsBackButton;
                 default:
                     return null;
+            }
+        }
+
+        private CanvasGroup ResolveSectionGroup(PauseSection section)
+        {
+            switch (section)
+            {
+                case PauseSection.Saves:
+                    return _savesPanelCanvasGroup;
+                case PauseSection.Help:
+                    return _helpPanelCanvasGroup;
+                case PauseSection.Settings:
+                    return _settingsPanelCanvasGroup;
+                default:
+                    return _mainPanelCanvasGroup;
             }
         }
 
@@ -1830,6 +2104,7 @@ namespace Hecton8.UI
 
         private void HandleSaveCompleted(string slotName)
         {
+            _pendingRetrySaveSlotName = string.Empty;
             _saveOperationInFlight = false;
             SetSaveButtonsInteractable(true);
 
@@ -1837,7 +2112,7 @@ namespace Hecton8.UI
                 ApplySaveStatusText(string.Empty, ResolveSlotDisplayName(slotName), _cachedWritten);
 
             if (_activeSection == PauseSection.Saves)
-                SelectDefaultButtonForSection(PauseSection.Saves);
+                QueueDefaultSelectionForSection(PauseSection.Saves, gateInteraction: false);
         }
 
         private void HandleSaveFailed(string slotName, string error)
@@ -1849,7 +2124,7 @@ namespace Hecton8.UI
                 ApplySaveFailedStatusText(slotName, error);
 
             int messageLength = BuildSaveModalMessage(
-                LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE,
+                ErrorSaveFailedMessageKeyHash,
                 "Failed to save.",
                 slotName,
                 error,
@@ -1859,13 +2134,13 @@ namespace Hecton8.UI
                 "Save Failed",
                 _modalMessageBuffer,
                 messageLength,
-                () => SaveSlot(slotName),
+                CacheRetrySaveSlot(slotName),
                 null,
                 "Retry",
                 "Cancel");
 
             if (_activeSection == PauseSection.Saves)
-                SelectDefaultButtonForSection(PauseSection.Saves);
+                QueueDefaultSelectionForSection(PauseSection.Saves, gateInteraction: false);
         }
 
         private void CycleLanguage()
@@ -1881,6 +2156,22 @@ namespace Hecton8.UI
             RefreshLanguageSettingsStatus();
         }
 
+        private Action CacheRetrySaveSlot(string slotName)
+        {
+            _pendingRetrySaveSlotName = slotName ?? string.Empty;
+            return RetryPendingSaveSlot;
+        }
+
+        private void RetryPendingSaveSlot()
+        {
+            string slotName = _pendingRetrySaveSlotName;
+            if (string.IsNullOrEmpty(slotName))
+                return;
+
+            _pendingRetrySaveSlotName = string.Empty;
+            SaveSlot(slotName);
+        }
+
         private void CycleMenuVisualStyle()
         {
             int nextIndex = MenuVisualStyleCatalog.ToIndex(visualStyle) + 1;
@@ -1889,13 +2180,10 @@ namespace Hecton8.UI
 
             MenuVisualStyle nextStyle = MenuVisualStyleCatalog.FromIndex(nextIndex);
             SettingsManager settings = _cachedSettings;
-            if (settings != null)
-            {
-                settings.MenuVisualStyle = nextStyle;
-                nextStyle = settings.MenuVisualStyle;
-            }
-
+            _pauseVisualStyleDirty = true;
+            _pendingMenuVisualStyleIndex = nextIndex;
             SetVisualStyle(nextStyle);
+            settings?.PreviewMenuVisualStyle(nextStyle);
             RefreshMenuVisualStyleStatus();
         }
 
@@ -1907,14 +2195,57 @@ namespace Hecton8.UI
 
             MenuVisualConcept nextConcept = MenuVisualConceptCatalog.FromIndex(nextIndex);
             SettingsManager settings = _cachedSettings;
-            if (settings != null)
+            _pauseVisualConceptDirty = true;
+            _pendingMenuVisualConceptIndex = nextIndex;
+            SetVisualConcept(nextConcept);
+            settings?.PreviewMenuVisualConcept(nextConcept);
+            RefreshMenuVisualConceptStatus();
+        }
+
+        private void CommitPauseVisualSelectionIfNeeded()
+        {
+            if (!_pauseVisualStyleDirty && !_pauseVisualConceptDirty)
+                return;
+
+            SettingsManager settings = _cachedSettings;
+            if (settings == null)
             {
-                settings.MenuVisualConcept = nextConcept;
-                nextConcept = settings.MenuVisualConcept;
+                ClearPendingPauseVisualSelection();
+                return;
             }
 
-            SetVisualConcept(nextConcept);
-            RefreshMenuVisualConceptStatus();
+            settings.BeginPersistenceBatch();
+            try
+            {
+                if (_pauseVisualStyleDirty)
+                {
+                    int styleIndex = _pendingMenuVisualStyleIndex >= 0
+                        ? _pendingMenuVisualStyleIndex
+                        : MenuVisualStyleCatalog.ToIndex(visualStyle);
+                    settings.MenuVisualStyle = MenuVisualStyleCatalog.FromIndex(styleIndex);
+                }
+
+                if (_pauseVisualConceptDirty)
+                {
+                    int conceptIndex = _pendingMenuVisualConceptIndex >= 0
+                        ? _pendingMenuVisualConceptIndex
+                        : MenuVisualConceptCatalog.ToIndex(visualConcept);
+                    settings.MenuVisualConcept = MenuVisualConceptCatalog.FromIndex(conceptIndex);
+                }
+            }
+            finally
+            {
+                settings.EndPersistenceBatch();
+                ClearPendingPauseVisualSelection();
+            }
+        }
+
+        private void ClearPendingPauseVisualSelection()
+        {
+            _pauseVisualStyleDirty = false;
+            _pauseVisualConceptDirty = false;
+            _pendingMenuVisualStyleIndex = -1;
+            _pendingMenuVisualConceptIndex = -1;
         }
 
         private void ApplyPersistedVisualStyleCold()
@@ -1939,6 +2270,8 @@ namespace Hecton8.UI
         {
             if (ReferenceEquals(_cachedSettings, settings))
                 return;
+
+            CommitPauseVisualSelectionIfNeeded();
 
             if (_cachedSettings != null)
             {
@@ -1973,7 +2306,9 @@ namespace Hecton8.UI
                 return;
 
             SettingsManager settings = _cachedSettings;
-            MenuVisualStyle currentStyle = settings != null ? settings.MenuVisualStyle : visualStyle;
+            MenuVisualStyle currentStyle = _pauseVisualStyleDirty || settings == null
+                ? visualStyle
+                : settings.MenuVisualStyle;
             if (currentStyle != visualStyle)
                 SetVisualStyle(currentStyle);
 
@@ -1992,7 +2327,9 @@ namespace Hecton8.UI
                 return;
 
             SettingsManager settings = _cachedSettings;
-            MenuVisualConcept currentConcept = settings != null ? settings.MenuVisualConcept : visualConcept;
+            MenuVisualConcept currentConcept = _pauseVisualConceptDirty || settings == null
+                ? visualConcept
+                : settings.MenuVisualConcept;
             if (currentConcept != visualConcept)
                 SetVisualConcept(currentConcept);
 
@@ -2014,14 +2351,14 @@ namespace Hecton8.UI
             if (localization == null)
             {
                 SetSettingsLanguageStatus(ResolveLocalizedSpan(
-                    LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE,
+                    SettingsLanguageOwnerUnavailableKeyHash,
                     "LANGUAGE OWNER UNAVAILABLE."));
                 return;
             }
 
             ApplyFormattedSettingsLanguageStatus(
                 ResolveLocalizedSpan(
-                    LocalizationKeys.SETTINGS_CURRENT_LANGUAGE,
+                    SettingsCurrentLanguageKeyHash,
                     "CURRENT LANGUAGE: {0}"),
                 GetLanguageDisplayName((GameLanguage)localization.ActiveLanguageId).AsSpan());
         }
@@ -2080,19 +2417,19 @@ namespace Hecton8.UI
             }
         }
 
-        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, string fallback)
         {
             ILocalizationLanguageControl manager = _cachedLocalization;
             return manager != null
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                ? manager.GetRawSpanOrFallback(keyHash, fallback.AsSpan())
                 : fallback.AsSpan();
         }
 
-        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
             ILocalizationLanguageControl manager = _cachedLocalization;
             return manager != null
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
+                ? manager.GetRawSpanOrFallback(keyHash, fallback)
                 : fallback;
         }
 
@@ -2138,13 +2475,13 @@ namespace Hecton8.UI
             return SaveEvents.ResolveManualSlotName(slotIndex);
         }
 
-        private int CopyLocalizedSpanToModalBuffer(string key, ReadOnlySpan<char> fallback)
+        private int CopyLocalizedSpanToModalBuffer(int keyHash, ReadOnlySpan<char> fallback)
         {
-            return CopySpanToBuffer(ResolveLocalizedSpan(key, fallback), _modalMessageBuffer, 0);
+            return CopySpanToBuffer(ResolveLocalizedSpan(keyHash, fallback), _modalMessageBuffer, 0);
         }
 
         private int BuildSaveModalMessage(
-            string localizationKey,
+            int localizationKeyHash,
             ReadOnlySpan<char> fallback,
             string slotName,
             string error,
@@ -2154,7 +2491,7 @@ namespace Hecton8.UI
                 return 0;
 
             int cursor = 0;
-            cursor += CopySpanToBuffer(ResolveLocalizedSpan(localizationKey, fallback), _modalMessageBuffer, cursor);
+            cursor += CopySpanToBuffer(ResolveLocalizedSpan(localizationKeyHash, fallback), _modalMessageBuffer, cursor);
             cursor += CopySpanToBuffer(" // ".AsSpan(), _modalMessageBuffer, cursor);
             cursor += CopySpanToBuffer(ResolveSlotDisplayName(slotName).AsSpan(), _modalMessageBuffer, cursor);
 
@@ -2256,16 +2593,11 @@ namespace Hecton8.UI
 
         private void ClearPauseSelection()
         {
-            EventSystem eventSystem = _cachedEventSystem;
-            if (eventSystem == null)
-                return;
+            _hasPendingDefaultSelection = false;
+            _hasPendingPauseSelectionClear = true;
 
-            GameObject selected = eventSystem.currentSelectedGameObject;
-            if (selected == null || _root == null)
-                return;
-
-            if (selected.transform.IsChildOf(_root))
-                eventSystem.SetSelectedGameObject(null);
+            if (!Application.isPlaying || !_lateFrameRegistered || !isActiveAndEnabled)
+                FlushPendingPauseSelectionClear();
         }
 
         private void EnsureEventSystem()
@@ -2304,6 +2636,9 @@ namespace Hecton8.UI
             INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (inputManager != null)
                 inputManager.TryConfigureUiInputModule(inputSystemModule);
+
+            if (_diegeticRaycastReceiver != null && _diegeticCanvasRoot != null)
+                _diegeticRaycastReceiver.Configure(_diegeticCanvasRoot, _cachedEventSystem, DiegeticPauseHapticSourceHash);
         }
 
         private void BindInputActions()

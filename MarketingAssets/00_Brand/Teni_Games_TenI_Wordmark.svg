@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="500" viewBox="0 0 1800 500" role="img" aria-label="Teni Games / 天衣 wordmark">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071012"/>
+      <stop offset="1" stop-color="#020505"/>
+    </linearGradient>
+    <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#eff2e4"/>
+      <stop offset="0.6" stop-color="#b7d2c5"/>
+      <stop offset="1" stop-color="#6e9690"/>
+    </linearGradient>
+  </defs>
+  <rect width="1800" height="500" fill="url(#bg)"/>
+  <path d="M60 102 H1740" stroke="#2a4649" stroke-width="1"/>
+  <path d="M60 398 H1740" stroke="#2a4649" stroke-width="1"/>
+  <text x="152" y="301" font-family="Yu Gothic UI, Meiryo, Noto Sans JP, Arial, sans-serif" font-size="156" font-weight="700" fill="#dfe7d8" letter-spacing="4">天衣</text>
+  <text x="390" y="290" font-family="Arial, Helvetica, sans-serif" font-size="126" font-weight="700" fill="url(#txt)" letter-spacing="8">TENI GAMES</text>
+  <text x="406" y="345" font-family="Yu Gothic UI, Meiryo, Noto Sans JP, Arial, sans-serif" font-size="30" fill="#86a59e" letter-spacing="7">テニゲームス / 天意</text>
+  <text x="1288" y="344" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#617d7a" letter-spacing="5">STUDIO FOR SUBMERGE</text>
+  <path d="M390 312 H1196" stroke="#cbd7c8" stroke-width="1" opacity="0.4"/>
+</svg>

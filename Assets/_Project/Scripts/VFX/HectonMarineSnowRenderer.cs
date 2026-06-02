@@ -2200,37 +2200,12 @@ namespace Hecton8.Environment
 
         private static void UploadSingleGraphicsBuffer<T>(GraphicsBuffer buffer, T value) where T : struct
         {
-            int safeCount = ResolveSafeGpuWriteCount<T>(buffer, 1);
-            if (safeCount <= 0)
-                return;
-
-            NativeArray<T> mapped = buffer.LockBufferForWrite<T>(0, safeCount);
-            try
-            {
-                mapped[0] = value;
-            }
-            finally
-            {
-                buffer.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            GraphicsBufferUploadUtility.TryUploadSingle(buffer, value);
         }
 
         private static void ClearGraphicsBuffer<T>(GraphicsBuffer buffer, int requestedCount) where T : struct
         {
-            int safeCount = ResolveSafeGpuWriteCount<T>(buffer, requestedCount);
-            if (safeCount <= 0)
-                return;
-
-            NativeArray<T> mapped = buffer.LockBufferForWrite<T>(0, safeCount);
-            try
-            {
-                for (int i = 0; i < safeCount; i++)
-                    mapped[i] = default;
-            }
-            finally
-            {
-                buffer.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            GraphicsBufferUploadUtility.TryClear<T>(buffer, requestedCount);
         }
 
         private static DynamicWakeDTO SanitizeDynamicWake(DynamicWakeDTO wake)
@@ -2262,11 +2237,32 @@ namespace Hecton8.Environment
             if (safeCount <= 0)
                 return;
 
-            NativeArray<DynamicWakeDTO> dtoMap = _mockWakeDtoBuffer.LockBufferForWrite<DynamicWakeDTO>(0, safeCount);
-            NativeArray<Vector4> wakeMap = _mockWakeBuffer.LockBufferForWrite<Vector4>(0, safeCount);
-            NativeArray<Vector4> vectorMap = _mockWakeVectorBuffer.LockBufferForWrite<Vector4>(0, safeCount);
+            long uploadBytes =
+                GraphicsBufferUploadUtility.EstimateUploadBytes<DynamicWakeDTO>(safeCount) +
+                GraphicsBufferUploadUtility.EstimateUploadBytes<Vector4>(safeCount) +
+                GraphicsBufferUploadUtility.EstimateUploadBytes<Vector4>(safeCount);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return;
+
+            bool dtoLocked = false;
+            bool wakeLocked = false;
+            bool vectorLocked = false;
+            bool uploadAccepted = false;
+            bool dtoUnlockSucceeded = false;
+            bool wakeUnlockSucceeded = false;
+            bool vectorUnlockSucceeded = false;
+            NativeArray<DynamicWakeDTO> dtoMap = default;
+            NativeArray<Vector4> wakeMap = default;
+            NativeArray<Vector4> vectorMap = default;
             try
             {
+                dtoMap = _mockWakeDtoBuffer.LockBufferForWrite<DynamicWakeDTO>(0, safeCount);
+                dtoLocked = true;
+                wakeMap = _mockWakeBuffer.LockBufferForWrite<Vector4>(0, safeCount);
+                wakeLocked = true;
+                vectorMap = _mockWakeVectorBuffer.LockBufferForWrite<Vector4>(0, safeCount);
+                vectorLocked = true;
+
                 int sourceCount = wakes.IsCreated ? wakes.Length : 0;
                 int enabledCount = math.min(math.max(0, activeCount), sourceCount);
                 for (int i = 0; i < safeCount; i++)
@@ -2285,18 +2281,47 @@ namespace Hecton8.Environment
                     wakeMap[i] = new Vector4(wake.Position.x, wake.Position.y, wake.Position.z, intensity);
                     vectorMap[i] = new Vector4(wake.Force.x, wake.Force.y, wake.Force.z, math.max(0.001f, wake.Radius));
                 }
+                uploadAccepted = true;
             }
             finally
             {
-                _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
-                _mockWakeBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
-                _mockWakeVectorBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+                try
+                {
+                    try
+                    {
+                        if (dtoLocked)
+                            _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
+                        dtoUnlockSucceeded = true;
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (wakeLocked)
+                                _mockWakeBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+                            wakeUnlockSucceeded = true;
+                        }
+                        finally
+                        {
+                            if (vectorLocked)
+                                _mockWakeVectorBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+                            vectorUnlockSucceeded = true;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && dtoUnlockSucceeded && wakeUnlockSucceeded && vectorUnlockSucceeded)
+                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                    else
+                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
+                }
             }
         }
 
         private void UploadPropwashEventGpuBuffer(NativeArray<PropwashEventDTO> events, PropwashRingCursorDTO cursor)
         {
-            GraphicsBuffer uploadBuffer = ClaimPropwashEventUploadBuffer();
+            GraphicsBuffer uploadBuffer = ResolvePropwashEventUploadBufferCandidate();
             int safeCount = ResolveSafeGpuWriteCount<PropwashEventDTO>(uploadBuffer, PropwashEventRingCapacity);
             int sourceCount = events.IsCreated ? events.Length : 0;
             int enabledCount = math.min(math.max(0, cursor.EventCount), math.min(sourceCount, safeCount));
@@ -2310,11 +2335,20 @@ namespace Hecton8.Environment
                 return;
             }
 
+            long uploadBytes = GraphicsBufferUploadUtility.EstimateUploadBytes<PropwashEventDTO>(safeCount);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return;
+
             float maxIntensity = 0f;
             float3 strongestLocalPosition = default;
-            NativeArray<PropwashEventDTO> mapped = uploadBuffer.LockBufferForWrite<PropwashEventDTO>(0, safeCount);
+            bool bufferLocked = false;
+            bool uploadAccepted = false;
+            bool unlockSucceeded = false;
+            NativeArray<PropwashEventDTO> mapped = default;
             try
             {
+                mapped = uploadBuffer.LockBufferForWrite<PropwashEventDTO>(0, safeCount);
+                bufferLocked = true;
                 for (int i = 0; i < safeCount; i++)
                 {
                     if (i < enabledCount)
@@ -2333,13 +2367,28 @@ namespace Hecton8.Environment
                         mapped[i] = default;
                     }
                 }
+                uploadAccepted = true;
             }
             finally
             {
-                uploadBuffer.UnlockBufferAfterWrite<PropwashEventDTO>(safeCount);
+                try
+                {
+                    if (bufferLocked)
+                    {
+                        uploadBuffer.UnlockBufferAfterWrite<PropwashEventDTO>(safeCount);
+                        unlockSucceeded = true;
+                    }
+                }
+                finally
+                {
+                    if (uploadAccepted && unlockSucceeded)
+                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                    else
+                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
+                }
             }
 
-            _propwashEventBuffer = uploadBuffer;
+            CommitPropwashEventUploadBuffer(uploadBuffer);
             _debugPropwashEventCount = enabledCount;
             _debugPropwashGpuEventCount = enabledCount;
             _debugPropwashMaxIntensity = maxIntensity;
@@ -2362,7 +2411,7 @@ namespace Hecton8.Environment
             return wrapped < 0 ? wrapped + safeCapacity : wrapped;
         }
 
-        private GraphicsBuffer ClaimPropwashEventUploadBuffer()
+        private GraphicsBuffer ResolvePropwashEventUploadBufferCandidate()
         {
             GraphicsBuffer candidate = _propwashEventUploadWriteIndex == 0
                 ? _propwashEventBufferA
@@ -2370,8 +2419,13 @@ namespace Hecton8.Environment
             if (candidate == null)
                 candidate = _propwashEventBufferA != null ? _propwashEventBufferA : _propwashEventBufferB;
 
-            _propwashEventUploadWriteIndex = _propwashEventUploadWriteIndex == 0 ? 1 : 0;
             return candidate;
+        }
+
+        private void CommitPropwashEventUploadBuffer(GraphicsBuffer uploadBuffer)
+        {
+            _propwashEventBuffer = uploadBuffer;
+            _propwashEventUploadWriteIndex = uploadBuffer == _propwashEventBufferA ? 1 : 0;
         }
 
         private static PropwashEventDTO SanitizePropwashEvent(PropwashEventDTO evt)
@@ -2715,7 +2769,7 @@ namespace Hecton8.Environment
             _flowFieldBufferCapacity = flowFieldCapacity;
             ClearGraphicsBuffer<float2>(_flowFieldBuffer, _flowFieldBufferCapacity);
             _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
-            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, ProceduralIndirectArgsStride); // COLD ALLOC: GraphicsBuffer[1] - GPU-written non-indexed procedural indirect args: vertexCount, instanceCount, startVertex, startInstance - owner: HectonMarineSnowRenderer
+            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, ProceduralIndirectArgsStride); // COLD ALLOC: GraphicsBuffer[1] - GPU-written non-indexed procedural indirect args: vertexCount, instanceCount, startVertex, startInstance - owner: HectonMarineSnowRenderer
             _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback abyssal-flow vector buffer - owner: HectonMarineSnowRenderer
             ClearGraphicsBuffer<Vector4>(_emptyAbyssalFlowBuffer, 1);
             _mockWakeDtoBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DynamicWakeDTO>(MockWakeCapacity); // COLD ALLOC: GraphicsBuffer[4] - local mock DynamicWakeDTO proof buffer - owner: HectonMarineSnowRenderer

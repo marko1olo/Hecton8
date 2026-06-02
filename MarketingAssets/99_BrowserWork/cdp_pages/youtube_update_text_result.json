@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-05-31T17:45:49.392Z",
+  "fields": {
+    "name": "Teni Games",
+    "handle": "TeniGames",
+    "description": "Teni Games is building Submerge: pressure, machinery, salvage, black water. Public footage waits for current-build proof."
+  },
+  "setResult": {
+    "nameOk": true,
+    "handleOk": true,
+    "descOk": true,
+    "nameValue": "Teni Games",
+    "handleValue": "СтепанБандера-1",
+    "descText": "Teni Games is building Submerge: pressure, machinery, salvage, black water. Public footage waits for current-build proof."
+  },
+  "publish": {
+    "ok": true,
+    "text": "Publish",
+    "disabled": false,
+    "x": 1111.2800102233887,
+    "y": 142.65024185180664,
+    "rect": [
+      1071.93505859375,
+      124.65144348144531,
+      1150.6249618530273,
+      160.64904022216797
+    ],
+    "className": "ytcpButtonShapeImplHost ytcpButtonShapeImpl--filled ytcpButtonShapeImpl--mono ytcpButtonShapeImpl--size-m ytcpButtonShapeImpl--enable-backdrop-filter-experiment"
+  },
+  "clicked": true,
+  "confirm": {
+    "url": "https://studio.youtube.com/channel/UCvBcsOh67dIS8yMzp3ah7Ng/editing/profile",
+    "title": "Channel customization - YouTube Studio",
+    "nameValue": "Teni Games",
+    "handleValue": "СтепанБандера-1",
+    "descText": "Teni Games is building Submerge: pressure, machinery, salvage, black water. Public footage waits for current-build proof.",
+    "publishDisabled": true,
+    "bodyText": "Channel customization\nYour account is at greater risk of attack because you don't have 2-Step Verification. Turn it on now for extra security\nGet started\nDismiss\nSkip navigation\nCreate\nYour channel\nTeni Games\nDashboard\nContent\nAnalytics\nCommunity\nSubtitles\nContent detection\nEarn\nCustomization\nAudio library\nSettings\nSend feedback\nChannel customization\nProfile\nHome tab\nView channel\nCancel\nPublish\nBanner image\nThis image will appear across the top of your channel\nFor the best results on all devices, use an image that’s at least 2048 x 1152 pixels and 6MB or less.\nUpload\nPicture\nYour profile picture will appear where your channel is presented on YouTube, like next to your videos and comments\nIt’s recommended to use a picture that’s at least 98 x 98 pixels and 4MB or less. Use a PNG or GIF (no animations) file. Make sure your picture follows the YouTube Community Guidelines.\nUpload\nName\nChoose a channel name that represents you and your content. Changes made to your name and picture are visible only on YouTube and not other Google services. You can change your name twice in 14 days.\nHandle\nYour handle is a unique @name that helps people find your channel, different from your channel name. You can change your handle twice within a 14-day period. We hold your previous handle for 14 days in case you’d like to switch back.\n@\nhttps://www.youtube.com/@СтепанБандера-1\nPronouns\nOptionally add your pronouns. Let others know how to refer to you. You can edit or remove them anytime. You can choose who can view your pronouns. Your pronouns will appear on your channel page. \nAdd pronoun\nDescription\nTeni Games is building Submerge: pressure, machinery, salvage, black water. Public footage waits for current-build proof.\nAdd language\nChannel URL\nThis is the standard web address for your channel. It includes your unique channel ID, which is the numbers and letters at the end of the URL. \nLinks\nShare external links with your viewers. They'll be visible on your channel profile and about pa"
+  },
+  "screenshot": "C:\\hades\\Hecton8\\MarketingAssets\\99_BrowserWork\\cdp_pages\\youtube_update_text_after.png"
+}

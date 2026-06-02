@@ -1571,15 +1571,17 @@ namespace Hecton8.Core.Contracts.Signals
             out NativeArray<T> frameSnapshot)
         {
             frameSnapshot = default;
-            if (snapshotVault == null ||
-                !snapshotVault.TryAcquireWriteLock(in handle, SystemID.CoreDataVault, out frameSnapshot))
-            {
-                return false;
-            }
-
+            bool lockAcquired = false;
             bool ownershipTransferred = false;
             try
             {
+                if (snapshotVault == null)
+                    return false;
+
+                lockAcquired = snapshotVault.TryAcquireWriteLock(in handle, SystemID.CoreDataVault, out frameSnapshot);
+                if (!lockAcquired)
+                    return false;
+
                 if (frameSnapshot.IsCreated)
                 {
                     if (_frameSnapshotCount > frameSnapshot.Length)
@@ -1596,7 +1598,7 @@ namespace Hecton8.Core.Contracts.Signals
             }
             finally
             {
-                if (!ownershipTransferred)
+                if (lockAcquired && !ownershipTransferred)
                     snapshotVault.ReleaseWriteLock(in handle, SystemID.CoreDataVault);
             }
         }
@@ -1793,6 +1795,15 @@ namespace Hecton8.Core.Contracts.Signals
                 maxFrameSignals = ToolAcousticSignal.MaxFrameSignals;
                 lowTierFrameSignals = ToolAcousticSignal.LowTierFrameSignals;
                 laneHash = ToolAcousticSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(AppliedLoreTerminalPreviewSignal))
+            {
+                expectedCapacity = AppliedLoreTerminalPreviewSignal.ExpectedCapacity;
+                maxFrameSignals = AppliedLoreTerminalPreviewSignal.MaxFrameSignals;
+                lowTierFrameSignals = AppliedLoreTerminalPreviewSignal.LowTierFrameSignals;
+                laneHash = AppliedLoreTerminalPreviewSignal.LaneHash;
                 return true;
             }
 
@@ -2000,6 +2011,15 @@ namespace Hecton8.Core.Contracts.Signals
                 maxFrameSignals = ReentryVfxStateSignal.MaxFrameSignals;
                 lowTierFrameSignals = ReentryVfxStateSignal.LowTierFrameSignals;
                 laneHash = ReentryVfxStateSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(ReentryAcousticStressSignal))
+            {
+                expectedCapacity = ReentryAcousticStressSignal.ExpectedCapacity;
+                maxFrameSignals = ReentryAcousticStressSignal.MaxFrameSignals;
+                lowTierFrameSignals = ReentryAcousticStressSignal.LowTierFrameSignals;
+                laneHash = ReentryAcousticStressSignal.LaneHash;
                 return true;
             }
 

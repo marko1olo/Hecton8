@@ -1206,7 +1206,7 @@ namespace Hecton8.AI
             if (_indirectArgsBuffer == null)
             {
                 _indirectArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect crab draw args - owner: ProceduralCrabLegIKRuntime

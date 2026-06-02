@@ -17,12 +17,45 @@ Social accounts exist to support Steam conversion, creator trust, and feedback l
 | Discord | P1 | Community only after proof assets or demo interest. |
 | X/Twitter | P1 | Dev/press/creator visibility, short updates. |
 | Bluesky | P1 | Dev/community visibility. |
+| Telegram | P1 | Owner-created low-friction dev feed and asset drop channel. |
 | TikTok | P2 | Short clip tests if vertical clips exist. |
 | Reddit | P2 | Critique/listening, not broadcast spam. |
 | Mastodon | P3 | Optional dev presence. |
 | Instagram | P3 | Visual archive, lower priority for PC survival. |
 
 ## Handle Policy
+
+Studio/account update 2026-05-31: owner created accounts as `Teni Games`. Treat `Teni Games` as the studio/account speaker and `Submerge` as the game title candidate.
+
+Telegram update 2026-05-31: owner created `@teni_games`. Treat it as the current Telegram handle for Teni Games. Use English-only public copy and the dark-wave `天衣` identity.
+
+Teni Games account order:
+
+  `TeniGames`
+  `TeniGamesStudio`
+  `TeniGamesDev`
+  `TeniGamesWorks`
+
+Japanese account rendering:
+
+  `テニゲームス`
+
+Approved kanji motifs:
+
+  `天衣` = `ten'i`, heavenly garment. Primary visual motif.
+  `天意` = `ten'i`, divine will / providence. Secondary heavier motif; use sparingly.
+
+Do not use `TeNi` mixed-case or `Tiny`; `TeNi Tiny Games` exists publicly as a separate indie game developer.
+
+Naming update 2026-05-31: owner selected `Submerge` as the intended game name. Because another Steam app already uses exact title `Submerge`, naked `Submerge` handles are high-confusion candidates until `HOLD_NAMING_CONFLICT_REVIEW` clears.
+
+Submerge candidate order:
+
+  `PlaySubmerge`
+  `SubmergeGame`
+  `SubmergeH8`
+  `SubmergeBlackwater`
+  `SubmergeBelow`
 
 Preferred:
 
@@ -31,6 +64,209 @@ Preferred:
   `Hecton8`
 
 Keep a consistent candidate-handle list before public reveal. Actual reservation is blocked until `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`.
+
+If a platform accepts `Submerge` itself, do not reserve or publish it without owner/legal/storefront approval. Exact-name confusion with the existing Steam app is a search/support risk, not a clever shortcut.
+
+### 2026-05-31 Submerge Public Check Addendum V0
+
+This check used public unauthenticated sources and DNS only. It is not a trademark, store-title, registrar, or logged-in handle availability proof.
+
+Owner update: do not buy domains now. Domain rows below are naming/availability leads only; domain purchase state is `HOLD_NO_DOMAIN_PURCHASE`.
+
+| Surface | Candidate | Result | Decision |
+|---|---|---|---|
+| Steam | `Submerge` | Existing app `4180620` by Neuron Activation, coming soon / Early Access planned, demo visible, online co-op / horror tags, AI-content disclosure on store page. | Exact naked title is blocked for now; require naming conflict review and likely modifier. |
+| Domain DNS | `submerge.com` | Resolves to existing A records. | Treat as unavailable/high-cost unless registrar proves otherwise. |
+| Domain DNS | `submergegame.com` | No A record in public DNS pass. | Registrar check required; good first domain candidate. |
+| Domain DNS | `playsubmerge.com` | No A record in public DNS pass. | Registrar check required; good second domain candidate. |
+| Domain DNS | `submerge.games` | No A record in public DNS pass. | Registrar check required; secondary candidate. |
+| Domain DNS | `submerge.dev` | No A record in public DNS pass. | Registrar check required; dev-only candidate, weaker for players. |
+| Domain DNS | `submergegame.dev` | No A record in public DNS pass. | Registrar check required; dev-only backup. |
+| Domain DNS | `submerge8.com` | No A record in public DNS pass. | Registrar check required; internal-codename bridge. |
+| Domain DNS | `submergeh8.com` | No A record in public DNS pass. | Registrar check required; lower-priority bridge. |
+| Domain DNS | `submergebelow.com` | No A record in public DNS pass. | Registrar check required; title-modifier candidate. |
+| Domain DNS | `submergebelowthelight.com` | No A record in public DNS pass. | Registrar check required; strong mood, long URL. |
+| Domain DNS | `submergeblackwater.com` | No A record in public DNS pass. | Registrar check required; strong identity, narrower tone. |
+
+New reservation pack if naming review clears `Submerge` route:
+
+```text
+Project public title candidate: Submerge
+Internal codename: HECTON-8
+Preferred handle: PlaySubmerge
+Backup handle: SubmergeGame
+Conflict-safe handles: SubmergeH8, SubmergeBlackwater, SubmergeBelow
+Display name: Submerge
+Short bio: Single player deep sea survival about pressure, salvage, machinery, and black water.
+Website: HOLD_NO_PUBLIC_CTA
+Contact: HOLD_NO_PROJECT_INBOX_PUBLICATION
+Profile state: private/blank until first screenshot pack passes QA
+Abort if platform forces first post before public_post_permission_gate allows it.
+```
+
+### 2026-05-31 Teni Games Public Check Addendum V0
+
+This check used public search results only. It is not trademark clearance.
+
+| Surface | Name | Result | Decision |
+|---|---|---|---|
+| Steam developer | `TeNi Tiny Games` | Existing Steam developer page with one VR escape-room game and 6 followers observed in public store view. | Near-name conflict. Avoid `TeNi` casing and `Tiny`. |
+| itch.io | `TeNi Tiny Games` | Existing itch.io creator page; public snippet says it is a 2-person Copenhagen team. | Near-name conflict. Keep `Teni Games` visually separate. |
+| Web/site | `TeNi Tiny Games` | Existing Wix site and public developer contact in snippets. | Do not imitate layout/copy. |
+| Exact search | `Teni Games` | No stronger exact studio conflict found in this pass, but search is not legal clearance. | Usable as public label candidate with caution. |
+
+Source links:
+
+- Steam developer: `https://store.steampowered.com/developer/TeNiTinyGames`
+- itch.io creator: `https://teni-tiny-games.itch.io/`
+- website: `https://tenitinygames.wixsite.com/ttgames`
+- `天意` dictionary: `https://jlearn.net/dictionary/%E5%A4%A9%E6%84%8F`
+- `転移` dictionary: `https://www.nihongomaster.com/japanese/dictionary/word/67478/ten%27i-%E8%BB%A2%E7%A7%BB-%E3%81%A6%E3%82%93%E3%81%84`
+- `天衣` dictionary: `https://japaneseenglish.aliendictionary.com/en/meaning/%E5%A4%A9%E8%A1%A3.html`
+- `手` dictionary: `https://jlearn.net/dictionary/%E6%89%8B`
+
+Studio profile field kit:
+
+| Field | Value |
+|---|---|
+| Display name | `Teni Games` |
+| Japanese display variant | `Teni Games / 天衣` |
+| Japanese bio line | `テニゲームス / 天衣 / 天意` |
+| Bio short | `Small game studio. Building Submerge: pressure, machinery, salvage, black water.` |
+| Bio no-game-link | `Building Submerge. No Steam link until the current build can carry the screenshot.` |
+| Website | blank until official CTA gate |
+| Contact | blank until official inbox custody gate |
+| Static avatar | `MarketingAssets/00_Brand/Teni_Games_Avatar_DarkWave_CircleSafe_1024.png` |
+| Animated avatar | `MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif` |
+| Banner | `MarketingAssets/00_Brand/Teni_Games_TenI_Banner_X_1500x500.png` |
+| Telegram handle | `@teni_games` |
+
+Platform-ready export pack:
+
+- `MarketingAssets/00_Brand/PlatformExports/teni_games_profile_fields.json`
+- `MarketingAssets/00_Brand/PlatformExports/platform_exports_contact_sheet.png`
+- `MarketingAssets/00_Brand/PlatformExports/x_avatar_400.png`
+- `MarketingAssets/00_Brand/PlatformExports/x_banner_1500x500.png`
+- `MarketingAssets/00_Brand/PlatformExports/youtube_profile_800.png`
+- `MarketingAssets/00_Brand/PlatformExports/youtube_banner_2560x1440_safe.png`
+- `MarketingAssets/00_Brand/PlatformExports/instagram_profile_1080.png`
+- `MarketingAssets/00_Brand/PlatformExports/tiktok_profile_1024.png`
+- `MarketingAssets/00_Brand/PlatformExports/reddit_profile_256.png`
+- `MarketingAssets/00_Brand/PlatformExports/reddit_banner_1600x480.png`
+
+Studio no-link post draft:
+
+```text
+I opened the studio account before the screenshots are ready because leaving the name empty felt worse.
+
+Submerge is the game.
+Right now most of the work is cutting underwater shots that look cool and explain nothing.
+```
+
+Do not use kanji as the platform username. `天衣` and `天意` are allowed in the visual identity, banner, avatar, profile description, and occasional posts.
+
+### 2026-06-01 First Public Brand-Art Post
+
+Published text:
+
+```text
+Teni Games is the name. Submerge is the game.
+
+Pressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.
+
+This is profile art, not gameplay.
+```
+
+Published surfaces:
+
+| Platform | Public URL | Media | Proof |
+|---|---|---|---|
+| X | `https://x.com/submerge_game` | `MarketingAssets/00_Brand/Animated/Teni_Games_DarkWave_Avatar_GlitchSubtle_512.gif` | `MarketingAssets/99_BrowserWork/cdp_pages/x_public_after_first_post_20260601.png` |
+| Bluesky | `https://bsky.app/profile/teni-games.bsky.social` | `MarketingAssets/00_Brand/PlatformExports/bluesky_profile_1000.png` | `MarketingAssets/99_BrowserWork/cdp_pages/bsky_public_after_first_post_20260601.png` |
+
+Bluesky GIF/video upload is held until account email confirmation. Reddit remains hold until subreddit rule checks. Instagram/YouTube/Telegram posts need separate platform-specific media proof before use.
+
+### Teni Human Dev Voice V0
+
+The account should read like a developer with dirt under the nails, not a brand scheduler.
+
+Owner correction 2026-05-31:
+
+- public posts are English-only unless a specific Japanese-language post is requested;
+- remove sterile phrasing like "studio account is being wired";
+- remove internal legal-gate phrasing like "no demo claim";
+- do not post Russian from official Teni/Submerge channels;
+- keep the first-person/dev tone blunt and ordinary.
+
+Rules:
+
+- one concrete thing per post;
+- no "we are excited";
+- no "soon";
+- no "stay tuned";
+- no "revolutionary";
+- no fake vulnerability thread;
+- no hashtags before real footage;
+- no Steam/wishlist CTA before the gate;
+- no Japanese text dump unless the post actually needs it.
+
+Good pre-screenshot post bank:
+
+```text
+Submerge has a simple rule for screenshots:
+if the image does not tell you what the player should worry about, it is not ready.
+```
+
+```text
+The first screenshot has one job:
+make a stranger ask "what do I do next?"
+
+If the answer is "swim forward and admire the mood", we cut it.
+```
+
+```text
+I don't want Submerge to sell a pretty ocean.
+Pretty ocean is cheap.
+
+The shot has to show pressure, a machine, and a return route that already looks like a mistake.
+```
+
+```text
+Teni = テニ.
+天衣 is the mark now. Heavenly garment, but we are dragging it into black water and rust.
+天意 stays as the heavier version: providence, bad luck, something deciding before you do.
+```
+
+```text
+Still killing screenshots that look like mood boards.
+
+If the player decision is not visible, the image is decoration.
+```
+
+```text
+Trying to make black water readable without making it look safe.
+
+That is most of the job right now.
+```
+
+```text
+The current enemy is not a monster.
+It is screenshots that look cool and explain nothing.
+```
+
+```text
+天衣 is the mark.
+Submerge is the game.
+Everything else has to earn the screenshot.
+```
+
+Telegram-first description:
+
+```text
+Submerge development notes from Teni Games.
+Pressure, machinery, salvage, black water.
+No fake trailers. No wishlist begging. Screenshots have to earn the post.
+```
 
 ## 2026 05 19 Handle Reservation Work Order
 
@@ -41,6 +277,7 @@ Do candidate checks quietly before public screenshots. Do not register, reserve,
 | YouTube | `@Hecton8Game`, `@PlayHecton8`, `@Hecton8` | Private/empty channel acceptable. | Owner email, recovery email, 2FA owner, brand asset path. |
 | X/Twitter | `@Hecton8Game`, `@PlayHecton8`, `@Hecton8` | Locked/private or blank profile acceptable. | Login owner, 2FA, backup codes, reserved date. |
 | Bluesky | `@hecton8game.*`, `@playhecton8.*`, `@hecton8.*` | Blank is acceptable. | Handle domain, recovery owner. |
+| Telegram | `@teni_games` | Owner-created. Keep English-only profile and dev-feed copy. | Login owner, 2FA/passcode status, recovery phone/email custody, channel/admin ownership. |
 | TikTok | `@hecton8game`, `@playhecton8`, `@hecton8` | Reserve only; no vertical spam. | Login owner, 2FA, phone/email custody. |
 | Instagram | `@hecton8game`, `@playhecton8`, `@hecton8` | Reserve only. | Login owner, 2FA, Meta ownership if any. |
 | Reddit | `u/Hecton8Game` or official dev account | Do not post marketing yet. | Account owner, disclosure policy, subreddit rule log. |
@@ -105,6 +342,204 @@ Machine gate: `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`. Th
 Current verdict: `HOLD_ACCOUNT_CREATION`; `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`.
 
 Candidate handles are notes only while this verdict holds. They are not reservation permission, posting permission, or proof that a logged-in platform flow will accept the handle.
+
+## 2026-05-31 Account Reservation Dry Run V1
+
+Prepare this now; do not create accounts until the gate changes.
+
+| Step | Work | Pass state |
+|---:|---|---|
+| 1 | Select approved handle order. | `Hecton8Game` first, `PlayHecton8` second, no novelty handle without owner approval. |
+| 2 | Prepare display fields. | Display name, short bio, long bio, blank location, no public links. |
+| 3 | Prepare vault destinations. | One named vault item per platform before account creation. |
+| 4 | Prepare recovery and 2FA owner. | Owner-controlled recovery, 2FA method, backup-code destination ready. |
+| 5 | Prepare profile state. | Private/blank if possible; otherwise abort if a public profile or first post is forced. |
+| 6 | Prepare post-registration row. | Platform, handle, URL, login alias, vault item, recovery check, 2FA, backup code, visibility, status. |
+
+No public account should look like a launch surface before first asset proof. A blank/private reserved handle is acceptable only after custody. A public profile with no assets, no contact custody, and no Steam page is noise.
+
+### 2026-05-31 Public Headless Recheck V2
+
+This pass used public unauthenticated requests only. No login, cookie extraction, browser-profile inspection, credential entry, or account creation occurred.
+
+| Surface | Candidate | Result | Decision |
+|---|---|---|---|
+| YouTube | `@hecton8game` | PowerShell public fetch returned no usable response. | Inconclusive; confirm in logged-in owner flow. |
+| YouTube | `@playhecton8` | PowerShell public fetch returned no usable response. | Inconclusive; confirm in logged-in owner flow. |
+| YouTube | `@hecton8` | PowerShell public fetch returned no usable response in this pass; earlier public check treated it as taken/unrelated. | Avoid unless owner flow proves otherwise. |
+| X/Twitter | `@Hecton8Game` | Public fetch returned no usable response. | Inconclusive; confirm in logged-in owner flow. |
+| X/Twitter | `@PlayHecton8` | Public fetch returned no usable response. | Inconclusive; backup only. |
+| X/Twitter | `@Hecton8` | Public fetch returned no usable response in this pass; earlier public check treated it as taken/unrelated. | Avoid unless owner flow proves otherwise. |
+| Reddit | `u/Hecton8Game` | Public JSON fetch returned HTTP 403. | Inconclusive; confirm in browser owner flow. |
+| Reddit | `u/PlayHecton8` | Public JSON fetch returned HTTP 403. | Inconclusive; backup only. |
+| Bluesky | `hecton8game.bsky.social` | `resolveHandle` returned HTTP 400/not resolved. | Candidate only; confirm during account creation. |
+| Bluesky | `playhecton8.bsky.social` | `resolveHandle` returned HTTP 400/not resolved. | Backup candidate. |
+| Domain DNS | `hecton8.com`, `hecton8game.com`, `playhecton8.com`, `hecton8.dev`, `hecton8.games`, `hecton8.ru` | No A record found by DNS query. | Registrar check required; DNS absence is not ownership proof. |
+
+### 2026-05-31 Owner Browser Tabs Opened
+
+The agent opened the following owner-browser surfaces for manual owner login/onboarding:
+
+- Google account selector;
+- Steam Direct / Steamworks onboarding;
+- YouTube account page;
+- X/Twitter signup;
+- Bluesky app;
+- Namecheap domain search for `hecton8.com`.
+
+No account was created by the agent. Registration remains held until the owner completes secrets/2FA/captcha steps and the post-registration custody row is filled.
+
+### 2026-05-31 X/Twitter Existing Account Work Packet V0
+
+Owner update: an X/Twitter account already exists. The handle and custody fields are not recorded in docs. Do not invent the public URL.
+
+Agent action:
+
+- opened X home;
+- opened X profile settings;
+- opened an X/Twitter intent composer with the no-link draft below;
+- did not click publish from shell automation.
+
+Post status: `POST_DRAFT_OPENED_OWNER_BROWSER`.
+
+Route class if posted by owner: `forced_reservation_no_link`.
+
+Post draft:
+
+```text
+Working title: Submerge. A single-player deep-sea survival project about pressure, salvage, machinery, and black water. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
+```
+
+Why this draft is the least bad pre-asset post:
+
+- no Steam link;
+- no wishlist ask;
+- no release window;
+- no screenshot/demo claim;
+- no performance claim;
+- no competitor attack;
+- names `Submerge` as working title to reduce exact-title conflict risk.
+
+Profile field draft for the existing account:
+
+| Field | Value |
+|---|---|
+| Display name | `Submerge` |
+| Bio | `Single-player deep-sea survival about pressure, salvage, machinery, and black water. Public footage only when captured from the current build.` |
+| Website | blank until Steam/site CTA gate |
+| Location | blank |
+| Avatar | `MarketingAssets/00_Brand/Submerge_Avatar_TextOnly_1024.png` |
+| Banner | `MarketingAssets/00_Brand/Submerge_Banner_TextOnly_X_1500x500.png` |
+| Pinned post | hold until first screenshot/clip proof |
+
+If the account is personal or mixed-use, do not post from it as official unless the owner accepts that it becomes a visible project channel. If the account is not project-owned, keep it as founder/dev account and disclose that voice plainly.
+
+### 2026-05-31 Multi-Platform Account Surface Pass V0
+
+Agent opened these browser surfaces for owner-controlled account setup/preflight:
+
+- YouTube channel switcher;
+- YouTube account page;
+- Bluesky app;
+- Reddit register;
+- TikTok signup;
+- Instagram signup;
+- Steam Direct.
+
+No account creation was completed by the agent. Reasons to stop before completion:
+
+- platform may require phone, captcha, 2FA, recovery email, or payment/KYC;
+- exact handle acceptance is visible only in logged-in UI;
+- profile ownership and backup-code custody must be owner-controlled;
+- blind keyboard automation can bind the wrong account or post from the wrong profile.
+
+Submerge account field kit:
+
+| Platform | Display name | First handle | Backup handle | Bio |
+|---|---|---|---|---|
+| X/Twitter | `Submerge` | `PlaySubmerge` | `SubmergeGame` | `Single-player deep-sea survival about pressure, salvage, machinery, and black water. Public footage waits for current-build proof.` |
+| Bluesky | `Submerge` | `playsubmerge.bsky.social` | `submergegame.bsky.social` | `Single-player deep-sea survival about pressure, salvage, machinery, and black water.` |
+| YouTube | `Submerge` | `@PlaySubmerge` | `@SubmergeGame` | `Official development channel for Submerge, a single-player deep-sea survival project about pressure, salvage, machinery, and black water.` |
+| Telegram | `Teni Games / 天衣` | `@teni_games` | hold | `Submerge development notes from Teni Games. Pressure, machinery, salvage, black water. Screenshots have to earn the post.` |
+| TikTok | `Submerge` | `@playsubmerge` | `@submergegame` | `Deep-sea survival. Pressure, salvage, machinery, black water.` |
+| Instagram | `Submerge` | `@playsubmerge` | `@submergegame` | `Single-player deep-sea survival: pressure, salvage, machinery, black water.` |
+| Reddit | owner/dev account | `u/PlaySubmerge` | `u/SubmergeGame` | `Developer account for Submerge. Posts disclose dev status.` |
+
+No website/contact field until official inbox and CTA gates pass. No avatar/banner unless it is text-only or a current approved logo mark; do not use concept art as proof.
+
+Temporary profile art paths:
+
+- `MarketingAssets/00_Brand/Submerge_Avatar_TextOnly_1024.png`;
+- `MarketingAssets/00_Brand/Submerge_Banner_TextOnly_X_1500x500.png`;
+- `MarketingAssets/00_Brand/Submerge_Wordmark_TextOnly_1800x500.png`.
+
+These are placeholder account visuals only. They are not Steam capsule art, gameplay proof, final logo, or final key art.
+
+Pre-asset no-link post bank:
+
+```text
+Working title: Submerge. A single-player deep-sea survival project about pressure, salvage, machinery, and black water. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
+```
+
+```text
+If a screenshot needs a paragraph to explain what the player does, it fails. Submerge public footage waits until pressure, machinery, and the next decision read from the image itself.
+```
+
+```text
+The lane is not colorful ocean wonder. Submerge is about machines trying to keep black water outside.
+```
+
+```text
+No Steam link yet. First public assets need to prove a readable pressure problem from the current build, not a promise.
+```
+
+```text
+Submerge is single-player-first. The useful fear is not a random jump scare; it is a bad reading, a bad route, and a machine that may not buy enough time.
+```
+
+Use one post at a time. Do not thread all of them. Do not add hashtags until the first real asset exists.
+
+### 2026-05-31 Chat-Shared Password Boundary V0
+
+Owner supplied a password in chat for account work. Do not write the password value into docs, scripts, logs, shell history, screenshots, browser notes, or account records.
+
+Verdict: `REJECT_CHAT_SHARED_PASSWORD_FOR_PERMANENT_ACCOUNT_CUSTODY`.
+
+Reason:
+
+- any password posted in chat must be treated as exposed;
+- the proposed password is weak for real public accounts;
+- platform accounts should use a password manager generated secret plus 2FA and backup-code custody;
+- account recovery and 2FA cannot be validated from shell-only automation.
+
+Allowed:
+
+- use browser forms already opened by the owner;
+- paste approved public text fields;
+- prepare assets, bios, handles, and post drafts;
+- ask owner to complete visible captcha/2FA/email/phone/KYC steps in the browser.
+
+Blocked:
+
+- storing the chat-shared password;
+- using it for permanent official accounts;
+- bypassing captcha/2FA/email confirmation;
+- accepting KYC/payment/Steamworks terms blindly;
+- blind keyboard automation into the active browser window.
+
+### Reservation Pack To Hand To Owner
+
+```text
+Project: HECTON-8
+Preferred handle: Hecton8Game
+Backup handle: PlayHecton8
+Display name: HECTON-8
+Short bio: Single player deep sea survival about pressure, salvage, machinery, and black water.
+Website: HOLD_NO_PUBLIC_CTA
+Contact: HOLD_NO_PROJECT_INBOX_PUBLICATION
+Profile state: private/blank until first screenshot pack passes QA
+Abort if platform forces first post before public_post_permission_gate allows it.
+```
 
 Allowed agent work while this verdict holds:
 
@@ -222,12 +657,133 @@ Fill one row immediately after each successful registration. Do not record passw
 
 | Platform | Handle | Public URL | Login email alias | Vault item name | Recovery owner checked | 2FA enabled | Backup codes stored | Profile visibility | First public asset gate | Current status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YouTube | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
-| X/Twitter | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
-| Bluesky | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| YouTube | `@TeniGames` | `https://www.youtube.com/@TeniGames` | OWNER_SESSION_PERSONAL_GOOGLE | `Teni Games / YouTube` | NO | NO | NO | public branded shell | HOLD_NO_FIRST_PUBLIC_ASSET_POST | PUBLIC_PROFILE_BRANDED |
+| X/Twitter | `@submerge_game` | `https://x.com/submerge_game` | OWNER_SESSION_X | `Teni Games / X` | NO | NO | NO | public branded shell | HOLD_NO_FIRST_PUBLIC_ASSET_POST | PUBLIC_PROFILE_BRANDED |
+| Bluesky | `teni-games.bsky.social` | `https://bsky.app/profile/teni-games.bsky.social` | OWNER_SESSION_BLUESKY | `Teni Games / Bluesky` | NO | NO | NO | public branded shell | HOLD_NO_FIRST_PUBLIC_ASSET_POST | PUBLIC_PROFILE_BRANDED |
+| Telegram | `@teni_games` | `https://t.me/teni_games` | OWNER_SESSION_UNVERIFIED | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank until checked | HOLD_NO_FIRST_PUBLIC_ASSET_POST | OWNER_CREATED_UNVERIFIED |
 | TikTok | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
-| Instagram | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
-| Reddit | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | blank/disclosed dev | HOLD_SUBREDDIT_RULE_AND_PUBLIC_POST_GATE | NOT_CREATED |
+| Instagram | `teni_games` | `https://www.instagram.com/teni_games/` | OWNER_SESSION_INSTAGRAM | `Teni Games / Instagram` | NO | NO | NO | public branded shell | HOLD_NO_FIRST_PUBLIC_ASSET_POST | PUBLIC_PROFILE_BRANDED |
+| Reddit | `u/Expert-Try8516` | `https://www.reddit.com/user/Expert-Try8516/` | OWNER_SESSION_REDDIT | `Teni Games / Reddit` | NO | NO | NO | public branded disclosed dev | HOLD_SUBREDDIT_RULE_AND_PUBLIC_POST_GATE | PUBLIC_PROFILE_BRANDED |
+
+### 2026-05-31 Background Public Profile Check V0
+
+Tooling:
+
+- `C:\hades\Tools\BrowserOps\edge_session_urls.py`
+- `C:\hades\Tools\BrowserOps\public_profile_check.js`
+
+Result snapshot:
+
+| Surface | Public check result | Action |
+|---|---|---|
+| Telegram `@teni_games` | Public page shows Teni Games, 3 subscribers, saved English description. | ADVANCE as owned low-friction feed. |
+| TikTok `@tenigames` | Public page says account not found. | Candidate; confirm in logged-in flow before claiming. |
+| X `@TeniGamesDev` | Public page says account does not exist. | Candidate; confirm in logged-in flow. |
+| X `@TeniGames` | Latest public check says account does not exist. | Candidate only; confirm inside logged-in X flow before claiming. |
+| Instagram `tenigames` | Public check redirects to login. | Inconclusive; requires logged-in owner flow. |
+| Reddit `u/TeniGames` | Public headless check blocked by Reddit network security. | Inconclusive; requires logged-in owner flow or API token. |
+| Bluesky `tenigames.bsky.social` | Public page loads without clear ownership proof in headless text. | Inconclusive; requires logged-in owner flow. |
+| YouTube Studio profile | Headless check redirects to Google sign-in. | Requires logged-in owner browser session. |
+
+### 2026-05-31 Background Account Work Queue V1
+
+Queue artifact:
+
+- `MarketingAssets/99_BrowserWork/account_work_queue_teni_games.json`
+
+Current operating rule:
+
+- background-first: use Edge session extraction and headless public checks before touching a visible logged-in UI;
+- logged-in mutations require a screenshot-verified target window immediately before any click or paste;
+- old X/Twitter intent URLs are quarantined and must not be used;
+- no publish/send action from shell automation.
+
+Current platform order:
+
+| Priority | Platform | State | Next useful action |
+|---:|---|---|---|
+| 1 | X | Public `https://x.com/submerge_game` shows Teni Games display identity, bio, avatar, and banner. | Hold posts; handle rename remains held until naming/handle review. |
+| 2 | YouTube | Public `https://www.youtube.com/@TeniGames` resolves and shows Teni Games identity. | Hold videos/community posts until first proof asset; owner must enable 2-Step Verification. |
+| 3 | Instagram | Public `https://www.instagram.com/teni_games/` shows Teni Games bio and dark-wave avatar. | Hold posts/Reels/stories until first proof asset; web link editing remains mobile-only. |
+| 4 | TikTok | Public `@tenigames` says account not found. | Confirm handle in logged-in flow; do not claim reservation from public not-found. |
+| 5 | Reddit | Public `https://www.reddit.com/user/Expert-Try8516/` shows Teni Games display name, about text, avatar, and banner. | Use as disclosed dev/listening account only; no subreddit posting before rule checks. |
+| 6 | Bluesky | Public `https://bsky.app/profile/teni-games.bsky.social` shows Teni Games display name, bio, avatar, and banner. | Hold first post until proof asset exists and exact composer text is screenshot-verified. |
+| 7 | Telegram | `@teni_games` public page shows saved description. | Hold posts unless a compose-box screenshot verifies the exact text before send. |
+
+### 2026-05-31 Main Edge CDP Account Pass V1
+
+Main Edge was restarted with remote debugging on `127.0.0.1:9222` after saving the session snapshot. This allows background page reads and low-level CDP actions against the owner browser without blind UIA clicks.
+
+Artifacts:
+
+- `MarketingAssets/99_BrowserWork/cdp_pages/cdp_account_pages.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/youtube_studio_profile.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_edit.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_set_bio_result.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_public_check_result.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/reddit_tenigames.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/bluesky_home.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/tiktok_tenigames.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/telegram_teni_games.png`
+
+Results:
+
+| Platform | CDP result | Action |
+|---|---|---|
+| X | Profile editor rendered for `@submerge_game`; display name, bio, avatar, and banner were updated through CDP and public proof was captured. | Keep away from composer. Do not rename handle until naming/handle review. |
+| YouTube | Logged in; owner explicitly allowed converting the visible channel to Teni Games. Studio shows a 2-Step Verification warning. | Convert profile to Teni Games, but do not publish videos or add contact/site claims yet. |
+| Instagram | Logged in as `teni_games` / `Teni Games`; later public verification shows bio and dark-wave avatar saved. | Treat as public branded shell. No posts/Reels/stories until proof asset exists. |
+| Reddit | Owner confirmed existing account `u/Expert-Try8516` is available and display name is already `Teni Games`. | Use this as the disclosed dev account; do not chase `u/TeniGames` for now. |
+| Bluesky | Logged-in feed is visible, but Teni profile ownership is not proven. | Do not mutate until profile ownership/control is visible. |
+| TikTok | `@tenigames` still shows account not found and GDPR transfer notice. | Candidate only; needs logged-in registration/profile flow. |
+| Telegram | Public page shows avatar, display name, 3 subscribers, and saved English description. | Confirmed profile surface; no posts without compose proof. |
+
+### 2026-05-31 YouTube / Reddit Conversion Pass V1
+
+Proof artifacts:
+
+- `MarketingAssets/99_BrowserWork/cdp_pages/youtube_public_at_TeniGames_after_publish.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/youtube_public_at_TeniGames_after_publish.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/reddit_public_expert_try8516_after_banner.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/reddit_public_expert_try8516_after_banner.png`
+
+Results:
+
+| Platform | Public result | Hold |
+|---|---|---|
+| YouTube | Public channel is now `Teni Games` at `https://www.youtube.com/@TeniGames`, with handle `@TeniGames`, English Submerge description, dark-wave banner, and Teni avatar. | No videos, Shorts, community posts, website, or contact email until proof assets and custody gates exist. Studio still warns that 2-Step Verification is not enabled. |
+| Reddit | Existing account is now branded as `Teni Games` at `https://www.reddit.com/user/Expert-Try8516/`, with dark-wave avatar/banner and about text: `Making Submerge. Deep water, pressure, ugly machinery, and getting back alive.` | Username remains `u/Expert-Try8516`; do not chase a rename. No subreddit posting/comment outreach until each community rule page is checked. |
+| Bluesky | Profile is now branded as `Teni Games` at `https://bsky.app/profile/teni-games.bsky.social`, with dark-wave avatar/banner and bio: `Making Submerge. Pressure, salvage, ugly machinery, black water.` | No first post until a real proof asset exists and the exact composer text is screenshot-verified before send. |
+
+### 2026-05-31 Instagram Finalization Pass V1
+
+Proof artifacts:
+
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_public_teni_games_refresh_20260531_2318.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_public_teni_games_refresh_20260531_2318.png`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_public_after_avatar_attempt_20260531_2342.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/instagram_public_after_avatar_attempt_20260531_2342.png`
+
+Result:
+
+| Platform | Public result | Hold |
+|---|---|---|
+| Instagram | Public profile is now `Teni Games` at `https://www.instagram.com/teni_games/`, with bio `Building Submerge. Pressure, machinery, salvage, black water.` and dark-wave Teni avatar. | No posts, Reels, stories, links, or contact claims until current-build proof assets exist. Website/link edits are web-blocked by Instagram and require mobile. |
+
+### 2026-06-01 X Profile Conversion Pass V1
+
+Proof artifacts:
+
+- `MarketingAssets/99_BrowserWork/cdp_pages/x_profile_text_update_result_20260531_2355.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/x_public_submerge_game_after_text_20260601_0000.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/x_public_submerge_game_after_assets_20260601_0011.json`
+- `MarketingAssets/99_BrowserWork/cdp_pages/x_public_submerge_game_after_assets_20260601_0011.png`
+
+Result:
+
+| Platform | Public result | Hold |
+|---|---|---|
+| X | Public profile is now `Teni Games` at `https://x.com/submerge_game`, with bio `Making Submerge. Pressure, salvage, ugly machinery, black water.`, dark-wave avatar, and dark-wave banner. | Handle remains `@submerge_game` until naming/handle review. No first post until current-build proof exists and exact composer text is screenshot-verified. |
 
 Allowed `Current status` values:
 
@@ -496,6 +1052,38 @@ It shares underwater survival adjacency, but the lane is different: pressure, ma
 ```text
 We will publish performance details only with build, hardware, settings, and frame time context. No empty FPS promises.
 ```
+
+## 2026-06-01 Queue Posting State
+
+Queue file:
+
+  `MarketingAssets/99_BrowserWork/social_post_queue_20260601.json`
+
+Runner:
+
+  `node C:\hades\Tools\BrowserOps\social_queue_run.js <queue-json> dryrun READY x,bluesky 9222`
+
+  `node C:\hades\Tools\BrowserOps\social_queue_run.js <queue-json> publish <item-id> x,bluesky 9222`
+
+Published post 2 on X and Bluesky:
+
+```text
+Opened the accounts before the good shots are ready.
+For now I am mostly deleting frames that look cool and say nothing.
+```
+
+Proof:
+
+  X public proof: `MarketingAssets/99_BrowserWork/cdp_pages/x_public_after_devnote_cutting_frames_20260601.png`
+
+  Bluesky public proof: `MarketingAssets/99_BrowserWork/cdp_pages/bsky_public_after_devnote_cutting_frames_20260601.png`
+
+Current queue policy:
+
+  Keep one or two human setup/dev notes public.
+  Do not bulk-post slogans before screenshots.
+  Use the queue for X/Bluesky only until other platform post flows are proven.
+  Mark posted items as `PUBLISHED` to block accidental repeat.
 
 ## Current HECTON-8 Decision
 

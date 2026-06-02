@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -78,31 +79,50 @@ namespace Hecton8.World.ProceduralWreckage
             GraphicsBuffer matrixTarget = _writeIndex == 0 ? _matrixBufferA : _matrixBufferB;
             GraphicsBuffer argsTarget = _writeIndex == 0 ? _argsBufferA : _argsBufferB;
             int writeCount = math.clamp(requested, 0, math.min(_capacity, matrixTarget.count));
-            if (writeCount > 0)
+            long uploadBytes =
+                GraphicsBufferUploadUtility.EstimateUploadBytes<float4x4>(writeCount) +
+                GraphicsBufferUploadUtility.EstimateUploadBytes<WreckageIndirectArgsDTO>(1);
+            if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                return false;
+
+            bool uploadCompleted = false;
+            try
             {
-                NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
+                if (writeCount > 0)
+                {
+                    NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
+                    try
+                    {
+                        void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
+                        void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
+                        UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                    }
+                    finally
+                    {
+                        matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                    }
+                }
+
+                WreckageIndirectArgsDTO args = indirectArgs[0];
+                args.InstanceCount = (uint)writeCount;
+                NativeArray<WreckageIndirectArgsDTO> mappedArgs = argsTarget.LockBufferForWrite<WreckageIndirectArgsDTO>(0, 1);
                 try
                 {
-                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
-                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
-                    UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                    mappedArgs[0] = args;
                 }
                 finally
                 {
-                    matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                    argsTarget.UnlockBufferAfterWrite<WreckageIndirectArgsDTO>(1);
                 }
-            }
 
-            WreckageIndirectArgsDTO args = indirectArgs[0];
-            args.InstanceCount = (uint)writeCount;
-            NativeArray<WreckageIndirectArgsDTO> mappedArgs = argsTarget.LockBufferForWrite<WreckageIndirectArgsDTO>(0, 1);
-            try
-            {
-                mappedArgs[0] = args;
+                uploadCompleted = true;
             }
             finally
             {
-                argsTarget.UnlockBufferAfterWrite<WreckageIndirectArgsDTO>(1);
+                if (uploadCompleted)
+                    GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                else
+                    GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
             }
 
             _activeIndex = _writeIndex;
@@ -206,7 +226,7 @@ namespace Hecton8.World.ProceduralWreckage
         private static GraphicsBuffer CreateIndirectArgsBuffer()
         {
             return new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 UnsafeUtility.SizeOf<WreckageIndirectArgsDTO>());

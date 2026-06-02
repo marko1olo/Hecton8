@@ -708,11 +708,11 @@ namespace Hecton8.UI
         private void TryRegisterRuntime()
         {
             if (!_registeredColdTick)
-                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.UI);
+                _registeredColdTick = SystemDispatcher.Register((IColdTickable)this, PriorityLayer.UI);
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
             if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
             if (!_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
@@ -721,19 +721,19 @@ namespace Hecton8.UI
         {
             if (_registeredColdTick)
             {
-                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((IColdTickable)this, PriorityLayer.UI);
                 _registeredColdTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _registeredSlowTick = false;
             }
 
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
 
@@ -1295,7 +1295,7 @@ namespace Hecton8.UI
             if (_radarArgsBufferA == null)
             {
                 _radarArgsBufferA = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args A - owner: VehicleSubOsCockpitRuntime
@@ -1305,7 +1305,7 @@ namespace Hecton8.UI
             if (_radarArgsBufferB == null)
             {
                 _radarArgsBufferB = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args B - owner: VehicleSubOsCockpitRuntime
@@ -1457,7 +1457,7 @@ namespace Hecton8.UI
             if (_damageArgsBuffer == null)
             {
                 _damageArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.CopyDestination,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - damage hologram indirect args - owner: VehicleSubOsCockpitRuntime
                 _damageArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(

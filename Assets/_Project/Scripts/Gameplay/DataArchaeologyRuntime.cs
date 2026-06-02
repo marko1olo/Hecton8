@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Data;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
@@ -1310,22 +1311,12 @@ namespace Hecton8.Gameplay
                 return;
 
             uint frame = SystemDispatcher.CurrentFrameId;
-            SignalBus<ScanCompleteSignal>.TryPushTracked(new ScanCompleteSignal
-            {
-                PositionAup = aup,
-                EntryHash = hash,
-                ScanId = hash,
-                SourceId = _scannerToolHash,
-                ReconKind = (byte)ScanEntryKind.Scannable,
-                Flags = 0
-            }, ref _signalPushDropCount);
-            SignalBus<LoreFragmentScannedSignal>.TryPushTracked(new LoreFragmentScannedSignal
-            {
-                Hash = hash,
-                Frame = frame,
-                SourceId = _scannerToolHash,
-                Flags = 0
-            }, ref _signalPushDropCount);
+            H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(
+                hash,
+                in aup,
+                _scannerToolHash,
+                0,
+                (byte)ScanEntryKind.Scannable);
             SignalBus<ProgressionEventSignal>.TryPushTracked(new ProgressionEventSignal
             {
                 PositionAup = aup,

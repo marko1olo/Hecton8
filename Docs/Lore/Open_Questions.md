@@ -10,6 +10,7 @@ Purpose: keep unresolved choices visible instead of burying them in prose.
 - How much real star data should appear in player-facing text versus internal lore only?
 - Working lock: Aegir has multiple major moons and smaller moonlets. HECTON-8 is one of many, not innermost and not farthest.
 - Working moon roster exists in `Encyclopedia/Aegir_Moon_System.md`, but moon names remain renameable.
+- Working detailed moon catalog exists in `Encyclopedia/Aegir_Moon_Catalog.md`.
 - Does HECTON-8 publicly have a catalog number/name separate from the Marauder/Deep Reach name?
 
 ## Human Expansion
@@ -51,10 +52,12 @@ Still unresolved:
 - How public was Atlas-6 before the disaster?
 - Was Atlas-6 insured, classified, or legally treated as a colonial authority?
 - Working lock: player carrier is `Black Keel`, an automated claim-tender / salvage carrier.
-- Still unresolved: exact class label, owner shell, and debt mechanism.
+- Working ownership lock: public Aegir claim-pool tender; debt-impounded / insurance custody; hidden Deep Reach priority hooks.
+- Still unresolved: exact claim-pool name, insurer shell name, and starting debt amount.
 
 ## Player
 
+- Working motive lock: professional interest becomes personal through recovered names, Barnard/frontier link, and late contract-trap evidence.
 - Does the player have any direct past with Deep Reach, or only a professional salvage history that becomes personal?
 - Did the player choose this contract freely, or were they forced by debt/blacklist/legal pressure?
 - Does the player know anyone connected to HECTON-8 before arrival?
@@ -80,7 +83,8 @@ Still unresolved:
 - Working slang lock: Marauders call Xenon-Omega `blue debt`.
 - Working technical slang: `pressure glass`.
 - Working Deep Reach sanitized term: `XO continuity substrate`.
-- How unstable is it after depressurization?
+- Working behavior lock: valuable samples require pressure-rated containment; high-value samples carry weak Atlas-compatible pressure-harmonic behavior; contamination is industrial/ecological, not viral magic.
+- Still unresolved: exact containment failure stages and gameplay thresholds.
 
 ## Aegir And HECTON-8 Physical Atlas
 
@@ -101,6 +105,8 @@ Still unresolved:
 ## Escape And False Endings
 
 - Can the player leave before reaching Atlas-6?
+- Working answer: yes, through false/partial endings.
+- Minimum false-ending families: Material Ending and Partial Exit.
 - If early escape exists, is it:
   - real ending with bitter credits;
   - partial extraction then return to same seed;
@@ -109,6 +115,7 @@ Still unresolved:
   - salvage-success / truth-failure ending?
 - What makes the early exit emotionally unsatisfying enough that returning feels natural?
 - What must the player physically build to escape?
+- Still unresolved: exact engineering chain for ascent/recovery.
 
 ## Final Question
 

@@ -40,33 +40,33 @@ namespace Hecton8.UI
         private static readonly char[] s_emptyDumpChars = System.Array.Empty<char>();
         private static readonly Color BackgroundColor = new Color(0f, 0f, 0f, 0.96f);
         private static readonly Color DumpTextColor = new Color(0.72f, 1f, 0.82f, 0.96f);
-        // COLD ALLOC: string[12] — death-dump module token table — owner: PDADeathMemoryDump
+        // COLD ALLOC: string[12] - death-dump module token table - owner: PDADeathMemoryDump
         private static readonly string[] DumpModules =
         {
             "MEMBUS", "PRESSURE CORE", "ABYSSAL CACHE", "LOCALIZATION", "HULL TRACE", "VECTOR STACK",
             "BLACKBOX", "ROUTE HASH", "SUIT SHELL", "SONAR BUS", "ARCHIVE", "RECOVERY MAP"
         };
 
-        // COLD ALLOC: string[12] — death-dump operation token table — owner: PDADeathMemoryDump
+        // COLD ALLOC: string[12] - death-dump operation token table - owner: PDADeathMemoryDump
         private static readonly string[] DumpOperations =
         {
             "SECTOR LOCK", "PAGE FLUSH", "STACK REWIND", "CRC CHECK", "INDEX SWEEP", "SIGNAL STITCH",
             "KERNEL MAP", "BIOFORM TRACE", "ANCHOR MOUNT", "PRESSURE SAMPLE", "HELMET CACHE", "FAULT REPLAY"
         };
 
-        // COLD ALLOC: string[12] — death-dump status token table — owner: PDADeathMemoryDump
+        // COLD ALLOC: string[12] - death-dump status token table - owner: PDADeathMemoryDump
         private static readonly string[] DumpStates =
         {
             "OK", "STALE", "CORRUPTED", "REPLAY", "NULL", "OVERRUN",
             "DESYNC", "DROPPED", "COMPROMISED", "JITTER", "FROZEN", "WIPED"
         };
 
-        // COLD ALLOC: string[192] — reusable per-session memory-dump line library — owner: PDADeathMemoryDump
+        // COLD ALLOC: string[192] - reusable per-session memory-dump line library - owner: PDADeathMemoryDump
         private readonly char[][] _dumpLineLibrary = new char[LibraryLineCount][];
         private readonly int[] _dumpLineLibraryLengths = new int[LibraryLineCount];
-        // COLD ALLOC: int[180] — visible-character thresholds for line-based reveal without per-frame string rebuilds — owner: PDADeathMemoryDump
+        // COLD ALLOC: int[180] - visible-character thresholds for line-based reveal without per-frame string rebuilds - owner: PDADeathMemoryDump
         private readonly int[] _lineCharacterThresholds = new int[SequenceLineCount];
-        // COLD ALLOC: char[16384] — TMP payload staging buffer for death dump SetCharArray path — owner: PDADeathMemoryDump
+        // COLD ALLOC: char[16384] - TMP payload staging buffer for death dump SetCharArray path - owner: PDADeathMemoryDump
         private readonly char[] _dumpPayloadBuffer = new char[DumpPayloadCharCapacity];
 
         private struct DumpTextWriter
@@ -138,7 +138,7 @@ namespace Hecton8.UI
             }
         }
 
-        [Header("── Font ──────────────────")]
+        [Header("-- Font ------------------")]
         [Tooltip("Optional readable font override for the death memory dump overlay.")]
         [SerializeField] private TMP_FontAsset dumpFont;
 
@@ -443,7 +443,7 @@ namespace Hecton8.UI
             _overlayRoot = FindExistingChild(canvasRoot, OverlayName);
             if (_overlayRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — fatal-pressure death dump overlay host — owner: PDADeathMemoryDump
+                // COLD ALLOC: GameObject[1] - fatal-pressure death dump overlay host - owner: PDADeathMemoryDump
                 GameObject overlayObject = new GameObject(OverlayName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
                 overlayObject.layer = canvasRoot.gameObject.layer;
                 overlayObject.TryGetComponent(out _overlayRoot);
@@ -519,7 +519,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -527,7 +527,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

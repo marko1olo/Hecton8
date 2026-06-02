@@ -579,7 +579,7 @@ namespace Hecton8.UI
         private const int MaxBioformContacts = 24;
         private const int MaxDriftTargets = 96;
 
-        [Header("── Intrusion Thresholds ──────────────────")]
+        [Header("-- Intrusion Thresholds ------------------")]
         [Tooltip("Minimum director glitch intensity required before the intrusion owner treats the event as a hostile EMI strike.")]
         [SerializeField, Range(0f, 1f)] private float equipmentGlitchThreshold = EquipmentGlitchHackThreshold;
 
@@ -595,15 +595,15 @@ namespace Hecton8.UI
         [Tooltip("How long the player must hold the reboot action while the PDA is open.")]
         [SerializeField, Min(0.5f)] private float rebootHoldDuration = RebootHoldDuration;
 
-        // COLD ALLOC: SpatialQueryHit[24] — cached bioform proximity buffer for intrusion scans — owner: PDAIntrusionManager
+        // COLD ALLOC: SpatialQueryHit[24] - cached bioform proximity buffer for intrusion scans - owner: PDAIntrusionManager
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
-        // COLD ALLOC: TextMeshProUGUI[96] — cached PDA text targets for hacked-line drift — owner: PDAIntrusionManager
+        // COLD ALLOC: TextMeshProUGUI[96] - cached PDA text targets for hacked-line drift - owner: PDAIntrusionManager
         private readonly TextMeshProUGUI[] _driftTargets = new TextMeshProUGUI[MaxDriftTargets];
-        // COLD ALLOC: RectTransform[96] — cached rect owners for hacked-line drift — owner: PDAIntrusionManager
+        // COLD ALLOC: RectTransform[96] - cached rect owners for hacked-line drift - owner: PDAIntrusionManager
         private readonly RectTransform[] _driftRects = new RectTransform[MaxDriftTargets];
-        // COLD ALLOC: Vector2[96] — cached pre-hack anchored positions for text drift restore — owner: PDAIntrusionManager
+        // COLD ALLOC: Vector2[96] - cached pre-hack anchored positions for text drift restore - owner: PDAIntrusionManager
         private readonly Vector2[] _driftBaseAnchoredPositions = new Vector2[MaxDriftTargets];
-        // COLD ALLOC: float[96] — deterministic phase offsets for hacked-line drift — owner: PDAIntrusionManager
+        // COLD ALLOC: float[96] - deterministic phase offsets for hacked-line drift - owner: PDAIntrusionManager
         private readonly float[] _driftPhaseOffsets = new float[MaxDriftTargets];
 
         private PlayerPDA _playerPda;
@@ -1266,18 +1266,15 @@ namespace Hecton8.UI
             if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
         }

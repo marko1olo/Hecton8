@@ -1,0 +1,30 @@
+---
+packet_id: P038_MATERIAL_PAYOUT_LEDGER
+article_id: hecton8.material_payout_ledger
+locale: zh_CN
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 物资结算账本
+
+物资结算账本记录类似Stalker的假成功路线：玩家能获利，却在道德上未解决地离开HECTON-8。
+
+## Scanner
+
+blue debt样本认证。可结算。真相可选。Deep Reach偏爱这种顺序。
+
+## Terminal
+
+结算计划：样本质量、纯度、压力历史与保管链通过。证据档案未解决。
+
+## Audio
+
+账户清了。水没有。
+
+## Field Note
+
+成功合同仍可能是失败人生。
+
+<!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/zh_CN. -->

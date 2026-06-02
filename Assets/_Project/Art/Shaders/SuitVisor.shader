@@ -67,6 +67,7 @@ Shader "NASAPunk/SuitVisor"
         _HypoxiaLevel ("HUD Hypoxia Failure", Range(0, 1)) = 0
         _HullStressFlicker ("Pressure Flicker", Range(0, 1)) = 0
         _PressureLensCrackIntensity ("Pressure Lens Crack Intensity", Range(0, 1)) = 0
+        _GlassCrackIntensity ("Reentry Glass Crack Intensity", Range(0, 1)) = 0
         _PressureCrackParallaxDepth ("Pressure Crack Parallax Depth", Range(0, 0.08)) = 0.028
         _PressureCrackNormalStrength ("Pressure Crack Normal Strength", Range(0, 2)) = 0.75
         _HazardRadiationLevel ("Radiation Glitch Level", Range(0, 1)) = 0
@@ -194,6 +195,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _HypoxiaLevel;
                 float  _HullStressFlicker;
                 float  _PressureLensCrackIntensity;
+                float  _GlassCrackIntensity;
                 float  _PressureCrackParallaxDepth;
                 float  _PressureCrackNormalStrength;
                 float  _HazardRadiationLevel;
@@ -244,6 +246,7 @@ Shader "NASAPunk/SuitVisor"
             float4 _SonarGridAbyssalColor;
             float _SonarRevealExpireTime;
             float _HectonHudFocusBlur;
+            float4 _HectonReentryAblationState;
 
             struct Attributes
             {
@@ -775,7 +778,8 @@ Shader "NASAPunk/SuitVisor"
                 float fingerprintStrength = HectonFiniteNonNegative(_FingerprintStrength, 0.0);
                 float lensGrimeIntensity = HectonFiniteNonNegative(_LensGrimeIntensity, 0.0);
                 float waterDropletMaskInfluence = HectonFinite01(_WaterDropletMaskInfluence);
-                float pressureCrackIntensity = HectonFinite01(_PressureLensCrackIntensity);
+                float reentryGlassCrack = max(HectonFinite01(_GlassCrackIntensity), HectonFinite01(_HectonReentryAblationState.z));
+                float pressureCrackIntensity = max(HectonFinite01(_PressureLensCrackIntensity), reentryGlassCrack);
                 float staticNoiseSignal = HectonFinite01(_StaticNoise);
                 float hazardRadiation = HectonFinite01(_HazardRadiationLevel);
                 float hazardThermal = HectonFinite01(_HazardThermalLevel);

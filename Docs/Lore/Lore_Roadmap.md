@@ -33,6 +33,8 @@ Layer 3: Aegir
 
 - real-system anchor candidate;
 - gas giant and moon architecture;
+- source-bound astronomy reference;
+- moon catalog with geology/orbit/route roles;
 - local carrier logistics;
 - relay windows;
 - Deep Reach route ownership;
@@ -82,6 +84,7 @@ Layer 7: Player-Facing Delivery
 - route telemetry;
 - corrupted Atlas fragments;
 - ending dossiers.
+- false-ending families.
 
 Layer 8: Reference Atlases
 
@@ -89,8 +92,10 @@ Layer 8: Reference Atlases
 - ship and propulsion families;
 - general technology level;
 - Aegir gas giant and moons;
+- Black Keel ownership/control;
 - HECTON-8 geology/resources;
 - resource naming and Deep Reach economic motive.
+- player motive arc.
 
 Layer 9: Binding Layer
 
@@ -101,6 +106,30 @@ Layer 9: Binding Layer
 - article template;
 - source voice rules.
 
+Layer 10: Gameable World Packets
+
+- broken bathy-drop;
+- Aegir sky windows;
+- bright shallows;
+- drowned colony spaces;
+- blue debt samples;
+- cable kelp and repair drone nests;
+- Marauder caches;
+- Barnard marks;
+- Atlas repair scars;
+- bottom factory temple;
+- final payload decisions.
+
+Layer 11: Multilingual Content Architecture
+
+- stable packets instead of loose prose;
+- source voice profiles;
+- scanner/codex/terminal/website/audio text shapes;
+- translation-ready chunks;
+- surface QA before runtime bake.
+- build-time bake into static IDs and localized string pools;
+- no runtime lore interpreter.
+
 ## Rule
 
 Every lore expansion must answer at least one of these:
@@ -109,3 +138,9 @@ Every lore expansion must answer at least one of these:
 - what does the player understand differently because of this;
 - what can be discovered, missed, sold, hidden, or misread;
 - what pressure does it add to survival, escape, or final choice.
+
+## Current Bias
+
+Less abstract corporate law. More physical world.
+
+Deep Reach matters when the player sees a clean memo beside a drowned room, a carrier call that prices a corpse as cargo, a pressure crate that keeps blue debt stable, or a blocked evacuation authorization that killed real workers.

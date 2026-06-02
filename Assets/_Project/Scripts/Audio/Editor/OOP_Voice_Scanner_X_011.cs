@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,8 +9,6 @@ namespace Hecton8.Audio.Editor
 {
     public static class OOP_Voice_Scanner_X_011
     {
-        private const string ReportPath = "Docs/Reports/UX_OPTIMIZATION_REPORT_X_011.json";
-
         private static readonly string[] Roots =
         {
             "Assets/_Project/Scripts/Audio",
@@ -21,10 +18,10 @@ namespace Hecton8.Audio.Editor
 
         private static readonly RoutePattern[] ForbiddenRuntimePatterns =
         {
-            new RoutePattern("native_min_heap", "NativeMinHeap", "fatal", "Use VocalWarningPriorityWordOps and VwsPriorityWord."),
-            new RoutePattern("vws_heap_ops", "VocalWarningHeapOps", "fatal", "Use VocalWarningPriorityWordOps."),
-            new RoutePattern("priority_queue", "PriorityQueue<", "fatal", "Use the 64-bit priority word route."),
-            new RoutePattern("sorted_set_queue", "SortedSet<", "fatal", "Use the 64-bit priority word route."),
+            new RoutePattern("native_min_heap", "NativeMinHeap", "fatal", "Use AlarmBitmaskOps and activeAlarmsMask."),
+            new RoutePattern("vws_heap_ops", "VocalWarningHeapOps", "fatal", "Use AlarmBitmaskOps."),
+            new RoutePattern("priority_queue", "PriorityQueue<", "fatal", "Use the 64-bit activeAlarmsMask route."),
+            new RoutePattern("sorted_set_queue", "SortedSet<", "fatal", "Use the 64-bit activeAlarmsMask route."),
             new RoutePattern("managed_string_subtitle_queue", "struct SubtitleRequest", "fatal", "Use BufferedSubtitleRequest with pooled char buffers."),
             new RoutePattern("managed_string_subtitle_queue_array", "private readonly SubtitleRequest[]", "fatal", "Use BufferedSubtitleRequest with pooled char buffers."),
             new RoutePattern("string_queue_field", "_stringQueue", "fatal", "Use the pooled buffered subtitle ring."),
@@ -37,9 +34,7 @@ namespace Hecton8.Audio.Editor
         public static void Scan()
         {
             ScanResult result = ScanProject();
-            WriteReport(result);
-            AssetDatabase.Refresh();
-            Hecton8.Core.H8Debug.Log("X_011 UX scanner wrote " + ReportPath + " with " + result.Findings.Count + " findings.");
+            Hecton8.Core.H8Debug.Log("X_011 UX scanner " + (result.Pass ? "PASS" : "FAIL") + " with " + result.Findings.Count + " findings.");
         }
 
         internal static ScanResult ScanProject()
@@ -78,9 +73,9 @@ namespace Hecton8.Audio.Editor
             string babelText = File.Exists(babelPath) ? File.ReadAllText(babelPath) : string.Empty;
             string subtitleSignalText = File.Exists(subtitleSignalPath) ? File.ReadAllText(subtitleSignalPath) : string.Empty;
 
-            result.PriorityWordImplemented =
-                vwsText.IndexOf("VwsPriorityWord", StringComparison.Ordinal) >= 0 &&
-                vwsText.IndexOf("VocalWarningPriorityWordOps", StringComparison.Ordinal) >= 0 &&
+            result.AlarmMaskImplemented =
+                vwsText.IndexOf("activeAlarmsMask", StringComparison.Ordinal) >= 0 &&
+                vwsText.IndexOf("AlarmBitmaskOps", StringComparison.Ordinal) >= 0 &&
                 vwsText.IndexOf("NativeMinHeap", StringComparison.Ordinal) < 0;
             result.SubtitleSignal64Bytes =
                 subtitleSignalText.IndexOf("public struct SubtitleCueSignal", StringComparison.Ordinal) >= 0 &&
@@ -96,7 +91,7 @@ namespace Hecton8.Audio.Editor
                 vwsText.IndexOf("VwsTelemetryEntry", StringComparison.Ordinal) >= 0 &&
                 vwsText.IndexOf("TelemetryCapacity = 300", StringComparison.Ordinal) >= 0;
             result.Pass = result.Findings.Count == 0 &&
-                          result.PriorityWordImplemented &&
+                          result.AlarmMaskImplemented &&
                           result.SubtitleSignal64Bytes &&
                           result.StringQueueRemoved &&
                           result.BlackBoxDumpRoutePresent;
@@ -153,90 +148,10 @@ namespace Hecton8.Audio.Editor
             return fullPath.Replace('\\', '/');
         }
 
-        private static void WriteReport(ScanResult result)
-        {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string absolutePath = Path.Combine(projectRoot, ReportPath);
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            File.WriteAllText(absolutePath, BuildJson(result), Encoding.UTF8);
-        }
-
-        private static string BuildJson(ScanResult result)
-        {
-            StringBuilder builder = new StringBuilder(4096);
-            builder.Append("{\n");
-            AppendProperty(builder, "agent", "X_011", 2, true);
-            AppendProperty(builder, "role", "VOCAL_WARNING_AND_SUBTITLE_STREAMLINER", 2, true);
-            AppendProperty(builder, "report", "UX_OPTIMIZATION_REPORT_X_011", 2, true);
-            AppendProperty(builder, "status", result.Pass ? "PASS_PENDING_COMPILE" : "FAIL_STATIC_FINDINGS", 2, true);
-            AppendProperty(builder, "filesScanned", result.FilesScanned, 2, true);
-            AppendProperty(builder, "priorityWordImplemented", result.PriorityWordImplemented, 2, true);
-            AppendProperty(builder, "subtitleSignal64Bytes", result.SubtitleSignal64Bytes, 2, true);
-            AppendProperty(builder, "stringQueueRemoved", result.StringQueueRemoved, 2, true);
-            AppendProperty(builder, "blackBoxDumpRoutePresent", result.BlackBoxDumpRoutePresent, 2, true);
-            builder.Append("  \"findings\": [\n");
-            for (int i = 0; i < result.Findings.Count; i++)
-            {
-                Finding finding = result.Findings[i];
-                builder.Append("    {\n");
-                AppendProperty(builder, "id", finding.Id, 6, true);
-                AppendProperty(builder, "severity", finding.Severity, 6, true);
-                AppendProperty(builder, "file", finding.File, 6, true);
-                AppendProperty(builder, "line", finding.Line, 6, true);
-                AppendProperty(builder, "needle", finding.Needle, 6, true);
-                AppendProperty(builder, "remediation", finding.Remediation, 6, false);
-                builder.Append("    }");
-                if (i + 1 < result.Findings.Count)
-                    builder.Append(',');
-                builder.Append('\n');
-            }
-            builder.Append("  ]\n");
-            builder.Append("}\n");
-            return builder.ToString();
-        }
-
-        private static void AppendProperty(StringBuilder builder, string name, string value, int indent, bool comma)
-        {
-            builder.Append(' ', indent);
-            builder.Append('"').Append(Escape(name)).Append("\": \"").Append(Escape(value)).Append('"');
-            if (comma)
-                builder.Append(',');
-            builder.Append('\n');
-        }
-
-        private static void AppendProperty(StringBuilder builder, string name, int value, int indent, bool comma)
-        {
-            builder.Append(' ', indent);
-            builder.Append('"').Append(Escape(name)).Append("\": ").Append(value);
-            if (comma)
-                builder.Append(',');
-            builder.Append('\n');
-        }
-
-        private static void AppendProperty(StringBuilder builder, string name, bool value, int indent, bool comma)
-        {
-            builder.Append(' ', indent);
-            builder.Append('"').Append(Escape(name)).Append("\": ").Append(value ? "true" : "false");
-            if (comma)
-                builder.Append(',');
-            builder.Append('\n');
-        }
-
-        private static string Escape(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return string.Empty;
-
-            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        }
-
         internal struct ScanResult
         {
             public int FilesScanned;
-            public bool PriorityWordImplemented;
+            public bool AlarmMaskImplemented;
             public bool SubtitleSignal64Bytes;
             public bool StringQueueRemoved;
             public bool BlackBoxDumpRoutePresent;

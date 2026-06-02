@@ -1,6 +1,6 @@
 ﻿# PDA Encyclopedia Streamer
 
-Owner: SHINOBU_130 / Echelon 8 Presentation & UX.
+Owner: `PDAEncyclopediaStreamer` / Echelon 8 Presentation & UX.
 
 Source anchors: `Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs`, `Assets/_Project/Scripts/UI/Editor/PDAEncyclopediaTunerWindow.cs`.
 
@@ -48,7 +48,8 @@ Signals:
 
 - `ScanCompleteSignal` unlocks lore with precise AUP metadata.
 
-- `LoreFragmentScannedSignal` unlocks by hash and reuses the last known discovery AUP when no precise position is present.
+- `LoreFragmentScannedSignal` unlocks by hash and carries scanner/applied-lore AUP when `FlagHasAup` is set. Hash-only legacy producers must clear `FlagHasAup`; PDA falls back to last known discovery AUP only for those legacy payloads.
+- When `FlagPairedScanComplete` is set and the same snapshot already contains a matching `ScanCompleteSignal`, PDA skips the lore-fragment unlock to avoid duplicate state writes. Other consumers still receive both unmanaged signal views.
 
 Scalability:
 
@@ -62,12 +63,12 @@ Scalability:
 
 Telemetry:
 
-- Runtime state flags encode active source at bits `8..9`.
-- Values: `1 = H8LR`, `2 = Babel fallback`, `3 = Vault mock`.
+- Runtime state flags encode active source at bits `8..10`.
+- Values: `1 = H8LR`, `2 = Babel fallback`, `3 = Vault mock`, `4 = Data Monolith AppliedLore`.
 - Black-box ring packs stream state in low byte and source/canvas bits above.
 
-- `Data/Lore/Encyclopedia.h8bin` is now claimed by SHINOBU_130 through the narrow H8LR reader. The older Narrative `LoreMmfEncyclopedia` still expects H8LE and is not treated as an H8LR reader.
+- `Data/Lore/Encyclopedia.h8bin` is claimed by `PDAEncyclopediaStreamer` through the narrow H8LR reader. The older Narrative `LoreMmfEncyclopedia` still expects H8LE and is not treated as an H8LR reader.
 
 Failure evidence:
 
-- On invalid UTF-8/fault detection the streamer dumps the fixed telemetry ring to both `Docs/AgentLogs/Dump_SHINOBU_130.bin` and `Docs/AgentLogs/Dump_PDA_STREAMER.bin`.
+- On invalid UTF-8/fault detection the streamer dumps the fixed telemetry ring to `Docs/AgentLogs/Dump_PDAEncyclopediaStreamer_BlackBox.bin`.

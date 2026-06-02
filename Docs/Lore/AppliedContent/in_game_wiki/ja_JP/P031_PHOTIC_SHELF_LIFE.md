@@ -1,0 +1,30 @@
+---
+packet_id: P031_PHOTIC_SHELF_LIFE
+article_id: hecton8.photic_shelf_life
+locale: ja_JP
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# 有光棚の生命
+
+有光棚は対照層だ。下層のケーブル礁や修復痕に入る前に、HECTON-8本来の海洋生態が残ることを示す。
+
+## Scanner
+
+浅い棚の生物は明るく騒がしく、ほぼ未改造だ。表層の月は死んでいない。
+
+## Terminal
+
+棚調査: 生体マット、透明な摂食種、pressureweed、経路藻はまだAtlas修復支配の外にある。
+
+## Audio
+
+最初の生きた水は慈悲ではない。基準線だ。
+
+## Field Note
+
+美しさは対照標本だ。
+
+<!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/ja_JP. -->

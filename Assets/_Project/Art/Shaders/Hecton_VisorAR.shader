@@ -197,10 +197,10 @@ Shader "Hidden/Hecton8/VisorAR"
             float SegmentBox(float2 uv, float2 center, float2 halfSize)
             {
                 float2 d = abs(uv - center) - halfSize;
-                float2 outside = max(d, 0.0);
-                float outside = max(outside.x, outside.y);
+                float2 outsideVec = max(d, 0.0);
+                float outsideDistance = max(outsideVec.x, outsideVec.y);
                 float inside = min(max(d.x, d.y), 0.0);
-                return saturate(1.0 - (outside + inside) * 40.0);
+                return saturate(1.0 - (outsideDistance + inside) * 40.0);
             }
 
             float DigitSegmentMask(float digit, float segment)

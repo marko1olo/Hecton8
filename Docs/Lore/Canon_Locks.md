@@ -63,6 +63,7 @@ This file records what is fixed enough to build against. It does not replace `Lo
 
 - Delivery asset: automated or skeleton-crew salvage carrier under contract/debt/claim-pool logic.
 - Working carrier identity: `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so this name fits current data.
+- Black Keel ownership model: publicly Aegir claim-pool infrastructure; legally debt-impounded / insurance-custody tender; secretly exposed to Deep Reach priority hooks in payload recovery, route certificates, quarantine, and old claim law.
 - Carrier is an Aegir-system workhorse, not the whole interstellar civilization.
 - Carrier holds around Aegir or a high transfer orbit, not safely parked over HECTON-8.
 - Player descends by capsule / bathy-drop package.
@@ -76,6 +77,7 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - Real mission: Xenon-Omega process control, Atlas-6 autonomous governance, pressure-biological exploitation, foothold in Aegir.
 - Xenon-Omega is a pressure-stable material/process family: xenon-rich clathrate/defect lattices plus local brine, mineral, biological, and industrial catalysts. It is valuable for extreme computation and high-energy containment, and Atlas-6 uses it as part of its pressure-world repair/compute substrate.
 - Marauder slang for Xenon-Omega: `blue debt`. Technical field slang: `pressure glass`. Deep Reach sanitized wording: `XO continuity substrate` or `extreme-environment process substrate`.
+- Blue debt behavior: valuable samples require pressure-rated containment, can carry a weak Atlas-compatible pressure-harmonic signal, and may carry industrial/ecological contamination. It is not magic and not a horror-virus.
 - HECTON-8 has many other resources: metals, sulfides, salts, noble-gas pockets, volatiles, vent chemistry, pressure ceramics, biofibers, enzymes, photoproteins, salvage hardware, and Atlas-altered biometal.
 - Deep Reach designed systems to make life/death decisions under interstellar delay and profit logic.
 - Deep Reach's post-2147 lie: unrecoverable geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The true hidden chain is asset priority, Xenon-Omega continuity, Atlas directive weighting, and worker lockout.
@@ -104,5 +106,7 @@ This file records what is fixed enough to build against. It does not replace `Lo
 
 - Multiple endings are desired.
 - A material/partial ending can exist without full truth, but it should be bitter, incomplete, or morally compromised.
+- Minimum false-ending families: Material Ending (real payout / truth failure) and Partial Exit (same seed can continue, but pressure worsens).
+- Player motive arc: professional interest -> recovered names -> Barnard/frontier link -> contract trap -> final agency. Do not start with open ex-Deep-Reach backstory unless reopened.
 - Final question candidate:
   - Do you sell a crime scene back to the people who made it, preserve a broken guardian that no longer understands humans cleanly, or make the truth public and lose control over what happens next?

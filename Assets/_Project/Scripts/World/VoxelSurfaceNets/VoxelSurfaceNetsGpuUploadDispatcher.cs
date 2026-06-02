@@ -60,7 +60,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             _vertexBack = CreateLockBuffer(GraphicsBuffer.Target.Structured, vertexCapacity, UnsafeUtility.SizeOf<VoxelVertexDTO>());
             _indexFront = CreateLockBuffer(GraphicsBuffer.Target.Index, indexCapacity, UnsafeUtility.SizeOf<uint>());
             _indexBack = CreateLockBuffer(GraphicsBuffer.Target.Index, indexCapacity, UnsafeUtility.SizeOf<uint>());
-            _indirectArgs = CreateLockBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, UnsafeUtility.SizeOf<VoxelSurfaceIndirectArgsDTO>());
+            _indirectArgs = CreateLockBuffer(GraphicsBuffer.Target.IndirectArguments, 1, UnsafeUtility.SizeOf<VoxelSurfaceIndirectArgsDTO>());
             _activeSet = 0;
             _maxVertices = vertexCapacity;
             _maxIndices = indexCapacity;
@@ -185,9 +185,17 @@ namespace Hecton8.World.VoxelSurfaceNets
                 }
 
                 sourceLeaseHeld = true;
+                long uploadBytes =
+                    GraphicsBufferUploadUtility.EstimateUploadBytes<VoxelVertexDTO>(vertexCount) +
+                    GraphicsBufferUploadUtility.EstimateUploadBytes<uint>(indexCount) +
+                    GraphicsBufferUploadUtility.EstimateUploadBytes<VoxelSurfaceIndirectArgsDTO>(1);
+                if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
+                    return false;
+
                 bool vertexLocked = false;
                 bool indexLocked = false;
                 bool indirectArgsLocked = false;
+                bool uploadScheduled = false;
                 try
                 {
                     NativeArray<VoxelVertexDTO> lockedVertices = vertexBuffer.LockBufferForWrite<VoxelVertexDTO>(0, vertexCount);
@@ -208,6 +216,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                     copyJob.IndexCount = indexCount;
                     uploadDependency = copyJob.Schedule(inputDependency);
                     _pendingUploadDependency = uploadDependency;
+                    uploadScheduled = true;
                 }
                 catch
                 {
@@ -224,6 +233,13 @@ namespace Hecton8.World.VoxelSurfaceNets
                     states[chunkIndex] = state;
                     uploadDependency = inputDependency;
                     return false;
+                }
+                finally
+                {
+                    if (uploadScheduled)
+                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                    else
+                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
                 }
 
                 state.Stage = (byte)VoxelMeshingStage.Uploading;

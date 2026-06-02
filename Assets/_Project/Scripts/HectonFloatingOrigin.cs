@@ -906,8 +906,8 @@ namespace Hecton8.Core
                     nextShiftSequence,
                     out aupScheduleInfo);
 
+                CompleteAupRebaseBeforeSceneMutation(ref aupRebaseHandle);
                 ApplyOriginShiftToCachedRootTransforms(shiftOffset);
-                await AwaitTransformShiftJobAsync(aupRebaseHandle, cancellationToken);
                 if (vault != null)
                 {
                     AupOriginShiftCoordinator.ReleaseScheduledRebaseLocks(vault, in aupScheduleInfo);
@@ -1172,6 +1172,14 @@ namespace Hecton8.Core
             {
                 DispatcherJobSwap.TryComplete(ref handle, true);
             }
+        }
+
+        private static void CompleteAupRebaseBeforeSceneMutation(ref JobHandle handle)
+        {
+            // Origin shift is the only legal mutation window for these DataVault AUP views.
+            // Completing here prevents one-frame NativeArray alias exposure while transforms,
+            // tethers, telemetry, and physics owners are rebased.
+            DispatcherJobSwap.TryComplete(ref handle, true);
         }
 
         private async Awaitable BroadcastOriginShiftAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)

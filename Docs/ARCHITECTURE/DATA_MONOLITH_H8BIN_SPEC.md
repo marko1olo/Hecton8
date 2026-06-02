@@ -1,6 +1,6 @@
 ﻿# Data Monolith H8BIN Spec
 
-Date: 2026-05-26
+Date: 2026-06-01
 Status: STATIC FILE PRESENT / HEADER PARSE RECORDED / UNITY RUNTIME PROOF PENDING
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC / STATIC_SOURCE / H8BIN_HEADER_PARSE
@@ -10,20 +10,20 @@ Evidence class: STATIC_DOC / STATIC_SOURCE / H8BIN_HEADER_PARSE
 | Item | Value |
 |---|---|
 | runtime payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
-| current workspace payload status | present; `1,064,384` bytes |
+| current workspace payload status | present; `1,804,864` bytes |
 | H8DM header size | `64` bytes |
 | H8DM directory size | `64` bytes |
 | H8DM format version | `2` |
-| H8DM schema hash | `0x33313331` |
-| current checksum64 | `0x19D880780D6E1B46` |
-| section count | `26` |
+| H8DM schema hash | `0x33313332` |
+| current checksum64 | `0xA85210353432862A` |
+| section count | `28` |
 | source data root | `Assets/_SourceData/DataMonolith` |
 | bake output | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | editor menu | `Hecton8/Data Monolith/Bake Static Data` |
 
 The Data Monolith stores immutable static data. It is not the save container.
 
-DTO structs are byte-exact binary records. The current hard contract is `StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)`; editor layout validation rejects missing Pack=1 before bake/import proof.
+DTO structs are byte-exact binary records. The current hard contract is explicit 8-byte-safe layout: `StructLayout(LayoutKind.Explicit, Size = ...)` with fixed offsets. Runtime `Pack=1` is rejected; packed file-format records must be copied into aligned runtime structs before NativeArray, Burst, SignalBus, telemetry, save staging, or GPU upload use.
 
 Cold boot loading contract:
 

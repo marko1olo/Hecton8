@@ -250,6 +250,25 @@ namespace Hecton8.Inventory
             _isDispatching = false;
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorTeardownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            UnityEditor.EditorApplication.quitting -= ResetStaticState;
+            UnityEditor.EditorApplication.quitting += ResetStaticState;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                ResetStaticState();
+        }
+#endif
+
         /// <summary>
         /// Registers a listener for deferred inventory events.
         /// </summary>
@@ -536,6 +555,9 @@ namespace Hecton8.Inventory
 
         private static void EnsureInitialized()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents

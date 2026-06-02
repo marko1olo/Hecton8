@@ -1,0 +1,278 @@
+#pragma kernel GenerateAlbedo
+#pragma kernel GenerateNormal
+#pragma kernel GenerateMask
+
+RWTexture2D<float4> _BakerOutput;
+
+float4 _BakerTextureSize;     // x=width, y=height, z=variant(0 organic, 1 mineral, 2 industrial), w=reserved
+uint _BakerSeed;              // integer seed; never packed through float precision
+float4 _BakerColorA;          // low/base gradient
+float4 _BakerColorB;          // high/accent gradient
+float4 _BakerColorC;          // rust/biolum/mineral vein color
+float4 _BakerNoiseParams;     // x=scale, y=pore density, z=rust spread, w=edge wear
+float4 _BakerSurfaceParams;   // x=normal strength, y=metallic, z=roughness, w=emissive
+float4 _BakerQualityParams;   // x=GlobalQualityWeight, y=detail weight, z=pore weight, w=reserved
+
+static const float HECTON_EPSILON = 0.000001;
+
+uint HectonHash(uint state)
+{
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
+}
+
+float HectonHash01(uint state)
+{
+    return (HectonHash(state) & 0x00FFFFFFu) / 16777215.0;
+}
+
+uint HectonBakerSeed()
+{
+    return max(_BakerSeed, 1u);
+}
+
+float HectonSeedFloat(uint salt)
+{
+    return HectonHash01(HectonBakerSeed() ^ salt) * 64.0;
+}
+
+float3 HectonSafeNormalize(float3 value, float3 fallback)
+{
+    float lenSq = dot(value, value);
+    return isfinite(lenSq) && lenSq > HECTON_EPSILON
+        ? value * rsqrt(lenSq)
+        : fallback;
+}
+
+float3 HectonHashGradient(int3 cell)
+{
+    uint seed =
+        (uint)(cell.x * 73856093) ^
+        (uint)(cell.y * 19349663) ^
+        (uint)(cell.z * 83492791) ^
+        HectonBakerSeed();
+
+    float3 g = float3(
+        HectonHash01(seed),
+        HectonHash01(seed ^ 0x68bc21ebu),
+        HectonHash01(seed ^ 0x02e5be93u)) * 2.0 - 1.0;
+
+    float lenSq = max(dot(g, g), HECTON_EPSILON);
+    return g * rsqrt(lenSq);
+}
+
+float HectonGradientNoise3D(float3 p)
+{
+    int3 cell = (int3)floor(p);
+    float3 f = frac(p);
+    float3 u = f * f * (3.0 - 2.0 * f);
+
+    float n000 = dot(HectonHashGradient(cell + int3(0, 0, 0)), f - float3(0, 0, 0));
+    float n100 = dot(HectonHashGradient(cell + int3(1, 0, 0)), f - float3(1, 0, 0));
+    float n010 = dot(HectonHashGradient(cell + int3(0, 1, 0)), f - float3(0, 1, 0));
+    float n110 = dot(HectonHashGradient(cell + int3(1, 1, 0)), f - float3(1, 1, 0));
+    float n001 = dot(HectonHashGradient(cell + int3(0, 0, 1)), f - float3(0, 0, 1));
+    float n101 = dot(HectonHashGradient(cell + int3(1, 0, 1)), f - float3(1, 0, 1));
+    float n011 = dot(HectonHashGradient(cell + int3(0, 1, 1)), f - float3(0, 1, 1));
+    float n111 = dot(HectonHashGradient(cell + int3(1, 1, 1)), f - float3(1, 1, 1));
+
+    float nx00 = lerp(n000, n100, u.x);
+    float nx10 = lerp(n010, n110, u.x);
+    float nx01 = lerp(n001, n101, u.x);
+    float nx11 = lerp(n011, n111, u.x);
+    float nxy0 = lerp(nx00, nx10, u.y);
+    float nxy1 = lerp(nx01, nx11, u.y);
+    return saturate(lerp(nxy0, nxy1, u.z) * 0.5 + 0.5);
+}
+
+float HectonSimplexFbm(float3 p)
+{
+    float quality = saturate(_BakerQualityParams.x);
+    float amplitude = 0.54;
+    float sum = 0.0;
+    float norm = 0.0;
+
+    [unroll]
+    for (int octave = 0; octave < 4; octave++)
+    {
+        float octaveGate = lerp(1.0, saturate(quality * (1.35 - (float)octave * 0.18)), step(0.5, (float)octave));
+        float weightedAmplitude = amplitude * octaveGate;
+        sum += HectonGradientNoise3D(p) * weightedAmplitude;
+        norm += weightedAmplitude;
+        p = p * 2.031 + float3(19.17, 31.43, 47.61);
+        amplitude *= 0.49;
+    }
+
+    return sum / max(norm, HECTON_EPSILON);
+}
+
+float HectonVoronoi3D(float3 p)
+{
+    int3 baseCell = (int3)floor(p);
+    float3 f = frac(p);
+    float closest = 32.0;
+
+    [unroll]
+    for (int z = -1; z <= 1; z++)
+    {
+        [unroll]
+        for (int y = -1; y <= 1; y++)
+        {
+            [unroll]
+            for (int x = -1; x <= 1; x++)
+            {
+                int3 c = baseCell + int3(x, y, z);
+                uint seed =
+                    (uint)(c.x * 73856093) ^
+                    (uint)(c.y * 19349663) ^
+                    (uint)(c.z * 83492791) ^
+                    HectonBakerSeed();
+                float3 jitter = float3(
+                    HectonHash01(seed),
+                    HectonHash01(seed ^ 0x9e3779b9u),
+                    HectonHash01(seed ^ 0x85ebca6bu));
+                float3 delta = float3(x, y, z) + jitter - f;
+                closest = min(closest, dot(delta, delta));
+            }
+        }
+    }
+
+    return saturate(sqrt(closest));
+}
+
+float HectonHeight(float2 uv)
+{
+    float quality = saturate(_BakerQualityParams.x);
+    float scale = max(_BakerNoiseParams.x, 0.01);
+    float poreScale = max(_BakerNoiseParams.y, 0.01);
+    float3 p = float3(uv * scale, HectonSeedFloat(0x16050001u));
+    float fbm = HectonSimplexFbm(p);
+    float cellular = (1.0 - HectonVoronoi3D(float3(uv * scale * poreScale, HectonSeedFloat(0x16050002u)))) * lerp(0.50, 1.0, quality);
+    float layered = HectonSimplexFbm(p * 0.37 + float3(11.3, 7.1, 5.9)) * lerp(0.20, 1.0, quality);
+    return saturate(fbm * lerp(0.72, 0.58, quality) + cellular * lerp(0.20, 0.28, quality) + layered * lerp(0.08, 0.14, quality));
+}
+
+float HectonHeightClamped(float2 uv)
+{
+    return HectonHeight(saturate(uv));
+}
+
+float4 HectonVariantWeights()
+{
+    float variant = clamp(floor(_BakerTextureSize.z + 0.5), 0.0, 2.0);
+    float organic = 1.0 - step(0.5, abs(variant - 0.0));
+    float mineral = 1.0 - step(0.5, abs(variant - 1.0));
+    float industrial = 1.0 - step(0.5, abs(variant - 2.0));
+    float sum = max(organic + mineral + industrial, 1.0);
+    return float4(organic / sum, mineral / sum, industrial / sum, 0.0);
+}
+
+float HectonEdgeWear(float2 uv, float height)
+{
+    float2 d = abs(uv * 2.0 - 1.0);
+    float border = smoothstep(0.58, 0.98, max(d.x, d.y));
+    float ridge = smoothstep(0.58, 0.92, height);
+    return saturate(max(border, ridge) * saturate(_BakerNoiseParams.w));
+}
+
+float HectonCurvature(float2 uv, float2 invSize, float centerHeight)
+{
+    float left = HectonHeightClamped(uv - float2(invSize.x, 0.0));
+    float right = HectonHeightClamped(uv + float2(invSize.x, 0.0));
+    float down = HectonHeightClamped(uv - float2(0.0, invSize.y));
+    float up = HectonHeightClamped(uv + float2(0.0, invSize.y));
+    float laplacian = abs(left + right + down + up - centerHeight * 4.0);
+    return saturate(laplacian * lerp(5.0, 12.0, saturate(_BakerQualityParams.x)));
+}
+
+float HectonRustMask(float2 uv, float2 invSize, float centerHeight, float wear, float frequency, uint salt)
+{
+    float spread = saturate(_BakerNoiseParams.z);
+    float rustNoise = HectonSimplexFbm(float3(uv * frequency * _BakerQualityParams.y, HectonSeedFloat(salt)));
+    float noiseMask = smoothstep(1.0 - max(spread, 0.001), 1.0, rustNoise) * step(0.001, spread);
+    float curvature = HectonCurvature(uv, invSize, centerHeight);
+    float catchment = saturate(curvature * 1.35 + wear * 0.65);
+    return saturate(noiseMask * catchment);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateAlbedo(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width = (uint)max(_BakerTextureSize.x, 1.0);
+    uint height = (uint)max(_BakerTextureSize.y, 1.0);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 invSize = 1.0 / float2(width, height);
+    float2 uv = ((float2)dispatchThreadId.xy + 0.5) * invSize;
+    float h = HectonHeight(uv);
+    float pores = (1.0 - HectonVoronoi3D(float3(uv * _BakerNoiseParams.x * _BakerNoiseParams.y, HectonSeedFloat(0x16050003u)))) * _BakerQualityParams.z;
+    float wear = HectonEdgeWear(uv, h);
+    float rust = HectonRustMask(uv, invSize, h, wear, 7.0, 0x16050004u);
+    float4 weights = HectonVariantWeights();
+
+    float3 organicColor = lerp(_BakerColorA.rgb, _BakerColorB.rgb, h) + _BakerColorC.rgb * pores * _BakerSurfaceParams.w;
+    float3 mineralColor = lerp(_BakerColorA.rgb * 0.82, _BakerColorB.rgb * 1.18, smoothstep(0.22, 0.86, h));
+    float3 industrialColor = lerp(_BakerColorA.rgb, _BakerColorB.rgb, wear) * lerp(1.0, 0.54, rust) + _BakerColorC.rgb * rust;
+    float3 color = organicColor * weights.x + mineralColor * weights.y + industrialColor * weights.z;
+
+    _BakerOutput[dispatchThreadId.xy] = float4(saturate(color), 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateNormal(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width = (uint)max(_BakerTextureSize.x, 1.0);
+    uint height = (uint)max(_BakerTextureSize.y, 1.0);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 invSize = 1.0 / float2(width, height);
+    float2 uv = ((float2)dispatchThreadId.xy + 0.5) * invSize;
+    float left = HectonHeightClamped(uv - float2(invSize.x, 0.0));
+    float right = HectonHeightClamped(uv + float2(invSize.x, 0.0));
+    float down = HectonHeightClamped(uv - float2(0.0, invSize.y));
+    float up = HectonHeightClamped(uv + float2(0.0, invSize.y));
+    float strength = max(_BakerSurfaceParams.x, 0.0);
+    float3 n = HectonSafeNormalize(float3((left - right) * strength, (down - up) * strength, 1.0), float3(0.0, 0.0, 1.0));
+
+    _BakerOutput[dispatchThreadId.xy] = float4(n * 0.5 + 0.5, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateMask(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width = (uint)max(_BakerTextureSize.x, 1.0);
+    uint height = (uint)max(_BakerTextureSize.y, 1.0);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 invSize = 1.0 / float2(width, height);
+    float2 uv = ((float2)dispatchThreadId.xy + 0.5) * invSize;
+    float h = HectonHeight(uv);
+    float pores = (1.0 - HectonVoronoi3D(float3(uv * _BakerNoiseParams.x * _BakerNoiseParams.y, HectonSeedFloat(0x16050005u)))) * _BakerQualityParams.z;
+    float wear = HectonEdgeWear(uv, h);
+    float rust = HectonRustMask(uv, invSize, h, wear, 9.0, 0x16050006u);
+    float4 weights = HectonVariantWeights();
+
+    float organicMetal = _BakerSurfaceParams.y * 0.08;
+    float mineralMetal = _BakerSurfaceParams.y * 0.18;
+    float industrialMetal = saturate(_BakerSurfaceParams.y * lerp(1.0, 0.22, rust));
+    float metallic = organicMetal * weights.x + mineralMetal * weights.y + industrialMetal * weights.z;
+
+    float roughOrganic = saturate(_BakerSurfaceParams.z + pores * 0.28);
+    float roughMineral = saturate(_BakerSurfaceParams.z + (1.0 - h) * 0.18);
+    float roughIndustrial = saturate(_BakerSurfaceParams.z + rust * 0.42 - wear * 0.18);
+    float roughness = roughOrganic * weights.x + roughMineral * weights.y + roughIndustrial * weights.z;
+
+    float ao = saturate(1.0 - pores * 0.62 - (1.0 - h) * 0.18);
+    float emissive = saturate(_BakerSurfaceParams.w * smoothstep(0.72, 1.0, pores + weights.x * h * 0.28));
+
+    // M.R.A.O. packing: R=Metallic, G=Roughness, B=Ambient Occlusion, A=Emissive/Biolum.
+    _BakerOutput[dispatchThreadId.xy] = float4(metallic, roughness, ao, emissive);
+}

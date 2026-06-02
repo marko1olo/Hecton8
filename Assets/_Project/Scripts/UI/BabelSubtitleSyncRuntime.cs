@@ -160,6 +160,7 @@ namespace Hecton8.UI
         private static uint s_uiOptimizationWriteSequence;
         private static int s_editorAudioFrameOffset;
         private static bool s_initialized;
+        private static bool s_signalBusInitialized;
         private static bool s_dispatcherRegistered;
         private static bool s_layoutValid;
 
@@ -199,8 +200,23 @@ namespace Hecton8.UI
             s_uiOptimizationWriteSequence = 0u;
             s_editorAudioFrameOffset = 0;
             s_initialized = false;
+            s_signalBusInitialized = false;
             s_dispatcherRegistered = false;
             s_layoutValid = false;
+        }
+
+        public static void BindDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(s_vault, vault))
+                return;
+
+            ReleaseAllSubtitleMutationBuffers();
+            ReleaseSubtitleBuffers(s_vault);
+            s_cueMutationGuardVault = null;
+            s_telemetryMutationGuardVault = null;
+            s_uiOptimizationTelemetryMutationGuardVault = null;
+            s_vault = vault;
+            s_initialized = false;
         }
 
         public static bool EnsureInitialized()
@@ -209,23 +225,11 @@ namespace Hecton8.UI
             if (!s_layoutValid)
                 return false;
 
-            SignalBus<SubtitleCueSignal>.Configure(
-                SubtitleCueSignal.ExpectedCapacity,
-                maxFrameSignals: SubtitleCueSignal.MaxFrameSignals,
-                lowTierFrameSignals: SubtitleCueSignal.LowTierFrameSignals,
-                laneHash: SubtitleCueLaneHash);
-            SignalBus<SubtitleCueSignal>.EnsureInitialized();
+            EnsureSignalBusInitializedCold();
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_vault;
             if (vault == null)
                 return false;
-
-            if (s_vault != null && !ReferenceEquals(s_vault, vault))
-            {
-                ReleaseAllSubtitleMutationBuffers();
-                ReleaseSubtitleBuffers(s_vault);
-                s_initialized = false;
-            }
 
             if (s_initialized &&
                 ReferenceEquals(s_vault, vault) &&
@@ -287,6 +291,20 @@ namespace Hecton8.UI
             s_initialized = true;
             TryRegisterDispatcher();
             return true;
+        }
+
+        private static void EnsureSignalBusInitializedCold()
+        {
+            if (s_signalBusInitialized)
+                return;
+
+            SignalBus<SubtitleCueSignal>.Configure(
+                SubtitleCueSignal.ExpectedCapacity,
+                maxFrameSignals: SubtitleCueSignal.MaxFrameSignals,
+                lowTierFrameSignals: SubtitleCueSignal.LowTierFrameSignals,
+                laneHash: SubtitleCueLaneHash);
+            SignalBus<SubtitleCueSignal>.EnsureInitialized();
+            s_signalBusInitialized = true;
         }
 
         public static void PreparePresentationFrame()
@@ -1282,7 +1300,7 @@ namespace Hecton8.UI
             if (s_dispatcherRegistered || !Application.isPlaying)
                 return;
 
-            s_dispatcherRegistered = GlobalRegistry.TryRegisterDispatcherSystem(s_dispatcherBridge);
+            s_dispatcherRegistered = SystemDispatcher.Register(s_dispatcherBridge);
         }
 
         private ref struct EvaluateSubtitleCuesPhase
@@ -1353,14 +1371,13 @@ namespace Hecton8.UI
         private sealed class DispatcherBridge : IDispatcherSystem
         {
             public uint GetSystemIdHash() => SystemHash;
-            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PreSimulation;
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.VisualSync;
             public byte GetBucketId() => 0;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
             public void PreSimulationTick(in DispatcherTimingDTO timing)
             {
-                PreparePresentationFrame();
             }
 
             public JobHandle ScheduleSimulation(
@@ -1378,6 +1395,7 @@ namespace Hecton8.UI
 
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
+                PreparePresentationFrame();
                 TryCompletePendingCueEvaluation();
             }
         }

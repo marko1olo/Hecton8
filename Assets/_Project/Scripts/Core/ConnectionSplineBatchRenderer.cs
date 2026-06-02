@@ -273,7 +273,7 @@ namespace Hecton8.Core
 
         private void TryRegisterSlowTickable()
         {
-            if (_registeredSlowTick || !Application.isPlaying || !_dispatcherAvailable)
+            if (_registeredSlowTick || !Application.isPlaying || !_dispatcherAvailable || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -290,7 +290,7 @@ namespace Hecton8.Core
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrameTick || !_dispatcherAvailable)
+            if (_registeredLateFrameTick || !_dispatcherAvailable || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredLateFrameTick = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.Environment);

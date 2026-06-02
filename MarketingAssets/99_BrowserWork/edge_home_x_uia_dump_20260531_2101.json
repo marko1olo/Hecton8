@@ -1,0 +1,184 @@
+﻿[
+  {
+    "depth": 0,
+    "name": "Home / X - MAT - Microsoft​ Edge",
+    "control_type": "Window",
+    "class_name": "Chrome_WidgetWin_1",
+    "automation_id": "",
+    "rect": [
+      -8,
+      -8,
+      1928,
+      1088
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "Intermediate D3D Window",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1920,
+      1078
+    ]
+  },
+  {
+    "depth": 1,
+    "name": "Home / X - Microsoft Edge",
+    "control_type": "Pane",
+    "class_name": "BrowserRootView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 2,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "NonClientView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "EdgeBrowserFrameViewWin",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 4,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "BrowserCaptionButtonContainer",
+    "automation_id": "",
+    "rect": [
+      1740,
+      0,
+      1920,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Minimize",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_2",
+    "rect": [
+      1741,
+      0,
+      1801,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Restore",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_4",
+    "rect": [
+      1800,
+      0,
+      1860,
+      52
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Close",
+    "control_type": "Button",
+    "class_name": "EdgeWindowsCaptionButton",
+    "automation_id": "view_7",
+    "rect": [
+      1860,
+      0,
+      1920,
+      52
+    ]
+  },
+  {
+    "depth": 4,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "BrowserView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "TopContainerView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      104
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "SidebarContentsSplitView",
+    "automation_id": "",
+    "rect": [
+      0,
+      104,
+      1921,
+      1079
+    ]
+  },
+  {
+    "depth": 5,
+    "name": "Tab bar",
+    "control_type": "Tab",
+    "class_name": "EdgeTabStripRegionView",
+    "automation_id": "",
+    "rect": [
+      3,
+      0,
+      1742,
+      54
+    ]
+  },
+  {
+    "depth": 3,
+    "name": "",
+    "control_type": "Pane",
+    "class_name": "TopContainerOverlayView",
+    "automation_id": "",
+    "rect": [
+      0,
+      0,
+      1921,
+      1079
+    ]
+  }
+]

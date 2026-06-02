@@ -25,13 +25,16 @@ Do not make a marketing vanity page before Steam is ready.
 
 ## One-Line Pitch
 
-HECTON-8 is a single-player-first underwater survival game where pressure, machinery, salvage, and black-water exploration decide whether you make it back alive.
+Submerge is a single-player-first underwater survival game where pressure, machinery, salvage, and black-water exploration decide whether you make it back alive.
+
+Naming caveat: `Submerge` is the owner-selected public title candidate as of 2026-05-31. Keep `HOLD_NAMING_CONFLICT_REVIEW` until the exact-title Steam conflict and domain/social route are resolved.
 
 ## Factsheet Fields
 
 | Field | Value |
 |---|---|
-| Title | HECTON-8 |
+| Title | Submerge - HOLD_NAMING_CONFLICT_REVIEW |
+| Internal codename | HECTON-8 |
 | Genre | Single-player underwater survival / exploration / base systems |
 | Platforms | HOLD_PLATFORM_LIST_UNVERIFIED - publish only after owner/platform source exists. |
 | Release | HOLD_NO_RELEASE_WINDOW - do not publish a date/window from planning prose. |
@@ -46,23 +49,23 @@ HECTON-8 is a single-player-first underwater survival game where pressure, machi
 
 ```text
 PressKit/
-  Factsheet_HECTON8.md
+  Factsheet_Submerge.md
   Logos/
-    HECTON8_Logo_Light.png
-    HECTON8_Logo_Dark.png
-    HECTON8_Logo_Transparent.png
+    Submerge_Logo_Light.png
+    Submerge_Logo_Dark.png
+    Submerge_Logo_Transparent.png
   Capsules/
     Steam_HeaderCapsule.png
     Steam_SmallCapsule.png
     Steam_MainCapsule.png
     Steam_LibraryCapsule.png
   Screenshots/
-    HECTON8_Screenshot_01_PressureMachinery.png
-    HECTON8_Screenshot_02_SalvageRoute.png
-    HECTON8_Screenshot_03_BasePressureVessel.png
+    Submerge_Screenshot_01_PressureMachinery.png
+    Submerge_Screenshot_02_SalvageRoute.png
+    Submerge_Screenshot_03_BasePressureVessel.png
   Video/
-    HECTON8_Trailer_1080p.mp4
-    HECTON8_Short_20s_PressureWarning.mp4
+    Submerge_Trailer_1080p.mp4
+    Submerge_Short_20s_PressureWarning.mp4
   Creator/
     Creator_Key_Disclosure.md
     Coverage_Guidelines.md
@@ -79,13 +82,13 @@ Do not ask creators to hide sponsorship, payment, keys, or relationship.
 
 ## Website Copy Blocks
 
-### What Is HECTON-8?
+### What Is Submerge?
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, and black-water exploration. You survive by operating and repairing systems that keep the ocean outside.
+Submerge is a single-player-first underwater survival game about pressure, machinery, salvage, and black-water exploration. You survive by operating and repairing systems that keep the ocean outside.
 
 ### What Makes It Different?
 
-HECTON-8 is aimed at industrial deep-sea noir: corrosion, floodlights, instruments, worn machinery, hostile visibility, and a Seed Ship anomaly that makes the environment stop feeling neutral.
+Submerge is aimed at industrial deep-sea noir: corrosion, floodlights, instruments, worn machinery, hostile visibility, and a Seed Ship anomaly that makes the environment stop feeling neutral.
 
 ### Scope
 
@@ -108,6 +111,8 @@ Do not publish the site until:
 
 If accounts or a domain are reserved before Steam is ready, do not publish a fake launch page. Use a minimal holding state only when there is a real official contact route.
 
+2026-05-31 owner update: do not buy domains now. Keep domain work as search/name-risk notes only. Current state: `HOLD_NO_DOMAIN_PURCHASE`.
+
 ## 2026-05-19 Official Project Inbox Gate V0
 
 No social account, presskit, curator batch, key email, paid creator term, or public contact field should use a personal inbox, throwaway inbox, or agent-owned inbox.
@@ -121,6 +126,70 @@ Machine gate:
 - `ALLOW_OFFICIAL_INBOX_USE_VERIFIED` requires owner-approved durable address, vault item, owner-controlled recovery, 2FA enabled, backup codes stored in the vault, required labels/folders, approved reply identity, and public-contact approval when the inbox is published.
 
 Do not infer inbox permission from an address field alone.
+
+## 2026-05-31 Pre-Screenshot Owner Setup Packet V1
+
+This packet can be prepared now. It is non-secret. Passwords, 2FA seeds, backup codes, cookies, session tokens, and recovery codes must not be stored in docs or chat.
+
+Owner note, 2026-05-31: the owner authorized two personal Gmail accounts in chat for account work. Treat them as owner-supplied candidate login/recovery inboxes only. Do not store the raw addresses in docs. Do not publish a personal Gmail as press/support contact if a domain-based project inbox can be created. If a personal Gmail is used temporarily, keep it as accounts/recovery custody, not public identity.
+
+### Owner Tasks
+
+1. Pick the project identity route: domain-based email or durable provider inbox.
+2. Create the password manager vault structure before creating accounts.
+3. Store secrets only in the vault.
+4. Fill the non-secret custody fields below after the owner verifies them.
+5. Do not publish the inbox until public-contact approval is explicit.
+
+### Recommended Vault Item Names
+
+| Vault item | Purpose |
+|---|---|
+| `HECTON-8 / Domain Registrar` | Domain, DNS, renewal, recovery. |
+| `HECTON-8 / Official Inbox` | Main project email and recovery. |
+| `HECTON-8 / Steamworks` | Steamworks credentials and partner records after creation. |
+| `HECTON-8 / Social / YouTube` | YouTube brand account after creation. |
+| `HECTON-8 / Social / X` | X/Twitter account after creation. |
+| `HECTON-8 / Social / Bluesky` | Bluesky account after creation. |
+| `HECTON-8 / Audience Provider` | Newsletter/form provider after selection. |
+| `HECTON-8 / Support Local RU` | Boosty/DonationAlerts/VK Donut only if approved. |
+| `HECTON-8 / Platform Tax And Payout` | Non-public tax, bank, and payout records. |
+
+### Non-Secret Custody Fields
+
+| Field | Current state | Pass state |
+|---|---|---|
+| Project identity route | UNDECIDED | DOMAIN_EMAIL or DURABLE_PROVIDER_EMAIL |
+| Domain candidate | UNRECORDED_NOT_PUBLISHABLE | Owner-approved domain or HOLD_NO_DOMAIN |
+| Official inbox address | UNRECORDED_NOT_PUBLISHABLE | Owner-approved durable address |
+| Provider/domain | UNRECORDED_NOT_PUBLISHABLE | Owner-controlled provider/domain |
+| Vault item name | UNRECORDED_NOT_PUBLISHABLE | Exact vault item name, no secret value |
+| Recovery owner | NO | Owner-controlled recovery recorded in vault |
+| 2FA method chosen | NO | App/security-key/SMS decision recorded in vault |
+| Backup-code custody | NO | Stored in vault, not docs |
+| Labels/folders | NO | `Accounts`, `Creators`, `Press`, `Keys`, `Support`, `Legal`, `Receipts` |
+| Public contact approval | NO | Explicit owner approval after proof gates |
+
+### Browser Work Boundary
+
+Agent-opened browser tabs are not custody proof. A tab can start onboarding, but `official_inbox_custody_gate` stays held until the owner has completed login, recovery, 2FA, backup-code storage, labels, vault record, and public-contact approval.
+
+Do not ask for passwords or 2FA in chat. Do not record cookies, session tokens, app passwords, backup codes, or recovery codes.
+
+### Minimum No-Link Holding Page Draft
+
+```text
+Submerge
+Internal codename: HECTON-8
+
+Single-player deep-sea survival about pressure, machinery, salvage, and black-water exploration.
+
+Public screenshots, Steam page, and demo details will be posted when they are ready.
+
+Contact: HOLD_OFFICIAL_INBOX_PUBLICATION
+```
+
+Replace the contact line only after `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED` and public-contact approval are both true.
 
 Minimum owner-controlled inbox requirements:
 
@@ -172,7 +241,7 @@ Do not publish the inbox or use it for social registration until recovery owner,
 ### Allowed Holding Page
 
 ```text
-HECTON-8
+Submerge
 Single-player-first underwater survival about pressure, machinery, salvage, and black-water exploration.
 
 Public screenshots, Steam page, and demo details will be posted when they are ready.

@@ -10,6 +10,8 @@ Articles here are not automatically player-visible. Each entry can later be spli
 - Marauder field-note version;
 - spoiler/full writer version.
 
+Every mature entry should follow `ARTICLE_TEMPLATE.md` and define Article ID, Loc Namespace, runtime layer, content targets, localization status, first unlock, and related articles. The localization contract lives in `../Lore_Localization_Model.md`.
+
 ## Tone Rules
 
 - Write concrete physical facts first.
@@ -35,11 +37,14 @@ Use these headings when needed:
 - `ARTICLE_TEMPLATE.md`
 - `Aegir_System.md`
 - `Aegir_Route.md`
+- `Aegir_Astronomy_Reference.md`
 - `Aegir_Moon_System.md`
+- `Aegir_Moon_Catalog.md`
 - `Corporate_Claims.md`
 - `Dead_Claims.md`
 - `HECTON_8.md`
 - `HECTON8_Geology_Resources.md`
+- `HECTON8_Colony_Layout.md`
 - `HECTON8_Resource_Catalog.md`
 - `HECTON8_Flora_Fauna_Overview.md`
 - `Human_Domains.md`
@@ -54,10 +59,14 @@ Use these headings when needed:
 - `Strategic_Pressure_Resources.md`
 - `Xenon_Omega.md`
 - `Deep_Reach.md`
+- `Black_Keel_Ownership.md`
+- `Blue_Debt_Field_Behavior.md`
 - `Deep_Reach_Liability_Doctrine.md`
 - `Marauders.md`
 - `Player_Origin_Barnard_Yards.md`
+- `Player_Motive_Arc.md`
 - `Salvage_Carrier.md`
 - `Atlas_6.md`
 - `Atlas6_Original_Directive.md`
 - `Deep_Reach_2147_Cover_Story.md`
+- `False_Ending_Families.md`

@@ -26,6 +26,9 @@ namespace Hecton8.Audio.Synthesis
         public const uint TelemetryRingCapacity = 300u;
         public const uint FnvOffset = 2166136261u;
         public const uint FnvPrime = 16777619u;
+        public const float VwsDuckingTargetGain = 0.25f;
+        public const float VwsDuckingAttackSeconds = 0.1f;
+        public const float VwsDuckingReleaseSeconds = 0.1f;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -82,14 +85,8 @@ namespace Hecton8.Audio.Synthesis
         [FieldOffset(12)] public float PlaybackSpeed;
         [FieldOffset(16)] public float VolumeScalar;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] private byte _pad0;
-        [FieldOffset(25)] private byte _pad1;
-        [FieldOffset(26)] private byte _pad2;
-        [FieldOffset(27)] private byte _pad3;
-        [FieldOffset(28)] private byte _pad4;
-        [FieldOffset(29)] private byte _pad5;
-        [FieldOffset(30)] private byte _pad6;
-        [FieldOffset(31)] private byte _pad7;
+        [FieldOffset(24)] public float DuckingEnvelope01;
+        [FieldOffset(28)] public float SpeakerFloodDistortion01;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe ref VocalStateDTO AsRef(void* pointer)
@@ -559,8 +556,16 @@ namespace Hecton8.Audio.Synthesis
             bool mixOutput = mixIntoExistingOutput != 0;
             if ((stateRef.Flags & VocalBankConstants.StateFlagPlaying) == 0u)
             {
-                if (!mixOutput)
+                int inactiveSafeChannels = math.clamp(channels, 1, 8);
+                if (mixOutput)
+                {
+                    ApplyDuckingRelease(output, sampleCount, inactiveSafeChannels, codecRef.SampleRate, ref stateRef);
+                }
+                else
+                {
+                    stateRef.DuckingEnvelope01 = 0f;
                     OverwriteSilence(output, sampleCount, math.clamp(channels, 1, 8));
+                }
                 WriteTelemetry(frame, in stateRef, in codecRef, telemetry, counters);
                 return;
             }
@@ -576,8 +581,16 @@ namespace Hecton8.Audio.Synthesis
                 codecRef.FaultFlags |= VocalBankConstants.StateFlagBankMiss;
                 counters->FaultCount++;
                 counters->LastFaultFlags = stateRef.Flags;
-                if (!mixOutput)
+                int missingBankSafeChannels = math.clamp(channels, 1, 8);
+                if (mixOutput)
+                {
+                    ApplyDuckingRelease(output, sampleCount, missingBankSafeChannels, codecRef.SampleRate, ref stateRef);
+                }
+                else
+                {
+                    stateRef.DuckingEnvelope01 = 0f;
                     OverwriteSilence(output, sampleCount, math.clamp(channels, 1, 8));
+                }
                 WriteTelemetry(frame, in stateRef, in codecRef, telemetry, counters);
                 return;
             }
@@ -599,12 +612,17 @@ namespace Hecton8.Audio.Synthesis
             float speed = math.clamp(FiniteOrFallback(stateRef.PlaybackSpeed, 1f), 0.25f, 2f);
             float volume = math.saturate(FiniteOrFallback(stateRef.VolumeScalar, 1f)) *
                            math.saturate(FiniteOrFallback(codecRef.SpatialGain, 1f));
-            float distortion = math.saturate(FiniteOrFallback(codecRef.RadioDistortion01, 0f));
+            float distortion = math.saturate(math.max(
+                FiniteOrFallback(codecRef.RadioDistortion01, 0f),
+                FiniteOrFallback(stateRef.SpeakerFloodDistortion01, 0f)));
             int sampleStride = math.clamp((int)math.round(math.lerp(4f, 1f, smoothQuality)), 1, 4);
             float sourceAdvance = speed;
             byte* payload = bank + (int)codecRef.PayloadOffset;
             uint payloadLength = codecRef.PayloadByteLength;
             int safeChannels = math.clamp(channels, 1, 8);
+            float duckEnvelope = math.saturate(FiniteOrFallback(stateRef.DuckingEnvelope01, 0f));
+            float duckAttackAlpha = ResolveDuckingAlpha(codecRef.SampleRate, VocalBankConstants.VwsDuckingAttackSeconds);
+            float duckReleaseAlpha = ResolveDuckingAlpha(codecRef.SampleRate, VocalBankConstants.VwsDuckingReleaseSeconds);
             float peak = 0f;
             float sumSq = 0f;
             int written = 0;
@@ -640,11 +658,14 @@ namespace Hecton8.Audio.Synthesis
                 }
 
                 int outputIndex = frameIndex * safeChannels;
+                if (mixOutput)
+                    duckEnvelope = math.lerp(duckEnvelope, 1f, duckAttackAlpha);
+                float duckGain = math.lerp(1f, VocalBankConstants.VwsDuckingTargetGain, duckEnvelope);
                 for (int ch = 0; ch < safeChannels; ch++)
                 {
                     int destinationIndex = outputIndex + ch;
                     output[destinationIndex] = mixOutput
-                        ? math.clamp(output[destinationIndex] + finalSample, -1f, 1f)
+                        ? math.clamp((output[destinationIndex] * duckGain) + finalSample, -1f, 1f)
                         : finalSample;
                 }
 
@@ -665,13 +686,19 @@ namespace Hecton8.Audio.Synthesis
             for (; frameIndex < sampleCount; frameIndex++)
             {
                 int outputIndex = frameIndex * safeChannels;
+                if (mixOutput)
+                    duckEnvelope = math.lerp(duckEnvelope, 0f, duckReleaseAlpha);
+                float duckGain = math.lerp(1f, VocalBankConstants.VwsDuckingTargetGain, duckEnvelope);
                 for (int ch = 0; ch < safeChannels; ch++)
                 {
-                    if (!mixOutput)
+                    if (mixOutput)
+                        output[outputIndex + ch] *= duckGain;
+                    else
                         output[outputIndex + ch] = 0f;
                 }
             }
 
+            stateRef.DuckingEnvelope01 = duckEnvelope;
             float rms = written > 0 ? math.sqrt(sumSq / math.max(1, written)) : 0f;
             counters->LastFaultFlags = stateRef.Flags | codecRef.FaultFlags;
             counters->LastPhraseHashID = stateRef.PhraseHashID;
@@ -686,6 +713,37 @@ namespace Hecton8.Audio.Synthesis
             int total = sampleCount * channels;
             for (int i = 0; i < total; i++)
                 output[i] = 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyDuckingRelease(float* output, int sampleCount, int channels, uint sampleRate, ref VocalStateDTO state)
+        {
+            float envelope = math.saturate(FiniteOrFallback(state.DuckingEnvelope01, 0f));
+            if (envelope <= 0.000001f)
+            {
+                state.DuckingEnvelope01 = 0f;
+                return;
+            }
+
+            float alpha = ResolveDuckingAlpha(sampleRate, VocalBankConstants.VwsDuckingReleaseSeconds);
+            for (int frameIndex = 0; frameIndex < sampleCount; frameIndex++)
+            {
+                envelope = math.lerp(envelope, 0f, alpha);
+                float gain = math.lerp(1f, VocalBankConstants.VwsDuckingTargetGain, envelope);
+                int outputIndex = frameIndex * channels;
+                for (int ch = 0; ch < channels; ch++)
+                    output[outputIndex + ch] *= gain;
+            }
+
+            state.DuckingEnvelope01 = envelope <= 0.000001f ? 0f : envelope;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveDuckingAlpha(uint sampleRate, float timeSeconds)
+        {
+            float safeRate = math.max(8000f, (float)sampleRate);
+            float safeSeconds = math.max(0.001f, math.select(0.1f, timeSeconds, math.isfinite(timeSeconds)));
+            return math.saturate(1f - math.exp(-1f / (safeRate * safeSeconds)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

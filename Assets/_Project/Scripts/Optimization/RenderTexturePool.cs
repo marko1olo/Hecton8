@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -54,6 +55,9 @@ namespace Hecton8.Optimization
         private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private IRenderTextureLifecycleService _lifecycleTracker;
+        private IVramBudgetReadModel _vramMonitor;
+        private IVramPressureReadModel _vramPressure;
+        private bool _vramPressureTrimActive;
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextStatsLogTime;
@@ -114,6 +118,7 @@ namespace Hecton8.Optimization
         public void SlowTick()
         {
             DefragForCurrentScreenIfNeeded();
+            TrimForVramPressureIfNeeded();
         }
         
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
@@ -369,6 +374,18 @@ namespace Hecton8.Optimization
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.VRAMMonitorRuntime)
+            {
+                _vramMonitor = currentService as IVramBudgetReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
+            {
+                _vramPressure = currentService as IVramPressureReadModel;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterSlowTickable();
@@ -380,6 +397,8 @@ namespace Hecton8.Optimization
         private void CacheRegistryServicesCold()
         {
             _lifecycleTracker = GlobalRegistry.RenderTextureLifecycleService;
+            _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
+            _vramPressure = GlobalRegistry.VRAMPressureReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -437,6 +456,38 @@ namespace Hecton8.Optimization
                 }
             }
             pool.Clear();
+        }
+
+        private void TrimForVramPressureIfNeeded()
+        {
+            bool pressureActive = IsVramPoolTrimPressureActive();
+            if (!pressureActive)
+            {
+                _vramPressureTrimActive = false;
+                return;
+            }
+
+            if (_vramPressureTrimActive && TotalPooledCount == 0)
+                return;
+
+            _vramPressureTrimActive = true;
+            ClearAllPools(preserveScreenBuckets: true);
+        }
+
+        private bool IsVramPoolTrimPressureActive()
+        {
+            IVramPressureReadModel pressure = _vramPressure;
+            if (pressure != null && pressure.HasSample)
+            {
+                float pressureFactor = pressure.PressureFactor;
+                return math.saturate(math.select(0f, pressureFactor, math.isfinite(pressureFactor))) >= 0.85f;
+            }
+
+            IVramBudgetReadModel monitor = _vramMonitor;
+            return monitor != null &&
+                   (monitor.IsRenderTextureMemoryOverBudget ||
+                    monitor.IsTotalVRAMOverBudget ||
+                    monitor.PressureStateCode == VramPressureStateCodes.Critical);
         }
 
         private static int CountPool(Dictionary<ulong, Queue<RenderTexture>> pool)

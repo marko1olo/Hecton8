@@ -1,0 +1,67 @@
+---
+locale: es_ES
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+---
+
+# Archivo de campo HECTON-8
+
+- [Repisa del impacto](P001_CRASH_SHELF.md) `P001_CRASH_SHELF`
+- [Contacto Black Keel](P002_BLACK_KEEL_CONTACT.md) `P002_BLACK_KEEL_CONTACT`
+- [Marca Barnard](P003_BARNARD_MARK.md) `P003_BARNARD_MARK`
+- [Blue Debt](P004_BLUE_DEBT.md) `P004_BLUE_DEBT`
+- [Cicatriz de reparación](P005_REPAIR_SCAR.md) `P005_REPAIR_SCAR`
+- [Caché de claim muerto](P006_DEAD_CLAIM_CACHE.md) `P006_DEAD_CLAIM_CACHE`
+- [Escalera de salmuera](P007_BRINE_STAIR.md) `P007_BRINE_STAIR`
+- [Evacuación retenida](P008_EVACUATION_HOLD.md) `P008_EVACUATION_HOLD`
+- [Fábrica del fondo](P009_BOTTOM_FACTORY.md) `P009_BOTTOM_FACTORY`
+- [Ventana de carga](P010_PAYLOAD_WINDOW.md) `P010_PAYLOAD_WINDOW`
+- [Marcas de dominio 2190](P011_DOMAIN_MARKS_2190.md) `P011_DOMAIN_MARKS_2190`
+- [Espina de relés](P012_RELAY_SPINE.md) `P012_RELAY_SPINE`
+- [Clases de naves nearlight](P013_NEARLIGHT_SHIP_CLASSES.md) `P013_NEARLIGHT_SHIP_CLASSES`
+- [Ventana de ruta Aegir](P014_AEGIR_ROUTE_WINDOW.md) `P014_AEGIR_ROUTE_WINDOW`
+- [Libro Black Keel](P015_BLACK_KEEL_LEDGER.md) `P015_BLACK_KEEL_LEDGER`
+- [Estrella anfitriona de Aegir](P016_AEGIR_HOST_STAR.md) `P016_AEGIR_HOST_STAR`
+- [Escalera lunar de Aegir](P017_AEGIR_MOON_LADDER.md) `P017_AEGIR_MOON_LADDER`
+- [Geología ahogada](P018_HECTON8_DROWNED_GEOLOGY.md) `P018_HECTON8_DROWNED_GEOLOGY`
+- [Pila de recursos](P019_HECTON8_RESOURCE_STACK.md) `P019_HECTON8_RESOURCE_STACK`
+- [Registro ecológico](P020_HECTON8_ECOLOGY_REGISTRY.md) `P020_HECTON8_ECOLOGY_REGISTRY`
+- [Custodia Black Keel](P021_BLACK_KEEL_CUSTODY.md) `P021_BLACK_KEEL_CUSTODY`
+- [Daño de cápsula](P022_DROP_CAPSULE_DAMAGE.md) `P022_DROP_CAPSULE_DAMAGE`
+- [Reclamo Deep Reach](P023_DEEP_REACH_RETURN_CLAIM.md) `P023_DEEP_REACH_RETURN_CLAIM`
+- [Salida material](P024_FALSE_EXIT_MATERIAL.md) `P024_FALSE_EXIT_MATERIAL`
+- [Motivo profesional](P025_PROFESSIONAL_MOTIVE.md) `P025_PROFESSIONAL_MOTIVE`
+- [Libro de seis dominios](P026_SIX_DOMAIN_LEDGER.md) `P026_SIX_DOMAIN_LEDGER`
+- [Origen Barnard Yards](P027_BARNARD_YARDS_ORIGIN.md) `P027_BARNARD_YARDS_ORIGIN`
+- [Cálculo de tránsito sin FTL](P028_NO_FTL_TRANSIT_MATH.md) `P028_NO_FTL_TRANSIT_MATH`
+- [Doctrina Seed Ship](P029_SEED_SHIP_DOCTRINE.md) `P029_SEED_SHIP_DOCTRINE`
+- [Cadena de deuda de relé](P030_RELAY_CUSTODY_DEBT_CHAIN.md) `P030_RELAY_CUSTODY_DEBT_CHAIN`
+- [Vida de la plataforma fótica](P031_PHOTIC_SHELF_LIFE.md) `P031_PHOTIC_SHELF_LIFE`
+- [Escalera de presión](P032_PRESSURE_LADDER_DEPTH_BANDS.md) `P032_PRESSURE_LADDER_DEPTH_BANDS`
+- [Simbiosis de arrecife cable](P033_CABLE_REEF_SYMBIOSIS.md) `P033_CABLE_REEF_SYMBIOSIS`
+- [Fauna abisal de reparación](P034_ABYSSAL_REPAIR_FAUNA.md) `P034_ABYSSAL_REPAIR_FAUNA`
+- [Umbral fábrica-templo](P035_FACTORY_TEMPLE_THRESHOLD.md) `P035_FACTORY_TEMPLE_THRESHOLD`
+- [Ventana de vector de retorno](P036_RETURN_VECTOR_WINDOW.md) `P036_RETURN_VECTOR_WINDOW`
+- [Cadena de salida cobarde](P037_COWARD_EXIT_CHAIN.md) `P037_COWARD_EXIT_CHAIN`
+- [Libro de pago material](P038_MATERIAL_PAYOUT_LEDGER.md) `P038_MATERIAL_PAYOUT_LEDGER`
+- [Orden de limpieza Deep Reach](P039_DEEP_REACH_CLEANSE_ORDER.md) `P039_DEEP_REACH_CLEANSE_ORDER`
+- [Argumento final de Atlas](P040_ATLAS_FINAL_ARGUMENT.md) `P040_ATLAS_FINAL_ARGUMENT`
+- [Fila de taquillas obreras](P041_WORKER_LOCKER_ROW.md) `P041_WORKER_LOCKER_ROW`
+- [Rutina de literas presurizadas](P042_PRESSURE_BUNK_ROUTINE.md) `P042_PRESSURE_BUNK_ROUTINE`
+- [Retenciones de rutas de turno](P043_SHIFT_BOARD_ROUTE_HOLDS.md) `P043_SHIFT_BOARD_ROUTE_HOLDS`
+- [Demora de esclusa médica](P044_MEDICAL_LOCK_DELAY.md) `P044_MEDICAL_LOCK_DELAY`
+- [Pila de nombres de caja negra](P045_BLACK_BOX_NAME_STACK.md) `P045_BLACK_BOX_NAME_STACK`
+- [Acuerdo de sala de bombas](P046_PUMP_ROOM_HANDSHAKE.md) `P046_PUMP_ROOM_HANDSHAKE`
+- [Registro de sello de escotilla](P047_HATCH_SEAL_LEDGER.md) `P047_HATCH_SEAL_LEDGER`
+- [Cicatriz de empalme de cable](P048_CABLE_SPLICE_SCAR.md) `P048_CABLE_SPLICE_SCAR`
+- [Ruta de regreso por sonar](P049_SONAR_RETURN_ROUTE.md) `P049_SONAR_RETURN_ROUTE`
+- [Custodia de herramienta de salvamento](P050_SALVAGE_TOOL_CUSTODY.md) `P050_SALVAGE_TOOL_CUSTODY`
+- [Light-Delay Authority](P051_LIGHT_DELAY_AUTHORITY.md) `P051_LIGHT_DELAY_AUTHORITY`
+- [Black Keel Tariff Table](P052_BLACK_KEEL_TARIFF_TABLE.md) `P052_BLACK_KEEL_TARIFF_TABLE`
+- [Marauder Graffiti Masks](P053_MARAUDER_GRAFFITI_MASKS.md) `P053_MARAUDER_GRAFFITI_MASKS`
+- [Relay Queue Drift](P054_RELAY_QUEUE_DRIFT.md) `P054_RELAY_QUEUE_DRIFT`
+- [Corporate Response Ledger](P055_CORPORATE_RESPONSE_LEDGER.md) `P055_CORPORATE_RESPONSE_LEDGER`
+
+<!-- Generated localized index for external_site/es_ES. -->

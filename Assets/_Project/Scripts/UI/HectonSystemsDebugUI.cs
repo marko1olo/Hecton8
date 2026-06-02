@@ -77,14 +77,14 @@ namespace Hecton8.UI
         private const string ReadyLabel = "READY";
         private const string PendingLabel = "PENDING";
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- References -----------------------------")]
         [SerializeField, Tooltip("Optional explicit HUD canvas. If null, the overlay resolves the active suit HUD canvas at runtime.")]
         private Canvas targetCanvas;
 
         [SerializeField, Tooltip("Optional TMP font asset. If null, TMP default font is used.")]
         private TMP_FontAsset fontAsset;
 
-        [Header("â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Layout ---------------------------------")]
         [SerializeField, Tooltip("Top-left anchored position for the debug panel.")]
         private Vector2 anchoredPosition = new Vector2(26f, -28f);
 
@@ -102,7 +102,7 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Keeps the temporary debug owner alive through bootstrap scene transitions.")]
         private bool persistAcrossSceneLoads = false;
 
-        [Header("â”€â”€ Stress Harness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Stress Harness -------------------------")]
         [SerializeField, Tooltip("Development-only override that forces DynamicResolutionScaler into a pressured state.")]
         private bool enableStressTest = false;
 
@@ -114,7 +114,7 @@ namespace Hecton8.UI
         [Range(0.1f, 1f)]
         private float forcedRenderScale = 0.5f;
 
-        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("-- Diagnostics ----------------------------")]
         [SerializeField] private bool debugCanvasResolved;
         [SerializeField] private string debugSceneName = "None";
         [SerializeField] private string debugBootstrapState = "PENDING";
@@ -302,32 +302,29 @@ namespace Hecton8.UI
             if (!_runtimeActive)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (_slowTickRegistered)
             {
                 if (!_lateFrameRegistered)
-                    _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                    _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
                 return;
             }
 
-            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI);
             if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (_slowTickRegistered)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                SystemDispatcher.Unregister((ISlowTickable)this, PriorityLayer.UI);
                 _slowTickRegistered = false;
             }
 
             if (_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
         }

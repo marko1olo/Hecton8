@@ -3779,7 +3779,7 @@ namespace Hecton8.Celestial
                 RenderTextureReadWrite.Linear)
             {
                 name = "__HectonBakedSpectralStarCubemap",
-                dimension = TextureDimension.Cube,
+                dimension = TextureDimension.Tex2DArray,
                 volumeDepth = 6,
                 enableRandomWrite = true,
                 useMipMap = false,

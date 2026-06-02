@@ -1,0 +1,30 @@
+---
+packet_id: P013_NEARLIGHT_SHIP_CLASSES
+article_id: ships.nearlight_classes
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Clases de naves nearlight
+
+Las naves nearlight construyeron el espacio humano sin romper la física: sondas, seed ships, mass carriers, sleeper transports, carriers locales, remolcadores y tenders.
+
+## Scanner
+
+Manifiesto: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
+
+## Terminal
+
+No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
+
+## Audio
+
+Una nave puede cruzar estrellas y no servir a una sala inundada.
+
+## Field Note
+
+Las naves no son libertad. Son horarios con motores.
+
+<!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/es_ES. -->

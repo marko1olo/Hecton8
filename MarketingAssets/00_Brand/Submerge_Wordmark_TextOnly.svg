@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="500" viewBox="0 0 1800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Submerge text-only wordmark placeholder</title>
+  <desc id="desc">Temporary text-only wordmark for Submerge accounts and private planning. Not gameplay proof.</desc>
+  <rect width="1800" height="500" fill="#05080a"/>
+  <text x="900" y="245" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="154" font-weight="700" letter-spacing="12" fill="#e8f2ee">SUBMERGE</text>
+  <line x1="372" y1="302" x2="1428" y2="302" stroke="#8aa4a8" stroke-width="5"/>
+  <text x="900" y="364" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="4" fill="#8aa4a8">PRESSURE / SALVAGE / MACHINERY / BLACK WATER</text>
+</svg>

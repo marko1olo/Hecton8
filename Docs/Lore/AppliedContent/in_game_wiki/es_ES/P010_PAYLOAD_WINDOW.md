@@ -1,0 +1,30 @@
+---
+packet_id: P010_PAYLOAD_WINDOW
+article_id: ending.payload_window
+locale: es_ES
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Ventana de carga
+
+La Ventana de carga vuelve físicas las finales. El jugador solo puede mover una masa limitada a través de presión, clima, tiempo de radiación y geometría Black Keel. Dinero, pruebas, nombres, coordenadas, muestras vivas, señal Atlas o silencio no pueden salir todos juntos.
+
+## Scanner
+
+Paquete de ascenso improvisado. Puede salir del océano si masa, clima y geometría del carrier coinciden.
+
+## Terminal
+
+PAYLOAD SLOT: limitado. WINDOW: abierta. ROUTE: disputada. CLAIM VALUE: variable. EVIDENCE STATE: insuficiente para disputa limpia.
+
+## Audio
+
+La ventana está abierta. No seguirá abierta para todo.
+
+## Field Note
+
+Salir es una ruta. Salir limpio es un mito.
+
+<!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/es_ES. -->
