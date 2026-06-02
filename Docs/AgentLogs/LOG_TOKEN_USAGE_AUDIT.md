@@ -661,6 +661,33 @@ Compilation/resource throttling:
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
 
+## 2026-06-02 16:31 Europe/Samara - Full checkpoint push
+
+What was wrong:
+- Full workspace changes were not committed after the same-day token/dashboard refresh.
+- The first staging pass had whitespace failures in 25 files, then a second EOF-only pass was required for 20 CRLF-ended audit files.
+
+What was done:
+- Staged full workspace with explicit `CON` and `*1334*` exclusions.
+- Verified staged path scan returned `NO_STAGED_1334_OR_CON`.
+- Fixed only mechanical trailing whitespace/extra EOF blank lines reported by `git diff --cached --check`.
+- Re-ran `git diff --cached --check` clean.
+- Committed and pushed `305d804cb` to `origin/main`.
+
+Evidence:
+- Commit: `305d804cb`.
+- Staged shortstat before commit: `3132 files changed, 137456 insertions(+), 4610 deletions(-)`.
+- Push range: `c4b3946bb..305d804cb`.
+- Protected files left uncommitted: `Docs/AgentLogs/LOG_1334.md`, `Docs/AgentLogs/Rationale_1334.md`, `Docs/Tasks/Status_1334.md`, archived `1334` cleanup files, and root `CON`.
+- Post-push live drift detected: 15 non-protected AppliedLore terminal prefab deletions appeared and require a second checkpoint before final clean-state claim.
+
+Compilation/resource throttling:
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.
+
 ## 2026-06-02 16:18 Europe/Samara - Same-day token/dashboard refresh
 
 What was wrong:
