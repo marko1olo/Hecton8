@@ -148,7 +148,7 @@ namespace Hecton8.Narrative.Editor
             ScanNarrativeDiscoveryHashCacheRoute(files, findings, ref summary);
             ScanHectonNarrativeDirectorPoiHashCacheRoute(files, findings, ref summary);
             ScanAppliedLoreWorldImpactPhaseRoute(files, findings, ref summary);
-            ScanMetaCampaignVisualPhaseRoute(files, findings, ref summary);
+            ScanMetaCampaignPhaseSideEffectRoute(files, findings, ref summary);
             ScanAppliedLoreTerminalPreviewRoute(files, findings, ref summary);
             ScanAccessibilityTextScaleProducerRoute(files, findings, ref summary);
             ScanAccessibilityMotionScaleRoute(files, findings, ref summary);
@@ -1456,7 +1456,7 @@ namespace Hecton8.Narrative.Editor
             }
         }
 
-        private static void ScanMetaCampaignVisualPhaseRoute(
+        private static void ScanMetaCampaignPhaseSideEffectRoute(
             List<FileUnit> files,
             List<Finding> findings,
             ref ApexSummary summary)
@@ -1487,26 +1487,72 @@ namespace Hecton8.Narrative.Editor
                 CountTextInFile(campaignFile, "private void PublishCachedVisualState(") -
                 summary.MetaCampaignVisualPublishCalls;
 
+            summary.MetaCampaignAudioQueueCalls =
+                CountInvocationInMethod(campaignFile.Root, "PublishStateSideEffects", "QueueCampaignBroadcast");
+            summary.MetaCampaignAudioFlushLateFrameCalls =
+                CountInvocationInMethod(campaignFile.Root, "LateFrameTick", "FlushCampaignBroadcast");
+            summary.MetaCampaignAudioPublishCalls =
+                CountInvocationInMethod(campaignFile.Root, "FlushCampaignBroadcast", "PublishCampaignBroadcast");
+            int directAudioPublishCalls =
+                CountTextInFile(campaignFile, "PublishCampaignBroadcast(") -
+                CountTextInFile(campaignFile, "private void PublishCampaignBroadcast(") -
+                summary.MetaCampaignAudioPublishCalls;
+
+            summary.MetaCampaignCartographyQueueCalls =
+                CountInvocationInMethod(campaignFile.Root, "PublishStateSideEffects", "QueueCartographyState");
+            summary.MetaCampaignCartographyFlushLateFrameCalls =
+                CountInvocationInMethod(campaignFile.Root, "LateFrameTick", "FlushCartographyState");
+            summary.MetaCampaignCartographyPublishCalls =
+                CountInvocationInMethod(campaignFile.Root, "FlushCartographyState", "PublishCartographyState");
+            int directCartographyPublishCalls =
+                CountTextInFile(campaignFile, "PublishCartographyState(") -
+                CountTextInFile(campaignFile, "private void PublishCartographyState(") -
+                summary.MetaCampaignCartographyPublishCalls;
+
             if (summary.MetaCampaignVisualQueueCalls != 2 ||
                 summary.MetaCampaignVisualFlushLateFrameCalls != 1 ||
                 summary.MetaCampaignVisualPublishCalls != 1 ||
                 summary.MetaCampaignVisualShaderWrites != 2 ||
-                directVisualPublishCalls != 0)
+                directVisualPublishCalls != 0 ||
+                summary.MetaCampaignAudioQueueCalls != 1 ||
+                summary.MetaCampaignAudioFlushLateFrameCalls != 1 ||
+                summary.MetaCampaignAudioPublishCalls != 1 ||
+                directAudioPublishCalls != 0 ||
+                summary.MetaCampaignCartographyQueueCalls != 1 ||
+                summary.MetaCampaignCartographyFlushLateFrameCalls != 1 ||
+                summary.MetaCampaignCartographyPublishCalls != 1 ||
+                directCartographyPublishCalls != 0)
             {
                 findings.Add(new Finding(
                     campaignFile.RelativePath,
                     0,
-                    "meta_campaign_visual_phase_route",
-                    "MetaCampaign visual state must queue from state changes and flush only in LateFrameTick, queue_calls=" +
+                    "meta_campaign_phase_side_effect_route",
+                    "MetaCampaign presentation side effects must queue from state changes and flush only in LateFrameTick, visual_queue_calls=" +
                     summary.MetaCampaignVisualQueueCalls +
-                    " lateframe_flushes=" +
+                    " visual_lateframe_flushes=" +
                     summary.MetaCampaignVisualFlushLateFrameCalls +
-                    " publish_calls=" +
+                    " visual_publish_calls=" +
                     summary.MetaCampaignVisualPublishCalls +
                     " shader_writes=" +
                     summary.MetaCampaignVisualShaderWrites +
-                    " direct_publishes=" +
-                    directVisualPublishCalls));
+                    " visual_direct_publishes=" +
+                    directVisualPublishCalls +
+                    " audio_queue_calls=" +
+                    summary.MetaCampaignAudioQueueCalls +
+                    " audio_lateframe_flushes=" +
+                    summary.MetaCampaignAudioFlushLateFrameCalls +
+                    " audio_publish_calls=" +
+                    summary.MetaCampaignAudioPublishCalls +
+                    " audio_direct_publishes=" +
+                    directAudioPublishCalls +
+                    " cartography_queue_calls=" +
+                    summary.MetaCampaignCartographyQueueCalls +
+                    " cartography_lateframe_flushes=" +
+                    summary.MetaCampaignCartographyFlushLateFrameCalls +
+                    " cartography_publish_calls=" +
+                    summary.MetaCampaignCartographyPublishCalls +
+                    " cartography_direct_publishes=" +
+                    directCartographyPublishCalls));
                 summary.PhaseFindings++;
             }
         }
@@ -3570,6 +3616,12 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" meta_campaign_visual_lateframe_flushes=").Append(summary.MetaCampaignVisualFlushLateFrameCalls);
             builder.Append(" meta_campaign_visual_publish_calls=").Append(summary.MetaCampaignVisualPublishCalls);
             builder.Append(" meta_campaign_visual_shader_writes=").Append(summary.MetaCampaignVisualShaderWrites);
+            builder.Append(" meta_campaign_audio_queue_calls=").Append(summary.MetaCampaignAudioQueueCalls);
+            builder.Append(" meta_campaign_audio_lateframe_flushes=").Append(summary.MetaCampaignAudioFlushLateFrameCalls);
+            builder.Append(" meta_campaign_audio_publish_calls=").Append(summary.MetaCampaignAudioPublishCalls);
+            builder.Append(" meta_campaign_cartography_queue_calls=").Append(summary.MetaCampaignCartographyQueueCalls);
+            builder.Append(" meta_campaign_cartography_lateframe_flushes=").Append(summary.MetaCampaignCartographyFlushLateFrameCalls);
+            builder.Append(" meta_campaign_cartography_publish_calls=").Append(summary.MetaCampaignCartographyPublishCalls);
             builder.Append(" message_terminal_finite_time_guards=").Append(summary.MessageTerminalFiniteTimeGuards);
             builder.Append(" message_terminal_presentation_scalar_guards=").Append(summary.MessageTerminalPresentationScalarGuards);
             builder.Append(" message_terminal_pending_event_clears=").Append(summary.MessageTerminalPendingEventClears);
@@ -3802,6 +3854,12 @@ namespace Hecton8.Narrative.Editor
             public int MetaCampaignVisualFlushLateFrameCalls;
             public int MetaCampaignVisualPublishCalls;
             public int MetaCampaignVisualShaderWrites;
+            public int MetaCampaignAudioQueueCalls;
+            public int MetaCampaignAudioFlushLateFrameCalls;
+            public int MetaCampaignAudioPublishCalls;
+            public int MetaCampaignCartographyQueueCalls;
+            public int MetaCampaignCartographyFlushLateFrameCalls;
+            public int MetaCampaignCartographyPublishCalls;
             public int MessageTerminalFiniteTimeGuards;
             public int MessageTerminalPresentationScalarGuards;
             public int MessageTerminalPendingEventClears;
