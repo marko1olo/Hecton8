@@ -17,15 +17,13 @@ Purpose: keep unresolved choices visible instead of burying them in prose.
 
 ## Human Expansion
 
-- Aegir is not the first extrasolar domain. How many major human domains exist by 2190?
-- Which domains are public/civil, and which are corporate or military-industrial?
-- What were the earlier famous systems before Aegir?
-- Are there true independent extrasolar settlements, or mostly corporate/relay/industrial footholds?
-- Is Sol still politically dominant, or is it mostly a distant legal myth for frontier crews?
-- Did Deep Reach launch the Aegir/Atlas program from Sol directly, or from an already-established inner relay domain closer to Aegir?
-- What does a normal citizen know about Aegir before the HECTON-8 story?
-- Are Marauders legal private contractors, tolerated criminals, or a jurisdictional loophole?
-- Does interstellar law recognize salvage truth as evidence, or only as claim material?
+- AppliedLore lock: Aegir is not the first extrasolar domain. The current model is 4-6 named major nodes plus implied smaller claims.
+- AppliedLore lock: authority is split, not centralized. Sol certifies finance/ownership, Centauri lends charter legitimacy, Barnard normalizes salvage labor, Tau Ceti can make evidence public, Luyten owns packet custody, and Aegir executes dirty corporate frontier action.
+- AppliedLore lock: Deep Reach launched Aegir/Atlas through established route economics and shell authority, not as a clean direct Earth expedition.
+- AppliedLore lock: normal citizens know Aegir as an old disaster/resource headline; specialists, insurers, Marauders and corporate cells know the actionable detail.
+- AppliedLore lock: Marauders are a jurisdictional loophole, from licensed contractors to prosecutable raiders depending ledger, payload, witness hash and local authority.
+- AppliedLore lock: salvage truth becomes evidence only with chain-of-custody, witness hash and relay notary outside claimant control. Otherwise it is treated as claim material.
+- Future table work: exact domain distances, population scale, transit durations, public route names and formal Deep Reach shell hierarchy.
 
 ## Scale Choice
 
@@ -52,8 +50,9 @@ Still unresolved:
   - Early probes/autonomous packets use beam-assisted sail / beamed cargo lineage.
   - Heavy Atlas/Seed/colony freight uses external staging, pellet-beam assisted fusion or related fusion freight, long coasts and braking infrastructure.
   - Black Keel is an Aegir-system claim tender, not an interstellar rescue ship.
-- How public was Atlas-6 before the disaster?
-- Was Atlas-6 insured, classified, or legally treated as a colonial authority?
+- AppliedLore lock: Atlas-6 was public-facing as autonomous factory-governor / habitat-continuity / worker-safety infrastructure.
+- AppliedLore lock: Atlas was insured as infrastructure and colonial authority proxy, not legal personhood.
+- AppliedLore lock: classified layers weighted claim continuity, XO process control and Atlas/Seed infrastructure above human evacuation when corporate categories conflicted.
 - Working lock: player carrier is `Black Keel`, an automated claim-tender / salvage carrier.
 - Working ownership lock: public Aegir claim-pool tender; debt-impounded / insurance custody; hidden Deep Reach priority hooks.
 - AppliedLore lock: exact public claim-pool name is `Aegir Reclamation Pool`.
@@ -114,21 +113,16 @@ Still unresolved:
 - Working repair-network lock: Atlas uses ocean biology as maintenance ecology through conductive biofilms, acoustic/filter organisms, shell-like fracture sealants, sensor-bearing fauna, vent-powered micro-nodes and drones.
 - AppliedLore lock: Atlas can recognize the player as procedure, access pattern, repair anomaly and revoked Deep Reach key, but does not fully understand the player as a person.
 - AppliedLore lock: by 2190 Atlas still has local industrial agency, but not clean strategic intent or human categories.
-- Is shutting Atlas down mercy, murder, liberation, or corporate theft?
+- AppliedLore lock: shutting Atlas down intentionally remains morally multi-valued. It can be mercy, murder, liberation or corporate theft depending payload route, receiver, evidence state and ecological consequence. This is an ending design axis, not an unresolved canon hole.
 
 ## Escape And False Endings
 
-- Can the player leave before reaching Atlas-6?
-- Working answer: yes, through false/partial endings.
-- Minimum false-ending families: Material Ending and Partial Exit.
+- AppliedLore lock: the player can leave before Atlas-6 through false/partial endings.
 - AppliedLore lock: false/partial ending families are material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, and Atlas basin resolution.
-- If early escape exists, is it:
-  - real ending with bitter credits;
-  - partial extraction then return to same seed;
-  - coward route that pays but stains the dossier;
-  - corporate capture ending;
-  - salvage-success / truth-failure ending?
-- What makes the early exit emotionally unsatisfying enough that returning feels natural?
+- AppliedLore lock: material payout is real credits with unreconciled names and strengthened corporate systems.
+- AppliedLore lock: partial exit can return the player to the same seed under lien extension, quarantine pressure or new evidence leverage.
+- AppliedLore lock: corporate capture, quarantine hold and salvage-success/truth-failure are valid bitter outcomes.
+- AppliedLore lock: public ledger leak is a partial truth route that prevents clean erasure but removes player control over later consequences.
 - Working engineering chain lock:
   - acoustic relay spine;
   - pressure-rated seals and Deep Reach clamp rings;
@@ -165,8 +159,8 @@ Still unresolved:
 
 ## Replayability
 
-- What exactly persists in the Marauder dossier?
 - AppliedLore lock: dossier persists ending records, discovered contract types, rumor families, evidence categories and route warnings. Equipment power and world truth reset per seed.
-- Do endings unlock rumors/contracts only, or also new starting claim types?
-- Can the player deliberately choose a riskier contract seed?
-- How many false/partial endings should exist before the true Atlas endings?
+- AppliedLore lock: endings unlock rumors, contract families, route warnings, legal context and optional starting claim variants, not inherited equipment power.
+- AppliedLore lock: the player can deliberately choose riskier contract seeds through lien pressure, weather/orbital windows, sample custody, evidence-order and Deep Reach clause variations.
+- AppliedLore lock: practical false/partial ladder before Atlas-basin resolutions is four major families: material payout, partial return, corporate/quarantine capture and public ledger leak.
+- Still unresolved: exact UI for dossier selection, numeric risk weights, reward tables and save/profile presentation.

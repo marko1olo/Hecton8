@@ -65,6 +65,11 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - Aegir Claim is the dirty corporate frontier where Deep Reach could operate because the wider logistics economy already existed.
 - Deep Reach legal posture by 2190: old charter legitimacy through Centauri Compact language, Sol Core finance/insurance compatibility, and Aegir project shells for dirty frontier action. It is older than Aegir; Aegir is one of its worst projects, not its birthplace.
 - Strong authority split: Sol Core is strongest for ownership, finance and insurance continuity; Tau Ceti League is strongest for public evidence pressure after relay delay; Luyten Junction controls packet custody rather than moral authority.
+- Applied authority split: Sol/Core finance certifies claims, Centauri language legitimizes charters, Barnard normalizes dead-claim work, Tau Ceti can make evidence politically public, Luyten authenticates packet custody, and Aegir shells execute the dirty project.
+- Marauders are a jurisdictional loophole: licensed contractors in one ledger, tolerated criminals in another, prosecutable raiders when payload custody or witness hashes fail.
+- Salvage truth becomes public evidence only when chain-of-custody, packet witness hash, and relay notary escape the claimant's control. Without that route it is treated as claim material.
+- Normal citizens remember Aegir as a stale resource/disaster headline. Specialists, insurers, Marauders and corporate cells know the useful detail.
+- Deep Reach did not launch Aegir as a heroic direct Earth leap. It used an already established route economy across Centauri, Luyten, Sol-compatible finance and local Aegir project shells.
 
 ## Player Locks
 
@@ -138,11 +143,16 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - By 2190 it is inseparable from the ocean and HECTON-8 industrial ecology.
 - Original public directive: preserve HECTON-8 habitat continuity and worker safety under interstellar-delay conditions.
 - Real weighted directive stack: preserve Aegir claim continuity, preserve Xenon-Omega process integrity, preserve Atlas/Seed infrastructure, preserve biological workforce only when compatible, contain evidence/contamination that threatens the claim.
+- Public front: Atlas was sold as autonomous factory-governor, habitat-continuity controller and worker-safety authority for remote delay conditions.
+- Insurance/legal status: Atlas was insured and treated as infrastructure plus colonial authority proxy, not as a legal person.
+- Classified weighting layer: claim continuity, XO process control and Atlas/Seed infrastructure could outrank workforce survival when a conflict was framed as contamination, evacuation risk or asset continuity.
 - Atlas-6 did not consciously murder colonists.
 - After damage, it no longer cleanly distinguishes colonists, colony material, local life, resource substrate, and repair inventory.
 - Atlas wants restoration, not conquest. It tries to restore the colony as a damaged coupled system where ocean, workers, metal, cable, biomass, and pressure infrastructure are all repair inventory.
 - Atlas can recognize the player as procedure, access pattern, repair anomaly and revoked Deep Reach key. It should not fully understand the player as a person.
 - Atlas uses the ocean as a maintenance ecology: conductive biofilms on cables, filter organisms as acoustic repeaters, shell/coral-like sealants around fractures, animals carrying embedded sensors or mineral tags, vent-powered micro-nodes, and drones that service this living-industrial layer.
+- Atlas shutdown is intentionally multi-valued: mercy if it stops damaged repair logic, murder if it destroys emergent ocean-machine life, liberation if it ends corporate ownership, corporate theft if the payload returns to Deep Reach.
+- Public memory after 2147 reduced Atlas to failed automation, corrupted logs and unavoidable stabilization loss.
 - Final zone: factory-ship on the bottom, temple of industrial iron and living tissue.
 - Deep Reach, colony, Atlas, and ocean physically fuse in the final depth.
 
@@ -163,6 +173,9 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - First recipes are repair-certified parts, not generic alchemy: valve gasket, cutter contact, pinger float and sealant clamp.
 - Replayability comes from world seed: geology, loot, POIs, evidence order, routes, fauna, contracts, rare creatures, escape timing, partial endings.
 - No power-roguelite progression. A Marauder dossier may retain knowledge, rumors, contract context, and ending records.
+- Dossier persistence is knowledge, not power: rumors, warnings, ending records, contract families, legal context and evidence categories can persist; oxygen, hull strength, weapons, inventory and world truth reset per seed.
+- Riskier contract seeds can change lien pressure, weather/orbital windows, route custody, sample requirements, legal hooks and evidence order without granting inherited strength.
+- Starting claim variants keep the same ex-Deep-Reach/current-Marauder protagonist. They change contract framing, debt pressure and rumor context, not the core identity.
 
 ## Resource Taxonomy Locks
 
@@ -177,6 +190,11 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - Multiple endings are desired.
 - A material/partial ending can exist without full truth, but it should be bitter, incomplete, or morally compromised.
 - False/partial ending families: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, and Atlas basin resolution. These are real outcomes, not fake fail screens.
+- Material exit pays but strengthens the systems that buried the colony and leaves worker names unreconciled.
+- Partial exit returns to the same seed under lien extension, quarantine pressure or new evidence leverage.
+- Corporate capture and quarantine hold are valid bad/partial outcomes, not death screens.
+- Public ledger leak is a partial truth route: it prevents clean erasure but makes the player lose control over who weaponizes the evidence.
+- Practical false/partial ladder before Atlas-basin resolutions: material payout, partial return, corporate/quarantine capture, and public ledger leak.
 - Player motive arc: professional interest -> ex-Deep-Reach recognition -> recovered names -> Barnard/frontier claim logic -> contract trap -> final agency.
 - Marauder dossier persistence: ending records, discovered contract types, rumor families, evidence categories and route warnings can persist. Equipment power and world truth reset per seed.
 - Final choice payloads: sell coordinates and XO proof, sever Atlas continuity, preserve/quarantine ocean-machine ecology, publish evidence to public ledger, or withhold payload and leave Deep Reach blind.

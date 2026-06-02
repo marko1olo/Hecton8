@@ -63,3 +63,8 @@ Date: 2026-06-02
 
 - Non-editor scan found several `OnGUI` diagnostic/tuner files outside `/Editor/` paths. Even when they are not normal HUD code, release closure requires asmdef/define proof that IMGUI overlays are absent from player builds.
 - UI runtime proof must include build-symbol exclusion for diagnostic overlays in addition to HUD/menu profiler captures.
+
+## Pass 7 Addendum - Menu And Font Runtime Boundary
+
+- `SettingsPanel.CreateMenuStyleTextCold()` and `ConfigureMenuStyleLayoutCold()` read as legal cold menu assembly, not a steady-state UI tick. Closure still needs menu interaction proof that the panel does not rebuild hierarchy or add layout components after construction.
+- `FontAssetRecovery` material repair and asset import repair are editor-guarded, but runtime `RefreshTextComponent()` can force a TMP mesh rebuild. Release closure requires callsite proof that this is bootstrap/recovery only and not the normal text update route.

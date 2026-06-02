@@ -62,3 +62,10 @@ Date: 2026-06-02
 - Production drone provider/material proof and mock route exclusion.
 - Authored Sargassum meshes/materials/trail proof.
 - Brine pool editor/offline bake proof or explicit runtime terrain exception route with profiler/device/collider proof.
+
+## Pass 7 Addendum - Wreck Method Structure
+
+- `ProceduralWreckGenerator` is not editor-only by type: it is a runtime `MonoBehaviour` and dispatcher-facing generator.
+- `GenerateInternal()` and `GenerateInternalAsync()` build merged visual meshes only when `wreckMaterialRegistry == null`; therefore release closure cannot say "editor generator" unless player prefab/build proof makes `wreckMaterialRegistry` mandatory.
+- `BuildProxyMesh()` also creates a runtime `Mesh` when `wreckCollisionProxyMesh` is absent and `buildAsyncNavigationBake` is enabled. This is a proxy route, not the editor-only compound collider fitter.
+- `HectonCompoundColliderAutoFitter` remains legal offline tooling because it is under `#if UNITY_EDITOR`.

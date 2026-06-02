@@ -98,3 +98,10 @@ Date: 2026-06-02
 - `HectonWorldShellVisualDriver1428.cs` uses raw `LateUpdate` for visual animation and `FindObjectsByType`/managed arrays in `Awake` when references are not serialized. This is acceptable only as a demo/dev shell or one-time authored startup cache with proof.
 - `WorldProceduralScatterWorkingMemory.cs` registers persistent native working memory with `NativeMemorySentinel`, but `EnsureCapacity()` can reallocate scratch arrays. It needs a 300-frame scatter stress proof showing no growth after gameplay begins.
 - `ScavengingLootOracle.cs:1782` uses `Resources.FindObjectsOfTypeAll<GameObject>()` for HideAndDontSave orphan cleanup. It requires reload/fault-only proof and must not run in gameplay hot paths.
+
+## Pass 7 Addendum - Native Staging Detail
+
+- `VegetationNavGridSynchronizer` allocates per-path `NativeList<Vector3>` with `Allocator.Persistent` and H8Memory job snapshots during abyssal path scheduling. This is a runtime hot suspect until preallocated scratch or path-spam native-memory proof exists.
+- `VegetationFlowFieldIntegrator` allocates slow-tick owner staging arrays for flow/threat/thermal work. Owner-phase scheduling is better than raw `Update`, but the release gate is still zero post-bootstrap allocation/growth under stress.
+- `GroundPenetratingRadarRuntime` creates pending scan arrays for each scheduled radar job and can allocate/grow an SDF snapshot to the leased SDF payload length. Radar ping spam needs native memory proof or fixed-capacity preallocation.
+- `PersistentWorldRegistry` sector IO uses TempJob arrays/lists and managed arrays in explicit load/write windows. That is not automatically a gameplay hot-path defect, but save/stream stress proof must show frame impact and allocation windows are bounded.

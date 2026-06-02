@@ -63,3 +63,9 @@ Date: 2026-06-02
 - `SaveManager.cs:542` uses `FindObjectsByType<SaveManager>` for manager duplication/lifecycle validation. This is probably a cold guard, but it needs bootstrap-only proof.
 - Temp/TempJob payload routes in `FabricationAssemblerRuntime` and `FoveatedRenderCommander` look fault-dump-only after method reading, but closure still requires fault-only callsite proof and black-box dump tests.
 - Non-editor `OnGUI` diagnostic/tuner files outside `/Editor/` folders require assembly/define proof that release players do not include them.
+
+## Pass 7 Addendum - H8Memory Growth Detail
+
+- `H8Memory.CompleteAllOwnerJobs()` contains an explicit shutdown-only blocking sync comment; it is not a defect if no gameplay tick calls it.
+- `H8Memory.EnsureTrackingCapacity()` reallocates persistent tracking arrays when allocation record capacity is exhausted. That is legal only if capacity is prewarmed or runtime counters prove no gameplay growth.
+- Static memory-owner code remains yellow, not green, until DataVault/H8Memory growth counters are captured during real gameplay stress.
