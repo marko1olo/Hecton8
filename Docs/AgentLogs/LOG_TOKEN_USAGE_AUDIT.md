@@ -661,6 +661,50 @@ Compilation/resource throttling:
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
 
+## 2026-06-02 16:18 Europe/Samara - Same-day token/dashboard refresh
+
+What was wrong:
+- The 2026-06-02 12:56 token/dashboard/apex artifacts were stale after more local Codex JSONL activity.
+- A first validation helper used the wrong delta key (`total_tokens_delta`) and failed; the persisted schema uses `previous_snapshot_delta.totals_delta.total_tokens`.
+
+What was done:
+- Rechecked official OpenAI pricing, GPT-5.5 model, prompt caching, and reasoning docs.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Ran `python Tools\ProjectMetricsDashboard_20260528.py`.
+- Ran `python Tools\TokenUsageApexVerification_20260528.py`.
+- Parsed the persisted token/dashboard/apex JSON with the real schema.
+- Checked 112 dashboard chart paths against 112 disk PNGs and verified PNG signatures.
+- Verified apex JSON SHA-256 against the `.json.sha256` artifact.
+
+Evidence:
+- Token report: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-02.json`.
+- Dashboard report: `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-02.json`.
+- Apex report: `Docs/Reports/TOKEN_USAGE_APEX_VERIFICATION_2026-06-02.json`.
+- Token total: `129,631,981,374`.
+- Input tokens: `129,184,482,782`.
+- Cached input tokens: `124,245,990,784`.
+- Output tokens: `446,464,992`.
+- Reasoning output tokens: `137,637,121`.
+- Delta tokens since previous same-day snapshot: `263,198,862`.
+- Tokens/hour: `81,199,699.19248042`.
+- Tokens/second: `22,555.471997911227`.
+- GPT-5.5 base API-equivalent: `$100,209.405142`.
+- GPT-5.5 delta cost: `$200.8258710000082`.
+- Chart manifest/disk count: `112/112`.
+- Missing charts: `0`.
+- Bad PNG signatures: `0`.
+- Apex JSON SHA-256: `6d7cb9b2a5933e6c2a7b1e9c630b3202aa9d4eea903fd6d81534b635fc9ea319`.
+
+Compilation/resource throttling:
+- CPU sample inside apex: `11%`.
+- Active compiler/build process sample: `dotnet` process count `2`.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Python bytecode compile: skipped because active `dotnet` processes remained.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.
+
 ## 2026-06-02 13:22 Europe/Samara - Full workspace checkpoint gate
 
 What was wrong:

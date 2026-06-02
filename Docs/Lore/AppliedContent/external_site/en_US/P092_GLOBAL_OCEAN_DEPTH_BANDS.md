@@ -1,0 +1,30 @@
+---
+packet_id: P092_GLOBAL_OCEAN_DEPTH_BANDS
+article_id: hecton8.global_ocean_depth_bands
+locale: en_US
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Global Ocean Depth Bands
+
+Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors.
+
+## Scanner
+
+Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+
+## Terminal
+
+BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+
+## Audio
+
+Every band changes what the world allows you to do.
+
+## Field Note
+
+Depth is not a number. It is a ruleset.
+
+<!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/en_US. -->

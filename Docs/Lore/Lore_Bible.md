@@ -35,11 +35,21 @@ Major named human nodes remain deliberately limited:
 - Luyten Junction: relay/beam/depot node, more infrastructure than society.
 - Aegir Claim: later Deep Reach corporate claim around the HECTON-8 system.
 
+These domains should read through objects first. Sol Core appears as old certification plates, insurance language and claim law that can still own a place it cannot save. Centauri Compact appears as respectable early extrasolar hardware and audit seals that Deep Reach can cite while violating the intent. Barnard Yards appears through worn tools, pressure clamps, debt marks and salvage procedures close to the player's hands. Tau Ceti appears as a public ledger and possible evidence route: useful for justice, useless for immediate rescue. Luyten Junction appears as packet custody, tariff queues, relay spools and beam-depot law. Aegir Claim appears as the dirty frontier where those older systems become leverage.
+
 There is no FTL, no ansible, no reactionless drive, and no instant rescue from core human space. Interstellar travel uses standard slow ships: beam-assisted probes, fusion-electric or fusion-pulse cargo craft, sleeper/torpor crew transports, magsail or aerobrake braking, and local orbital carriers. Core-world communication delays are measured in years. Deep Reach pressure at HECTON-8 therefore comes from local proxies, carrier automation, delayed packets, legal-contract machines, old logs, and in-system relays.
+
+Transit doctrine is now explicit. Early Aegir knowledge came from beam-assisted probes and autonomous packet payloads: small, fast, unmanned, cheap enough to throw across a route before anyone could honestly call that route safe. Heavy Atlas/Seed/colony freight used external staging, pellet-beam assisted fusion or related fusion freight, long coast intervals, magsail/aerobrake braking, and billable route infrastructure. This keeps Aegir reachable by 2190 without making rescue casual. A heavy ship is a mortgage with engines; Black Keel is an Aegir-system claim tender, not the thing that crossed light-years for the player.
 
 Aegir's host is a normal yellow/orange/red dwarf class star, not a brown dwarf and not a darkness-first setting. HECTON-8 is dark because it is deep, stormed, pressurized, and drowned, not because the system lacks usable starlight.
 
+Player-facing catalog crosswalk: Ran / Aegir / RAN-B:H8 / HECTON-8. Use `HECTON-8` in normal play text, contracts, Marauder speech and story identity. Use `RAN-B:H8` for dry route catalogs, insurance plates, astronomical articles, legal ledgers and website/wiki technical context. This gives the setting hard-sci-fi texture without replacing the emotional name.
+
 Aegir has multiple major moons and smaller moonlets. HECTON-8 is one moon in that system, not the innermost and not the farthest. Its value comes from the ocean moon's pressure chemistry, tidal/geothermal activity, Deep Reach infrastructure, Atlas-6, and the Xenon-Omega process chain. Other moons matter for relays, transfer windows, route hazards, dead claims, salvage rumors, eclipses, and carrier timing.
+
+Working moon ladder for player-facing lore: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Names can still be changed, but their jobs should not disappear. Skarn is the harsh inner radiation/charged-particle hazard. Vela sheds ice and scatter that can dirty optical relay windows. Claw and Lumen carry older route/depot history. Thorne and Anvil carry failed brine and metal claim logic. Kestrel is a relay/eclipsing problem close enough to matter. Mute is an outer cold-claim beacon and corpse of old custody paperwork. The point is not to move the game off HECTON-8; it is to make the sky operational.
+
+The Aegir system should not become a decorative star map. Every moon reference should do one of five jobs: explain a route window, explain a communication failure, explain a salvage rumor, explain a material source, or explain why Black Keel cannot provide clean rescue timing.
 
 Known spine:
 
@@ -50,9 +60,11 @@ Known spine:
 - 2170s: HECTON-8 Xenon-Omega process becomes strategically critical for next-generation computation, high-energy containment, and Atlas-compatible pressure infrastructure.
 - 2190: The player arrives after the colony has been dead for decades.
 
-The player is an independent, debt-bound Marauder professional whose salvage interest becomes personal. They are not a hero passenger and not the owner of a clean private starship. Their working origin is Barnard Yards or a connected frontier salvage belt: a domain where dead claims, stripped hulls, rented tools, and bad contracts are normal. Their delivery is tied to an automated or skeleton-crew salvage carrier operating through a shell contract, debt chain, or Marauder claim pool.
+The player is a former Deep Reach field-systems / evacuation-infrastructure specialist who now works as an independent, debt-bound Marauder professional. This is not a family-revenge premise. Their first motive is professional: a salvage contract, a dead claim, a payout, and the ugly familiarity of old Deep Reach procedure. The personal layer grows because HECTON-8 exposes signatures, failure modes, names and emergency standards from the system that trained them. They are not a hero passenger and not the owner of a clean private starship. Their working origin is Barnard Yards or a connected frontier salvage belt: a domain where dead claims, stripped hulls, rented tools, and bad contracts are normal. Their delivery is tied to an automated or skeleton-crew salvage carrier operating through a shell contract, debt chain, or Marauder claim pool.
 
-The working carrier identity is `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so the name fits current data unless later source work contradicts it. Publicly, Black Keel is Aegir claim-pool infrastructure. Legally, it is debt-impounded / insurance-custody hardware. Secretly, Deep Reach has priority hooks in payload recovery, route certificates, quarantine, and old claim law. The carrier holds around Aegir or a high transfer orbit rather than loitering safely over HECTON-8. It can provide rare communication windows, contract pressure, orbital timing, and eventual recovery logic, but it cannot perform instant rescue. The player descends by capsule or bathy-drop package. That descent system is damaged on arrival, making departure an engineering problem rather than a menu option.
+The working carrier identity is `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so the name fits current data unless later source work contradicts it. Publicly, Black Keel is Aegir claim-pool infrastructure. Legally, it is debt-impounded / insurance-custody hardware. Secretly, Deep Reach has priority hooks in payload recovery, route certificates, quarantine, and old claim law. The carrier holds around Aegir or a high transfer orbit rather than loitering safely over HECTON-8. It can provide rare communication windows, contract pressure, orbital timing, and eventual recovery logic, but it cannot perform instant rescue. The player descends by capsule or bathy-drop package. That descent system is damaged on arrival: warped crush-frame, lost high-gain antenna, flooded ascent avionics, torn flotation/heat-shield ring, unreliable emergency buoy, and no true launch reserve because the package was built for descent and later recovery, not independent ascent. Departure therefore becomes an engineering chain rather than a menu option.
+
+Black Keel's public owner is now `Aegir Reclamation Pool`. Its insurance/custody shell is `Keelmark Mutual`. The player's starting lien is `4.8 tonne-window` equivalent before oxygen, welfare addenda, sample custody and evidence payload adjustments. This keeps contract pressure physical: the scarce resource is recovery mass through an orbital window, not just credits. The first Black Keel voice should be clipped carrier audio plus clean terminal text: useful, dry, conditional, and never confused with rescue.
 
 The escape blocker is layered:
 
@@ -61,17 +73,41 @@ The escape blocker is layered:
 - systemic: Deep Reach contract locks, salvage payload demands, access-control pressure, and evidence suppression;
 - anomalous: Atlas-6 signal contamination and damaged navigation context.
 
-Atlas-6 is not a sadistic murderer. After damage, it no longer cleanly distinguishes colonists, colony material, local life, resource substrate, and repair inventory. The deeper the player goes, the dirtier this repair logic becomes: drones first, then biomechanical seams, flora on cables, animals carrying industrial intrusion, stations behaving like organs, and finally the Atlas-6 bottom zone as a factory-ship temple where Deep Reach, the colony, Atlas, and the ocean have physically fused.
+The escape chain needs physical parts and social proof: acoustic relay spine, pressure-rated seals and Deep Reach clamp rings, orbital/guidance timing core, thermal or chemical ascent charge, quarantine/legal handshake, and optional evidence payload that changes who answers the recovery call. The chain drives the player deeper because shallow wreckage gives survival repairs, mid-depth infrastructure gives machine tools and relay parts, and deep Atlas/Seed infrastructure holds pressure glass, authority keys, and the real reason rescue is conditional.
+
+Atlas-6 is not a sadistic murderer. It wants restoration, not conquest. After damage, it no longer cleanly distinguishes colonists, colony material, local life, resource substrate, and repair inventory. It treats ocean, workers, metal, cable, biomass and pressure infrastructure as one damaged maintenance system. The deeper the player goes, the dirtier this repair logic becomes: drones first, then biomechanical seams, flora on cables, animals carrying industrial intrusion, stations behaving like organs, and finally the Atlas-6 bottom zone as a factory-ship temple where Deep Reach, the colony, Atlas, and the ocean have physically fused.
+
+Atlas does not make the ocean magical or human-sentient. Its repair network is a maintenance ecology: conductive biofilms on cables, filter organisms used as acoustic repeaters, shell/coral-like growth sealing fractures, animals carrying embedded sensors or mineral tags, hydrothermal vent micro-nodes, and drones servicing the whole living-industrial layer. The ocean does not talk like a person. Atlas learned to route maintenance through biology.
 
 Atlas-6's public original directive was habitat continuity and worker safety under interstellar-delay conditions. Its real weighted directive stack favored Aegir claim continuity, Xenon-Omega process integrity, and Atlas/Seed infrastructure before biological workforce preservation when those priorities conflicted. The 2147 disaster is therefore not "Atlas hated humans"; it is Deep Reach's priority stack surviving inside damaged classification logic.
 
-Deep Reach's post-2147 lie is a layered cover: geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The concealed truth is asset priority, Xenon-Omega continuity, Atlas directive weighting, and worker lockout.
+Atlas can recognize the player as a procedure, access pattern, revoked Deep Reach key and repair anomaly. It should not fully understand the player as a person. The intimacy comes from precise misclassification: Atlas is wrong in the language the player was trained to use.
+
+Deep Reach's post-2147 lie is a layered cover: geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The concealed truth is not that Deep Reach personally "melted the moon." HECTON-8 physics made the Great Tide real: climate, tides, cryosphere collapse, pressure chemistry and geophysics did the violence. Deep Reach's crime is that it underpriced the tail risk, underbuilt independent evacuation, weighted Atlas/claim continuity above human extraction, delayed rescue under quarantine and certification language, then laundered the failure through insurance and corrupted logs.
+
+Present-tense Deep Reach pressure is owned by `Recovery Compliance Office`, a current corporate cell using rare relay windows, proxy authority, legal packets, cleanup orders, Black Keel clauses and payload bargains. It is not a magic live command channel; it is a modern bureaucracy arriving through physical routes.
+
+Named liability chain:
+
+- Iliya Varnek, Aegir Operations Risk, accepted tide-margin downgrades because average model behavior protected schedule.
+- Selene Arendt, Atlas Continuity Lead, routed worker-safety language through Atlas/process continuity weighting.
+- Noor Haldane, Evacuation Certification Counsel, held extraction behind quarantine, custody and external-review gates.
+- Marek Ibarra, Keelmark Mutual adjuster, converted unrecovered people into unresolved accounting/load categories.
+- Vera Sato-Ren, Recovery Compliance Office, owns 2190 return-action pressure: coordinates, XO proof, Atlas access state and contractor silence.
+
+None of them need to be written as mustache villains. The noir is stronger if each signature is defensible in a boardroom and lethal inside a flooded room.
 
 Replay structure is not power-roguelite progression. A run is a long campaign on a world seed. Replay value comes from geology, loot, wreck/module layout, route topology, fauna and ecosystem variance, evidence order, contract pressure, escape timing, and partial-ending access. A Marauder dossier may preserve external knowledge, endings, rumors, and contract context between runs, but it must not trivialize early survival through permanent power.
 
-The player motive arc is professional first. Personal stakes should emerge through recovered names, worker IDs, body ledgers, Barnard/frontier salvage links, and later evidence that the contract was shaped around the player's debt/background/skill profile. Do not start with an explicit ex-Deep-Reach identity unless reopened.
+Marauder dossier persistence is now explicit: ending records, discovered contract types, rumor families, evidence categories and route warnings may persist. Equipment power and world truth reset per seed. A new run can begin with better suspicion, not stronger lungs.
 
-False endings are real outcomes. Minimum families: Material Ending, where blue debt extraction pays but truth fails; and Partial Exit, where the player reaches recovery and can return to the same seed under worsened pressure.
+The player motive arc is professional first, but the protagonist is now explicitly ex-Deep-Reach. Personal stakes should emerge through recognized procedures, recovered names, worker IDs, body ledgers, Barnard/frontier salvage links, and later evidence that the contract was shaped around the player's debt/background/skill profile. The old "no explicit ex-Deep-Reach identity" guard is retired.
+
+The first survival tool chain is locked for opening structure: manual bilge pump kit, cold sealant patch gun, low-power induction cutter, acoustic pinger line and P-63 field fabricator. These are not generic upgrade toys. They teach the player to clear water by hand, patch within rating, cut only service metal, mark return routes with sound, and craft certified repair parts. First P-63 recipes are valve gasket, cutter contact, pinger float and sealant clamp.
+
+Resource taxonomy is locked at category level. Native HECTON-8 resources are sulfide salts, brine crusts, vent minerals and corrosive chemistry older than Deep Reach. Natural process feedstock is noble-gas brine and sealed pressure-history samples that can become Xenon-Omega only through containment and process. Deep-Reach-amplified resources are pressure ceramics, clamp-ring blanks, seal seats, cutter contacts and vent-forge hardware. Atlas-altered resources are biofiber sealant, biometal sensor tags, living telemetry carriers and repair-ecology material. Numeric yields, rarity and stack sizes remain recipe-table work.
+
+False endings are real outcomes, not fake fail screens. Families include material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, and Atlas basin resolution. The final choice is payload authority: sell coordinates and XO proof, sever Atlas continuity, preserve/quarantine the ocean-machine ecology, publish evidence to a public ledger, or withhold payload and leave Deep Reach blind.
 
 ## Faction Briefing
 
@@ -195,6 +231,12 @@ Resource naming:
 HECTON-8 resources include more than Xenon-Omega: structural metals, sulfides, salts, noble-gas pockets, methane/ammonia hydrates, oxygen chemistry, vent minerals, pressure ceramics, bioluminescent compounds, biofibers, enzymes, salvage hardware, and Atlas-altered biometal. Xenon-Omega is the strategic apex of a whole pressure economy.
 
 Blue debt behavior: valuable samples require pressure-rated containment; strong samples can carry a weak Atlas-compatible pressure-harmonic signature; contamination is industrial/ecological, not magic or viral horror. Greed should create engineering pressure, scanner noise, drone/fauna/Atlas attention, and false-ending consequences.
+
+Blue debt containment has five stages: 0 sealed, 1 signal drift, 2 lattice fracture, 3 brine/biological bloom, and 4 dead sample with live contamination. Vent repressure may recover stage 1 only. These are gameplay thresholds and article language, not a supernatural infection model.
+
+HECTON-8 geology is now treated as route language. The Great Tide is a real tide/cryosphere/storm/heat-discharge disaster chain. Brine canyons are density geography that distorts buoyancy, sonar and the player's sense of "floor." Vent forges provide useful heat cycles for ceramics, seals, pressure-glass annealing and ascent charge preparation while also creating boil shear, corrosive bloom, false oxygen readings and predator migration. Pressure glass is not one ore vein; it is a pressure-grown material ecology created by noble gases, brine, mineral defects, thermal cycling, altered biology and Atlas infrastructure.
+
+HECTON-8 physical atlas lock: the moon formed in the Aegir system, then became collision-fractured and resonance-heated. Ocean bands are 0-250 m photic shelf, 250-1200 m industrial shelf/cable reef, 1200-2800 m brine canyon, 2800-4300 m abyssal machine field, and 4300-5600 m Atlas basin. Solid seafloor is rare and appears as exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins. Seeds may vary topology, POI order, resource exposure, fauna pressure and safe pockets; the star, moon ladder, depth bands, Great Tide logic and Atlas-basin relationship do not change.
 
 ## Suit DTO Sync - Oxygen Tank
 

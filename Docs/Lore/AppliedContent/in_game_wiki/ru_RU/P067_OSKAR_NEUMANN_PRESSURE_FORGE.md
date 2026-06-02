@@ -1,0 +1,30 @@
+---
+packet_id: P067_OSKAR_NEUMANN_PRESSURE_FORGE
+article_id: hecton8.oskar_neumann_pressure_forge
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Кузня давления Оскара Нойманна
+
+Оскар Нойманн связывает ремесло колонии с escape chain. Его notes по pressure forge оправдывают deep fabrication, clamp rings, seal tests и необходимость спускаться за компонентами вместо ожидания surface rescue.
+
+## Scanner
+
+Оскар Нойманн оставил рецепт forge для clamp rings, достаточно крепких, чтобы ascent cradle стал больше чем гробом.
+
+## Terminal
+
+NEUMANN, O. Forge note: pressure glass dust портит первый seal при холодном смешивании. Греть ring под vent draw, quench внутри brine jacket, затем test at twice ascent load.
+
+## Audio
+
+Запуск это просто pressure door, которая движется вверх. Строй его как дверь.
+
+## Field Note
+
+Выходу нужен craft, а не храбрость.
+
+<!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/ru_RU. -->

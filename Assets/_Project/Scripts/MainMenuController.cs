@@ -78,6 +78,7 @@ namespace Hecton.UI.MainMenu
         private const int SlotCount = SaveEvents.ManualSlotCount;
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
+        private const string OrbitSceneName = "01_ORBIT";
         private const float CancelInputDebounceSeconds = 0.35f;
         private const float InputRoutingRetrySeconds = 0.25f;
         private const float MaxMenuPresentationDeltaSeconds = 0.1f;
@@ -985,8 +986,22 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         public void StartGame(string slotName)
         {
+            bool isNewGame = string.IsNullOrEmpty(slotName);
+            StartGameWithScene(slotName, ResolveStartSceneName(isNewGame));
+        }
+
+        public void StartOrbitPrologue()
+        {
+            StartGameWithScene(string.Empty, OrbitSceneName);
+        }
+
+        private void StartGameWithScene(string slotName, string sceneName)
+        {
             if (_isSceneLoadInFlight || _isSaveLoadBusy)
                 return;
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+                sceneName = targetSceneName;
 
             // Validate save exists before loading
             if (!string.IsNullOrEmpty(slotName))
@@ -1034,7 +1049,6 @@ namespace Hecton.UI.MainMenu
             _isSceneLoadInFlight = true;
 
             bool isNewGame = string.IsNullOrEmpty(slotName);
-            string sceneName = ResolveStartSceneName(isNewGame);
             GameStartContext context = isNewGame
                 ? GameStartContext.CreateNewGame()
                 : GameStartContext.CreateLoadGame(slotName);

@@ -84,3 +84,99 @@
   - DOD pending: `validate_script` for `MetaCampaignService.cs` and `H8NarrativeApexVerifier.cs`, then `Hecton8/Lore/Run Narrative Apex Verification`.
   - Current blocker: Unity MCP `validate_script` disconnected once and timed out once while Unity/VBCSCompiler was active; CPU later returned to 100%.
   - Estimate: no `dotnet build` invoked in this pass.
+
+## Control Pass 84 - MetaCampaign side-effect phase closure
+
+- [x] Deferred MetaCampaign audio and cartography side effects to `LateFrameTick`.
+  - DOD: `PublishStateSideEffects` now queues `QueueCampaignBroadcast` and `QueueCartographyState`; only `LateFrameTick` calls `FlushCampaignBroadcast` and `FlushCartographyState`, and only those flush methods call `PublishCampaignBroadcast` / `PublishCartographyState`.
+  - Rejected: direct VWS/cartography `SignalBus` publication from state mutation/cold setter paths; adding new lanes or managed queues.
+  - Estimate: 0 allocations; two dirty bools plus two pending uint fields; two branches per `LateFrameTick`.
+- [x] Expanded MetaCampaign Apex phase guard from visual-only to full side-effect route.
+  - DOD: `H8NarrativeApexVerifier` now reports/fails `meta_campaign_audio_*` and `meta_campaign_cartography_*` counters alongside visual route counters.
+  - Rejected: prose proof or loose grep that cannot fail the Unity Apex menu.
+  - Estimate: editor-only AST proof; runtime cost 0.
+- [x] Rechecked scoped hot dependency and lock shape without compile spam.
+  - DOD: scoped source scan found no runtime `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, or `GetComponents` in active Narrative/AppliedLore runtime files; `MetaCampaignService` write-lock call sites remain acquire -> `try/finally` release with blackbox writes outside variable/rules locks.
+  - Rejected: `dotnet build`, Unity refresh, or Unity Apex menu while CPU is 100% and Unity/dotnet compiler PID 26752 is active.
+  - Estimate: no gameplay truth, DTO layout, save identity, or SignalBus payload change.
+- [ ] Unity MCP validate/menu proof after compiler throttle clears.
+  - DOD pending: `validate_script` for `MetaCampaignService.cs` and `H8NarrativeApexVerifier.cs`, then `Hecton8/Lore/Run Narrative Apex Verification`.
+  - Partial proof: Unity `validate_script` for `H8NarrativeApexVerifier.cs` reports 0 errors/0 warnings.
+  - Current blocker: `MetaCampaignService.cs` validation disconnected once and then timed out once; CPU returned to 90% with active `dotnet` PID 26752; no build, Unity import, or Apex menu was launched.
+  - Estimate: no `dotnet build` invoked in this pass.
+
+## Control Pass 85 - Ex-Deep-Reach canon and AppliedLore RS012-RS014
+
+- [x] Locked latest user-controlled story decisions in canon docs.
+  - DOD: `Canon_Locks.md`, `Open_Questions.md`, `Lore_Bible.md`, and `Narrative_Crystallization.md` now lock the player as former Deep Reach / current Marauder, no family hook; Great Tide as real physics plus Deep Reach liability; concrete escape chain; Atlas maintenance ecology; and first-hour spine.
+  - Rejected: keeping stale "do not start with ex-Deep-Reach" guard after user reopened and approved that identity.
+  - Estimate: static lore only; runtime cost 0.
+- [x] Added AppliedLore release sets `RS012_PLAYER_LIABILITY_ESCAPE`, `RS013_COLONY_ATLAS_MAINTENANCE`, and `RS014_COLONY_RETURN_WINDOWS`.
+  - DOD: 15 new packets `P056`-`P070` with scanner, terminal, audio, in-game wiki, external-site, field-note, unlock tags, EN/RU text and draft-filled remaining locales.
+  - Rejected: loose prose-only lore without packet IDs, route cards, binding maps, or publication pages.
+  - Estimate: baked string-pool content path only; no hot runtime parser.
+- [x] Propagated new lore through authoring/export surfaces.
+  - DOD: added manifests, packet bundles, release markdown, evidence graphs, route cards, runtime binding maps, scene binding target backlog, image briefs, exported source CSV, generated hash constants, in-game wiki pages, external-site pages, and localized indexes.
+  - Rejected: editing Unity scenes or C# gameplay systems during a lore/content pass.
+  - Estimate: source-data rows only; runtime impact depends on later DataMonolith bake, no new per-frame code.
+- [x] Verified source pipeline.
+  - DOD: `AppliedLoreImporter.py` reports `applied_lore_packets=70 localized_rows=1050`; page exporter reports `applied_lore_pages_written=450`; route-card exporter reports `applied_lore_route_cards=64`; source-only audit passes with `packets=70`, `rows=1050`, `graph_rows=70`, `route_cards=64`, `wiki_pages=1050`, `site_pages=1050`, `binding_map_rows=70`.
+  - Rejected: claiming full baked `static_data.h8bin` proof without running a Unity/DataMonolith bake.
+  - Estimate: no `dotnet build`, no Unity compile, no runtime code touched.
+
+## Control Pass 86 - Domains / Aegir moon ladder / HECTON-8 geology AppliedLore
+
+- [x] Added AppliedLore release sets `RS015_HUMAN_DOMAINS_ROUTE_ECONOMY`, `RS016_AEGIR_SYSTEM_MOON_LADDER`, and `RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY`.
+  - DOD: 15 packets `P071`-`P085` now cover Sol/Centauri/Barnard/Tau/Luyten domain roles, Aegir/Ran light, moon ladder, relay hazards, HECTON-8 orbit/tide geometry, Great Tide physics, pressure glass, brine canyons, vent forges and wider resource stack.
+  - Rejected: leaving human space, local astronomy and geology as loose internal prose with no packet IDs or route cards.
+  - Estimate: static content source only; runtime cost 0 until bake/placement.
+- [x] Propagated RS015-RS017 through content surfaces.
+  - DOD: generated packet bundles, manifests, release docs, evidence graphs, route cards, runtime binding maps, scene binding target backlogs, image briefs, localized in-game wiki pages, external-site pages, localized indexes, source CSV rows and `H8AppliedLoreHashes.cs` constants.
+  - Rejected: runtime markdown parsing, live translation, scene search, or Unity scene edits in a lore pass.
+  - Estimate: no per-frame code path added.
+- [x] Synced canon memory.
+  - DOD: `Canon_Locks.md`, `Lore_Bible.md`, `Open_Questions.md`, and `Narrative_Crystallization.md` now lock domain roles, moon ladder functions and geology/resource route pillars.
+  - Rejected: keeping already-decided items as open questions.
+  - Estimate: docs/content only.
+- [x] Verified source pipeline.
+  - DOD: importer reported `applied_lore_packets=85 localized_rows=1275`; page exporter wrote 450 new pages; route-card exporter reported `applied_lore_route_cards=79`; source-only audit passed with `packets=85`, `rows=1275`, `graph_rows=85`, `route_cards=79`, `wiki_pages=1275`, `site_pages=1275`, `binding_map_rows=85`.
+  - Rejected: claiming baked `static_data.h8bin` proof without a DataMonolith bake.
+  - Estimate: no `dotnet build`, no Unity compile, no runtime gameplay code touched.
+
+## Control Pass 87 - Carrier debt / physical atlas / ending agency AppliedLore
+
+- [x] Added AppliedLore release sets `RS018_CARRIER_DEBT_CLAIM_AUTHORITY`, `RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS`, and `RS020_ATLAS_ENDING_AGENCY_DOSSIER`.
+  - DOD: 15 packets `P086`-`P100` now lock Aegir Reclamation Pool, Keelmark Mutual, 4.8 tonne-window debt, Black Keel first voice, Deep Reach priority hook, collision-fractured HECTON-8 origin, ocean depth bands, seafloor windows, seed invariants, pressure-containment stages, Atlas person-boundary, Recovery Compliance Office, false-ending taxonomy, Marauder dossier persistence and final payload choices.
+  - Rejected: asking the user to decide already-solvable carrier/debt/geology/ending details without an applied proposal.
+  - Estimate: static content source only; runtime cost 0 until bake/placement.
+- [x] Propagated RS018-RS020 through content surfaces.
+  - DOD: generated packet bundles, manifests, release docs, evidence graphs, route cards, runtime binding maps, scene binding target backlogs, image briefs, localized in-game wiki pages, external-site pages, localized indexes, source CSV rows and `H8AppliedLoreHashes.cs` constants.
+  - Rejected: leaving these as one-off markdown articles not connected to runtime authoring routes.
+  - Estimate: no hot-path lookup, no runtime parser, no live localization.
+- [x] Synced canon memory and open-question list.
+  - DOD: `Canon_Locks.md`, `Lore_Bible.md`, `Open_Questions.md`, and `Narrative_Crystallization.md` now mark these choices as locks and leave only actual tuning/name questions open.
+  - Rejected: preserving stale unresolved prompts for exact claim-pool name, insurer shell, debt amount, first voice mode, HECTON-8 origin, depth bands, seafloor access, containment stages and Atlas person recognition.
+  - Estimate: docs/content only.
+- [x] Verified source pipeline after all edits.
+  - DOD: importer reported `applied_lore_packets=100 localized_rows=1500`; page exporter wrote 450 new pages; route-card exporter reported `applied_lore_route_cards=94`; source-only audit passed with `packets=100`, `rows=1500`, `graph_rows=100`, `route_cards=94`, `route_source_rows=94`, `wiki_pages=1500`, `site_pages=1500`, `index_pages=30`, `binding_map_rows=100`, `target_backlog_rows=100`.
+  - Rejected: Unity/DataMonolith bake claim; no `static_data.h8bin` rebuild was run in this lore-only pass.
+  - Estimate: no `dotnet build`, no Unity compile, no runtime gameplay code touched except regenerated hash constants from the existing importer.
+
+## Control Pass 88 - Transit doctrine / signoff chain / first tools / resource taxonomy AppliedLore
+
+- [x] Added AppliedLore release sets `RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY`, `RS022_DEEP_REACH_SIGNOFF_CHAIN`, `RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE`, and `RS024_RESOURCE_RECIPE_TAXONOMY`.
+  - DOD: 20 packets `P101`-`P120` now cover no-FTL route economy, beam-sail probe era, pellet-fusion freight, RAN-B:H8 catalog language, Black Keel in-system limits, named Deep Reach signoff chain, first-hour tools and resource category split.
+  - Rejected: leaving hard-sci-fi transit, Deep Reach responsibility names, first tools and resource classes as open prose without packet IDs, route cards or binding maps.
+  - Estimate: static content source only; runtime cost 0 until bake/placement.
+- [x] Propagated RS021-RS024 through source content surfaces.
+  - DOD: generated packet bundles, manifests, release docs, evidence graphs, route cards, runtime binding maps, scene binding targets, image briefs, localized in-game wiki pages, external-site pages, localized indexes, source CSV rows and `H8AppliedLoreHashes.cs` constants.
+  - Rejected: runtime markdown parsing, live translation, scene search or Unity scene edits in this lore pass.
+  - Estimate: no hot-path lookup, no runtime parser, no live localization.
+- [x] Removed stale canon conflicts.
+  - DOD: `Player_Motive_Arc.md` no longer warns against an ex-Deep-Reach protagonist; `Aegir_Gas_Giant.md`, `Canon_Locks.md`, `Open_Questions.md`, `Lore_Bible.md`, `Narrative_Crystallization.md`, and AppliedContent README now reflect RS021-RS024.
+  - Rejected: preserving stale unresolved prompts for drive family, public catalog label, senior names, first tool chain and resource class split.
+  - Estimate: docs/content only.
+- [x] Verified source pipeline after all edits.
+  - DOD: importer reported `applied_lore_packets=120 localized_rows=1800`; page exporter wrote 600 new pages; route-card exporter reported `applied_lore_route_cards=114`; source-only audit passed with `packets=120`, `rows=1800`, `graph_rows=120`, `route_cards=114`, `route_source_rows=114`, `wiki_pages=1800`, `site_pages=1800`, `index_pages=30`, `binding_map_rows=120`, `target_backlog_rows=120`.
+  - Rejected: Unity/DataMonolith bake claim; no `static_data.h8bin` rebuild was run in this lore-only pass.
+  - Estimate: no `dotnet build`, no Unity compile, no runtime gameplay code touched except regenerated hash constants from the existing importer.

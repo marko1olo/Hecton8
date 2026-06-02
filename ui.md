@@ -244,3 +244,31 @@ Reject if:
 - no render/performance status is recorded.
 
 If it looks cool but does not make the player decide, distrust, retreat, repair, reroute, scan, save, or descend, it is rejected.
+
+## 14. Truth Ownership
+
+UI owns presentation, input focus, layout, control affordance, text rendering, and state hierarchy. UI does not own oxygen, pressure, hull, route, AI, save, mission, construction, tool, vehicle, or inventory truth.
+
+Every UI readout must name its source owner. If the source is stale, missing, corrupted, or low-confidence, the UI must show that state instead of pretending certainty.
+
+## 15. GlobalQualityWeight Scaling
+
+Compact keeps hierarchy, legibility, color roles, static atlases, zero-GC text, and reduced motion. Middle adds richer glass, route diagrams, and screen material. High adds better degradation, secondary display response, and smoother transitions. Ultra adds dense instrument detail and cinematic screen texture without changing the command model or state truth.
+
+## 16. Proof Artifacts
+
+UI work must provide:
+
+- screen family and physical carrier;
+- source owner list for critical readouts;
+- input navigation proof;
+- 720p screenshot;
+- long localized string proof;
+- disabled/failure state screenshot;
+- zero-GC text/update route;
+- compact-tier screenshot;
+- accessibility note.
+
+## 17. Acceptance Sentence
+
+UI is accepted only when it behaves like an instrument, exposes true state from named owners, stays readable under pressure, supports input/accessibility, proves low-tier layout, and avoids hot-path allocation.

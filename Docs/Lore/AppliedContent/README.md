@@ -29,6 +29,9 @@ This folder is not an internal rationale archive.
 - `RS009_COLONY_LAYOUT_WORKER_EVIDENCE`: ninth five content packets for drowned worker lockers, pressure bunk routine, shift-board route holds, medical lock delay, and black-box name payloads.
 - `RS010_PRESSURE_MACHINERY_RETURN_ROUTE`: tenth five content packets for pump-room pressure tradeoffs, hatch seal history, cable splice scars, sonar return-route decay, and salvage tool custody.
 - `RS011_COMM_TARIFF_GRAFFITI_MASKS`: eleventh five content packets for no-ansible communication delay, Black Keel tariff queues, marauder graffiti masks, stale relay instructions, and corporate response ledgers.
+- `RS012_PLAYER_LIABILITY_ESCAPE`: twelfth five content packets for ex-Deep-Reach player canon, Great Tide liability, Black Keel claim hooks, escape-chain assembly, and first-hour structure.
+- `RS013_COLONY_ATLAS_MAINTENANCE`: thirteenth five content packets for Atlas maintenance ecology and first named colony workers: Mara Venn, Juno Kade, Ren Okoye, and Sahana Iqbal.
+- `RS014_COLONY_RETURN_WINDOWS`: fourteenth five content packets for Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn, and present-tense Deep Reach communication windows.
 
 ## Runtime Rule
 
@@ -49,3 +52,13 @@ No runtime markdown parsing. No runtime translation. No scene search for content
 - Consumers: PDA encyclopedia, scanner title route, `MessageTerminal`, and TerminalOS preview line.
 - Unlock route: `H8AppliedLoreRuntime.TryRaisePacketUnlocked` publishes `LoreFragmentScannedSignal`; PDA consumes the signal and unlocks/selects the baked packet.
 - Authoring hooks: `NarrativeDiscovery.appliedLorePacketHash`, `ScannableFragment` 25/50/100% stage packet hashes, `MessageTerminal.appliedLorePacketHash`, and AUP POI triggers via `NarrativeSpatialTriggerAuthoring.AppliedLoreHash`.
+- `RS015_HUMAN_DOMAINS_ROUTE_ECONOMY`: turn the six-domain human sphere into usable object lore, site/wiki articles, and route evidence without making the setting dense space opera.
+- `RS016_AEGIR_SYSTEM_MOON_LADDER`: make Aegir and its moons useful for navigation, site lore, route pressure, and hard-sci-fi constraints around HECTON-8.
+- `RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY`: make HECTON-8's pressure geology, brine routes, vent forge, blue debt formation and wider resource economy usable as gameplay evidence and site/wiki foundation.
+- `RS018_CARRIER_DEBT_CLAIM_AUTHORITY`: make Black Keel's claim-pool ownership, insurance custody, tonne-window debt, first voice and Deep Reach priority hooks usable as gameplay evidence and site/wiki foundation.
+- `RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS`: lock HECTON-8's moon origin, ocean bands, seafloor windows, seed invariants and pressure-containment failure stages.
+- `RS020_ATLAS_ENDING_AGENCY_DOSSIER`: lock Atlas recognition limits, present Deep Reach faction pressure, false-ending taxonomy, dossier persistence and final payload choices.
+- `RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY`: lock no-FTL route economy, beam-sail probe era, pellet-fusion freight doctrine, RAN-B:H8 catalog language and Black Keel in-system tender limits.
+- `RS022_DEEP_REACH_SIGNOFF_CHAIN`: name the 2147/2190 Deep Reach liability chain through risk, Atlas weighting, evacuation certification, insurance conversion and Recovery Compliance signatures.
+- `RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE`: lock the first-hour tool chain around manual pumping, cold sealant, low-power cutting, acoustic return lines and the P-63 field fabricator.
+- `RS024_RESOURCE_RECIPE_TAXONOMY`: split HECTON-8 resources into native geology, natural process feedstock, Deep-Reach-amplified materials and Atlas-altered biomechanical resources.

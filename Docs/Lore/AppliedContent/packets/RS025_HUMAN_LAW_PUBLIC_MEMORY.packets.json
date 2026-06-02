@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS025_HUMAN_LAW_PUBLIC_MEMORY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P121_DOMAIN_CIVIC_CORPORATE_SPLIT",
+      "article_id": "human_space.domain_civic_corporate_split",
+      "title_key": "applied_lore.domain_civic_corporate_split.title",
+      "unlock": {
+        "primary": "unlock.domain_civic_corporate_split",
+        "poi_tags": [
+          "poi.route_law_plate",
+          "poi.domain_mark_terminal",
+          "poi.claim_jurisdiction_tag"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.shallow_annex",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Legal map. Same species, different owners of truth.",
+          "field_note": "The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "ru_RU": {
+          "title": "Гражданско-корпоративный раскол доменов",
+          "scanner": "Юридическая карта. Один вид, разные владельцы правды.",
+          "field_note": "Доменов не нужны десятки. Их нужно ровно столько, чтобы спасение стало политической проблемой.",
+          "terminal": "DOMAIN MAP 2190: Sol Core держит старое право и финансы; Centauri - раннюю легитимность; Barnard - привычку к salvage; Tau Ceti - публично-правовое давление; Luyten - custody пакетов; Aegir - корпоративный claim.",
+          "audio": "Чем дальше от центра, тем больше закон похож на квитанцию.",
+          "in_game_wiki": "Человеческое пространство к 2190 году разреженное, но зрелое. Sol Core важен для собственности, финансов и сертификации. Centauri дает Deep Reach язык старых хартий. Barnard Yards объясняет salvage-культуру игрока. Tau Ceti может сделать доказательства публичными после relay-задержки. Luyten контролирует custody маршруты. Aegir - место, где все эти системы становятся уязвимыми.",
+          "external_site": "Гражданско-корпоративный раскол доменов удерживает HECTON-8 от плотной space opera: несколько названных центров власти, множество подразумеваемых foothold и никакого мгновенного спасения."
+        },
+        "ja_JP": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft JP localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft JP localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft JP localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft JP localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft JP localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft JP localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "zh_CN": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft CN localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft CN localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft CN localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft CN localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft CN localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft CN localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "fr_FR": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft FR localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft FR localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft FR localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft FR localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft FR localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft FR localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "es_ES": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft ES localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft ES localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft ES localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft ES localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft ES localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft ES localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "de_DE": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft DE localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft DE localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft DE localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft DE localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft DE localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft DE localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "pl_PL": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft PL localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft PL localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft PL localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft PL localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft PL localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft PL localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "uk_UA": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft UA localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft UA localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft UA localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft UA localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft UA localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft UA localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "ar_SA": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft AR localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft AR localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft AR localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft AR localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft AR localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft AR localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "id_ID": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft ID localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft ID localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft ID localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft ID localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft ID localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft ID localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "ko_KR": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft KO localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft KO localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft KO localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft KO localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft KO localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft KO localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "he_IL": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft HE localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft HE localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft HE localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft HE localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft HE localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft HE localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "pt_BR": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft PT localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft PT localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft PT localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft PT localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft PT localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft PT localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        },
+        "nl_NL": {
+          "title": "Domain Civic-Corporate Split",
+          "scanner": "Draft NL localization pending native pass. Legal map. Same species, different owners of truth.",
+          "field_note": "Draft NL localization pending native pass. The domains do not need dozens of names. They need enough pressure to make rescue political.",
+          "terminal": "Draft NL localization pending native pass. DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.",
+          "audio": "Draft NL localization pending native pass. The farther you go, the more the law becomes a receipt.",
+          "in_game_wiki": "Draft NL localization pending native pass. Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.",
+          "external_site": "Draft NL localization pending native pass. The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue."
+        }
+      }
+    },
+    {
+      "packet_id": "P122_MARAUDER_LEGAL_LOOPHOLE",
+      "article_id": "human_space.marauder_legal_loophole",
+      "title_key": "applied_lore.marauder_legal_loophole.title",
+      "unlock": {
+        "primary": "unlock.marauder_legal_loophole",
+        "poi_tags": [
+          "poi.claim_license_beacon",
+          "poi.salvage_lien_console",
+          "poi.black_keel_manifest_slot"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.photic_shelf",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "License valid in one lane, criminal in the next.",
+          "field_note": "Marauder is a job title only when the right court is listening.",
+          "terminal": "CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "ru_RU": {
+          "title": "Юридическая лазейка мародеров",
+          "scanner": "Лицензия действует в одном коридоре и становится преступлением в следующем.",
+          "field_note": "Marauder - профессия только пока слушает правильный суд.",
+          "terminal": "CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Один и тот же резак может быть инструментом, преступлением или средством спасения.",
+          "in_game_wiki": "Мародеры не единая фракция. Они лицензированные подрядчики там, где мертвому claim нужна работа; терпимые преступники там, где recovery дешевле enforcement; и незаконные рейдеры, когда доказательства угрожают владельцу claim. Игрок живет внутри этой юридической неоднозначности.",
+          "external_site": "Юридическая лазейка мародеров делает salvage профессией с зубами: достаточно полезной, чтобы нанять, и достаточно грязной, чтобы бросить."
+        },
+        "ja_JP": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft JP localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft JP localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft JP localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft JP localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft JP localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft JP localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "zh_CN": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft CN localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft CN localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft CN localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft CN localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft CN localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft CN localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "fr_FR": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft FR localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft FR localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft FR localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft FR localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft FR localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft FR localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "es_ES": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft ES localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft ES localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft ES localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft ES localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft ES localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft ES localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "de_DE": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft DE localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft DE localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft DE localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft DE localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft DE localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft DE localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "pl_PL": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft PL localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft PL localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft PL localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft PL localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft PL localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft PL localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "uk_UA": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft UA localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft UA localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft UA localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft UA localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft UA localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft UA localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "ar_SA": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft AR localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft AR localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft AR localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft AR localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft AR localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft AR localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "id_ID": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft ID localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft ID localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft ID localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft ID localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft ID localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft ID localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "ko_KR": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft KO localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft KO localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft KO localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft KO localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft KO localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft KO localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "he_IL": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft HE localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft HE localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft HE localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft HE localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft HE localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft HE localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "pt_BR": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft PT localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft PT localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft PT localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft PT localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft PT localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft PT localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        },
+        "nl_NL": {
+          "title": "Marauder Legal Loophole",
+          "scanner": "Draft NL localization pending native pass. License valid in one lane, criminal in the next.",
+          "field_note": "Draft NL localization pending native pass. Marauder is a job title only when the right court is listening.",
+          "terminal": "Draft NL localization pending native pass. CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.",
+          "audio": "Draft NL localization pending native pass. The same cutter can be a tool, a crime, or a rescue device.",
+          "in_game_wiki": "Draft NL localization pending native pass. Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.",
+          "external_site": "Draft NL localization pending native pass. The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon."
+        }
+      }
+    },
+    {
+      "packet_id": "P123_SALVAGE_TRUTH_EVIDENCE_STATUS",
+      "article_id": "human_space.salvage_truth_evidence_status",
+      "title_key": "applied_lore.salvage_truth_evidence_status.title",
+      "unlock": {
+        "primary": "unlock.salvage_truth_evidence_status",
+        "poi_tags": [
+          "poi.chain_of_custody_case",
+          "poi.packet_witness_slot",
+          "poi.relay_notary_cache"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "ru_RU": {
+          "title": "Статус salvage-правды как доказательства",
+          "scanner": "Доказательство только если custody пережила давление, соль и юристов.",
+          "field_note": "Правды мало. Ей нужен маршрут, который не купят до прибытия.",
+          "terminal": "EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Тело становится доказательством только после того, как кто-то согласится не списать его в неправильную папку.",
+          "in_game_wiki": "Salvage-правда не равна правосудию автоматически. Один и тот же black-box пакет может стать оценкой claim, записью contamination или публичным доказательством. Игрок должен сохранить custody маршруты, если хочет, чтобы Tau Ceti или другая публичная власть реально сработала.",
+          "external_site": "Статус salvage-правды превращает лор в механику: найденный лог имеет силу только если игрок защитил route пакета."
+        },
+        "ja_JP": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft JP localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft JP localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft JP localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft JP localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft JP localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft JP localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "zh_CN": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft CN localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft CN localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft CN localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft CN localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft CN localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft CN localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "fr_FR": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft FR localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft FR localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft FR localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft FR localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft FR localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "es_ES": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft ES localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft ES localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft ES localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft ES localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft ES localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "de_DE": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft DE localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft DE localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft DE localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft DE localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft DE localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "pl_PL": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft PL localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft PL localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft PL localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft PL localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft PL localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "uk_UA": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft UA localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft UA localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft UA localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft UA localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft UA localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft UA localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "ar_SA": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft AR localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft AR localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft AR localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft AR localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft AR localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "id_ID": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft ID localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft ID localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft ID localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft ID localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft ID localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "ko_KR": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft KO localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft KO localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft KO localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft KO localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft KO localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "he_IL": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft HE localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft HE localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft HE localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft HE localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft HE localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "pt_BR": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft PT localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft PT localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft PT localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft PT localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft PT localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft PT localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        },
+        "nl_NL": {
+          "title": "Salvage Truth Evidence Status",
+          "scanner": "Draft NL localization pending native pass. Evidence only if custody survives pressure, salt and lawyers.",
+          "field_note": "Draft NL localization pending native pass. Truth is not enough. It needs a route that cannot be bought before arrival.",
+          "terminal": "Draft NL localization pending native pass. EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.",
+          "audio": "Draft NL localization pending native pass. A corpse is proof only after somebody agrees not to misfile it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.",
+          "external_site": "Draft NL localization pending native pass. Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route."
+        }
+      }
+    },
+    {
+      "packet_id": "P124_NORMAL_CITIZEN_AEGIR_MEMORY",
+      "article_id": "human_space.normal_citizen_aegir_memory",
+      "title_key": "applied_lore.normal_citizen_aegir_memory.title",
+      "unlock": {
+        "primary": "unlock.normal_citizen_aegir_memory",
+        "poi_tags": [
+          "poi.old_news_clip",
+          "poi.insurance_public_summary",
+          "poi.school_archive_stub"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.black_keel_orbit",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "ru_RU": {
+          "title": "Память обычных людей об Aegir",
+          "scanner": "Публичная память: старая катастрофа, дальний ресурс, без лиц.",
+          "field_note": "Aegir достаточно известен, чтобы его оценивали, и достаточно забыт, чтобы его хоронили.",
+          "terminal": "PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Большинство знает это место как строку под страховыми ставками.",
+          "in_game_wiki": "Для обычных людей Aegir - устаревший заголовок и тарифная пометка. Больше знают специалисты, страховщики, Deep Reach, мародеры и route offices. Так HECTON-8 остается исторически известным, но эмоционально отсутствующим для широкой человеческой публики.",
+          "external_site": "Память обычных людей об Aegir задает публичную дистанцию HECTON-8: не секрет, не понято и слишком далеко для спасения."
+        },
+        "ja_JP": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft JP localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft JP localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft JP localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft JP localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft JP localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "zh_CN": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft CN localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft CN localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft CN localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft CN localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft CN localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "fr_FR": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft FR localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft FR localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft FR localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft FR localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft FR localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "es_ES": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft ES localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft ES localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft ES localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft ES localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft ES localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "de_DE": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft DE localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft DE localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft DE localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft DE localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft DE localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "pl_PL": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft PL localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft PL localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft PL localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft PL localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft PL localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "uk_UA": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft UA localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft UA localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft UA localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft UA localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft UA localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "ar_SA": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft AR localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft AR localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft AR localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft AR localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft AR localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "id_ID": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft ID localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft ID localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft ID localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft ID localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft ID localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "ko_KR": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft KO localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft KO localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft KO localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft KO localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft KO localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "he_IL": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft HE localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft HE localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft HE localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft HE localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft HE localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "pt_BR": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft PT localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft PT localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft PT localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft PT localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft PT localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        },
+        "nl_NL": {
+          "title": "Normal Citizen Aegir Memory",
+          "scanner": "Draft NL localization pending native pass. Public memory: old disaster, distant resource, no faces.",
+          "field_note": "Draft NL localization pending native pass. Aegir is famous enough to price, forgotten enough to bury.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.",
+          "audio": "Draft NL localization pending native pass. Most people know the place as a line under insurance rates.",
+          "in_game_wiki": "Draft NL localization pending native pass. For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.",
+          "external_site": "Draft NL localization pending native pass. Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save."
+        }
+      }
+    },
+    {
+      "packet_id": "P125_DEEP_REACH_ORIGIN_CHAIN",
+      "article_id": "human_space.deep_reach_origin_chain",
+      "title_key": "applied_lore.deep_reach_origin_chain.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_origin_chain",
+        "poi_tags": [
+          "poi.deep_reach_old_charter",
+          "poi.centauri_shell_mark",
+          "poi.aegir_project_stamp"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.industrial_shelf",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Old company. New disaster. Same charter language.",
+          "field_note": "Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "They brought the empire in filing cabinets.",
+          "in_game_wiki": "Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "ru_RU": {
+          "title": "Цепочка происхождения Deep Reach",
+          "scanner": "Старая компания. Новая катастрофа. Тот же язык хартий.",
+          "field_note": "Deep Reach не выросла на Aegir. Она пришла туда с уже старой бумажной властью.",
+          "terminal": "CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Они привезли империю в шкафах с документами.",
+          "in_game_wiki": "Deep Reach старше проекта Aegir. Она использовала раннюю extrasolar легитимность и route finance, чтобы HECTON-8 выглядел обычной high-risk colony. Это важно: преступление системное, потому что старые институты сделали катастрофу административно удобной.",
+          "external_site": "Цепочка происхождения Deep Reach привязывает корпорацию к более ранней человеческой экспансии: Aegir - один из худших проектов, а не место рождения компании."
+        },
+        "ja_JP": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft JP localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft JP localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft JP localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft JP localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "zh_CN": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft CN localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft CN localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft CN localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft CN localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "fr_FR": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft FR localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft FR localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft FR localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft FR localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "es_ES": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft ES localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft ES localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft ES localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft ES localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "de_DE": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft DE localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft DE localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft DE localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft DE localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "pl_PL": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft PL localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft PL localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft PL localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft PL localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "uk_UA": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft UA localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft UA localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft UA localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft UA localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft UA localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft UA localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "ar_SA": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft AR localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft AR localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft AR localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft AR localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "id_ID": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft ID localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft ID localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft ID localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft ID localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "ko_KR": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft KO localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft KO localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft KO localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft KO localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "he_IL": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft HE localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft HE localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft HE localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft HE localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "pt_BR": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft PT localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft PT localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft PT localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft PT localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        },
+        "nl_NL": {
+          "title": "Deep Reach Origin Chain",
+          "scanner": "Draft NL localization pending native pass. Old company. New disaster. Same charter language.",
+          "field_note": "Draft NL localization pending native pass. Deep Reach did not grow up on Aegir. It arrived with paperwork already old.",
+          "terminal": "Draft NL localization pending native pass. CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.",
+          "audio": "Draft NL localization pending native pass. They brought the empire in filing cabinets.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace."
+        }
+      }
+    }
+  ]
+}

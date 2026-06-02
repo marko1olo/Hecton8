@@ -1,0 +1,30 @@
+---
+packet_id: P094_SEED_GEOLOGY_INVARIANTS
+article_id: hecton8.seed_geology_invariants
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Seed Geology Invariants
+
+Seed geology invariants определяют, что может менять replayability. Canyons, loot, evidence order, species density и safe routes могут сдвигаться. Star, Aegir, moon ladder, depth bands, Great Tide physics и Atlas-basin truth остаются стабильными.
+
+## Scanner
+
+Procedural note. Маршрут меняется; луна не забывает свои законы.
+
+## Terminal
+
+SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+
+## Audio
+
+Новый seed, та же луна. Другая рана.
+
+## Field Note
+
+Реиграбельность должна двигать evidence и geography, а не переписывать physics в каждом seed.
+
+<!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ru_RU. -->

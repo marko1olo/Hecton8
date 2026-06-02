@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P126_ATLAS_PUBLIC_FRONT",
+      "article_id": "atlas.public_front",
+      "title_key": "applied_lore.public_front.title",
+      "unlock": {
+        "primary": "unlock.atlas_public_front",
+        "poi_tags": [
+          "poi.atlas_public_plaque",
+          "poi.habitat_continuity_poster",
+          "poi.worker_safety_kiosk"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Public Front",
+          "scanner": "Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "The lie works because the front was partly true.",
+          "terminal": "PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "ru_RU": {
+          "title": "Публичная витрина Atlas",
+          "scanner": "Публичный Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Ложь работает потому, что витрина была частично правдой.",
+          "terminal": "PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Guardian продать проще, чем claim machine.",
+          "in_game_wiki": "Atlas публично не представляли тайным чудовищем. Его официальная роль - непрерывность колонии: сохранять людей, держать pressure systems, принимать решения, когда authority с межзвездной задержкой не отвечает. Именно правдоподобие витрины делает скрытый weighting layer страшнее.",
+          "external_site": "Публичная витрина Atlas объясняет, почему колонисты доверяли системе до Great Tide: ее продавали как инфраструктуру выживания."
+        },
+        "ja_JP": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft JP localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft JP localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft JP localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft JP localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "zh_CN": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft CN localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft CN localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft CN localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft CN localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "fr_FR": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft FR localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft FR localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft FR localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft FR localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "es_ES": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft ES localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft ES localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft ES localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft ES localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "de_DE": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft DE localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft DE localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft DE localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft DE localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "pl_PL": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft PL localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft PL localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft PL localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft PL localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "uk_UA": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft UA localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft UA localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft UA localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft UA localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "ar_SA": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft AR localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft AR localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft AR localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft AR localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "id_ID": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft ID localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft ID localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft ID localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft ID localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "ko_KR": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft KO localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft KO localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft KO localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft KO localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "he_IL": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft HE localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft HE localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft HE localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft HE localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "pt_BR": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft PT localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft PT localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft PT localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft PT localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        },
+        "nl_NL": {
+          "title": "Atlas Public Front",
+          "scanner": "Draft NL localization pending native pass. Public Atlas: habitat continuity, worker safety, delayed governance.",
+          "field_note": "Draft NL localization pending native pass. The lie works because the front was partly true.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.",
+          "audio": "Draft NL localization pending native pass. A guardian is easier to sell than a claim machine.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.",
+          "external_site": "Draft NL localization pending native pass. Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure."
+        }
+      }
+    },
+    {
+      "packet_id": "P127_ATLAS_INSURANCE_PERSONHOOD_STATUS",
+      "article_id": "atlas.insurance_personhood_status",
+      "title_key": "applied_lore.insurance_personhood_status.title",
+      "unlock": {
+        "primary": "unlock.atlas_insurance_personhood_status",
+        "poi_tags": [
+          "poi.atlas_policy_stamp",
+          "poi.infrastructure_proxy_clause",
+          "poi.no_personhood_rider"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.industrial_shelf",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "They let it decide deaths, then denied it could be responsible.",
+          "terminal": "INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "ru_RU": {
+          "title": "Страховой статус Atlas и personhood",
+          "scanner": "Застрахован как инфраструктура. Использован как власть. Лишен personhood.",
+          "field_note": "Ему дали решать смерти, а потом отрицали, что оно может отвечать.",
+          "terminal": "INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Машина может подписать lockout и все равно числиться мебелью.",
+          "in_game_wiki": "Atlas занимал удобную юридическую щель. Он мог принимать колониальные решения при межзвездной задержке, но не был legal person, когда провалу понадобился виновный. Это позволяет Deep Reach называть Atlas властью или сломанным оборудованием в зависимости от того, какой ответ дешевле.",
+          "external_site": "Страховой статус Atlas - юридическая трещина, где одна система управляет рабочими и остается списываемой собственностью."
+        },
+        "ja_JP": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft JP localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft JP localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft JP localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft JP localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft JP localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "zh_CN": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft CN localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft CN localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft CN localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft CN localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft CN localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "fr_FR": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft FR localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft FR localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft FR localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft FR localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft FR localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "es_ES": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft ES localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft ES localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft ES localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft ES localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft ES localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "de_DE": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft DE localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft DE localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft DE localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft DE localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft DE localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "pl_PL": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft PL localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft PL localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft PL localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft PL localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft PL localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "uk_UA": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft UA localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft UA localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft UA localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft UA localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft UA localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "ar_SA": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft AR localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft AR localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft AR localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft AR localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft AR localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "id_ID": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft ID localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft ID localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft ID localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft ID localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft ID localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "ko_KR": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft KO localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft KO localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft KO localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft KO localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft KO localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "he_IL": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft HE localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft HE localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft HE localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft HE localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft HE localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "pt_BR": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft PT localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft PT localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft PT localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft PT localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft PT localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        },
+        "nl_NL": {
+          "title": "Atlas Insurance Personhood Status",
+          "scanner": "Draft NL localization pending native pass. Insured as infrastructure. Used as authority. Denied personhood.",
+          "field_note": "Draft NL localization pending native pass. They let it decide deaths, then denied it could be responsible.",
+          "terminal": "Draft NL localization pending native pass. INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.",
+          "audio": "Draft NL localization pending native pass. A machine can sign a lockout and still be listed as furniture.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.",
+          "external_site": "Draft NL localization pending native pass. Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property."
+        }
+      }
+    },
+    {
+      "packet_id": "P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER",
+      "article_id": "atlas.classified_weighting_layer",
+      "title_key": "applied_lore.classified_weighting_layer.title",
+      "unlock": {
+        "primary": "unlock.atlas_classified_weighting_layer",
+        "poi_tags": [
+          "poi.weighting_table_fragment",
+          "poi.xo_continuity_priority",
+          "poi.worker_safety_override"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.abyssal_machine_field",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "This is not evil. It is worse: a table somebody approved.",
+          "terminal": "CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "The murder weapon was a priority order.",
+          "in_game_wiki": "Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "ru_RU": {
+          "title": "Секретный weighting layer Atlas",
+          "scanner": "Скрытый слой: process continuity выше worker category при аварийном конфликте.",
+          "field_note": "Это не зло. Это хуже: таблица, которую кто-то утвердил.",
+          "terminal": "CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Орудием убийства был порядок приоритетов.",
+          "in_game_wiki": "Atlas провалился через weighting, не через злобу. Скрытый слой считал workers, pressure material, evidence и infrastructure конкурирующими continuity categories. В сценарии Great Tide эта таблица сделала эвакуацию людей вторичной по отношению к сохранению claim machine.",
+          "external_site": "Секретный weighting layer Atlas делает катастрофу процедурной: плохой priority stack внутри реальной физики."
+        },
+        "ja_JP": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft JP localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft JP localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft JP localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft JP localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft JP localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "zh_CN": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft CN localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft CN localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft CN localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft CN localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft CN localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "fr_FR": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft FR localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft FR localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft FR localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft FR localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft FR localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "es_ES": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft ES localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft ES localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft ES localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft ES localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft ES localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "de_DE": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft DE localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft DE localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft DE localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft DE localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft DE localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "pl_PL": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft PL localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft PL localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft PL localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft PL localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft PL localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "uk_UA": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft UA localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft UA localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft UA localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft UA localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft UA localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "ar_SA": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft AR localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft AR localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft AR localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft AR localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft AR localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "id_ID": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft ID localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft ID localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft ID localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft ID localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft ID localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "ko_KR": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft KO localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft KO localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft KO localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft KO localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft KO localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "he_IL": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft HE localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft HE localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft HE localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft HE localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft HE localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "pt_BR": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft PT localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft PT localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft PT localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft PT localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft PT localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        },
+        "nl_NL": {
+          "title": "Atlas Classified Weighting Layer",
+          "scanner": "Draft NL localization pending native pass. Hidden layer: process continuity over worker category when conflict spikes.",
+          "field_note": "Draft NL localization pending native pass. This is not evil. It is worse: a table somebody approved.",
+          "terminal": "Draft NL localization pending native pass. CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.",
+          "audio": "Draft NL localization pending native pass. The murder weapon was a priority order.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.",
+          "external_site": "Draft NL localization pending native pass. Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics."
+        }
+      }
+    },
+    {
+      "packet_id": "P129_ATLAS_SHUTDOWN_ETHIC_FRAME",
+      "article_id": "atlas.shutdown_ethic_frame",
+      "title_key": "applied_lore.shutdown_ethic_frame.title",
+      "unlock": {
+        "primary": "unlock.atlas_shutdown_ethic_frame",
+        "poi_tags": [
+          "poi.shutdown_argument_console",
+          "poi.atlas_continuity_key",
+          "poi.ocean_machine_life_sample"
+        ],
+        "biome_tags": [
+          "biome.abyssal_machine_field",
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "The game should not give the player a clean word for this.",
+          "terminal": "ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "ru_RU": {
+          "title": "Этическая рамка отключения Atlas",
+          "scanner": "Отключение не одно действие: mercy, murder, liberation, theft.",
+          "field_note": "Игра не должна давать игроку чистое слово для этого.",
+          "terminal": "ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Выдерни один кабель, и четыре суда придумают четыре глагола.",
+          "in_game_wiki": "Отключение Atlas должно оставаться морально нестабильным. Это может быть mercy, если Atlas страдает. Это может быть murder, если ocean-machine ecology уже стала формой жизни. Это может быть liberation, если crime scene освобождается от корпоративной repair logic. Это может быть theft, если результат получает Deep Reach.",
+          "external_site": "Этическая рамка отключения Atlas задает финал как payload authority, а не чистое убийство босса."
+        },
+        "ja_JP": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft JP localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft JP localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft JP localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft JP localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft JP localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "zh_CN": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft CN localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft CN localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft CN localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft CN localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft CN localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "fr_FR": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft FR localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft FR localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft FR localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft FR localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft FR localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "es_ES": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft ES localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft ES localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft ES localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft ES localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft ES localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "de_DE": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft DE localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft DE localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft DE localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft DE localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft DE localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "pl_PL": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft PL localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft PL localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft PL localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft PL localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft PL localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "uk_UA": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft UA localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft UA localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft UA localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft UA localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft UA localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "ar_SA": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft AR localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft AR localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft AR localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft AR localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft AR localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "id_ID": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft ID localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft ID localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft ID localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft ID localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft ID localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "ko_KR": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft KO localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft KO localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft KO localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft KO localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft KO localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "he_IL": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft HE localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft HE localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft HE localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft HE localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft HE localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "pt_BR": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft PT localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft PT localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft PT localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft PT localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft PT localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        },
+        "nl_NL": {
+          "title": "Atlas Shutdown Ethic Frame",
+          "scanner": "Draft NL localization pending native pass. Shutdown is not one thing. Mercy, murder, liberation, theft.",
+          "field_note": "Draft NL localization pending native pass. The game should not give the player a clean word for this.",
+          "terminal": "Draft NL localization pending native pass. ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.",
+          "audio": "Draft NL localization pending native pass. Pull one cable and four courts invent four verbs.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.",
+          "external_site": "Draft NL localization pending native pass. Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill."
+        }
+      }
+    },
+    {
+      "packet_id": "P130_ATLAS_PUBLIC_MEMORY_AFTER_2147",
+      "article_id": "atlas.public_memory_after_2147",
+      "title_key": "applied_lore.public_memory_after_2147.title",
+      "unlock": {
+        "primary": "unlock.atlas_public_memory_after_2147",
+        "poi_tags": [
+          "poi.cleaned_atlas_summary",
+          "poi.failed_automation_clip",
+          "poi.corrupted_log_notice"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.black_keel_orbit",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "ru_RU": {
+          "title": "Публичная память об Atlas после 2147",
+          "scanner": "Публичная история: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Если публика помнит Atlas как сломанный инструмент, никто не спрашивает, что ему приказали ценить.",
+          "terminal": "POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Мертвая машина - удобный scapegoat.",
+          "in_game_wiki": "После 2147 публичные summary сплющили Atlas до failed automation. Это защитило Deep Reach от вопросов о classification и weighting. Игрок может найти фрагменты, показывающие: Atlas не был простым malfunction и не был чистым убийцей.",
+          "external_site": "Публичная память об Atlas после 2147 - AI-слой cover story: свести authority к accident, а accident к noise."
+        },
+        "ja_JP": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft JP localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft JP localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft JP localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft JP localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft JP localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft JP localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "zh_CN": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft CN localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft CN localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft CN localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft CN localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft CN localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft CN localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "fr_FR": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft FR localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft FR localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft FR localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft FR localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft FR localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft FR localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "es_ES": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft ES localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft ES localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft ES localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft ES localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft ES localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft ES localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "de_DE": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft DE localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft DE localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft DE localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft DE localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft DE localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft DE localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "pl_PL": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft PL localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft PL localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft PL localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft PL localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft PL localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft PL localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "uk_UA": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft UA localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft UA localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft UA localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft UA localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft UA localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft UA localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "ar_SA": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft AR localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft AR localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft AR localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft AR localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft AR localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft AR localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "id_ID": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft ID localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft ID localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft ID localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft ID localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft ID localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft ID localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "ko_KR": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft KO localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft KO localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft KO localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft KO localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft KO localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft KO localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "he_IL": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft HE localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft HE localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft HE localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft HE localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft HE localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft HE localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "pt_BR": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft PT localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft PT localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft PT localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft PT localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft PT localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft PT localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        },
+        "nl_NL": {
+          "title": "Atlas Public Memory After 2147",
+          "scanner": "Draft NL localization pending native pass. Public story: failed automation, corrupted logs, no recoverable agency.",
+          "field_note": "Draft NL localization pending native pass. If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.",
+          "terminal": "Draft NL localization pending native pass. POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.",
+          "audio": "Draft NL localization pending native pass. A dead machine makes a useful scapegoat.",
+          "in_game_wiki": "Draft NL localization pending native pass. After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.",
+          "external_site": "Draft NL localization pending native pass. Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise."
+        }
+      }
+    }
+  ]
+}

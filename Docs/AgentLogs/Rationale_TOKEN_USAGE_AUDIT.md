@@ -276,3 +276,11 @@ Solution: Strip only trailing spaces/tabs and EOF blank whitespace from the exac
 Rejected Alternatives: Reverting unrelated cross-agent changes was rejected because the operator asked to commit/push everything. Staging root `CON` was rejected because it is a Windows-reserved path. Staging `1334` files was rejected by explicit operator instruction. Running `dotnet build` was rejected because compile-throttle evidence already showed CPU/compiler contention and TOKEN_USAGE_AUDIT changed offline reports/tools.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is repository hygiene around a telemetry checkpoint.
 Hardware Impact: 0 us runtime gain. Process gain: staged path scan returned `NO_STAGED_1334_OR_CON`; `git diff --cached --check` is clean.
+
+## Decision 43 - 2026-06-02 same-day full refresh
+
+Problem: The operator requested a full update/commit/push after the 12:56 token snapshot, and local Codex JSONL plus repo metrics had already moved again.
+Solution: Recheck the official OpenAI pricing/model/cache/reasoning boundary, rerun token fast refresh, rerun the 112-chart dashboard, rerun apex verification, and validate persisted JSON/PNG/SHA artifacts before staging.
+Rejected Alternatives: Reusing the 12:56 snapshot was rejected because 263,198,862 new local tokens were present. Text-only refresh was rejected because the request said update everything. Running `dotnet build` was rejected because this domain changed offline telemetry/docs only and active `dotnet` processes were present during the apex compile-throttle sample.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline reporting. Reporting scalability improves because same-day refreshes preserve graph and hash consistency even under parallel-agent churn.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 129,631,981,374 tokens, GPT-5.5 base API-equivalent is 100,209.405142 USD, chart manifest is 112/112 with 0 missing and 0 bad PNG signatures, and apex JSON SHA-256 is `6d7cb9b2a5933e6c2a7b1e9c630b3202aa9d4eea903fd6d81534b635fc9ea319`.

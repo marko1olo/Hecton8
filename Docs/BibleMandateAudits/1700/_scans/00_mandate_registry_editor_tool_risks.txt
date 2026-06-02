@@ -1,0 +1,22 @@
+﻿AGENTS.md:33:- Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
+AGENTS.md:192:| Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
+AGENTS.md:193:| Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / injected owner interfaces / cold GlobalRegistry lookup cached outside hot path |
+AGENTS.md:194:| Coroutines | StartCoroutine / yield return new | ITickable state machine |
+AGENTS.md:201:| Camera     | Camera.main | cached _mainCam |
+AGENTS.md:204:| Renderer   | renderer.material (leak) · .materials (alloc) | MaterialPropertyBlock · sharedMaterials |
+AGENTS.md:232:[FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
+AGENTS.md:254:[FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
+AGENTS.md:256:[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
+AGENTS.md:257:[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
+AGENTS.md:283:[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
+AGENTS.md:284:[REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
+AGENTS.md:299:[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
+AGENTS.md:304:[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
+AGENTS.md:356:- Renderer.materials — use sharedMaterials or cache
+AGENTS.md:512:? StartCoroutine?             ? ITickable state machine
+AGENTS.md:514:? renderer.material?          ? MaterialPropertyBlock
+AGENTS.md:525:? Camera.main in hot path?         ? cache
+AGENTS.md:526:? Debug.Log without #if guard?     ? wrap
+AGENTS.md:547:? jobHandle.Complete() before Dispose()? ? verify order
+AGENTS.md:548:? Renderer.materials (alloc)?     ? sharedMaterials
+AGENTS.md:712:[FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.

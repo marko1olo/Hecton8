@@ -116,3 +116,37 @@ Reject if:
 - AI tick allocates;
 - no black-box state exists for fault review;
 - model looks good but gameplay role is empty.
+
+## 8. Truth Ownership
+
+Creature truth is owned by AI, animation, physics, audio, and generated asset domains separately:
+
+- `ai.md` owns cognition, Director pressure, stimulus memory, navigation intent, and flocking cadence.
+- `animation.md` owns motion presentation, IK/VAT routes, and silhouette-preserving animation LOD.
+- `physics.md` owns collision, hit response, force packets, and contact truth.
+- `audio.md` owns sound identity, mix priority, and sonar/audio telegraphs.
+- `3dmodel.md` and fauna-specific rules own mesh topology, materials, LODs, and collider proxies.
+
+Creature scripts must not become a monolith that directly owns all of these lanes.
+
+## 9. GlobalQualityWeight Scaling
+
+Compact keeps the same creature role with fewer active entities, lower cognition cadence, simpler animation, stronger audio cues, simpler VFX, and shorter visibility range. Middle restores normal local cognition and presentation. High adds richer memory, secondary motion, and material/lighting detail. Ultra adds encounter density and sensory overkill, not omniscience or unavoidable attacks.
+
+## 10. Proof Artifacts
+
+A creature implementation must provide:
+
+- role statement: what player decision changes;
+- sensory contract and stimulus causes;
+- Director/token interaction if encounter-managed;
+- AI tick cadence and active count;
+- animation/mesh proof screenshot;
+- audio cue list;
+- collision proxy proof;
+- low-tier readability capture;
+- black-box state fields.
+
+## 11. Acceptance Sentence
+
+A creature is accepted only when it has a gameplay role, sensory cause, readable intent, authored body quality, bounded AI cost, scalable presentation, and evidence that the player can understand why the encounter happened.

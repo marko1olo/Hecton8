@@ -2630,6 +2630,7 @@ namespace Hecton8.UI
         private void TryScheduleTerminalInteractionPipeline(int frame, bool refreshAvailabilityFromStates)
         {
             if (_terminalInteractionScheduled ||
+                _decryptionScheduled ||
                 _terminalCount <= 0 ||
                 !TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes) ||
                 !TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays) ||
@@ -2667,16 +2668,14 @@ namespace Hecton8.UI
             _lastTerminalProjectionEvalRadiusMeters = math.min(maxDistance, qualityRadius);
             _interactionScheduleTicks = Stopwatch.GetTimestamp();
 
-            JobHandle gazeHandle = new GenerateMockGazeVectorsJob
-            {
-                GazeRays = gazeRays,
-                FallbackOriginAup = originAup,
-                FallbackForward = forward,
-                ScrollDelta = scrollDelta,
-                InteractionFlags = interactionFlags,
-                Frame = (uint)frame,
-                MicroSwayRadians = math.lerp(0.0125f, 0.0005f, _globalQualityWeight) * math.saturate(hologramDistortionIntensity)
-            }.Schedule(math.max(1, gazeRays.Length), 1);
+            WriteGazeRaysForOwner(
+                gazeRays,
+                in originAup,
+                forward,
+                scrollDelta,
+                interactionFlags,
+                (uint)frame,
+                math.lerp(0.0125f, 0.0005f, _globalQualityWeight) * math.saturate(hologramDistortionIntensity));
 
             TerminalInputStateDTO* inputStatePtr = (TerminalInputStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inputStates);
             TerminalInteractionDTO* interactionPtr = (TerminalInteractionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(interactions);
@@ -2702,8 +2701,48 @@ namespace Hecton8.UI
                 CommandsBudget = SignalBus<TerminalCommandSignal>.ParallelWriterBudget,
                 UiSignals = SignalBus<InteractionUiSignal>.OpenParallelWriter(),
                 UiSignalsBudget = SignalBus<InteractionUiSignal>.ParallelWriterBudget
-            }.Schedule(terminalJobCount, batchSize, gazeHandle);
+            }.Schedule(terminalJobCount, batchSize);
             _terminalInteractionScheduled = true;
+            CompleteTerminalInteractionJobForOwner();
+        }
+
+        private static void WriteGazeRaysForOwner(
+            NativeArray<GazeRayDTO> gazeRays,
+            in AbsoluteUniversePosition originAup,
+            float3 forward,
+            float2 scrollDelta,
+            uint interactionFlags,
+            uint frame,
+            float microSwayRadians)
+        {
+            if (!gazeRays.IsCreated || gazeRays.Length <= 0)
+                return;
+
+            float3 safeForward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
+            float3 side = math.normalizesafe(math.cross(new float3(0f, 1f, 0f), safeForward), new float3(1f, 0f, 0f));
+            float3 up = math.normalizesafe(math.cross(safeForward, side), new float3(0f, 1f, 0f));
+            float swayScale = math.max(0f, microSwayRadians);
+            int count = gazeRays.Length;
+            for (int index = 0; index < count; index++)
+            {
+                float framePhase = ((frame + (uint)(index * 37)) & 2047u) * (1f / 2048f);
+                float swayX = ResolveTriangleWave(framePhase) * swayScale;
+                float swayY = ResolveTriangleWave(framePhase * 1.6180339f + 0.37f) * swayScale * 0.5f;
+                float3 direction = math.normalizesafe(safeForward + side * swayX + up * swayY, safeForward);
+                gazeRays[index] = new GazeRayDTO
+                {
+                    OriginAup = originAup,
+                    Direction = direction,
+                    InteractionFlags = interactionFlags,
+                    Frame = frame,
+                    ScrollDelta = scrollDelta
+                };
+            }
+        }
+
+        private static float ResolveTriangleWave(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
         }
 
         private void TryFinalizeTerminalInteractionJob()
@@ -2714,6 +2753,25 @@ namespace Hecton8.UI
             if (!TryFinalizeCompletedJob(ref _terminalInteractionHandle))
                 return;
 
+            CompleteTerminalInteractionFinalizeForOwner();
+        }
+
+        private void CompleteTerminalInteractionJobForOwner()
+        {
+            if (!_terminalInteractionScheduled)
+                return;
+
+            // OWNER-PHASE FENCE: GazeRays is a shared DataVault read source for other gameplay systems.
+            // Keep this presentation/input pipeline inside LateFrameTick so the next simulation frame never sees
+            // a pending writer dependency on the gaze buffer.
+            if (!DispatcherJobFence.TryComplete(ref _terminalInteractionHandle, forceComplete: true))
+                return;
+
+            CompleteTerminalInteractionFinalizeForOwner();
+        }
+
+        private void CompleteTerminalInteractionFinalizeForOwner()
+        {
             _terminalInteractionScheduled = false;
             _lastIntersectionMicroseconds = _interactionScheduleTicks > 0
                 ? ElapsedMicroseconds(_interactionScheduleTicks)
@@ -2772,6 +2830,7 @@ namespace Hecton8.UI
                 UnlockedSignalsBudget = SignalBus<TerminalUnlockedSignal>.ParallelWriterBudget
             }.Schedule();
             _decryptionScheduled = true;
+            CompleteDecryptionJobForOwner();
         }
 
         private void TryFinalizeDecryptionJob()
@@ -2782,6 +2841,25 @@ namespace Hecton8.UI
             if (!TryFinalizeCompletedJob(ref _decryptionHandle))
                 return;
 
+            CompleteDecryptionFinalizeForOwner();
+        }
+
+        private void CompleteDecryptionJobForOwner()
+        {
+            if (!_decryptionScheduled)
+                return;
+
+            // OWNER-PHASE FENCE: decryption reads terminal input, gaze, and terminal lanes captured from
+            // the settled presentation state. Leaving it pending lets the next gaze writer collide with
+            // those shared DataVault buffers, so this tiny puzzle pass closes inside LateFrameTick.
+            if (!DispatcherJobFence.TryComplete(ref _decryptionHandle, forceComplete: true))
+                return;
+
+            CompleteDecryptionFinalizeForOwner();
+        }
+
+        private void CompleteDecryptionFinalizeForOwner()
+        {
             _decryptionScheduled = false;
             int simulationFrame = ResolveScheduledDecryptionFrameForOwner();
             _lastDecryptionBurstMicroseconds = _decryptionScheduleTicks > 0

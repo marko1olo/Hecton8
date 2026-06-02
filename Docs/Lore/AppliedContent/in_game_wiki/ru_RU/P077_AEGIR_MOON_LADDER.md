@@ -1,0 +1,30 @@
+---
+packet_id: P077_AEGIR_MOON_LADDER
+article_id: aegir.moon_ladder
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Лунная лестница Aegir
+
+Лунная лестница Aegir удерживает HECTON-8 внутри физической системы. Внутренние луны создают radiation и relay hazards; средние держат металл, лед и старые depots; внешние несут cold claims и dead beacons. HECTON-8 не внутренняя и не самая дальняя.
+
+## Scanner
+
+Карта moon ladder. HECTON-8 - один рабочий риск в движущейся системе, не изолированный уровень.
+
+## Terminal
+
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+
+## Audio
+
+На карте больше лун, чем милости.
+
+## Field Note
+
+Skarn жжет, Vela сбрасывает лед, Anvil кормит металлом, Kestrel режет relays, HECTON-8 тонет.
+
+<!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ru_RU. -->

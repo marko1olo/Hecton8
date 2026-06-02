@@ -1,0 +1,4 @@
+﻿.agents-skills\README.md
+AGENTS.md
+Docs\Actual Domains of Project.txt
+PROJECT_BIBLES.md

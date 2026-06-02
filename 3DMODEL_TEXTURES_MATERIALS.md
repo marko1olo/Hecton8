@@ -139,3 +139,19 @@ Reject if:
 - UV stretch exceeds family threshold.
 - Runtime code is required to generate final textures.
 - Generated material count breaks SRP Batcher/instancing without proof.
+
+## 10. Proof Artifacts
+
+Texture and material generation must output:
+
+- material family, source texture ids, AI/procedural source notes when relevant, and final imported asset paths;
+- texture role report for albedo, normal, MRAO, emission, height, decal, trim, and mask maps;
+- import setting report proving sRGB, normal map type, compression, mip chain, max size, and streaming settings;
+- UV density, stretch, island overlap, atlas rect, padding, and edge bleed report;
+- material slot and SRP Batcher compatibility report;
+- preview captures for albedo-only, normal-only, mask-channel view, flat lighting, and final URP lighting;
+- explicit `PENDING UNITY/PROFILER VERIFICATION` if only static material rules changed.
+
+## 11. Acceptance Sentence
+
+A generated texture/material set is accepted only when every map has a documented PBR role, UVs or projection coordinates are measured, atlas padding survives mips, import settings are correct, material slots remain batchable, and final visual richness comes from valid offline maps rather than runtime texture generation or fake color noise.

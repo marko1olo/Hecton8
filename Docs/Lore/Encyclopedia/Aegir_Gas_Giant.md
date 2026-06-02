@@ -8,6 +8,15 @@ Aegir is the gas giant anchoring the local claim system that contains HECTON-8. 
 
 The player does not orbit a simple backdrop. Aegir shapes transfer windows, radiation exposure, magnetospheric interference, eclipse timing, tidal stress, and carrier geometry.
 
+Working public/catalog crosswalk:
+
+- star/domain label: Ran / Epsilon Eridani-inspired anchor;
+- gas giant claim label: Aegir;
+- dry route catalog for the moon: RAN-B:H8;
+- corporate/common claim name: HECTON-8.
+
+Use HECTON-8 in normal play text. Use RAN-B:H8 when a terminal, insurance plate, route ledger, or website/wiki astronomy article needs dry catalog language.
+
 ## Physical Role
 
 Gravity:
@@ -37,6 +46,6 @@ Aegir should not be just "the planet in the sky." It is a system machine:
 - salvage window tables;
 - Deep Reach route locks.
 
-Exact astronomical mapping remains open until the real-system choice is finally locked.
+Exact real-world numerical ephemeris remains a future astronomy/table pass, but the player-facing naming route is now locked enough to write against: Ran/Aegir/RAN-B:H8/HECTON-8.
 
 Runtime should not imply live N-body truth. Use authored ephemeris/window data, deterministic tide profiles, and staged visual bodies.

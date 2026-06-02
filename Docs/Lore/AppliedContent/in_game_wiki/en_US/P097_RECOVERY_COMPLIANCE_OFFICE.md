@@ -1,0 +1,30 @@
+---
+packet_id: P097_RECOVERY_COMPLIANCE_OFFICE
+article_id: deep_reach.recovery_compliance_office
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Recovery Compliance Office
+
+The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+
+## Scanner
+
+Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+
+## Terminal
+
+RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+
+## Audio
+
+They are late enough to be legal and current enough to be dangerous.
+
+## Field Note
+
+A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+
+<!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/en_US. -->

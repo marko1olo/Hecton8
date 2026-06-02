@@ -1,0 +1,74 @@
+﻿Assets\_Project\Scripts\Gameplay\AirlockPressurization\Editor\AirlockPressurizationEditor.cs:37:            window.titleContent.text = "Airlock Pressure";
+Assets\_Project\Scripts\Gameplay\AirlockPressurization\Editor\AirlockPressurizationEditor.cs:106:                    _readout.text = "Vault buffer unavailable.";
+Assets\_Project\Scripts\Gameplay\AirlockPressurization\Editor\AirlockPressurizationEditor.cs:115:            _readout.text = $"water={dto.MaxWaterVolumeLiters:0}L pressure={dto.ExternalPressureAtm:0.00}atm tick={AirlockPressurizationMath.ResolveAuthorityTickInterval():0.000}s";
+Assets\_Project\Scripts\Gameplay\Editor\VRSomaticComfortTunerWindow.cs:79:                    _stateLabel.text = "GlobalDataVault unavailable.";
+Assets\_Project\Scripts\Gameplay\Editor\VRSomaticComfortTunerWindow.cs:118:                    _stateLabel.text =
+Assets\_Project\Scripts\Gameplay\Editor\VRSomaticComfortTunerWindow.cs:126:                _stateLabel.text = hasState
+Assets\_Project\Scripts\Gameplay\Editor\VRKinematicsTunerWindow.cs:91:                    _layoutLabel.text = "GlobalDataVault unavailable.";
+Assets\_Project\Scripts\Gameplay\Editor\VRKinematicsTunerWindow.cs:108:                _layoutLabel.text =
+Assets\_Project\Scripts\Gameplay\Editor\VRKinematicsTunerWindow.cs:120:                _telemetryLabel.text =
+Assets\_Project\Scripts\Gameplay\Editor\SkinnedMesh_Scanner_Player.cs:96:            Debug.Log("[SHINOBU_315] " + verdict + " -> " + reportPath);
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:117:            _layoutLabel.text =
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:130:            NativeArray<ScanProgressDTO> progress = new NativeArray<ScanProgressDTO>(1, Allocator.TempJob);
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:131:            NativeArray<ScannerLoreIndexDTO> index = new NativeArray<ScannerLoreIndexDTO>(32, Allocator.TempJob);
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:132:            NativeArray<ScannerEncyclopediaStateDTO> state = new NativeArray<ScannerEncyclopediaStateDTO>(1, Allocator.TempJob);
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:133:            NativeArray<ScannerTelemetryEntry> telemetry = new NativeArray<ScannerTelemetryEntry>(4, Allocator.TempJob);
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:158:                _resultLabel.text =
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:180:                _resultLabel.text = "Vault unavailable.";
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:189:                _resultLabel.text = "Encyclopedia state unavailable.";
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:194:            _resultLabel.text = maskValue == 0UL
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:208:                _vaultLabel.text = "Vault: unavailable.";
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:241:            _vaultLabel.text = stateLive && telemetryLive
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:323:            "GetComponent<ItemData>",
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:324:            "GetComponent<ScannableTarget>",
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:325:            "GetComponent<ScannableFragment>",
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:354:            ".ToList(",
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:363:            ".Complete(",
+Assets\_Project\Scripts\Gameplay\Editor\ScannerLoreDatabaseSyncTunerWindow.cs:405:            Debug.Log("SHINOBU_226 scanner string inquisition wrote " + findings.Count + " findings to " + agentReportPath);
+Assets\_Project\Scripts\Gameplay\Editor\Camera_Hierarchy_Scanner.cs:207:                if (compact.Contains("Camera.main.transform.parent") ||
+Assets\_Project\Scripts\Gameplay\Editor\Camera_Hierarchy_Scanner.cs:245:            Debug.Log($"Camera hierarchy scanner wrote {findings.Count} findings to {reportPath}");
+Assets\_Project\Scripts\Construction\Editor\OOP_Interaction_Scanner.cs:41:            Hecton8.Core.H8Debug.Log(RunAndWriteReport());
+Assets\_Project\Scripts\Construction\Editor\OOP_Drone_Nav_Scanner.cs:46:            Hecton8.Core.H8Debug.Log("[SHINOBU_334] OOP drone nav scanner wrote " + report);
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:91:                _status.text = RuntimeInactiveText;
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:95:            _status.text = "Refund " + refunded +
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:118:            _csv.text = loaded
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:126:            _csv.text = "Scanner wrote " + report;
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:127:            Hecton8.Core.H8Debug.Log("SHINOBU_336 scanner wrote " + report);
+Assets\_Project\Scripts\Construction\Editor\ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs:323:            Hecton8.Core.H8Debug.Log("SHINOBU_336 scanner wrote " + RunAndWriteReport());
+Assets\_Project\Scripts\Construction\Editor\HatchLockFsmEditor.cs:113:                _statusLabel.text = _statusBuilder.ToString();
+Assets\_Project\Scripts\Construction\Editor\HatchLockFsmEditor.cs:131:                _statusLabel.text = RuntimeInactiveText;
+Assets\_Project\Scripts\Construction\Editor\HatchLockFsmEditor.cs:256:            Hecton8.Core.H8Debug.Log("SHINOBU_343 OOP Door Scanner verdict: " + verdict);
+Assets\_Project\Scripts\Construction\Editor\FoundationSnappingCalculatorEditor.cs:112:                _statusLabel.text = _statusBuilder.ToString();
+Assets\_Project\Scripts\Construction\Editor\FoundationSnappingCalculatorEditor.cs:127:                _statusLabel.text = RuntimeInactiveText;
+Assets\_Project\Scripts\Construction\Editor\FoundationSnappingCalculatorEditor.cs:184:                Hecton8.Core.H8Debug.Log("[SHINOBU_252] Foundation pylon ARM64 layout PASS.");
+Assets\_Project\Scripts\Construction\Editor\FoundationSnappingCalculatorEditor.cs:186:                Hecton8.Core.H8Debug.LogError("[SHINOBU_252] Foundation pylon ARM64 layout FAIL.");
+Assets\_Project\Scripts\Construction\Editor\FoundationSnappingCalculatorEditor.cs:237:            Hecton8.Core.H8Debug.Log("[SHINOBU_252] Foundation physics inquisition wrote " + ReportPath + " pass=" + pass);
+Assets\_Project\Scripts\Construction\Editor\BulkheadContainmentEditor.cs:108:                _statusLabel.text = _statusBuilder.ToString();
+Assets\_Project\Scripts\Construction\Editor\BulkheadContainmentEditor.cs:125:                _statusLabel.text = RuntimeInactiveText;
+Assets\_Project\Scripts\Construction\Editor\BulkheadContainmentEditor.cs:225:            Hecton8.Core.H8Debug.Log("SHINOBU_220 Door Physics Inquisition wrote " + sidecarFullPath);
+Assets\_Project\Scripts\Construction\Editor\BulkheadContainmentEditor.cs:331:                    ContainsToken(line, "MeshCollider") ||
+Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:163:                _status.text = "DataVault-backed tuning live.";
+Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:176:                _status.text = "DataVault unavailable until runtime bootstrap.";
+Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:203:                _status.text = "DataVault unavailable until runtime bootstrap.";
+Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:231:                _status.text = "DataVault unavailable until runtime bootstrap.";
+Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:255:            _status.text = ok ? "Layout OK: LaserCutRequestDTO = 64 bytes." : "Layout fault mask: 0x" + faults.ToString("X8", CultureInfo.InvariantCulture);
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:18:            Debug.Log("[SHINOBU_225] Cutter raycast inquisition wrote " + reportPath);
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:96:                cutterSyncRaycasts += Count(text, "Physics.Raycast(") + Count(text, "Physics.RaycastAll(") + Count(text, "Physics.RaycastNonAlloc(");
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:99:                cutterMeshMutationSites += Count(text, ".vertices") + Count(text, "SetVertices(") + Count(text, "RecalculateNormals(");
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:514:                   CountWithinMethod(text, methodSignature, ".Select(") +
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:515:                   CountWithinMethod(text, methodSignature, ".Where(") +
+Assets\_Project\Scripts\Tools\Editor\Cutter_Raycast_Inquisition.cs:516:                   CountWithinMethod(text, methodSignature, ".ToList(") +
+Assets\_Project\Scripts\Inventory\Editor\DockingLogisticsTunerWindow.cs:79:                _stateLabel.text = "Cargo tuning buffer unavailable";
+Assets\_Project\Scripts\Inventory\Editor\DockingLogisticsTunerWindow.cs:88:            _stateLabel.text = "Cargo vault tuning live";
+Assets\_Project\Scripts\Inventory\Editor\DockingLogisticsTunerWindow.cs:95:                _stateLabel.text = "Cargo tuning write lock unavailable";
+Assets\_Project\Scripts\Inventory\Editor\DockingLogisticsTunerWindow.cs:105:                _stateLabel.text = "Cargo vault tuning updated";
+Assets\_Project\Scripts\Inventory\Editor\OOP_Cargo_Scanner.cs:291:            Debug.Log("OOP_Cargo_Scanner wrote " + ReportPath);
+Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs:35:                Debug.LogError("[SHINOBU_229] Auxiliary ABI validation failed.");
+Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs:116:            _statusLabel.text = hasTelemetry
+Assets\_Project\Scripts\Power\Editor\BatteryLogisticsXRayWindow.cs:107:                _stateLabel.text = "runtime: offline";
+Assets\_Project\Scripts\Power\Editor\BatteryLogisticsXRayWindow.cs:108:                _telemetryLabel.text = "telemetry: none";
+Assets\_Project\Scripts\Power\Editor\BatteryLogisticsXRayWindow.cs:113:            _stateLabel.text = "links: " + activeCount +
+Assets\_Project\Scripts\Power\Editor\BatteryLogisticsXRayWindow.cs:120:                _telemetryLabel.text = "telemetry: empty";
+Assets\_Project\Scripts\Power\Editor\BatteryLogisticsXRayWindow.cs:127:            _telemetryLabel.text = "draw: " + entry.TotalEnergyDrawn.ToString("0.000", CultureInfo.InvariantCulture) +
+Assets\_Project\Scripts\Power\Editor\Charger_OOP_Scanner.cs:31:            Debug.Log("Charger OOP scanner wrote " + reportPath);
+Assets\_Project\Scripts\Power\Editor\Charger_OOP_Scanner.cs:1145:            counts.CoroutineLoops = CountInvocation(scanText, "StartCoroutine") + CountIdentifier(scanText, "IEnumerator");

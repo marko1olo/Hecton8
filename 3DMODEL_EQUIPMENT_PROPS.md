@@ -88,7 +88,15 @@ Collision uses primitives:
 
 Interaction raycast targets may use a simplified trigger surface or named socket. Visual mesh triangles are not interaction truth.
 
-## 7. Rejection Gates
+All prop geometry, labels, display masks, UVs, LODs, sockets, pivots, colliders, and interaction anchors are generated and validated offline. Runtime may only load serialized prefabs, read named anchors, and update approved material/UI state. Runtime does not create prop meshes, cook prop colliders, generate labels, unwrap UVs, or search visual triangles for interaction truth.
+
+## 7. Continuous Quality Scaling
+
+`GlobalQualityWeight` scales prop fidelity through offline asset variants: bevel segment count, decal density, texture resolution, label sharpness, LOD transition distance, wear mask precision, and optional hero-screen emissive detail. It never changes pivot identity, socket names, interaction anchors, collider truth, material channel semantics, or runtime generation law.
+
+Compact props still require visible function, bevels on inspected edges, readable silhouettes, shared material families, and proxy colliders. Higher quality levels add closer inspection detail; they do not turn a primitive into an accepted prop after the fact.
+
+## 8. Rejection Gates
 
 Reject if:
 
@@ -98,3 +106,20 @@ Reject if:
 - Collision uses visual LOD0.
 - UV seams cut across player-facing handles/screens.
 - Material count breaks batching without proof.
+
+## 9. Proof Artifacts
+
+Equipment and prop generation must output:
+
+- function category, seed, pivot, handedness, orientation, socket, and interaction anchor report;
+- LOD triangle counts and close-view silhouette capture;
+- bevel, radial segment, handle thickness, screen inset, and cable thickness report;
+- UV density, seam placement, atlas/decal slot, and material slot report;
+- vertex color channel summary for wear, grime/wetness, AO, and display/decal masks;
+- collider and interaction trigger layout;
+- flat-material screenshot proving the prop is functional geometry before texture detail;
+- final-material screenshot proving labels, display masks, corrosion, and wetness support function.
+
+## 10. Acceptance Sentence
+
+A generated prop is accepted only when it communicates its function through geometry, uses offline-authored bevels, masks, anchors, LODs, and proxy colliders, remains batchable through shared material routes, and proves that player-facing details are not just texture noise on a primitive.

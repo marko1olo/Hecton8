@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS020_ATLAS_ENDING_AGENCY_DOSSIER",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P096_ATLAS_PERSON_BOUNDARY",
+      "article_id": "atlas.atlas_person_boundary",
+      "title_key": "applied_lore.atlas_person_boundary.title",
+      "unlock": {
+        "primary": "unlock.first_atlas_person_boundary",
+        "poi_tags": [
+          "poi.atlas_recognition_fault",
+          "poi.old_credential_echo",
+          "poi.repair_anomaly_log"
+        ],
+        "biome_tags": [
+          "biome.factory_temple",
+          "biome.atlas_basin",
+          "biome.repair_ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "ru_RU": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Recognition fault. Atlas видит твой access pattern раньше, чем человека.",
+          "field_note": "Не делай Atlas человеком. Пусть он становится интимным через точную ошибку.",
+          "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Он знает, как ты работаешь. Это не значит, что он знает тебя.",
+          "in_game_wiki": "Atlas может распознать игрока как procedure, access pattern, repair anomaly и бывший Deep Reach key. Он не должен полностью понимать игрока как человека. Ужас в точности без эмпатии: Atlas становится личным, потому что ошибается на языке, которым игрок когда-то пользовался.",
+          "external_site": "Atlas Person Boundary задает агентность AI для концовок. Atlas не villain mind и не friendly ghost; это поврежденный industrial intelligence с partial recognition и сломанными категориями."
+        },
+        "ja_JP": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft JP localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft JP localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft JP localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft JP localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft JP localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "zh_CN": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft CN localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft CN localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft CN localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft CN localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft CN localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "fr_FR": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft FR localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft FR localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft FR localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft FR localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft FR localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "es_ES": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft ES localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft ES localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft ES localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft ES localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft ES localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "de_DE": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft DE localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft DE localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft DE localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft DE localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft DE localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "pl_PL": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft PL localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft PL localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft PL localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft PL localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft PL localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "uk_UA": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft UK localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft UK localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft UK localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft UK localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft UK localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "ar_SA": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft AR localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft AR localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft AR localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft AR localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft AR localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "id_ID": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft ID localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft ID localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft ID localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft ID localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft ID localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "ko_KR": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft KO localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft KO localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft KO localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft KO localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft KO localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "he_IL": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft HE localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft HE localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft HE localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft HE localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft HE localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "pt_BR": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft PT-BR localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft PT-BR localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft PT-BR localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft PT-BR localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft PT-BR localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        },
+        "nl_NL": {
+          "title": "Atlas Person Boundary",
+          "scanner": "Draft NL localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.",
+          "field_note": "Draft NL localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.",
+          "terminal": "Draft NL localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "audio": "Draft NL localization pending native pass. It knows how you work. That is not the same as knowing you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+          "external_site": "Draft NL localization pending native pass. Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+        }
+      }
+    },
+    {
+      "packet_id": "P097_RECOVERY_COMPLIANCE_OFFICE",
+      "article_id": "deep_reach.recovery_compliance_office",
+      "title_key": "applied_lore.recovery_compliance_office.title",
+      "unlock": {
+        "primary": "unlock.first_recovery_compliance_office",
+        "poi_tags": [
+          "poi.recovery_compliance_packet",
+          "poi.proxy_authority_window",
+          "poi.cleanup_escalation_notice"
+        ],
+        "biome_tags": [
+          "biome.drowned_admin",
+          "biome.carrier_link",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "ru_RU": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Present-tense office stamp. Deep Reach не призрак; это очередь с юристами.",
+          "field_note": "Живая фракция делает давление текущим, не превращая всю корпорацию в одного орущего злодея.",
+          "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Они достаточно поздние, чтобы быть законными, и достаточно текущие, чтобы быть опасными.",
+          "in_game_wiki": "Recovery Compliance Office - современная фракция Deep Reach, которая лезет обратно в HECTON-8. Она работает через windows, proxy authority, legal packets и cleanup orders. Ей не нужен instant command; ей нужно, чтобы игрок первым отправил неправильный payload.",
+          "external_site": "Recovery Compliance Office оставляет Deep Reach живой в 2190 как конкретную corporate pressure cell, а не туманную историческую тень."
+        },
+        "ja_JP": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft JP localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft JP localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft JP localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft JP localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft JP localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "zh_CN": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft CN localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft CN localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft CN localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft CN localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft CN localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "fr_FR": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft FR localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft FR localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft FR localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft FR localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft FR localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "es_ES": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft ES localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft ES localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft ES localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft ES localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft ES localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "de_DE": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft DE localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft DE localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft DE localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft DE localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft DE localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "pl_PL": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft PL localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft PL localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft PL localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft PL localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft PL localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "uk_UA": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft UK localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft UK localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft UK localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft UK localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft UK localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "ar_SA": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft AR localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft AR localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft AR localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft AR localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft AR localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "id_ID": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft ID localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft ID localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft ID localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft ID localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft ID localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "ko_KR": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft KO localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft KO localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft KO localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft KO localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft KO localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "he_IL": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft HE localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft HE localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft HE localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft HE localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft HE localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "pt_BR": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft PT-BR localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft PT-BR localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft PT-BR localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft PT-BR localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft PT-BR localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        },
+        "nl_NL": {
+          "title": "Recovery Compliance Office",
+          "scanner": "Draft NL localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+          "field_note": "Draft NL localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+          "terminal": "Draft NL localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+          "audio": "Draft NL localization pending native pass. They are late enough to be legal and current enough to be dangerous.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+          "external_site": "Draft NL localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+        }
+      }
+    },
+    {
+      "packet_id": "P098_FALSE_ENDING_TAXONOMY",
+      "article_id": "endings.false_ending_taxonomy",
+      "title_key": "applied_lore.false_ending_taxonomy.title",
+      "unlock": {
+        "primary": "unlock.first_false_ending_taxonomy",
+        "poi_tags": [
+          "poi.false_ending_board",
+          "poi.material_exit_choice",
+          "poi.partial_return_notice"
+        ],
+        "biome_tags": [
+          "biome.payload_gantry",
+          "biome.carrier_link",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Leaving is not the same as finishing.",
+          "in_game_wiki": "HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "ru_RU": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Ending board. Некоторые выходы достаточно реальны, чтобы считаться, и достаточно неправильны, чтобы болеть.",
+          "field_note": "False ending не должен быть обманкой. Это должна быть валидная плохая сделка.",
+          "terminal": "ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Уйти - не значит закончить.",
+          "in_game_wiki": "HECTON-8 поддерживает false и partial endings, не делая их фейковыми. Material payout может дать титры. Partial exit может вернуть в тот же seed. Corporate capture и quarantine hold наказывают плохие payloads. Public ledger release и Atlas resolution требуют более глубокой правды.",
+          "external_site": "False Ending Taxonomy задает replayability и player agency: exits могут быть физически реальными, materially successful и morally incomplete одновременно."
+        },
+        "ja_JP": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft JP localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft JP localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft JP localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft JP localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft JP localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "zh_CN": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft CN localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft CN localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft CN localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft CN localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft CN localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "fr_FR": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft FR localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft FR localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft FR localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft FR localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft FR localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "es_ES": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft ES localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft ES localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft ES localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft ES localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft ES localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "de_DE": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft DE localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft DE localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft DE localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft DE localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft DE localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "pl_PL": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft PL localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft PL localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft PL localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft PL localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft PL localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "uk_UA": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft UK localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft UK localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft UK localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft UK localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft UK localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "ar_SA": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft AR localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft AR localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft AR localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft AR localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft AR localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "id_ID": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft ID localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft ID localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft ID localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft ID localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft ID localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "ko_KR": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft KO localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft KO localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft KO localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft KO localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft KO localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "he_IL": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft HE localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft HE localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft HE localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft HE localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft HE localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "pt_BR": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft PT-BR localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft PT-BR localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft PT-BR localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft PT-BR localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft PT-BR localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        },
+        "nl_NL": {
+          "title": "False Ending Taxonomy",
+          "scanner": "Draft NL localization pending native pass. Ending board. Some exits are real enough to count and wrong enough to hurt.",
+          "field_note": "Draft NL localization pending native pass. False ending must not be a trick. It must be a valid bad bargain.",
+          "terminal": "Draft NL localization pending native pass. ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
+          "audio": "Draft NL localization pending native pass. Leaving is not the same as finishing.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
+          "external_site": "Draft NL localization pending native pass. False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+        }
+      }
+    },
+    {
+      "packet_id": "P099_MARAUDER_DOSSIER_PERSISTENCE",
+      "article_id": "progression.marauder_dossier_persistence",
+      "title_key": "applied_lore.marauder_dossier_persistence.title",
+      "unlock": {
+        "primary": "unlock.first_marauder_dossier_persistence",
+        "poi_tags": [
+          "poi.marauder_dossier_terminal",
+          "poi.ending_record_spool",
+          "poi.rumor_contract_cache"
+        ],
+        "biome_tags": [
+          "biome.carrier_link",
+          "biome.drowned_admin",
+          "biome.claim_cache"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "ru_RU": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Dossier spool. Ты сохраняешь знание, не суперсилы.",
+          "field_note": "Replay meta должна уважать hard mode: никакого магического retention силы.",
+          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Следующий run начинается со шрамов в файле, а не мышц в костюме.",
+          "in_game_wiki": "Marauder dossier - meta layer. Он может сохранять endings, rumors, contract classes, evidence categories и route warnings. Он не должен сохранять combat power или ломать survival economy. Knowledge меняет decisions; оно не делает pressure harmless.",
+          "external_site": "Marauder Dossier Persistence дает HECTON-8 replayability без roguelite power inflation: игрок сохраняет knowledge, records и contract context."
+        },
+        "ja_JP": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft JP localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft JP localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft JP localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft JP localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft JP localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "zh_CN": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft CN localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft CN localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft CN localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft CN localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft CN localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "fr_FR": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft FR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft FR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft FR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft FR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft FR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "es_ES": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft ES localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft ES localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft ES localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft ES localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft ES localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "de_DE": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft DE localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft DE localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft DE localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft DE localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft DE localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "pl_PL": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft PL localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft PL localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft PL localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft PL localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft PL localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "uk_UA": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft UK localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft UK localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft UK localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft UK localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft UK localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "ar_SA": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft AR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft AR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft AR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft AR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft AR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "id_ID": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft ID localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft ID localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft ID localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft ID localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft ID localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "ko_KR": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft KO localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft KO localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft KO localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft KO localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft KO localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "he_IL": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft HE localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft HE localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft HE localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft HE localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft HE localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "pt_BR": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft PT-BR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft PT-BR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft PT-BR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft PT-BR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft PT-BR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        },
+        "nl_NL": {
+          "title": "Marauder Dossier Persistence",
+          "scanner": "Draft NL localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
+          "field_note": "Draft NL localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "terminal": "Draft NL localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "audio": "Draft NL localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft NL localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+        }
+      }
+    },
+    {
+      "packet_id": "P100_FINAL_CHOICE_PAYLOAD",
+      "article_id": "endings.final_choice_payload",
+      "title_key": "applied_lore.final_choice_payload.title",
+      "unlock": {
+        "primary": "unlock.first_final_choice_payload",
+        "poi_tags": [
+          "poi.final_payload_matrix",
+          "poi.atlas_choice_interface",
+          "poi.public_release_key"
+        ],
+        "biome_tags": [
+          "biome.factory_temple",
+          "biome.atlas_basin",
+          "biome.payload_gantry"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Choice Payload",
+          "scanner": "Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "The best ending should be defensible, not clean.",
+          "terminal": "FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "ru_RU": {
+          "title": "Final Choice Payload",
+          "scanner": "Payload matrix. Продать, отсечь, quarantine, publish или оставить новое тело дышать.",
+          "field_note": "Лучшая концовка должна быть defendable, не чистой.",
+          "terminal": "FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "У crime scene, который стал живым неправильным способом, нет чистого владельца.",
+          "in_game_wiki": "Финальное решение спрашивает, что игрок отправляет наверх. Coordinates, samples, names, Atlas access, public proof и quarantine commands создают разные futures. Вопрос не в том, выигрывает ли игрок чисто. Вопрос в том, кто получает достаточно truth, чтобы действовать с HECTON-8 дальше.",
+          "external_site": "Final Choice Payload задает философию концовок HECTON-8: игрок выбирает, что покидает луну, кто это получает и что это делает возможным для Deep Reach, public law, Atlas и ocean-machine ecology."
+        },
+        "ja_JP": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft JP localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft JP localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft JP localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft JP localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft JP localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft JP localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "zh_CN": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft CN localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft CN localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft CN localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft CN localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft CN localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft CN localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "fr_FR": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft FR localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft FR localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft FR localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft FR localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft FR localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft FR localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "es_ES": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft ES localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft ES localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft ES localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft ES localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft ES localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft ES localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "de_DE": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft DE localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft DE localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft DE localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft DE localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft DE localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft DE localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "pl_PL": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft PL localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft PL localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft PL localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft PL localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft PL localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft PL localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "uk_UA": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft UK localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft UK localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft UK localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft UK localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft UK localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft UK localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "ar_SA": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft AR localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft AR localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft AR localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft AR localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft AR localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft AR localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "id_ID": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft ID localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft ID localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft ID localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft ID localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft ID localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft ID localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "ko_KR": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft KO localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft KO localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft KO localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft KO localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft KO localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft KO localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "he_IL": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft HE localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft HE localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft HE localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft HE localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft HE localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft HE localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "pt_BR": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft PT-BR localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft PT-BR localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft PT-BR localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft PT-BR localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft PT-BR localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        },
+        "nl_NL": {
+          "title": "Final Choice Payload",
+          "scanner": "Draft NL localization pending native pass. Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
+          "field_note": "Draft NL localization pending native pass. The best ending should be defensible, not clean.",
+          "terminal": "Draft NL localization pending native pass. FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
+          "audio": "Draft NL localization pending native pass. There is no clean ownership for a crime scene that became alive in the wrong way.",
+          "in_game_wiki": "Draft NL localization pending native pass. The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
+          "external_site": "Draft NL localization pending native pass. Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+        }
+      }
+    }
+  ]
+}

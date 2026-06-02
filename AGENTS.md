@@ -632,7 +632,7 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 [REQ] For major player-facing systems, read `PROJECT_BIBLES.md` and the matching root bible before implementation.
 [REQ] Use existing quality assets — don't rewrite what's available (water, terrain, save systems).
 [REQ] Handle version upgrades for older Unity assets. Clean assets (remove demos, junk scripts, unused textures).
-[REQ] 'PROCEDURAL_ASSET_PIPELINE.md' for creating procedural objects.
+[REQ] For creating procedural objects, read `PROCEDURAL_ASSET_PIPELINE.md`.
 [REQ] If instructed to make or improve generated 3D meshes/textures, read root `3dmodel.md` first.
 [REQ] For generated hard-surface modules/wreckage/equipment, read `3DMODEL_HARD_SURFACE_MODULES.md` and `3DMODEL_EQUIPMENT_PROPS.md`.
 [REQ] For generated flora/coral/fauna/geology, read `3DMODEL_FLORA_CORAL.md`, `3DMODEL_FAUNA.md`, or `3DMODEL_GEOLOGY_ROCKS.md` as applicable.
@@ -640,9 +640,50 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 [REQ] For hero/close-camera/premium generated models or any request for maximum realism, read `3DMODEL_HERO_REALISM_OVERKILL.md` after the family file.
 [REQ] If instructed to make or improve UI, HUD, menus, interface screens, terminals, cockpit panels, or visual interface taste, read root `ui.md` first.
 [REQ] For main menu/pause/settings/save/load/frontend screens, read `UI_MENU_SCREEN_STANDARDS.md`; for HUD/visor/cockpit/terminal/scanner/world-space panels, read `UI_DIEGETIC_HUD_STANDARDS.md`.
+[REQ] For settings/options/quality profiles/user configuration, read `settings.md`; for localization/subtitles/font atlases/runtime text, read `localization.md`.
 [REQ] For gameplay loop/survival/salvage/progression work, read `gameplay.md`; for world/biome/route/environment composition, read `world.md`.
-[REQ] For audio/sonar/warnings/soundscape work, read `audio.md`; for lighting/VFX/camera/screenshots/render presentation, read `presentation.md`.
+[REQ] For survival physiology/O2/pressure/damage/trauma/gas/temperature/death/recovery, read `survival.md` with `gameplay.md` and `physics.md`.
+[REQ] For combat/damage routing/hitboxes/penetration/threat contact, read `combat.md` with `survival.md` and `physics.md`.
+[REQ] For input/rebinding/device abstraction/haptics/UI navigation, read `input.md` with `player.md` and `accessibility.md`.
+[REQ] For player controls/movement/camera/vehicle feel/haptics, read `player.md`; for submarines/suits/docking/EVA/vehicle interiors/cockpit truth, read `vehicles.md`; for tools/equipment/interaction targets, read `tools.md`.
+[REQ] For camera/view/cockpit camera/shake/capture rigs, read `camera.md` with `player.md` and `presentation.md`.
+[REQ] For sonar/scanner/navigation/acoustic radar/cartography, read `sonar.md` with `audio.md`, `ui.md`, and `tools.md`.
+[REQ] For construction/resources/crafting/logistics/inventory/base systems, read `construction.md`; for missions/quests/lore/evidence/text, read `narrative.md`; for public copy/store/social/creator outreach, read `textes.md`.
+[REQ] For logistics/power/oxygen/fluid/coolant/data networks/graph flow, read `logistics.md` with `construction.md`, `data.md`, and `performance.md`.
+[REQ] For drones/automation/repair or mining probes/remote scanners/tether relays, read `drones.md` with `tools.md`, `ai.md`, and `logistics.md`.
+[REQ] For inventory/resources/crafting/storage/salvage economy, read `inventory.md` with `construction.md` and `data.md`.
+[REQ] For bootstrap/startup/initialization/GlobalRegistry cold setup/scene transition, read `bootstrap.md` with `systems.md`.
+[REQ] For runtime architecture/execution phases/ownership/signals/hot-path access, read `systems.md`.
+[REQ] For performance/zero-GC/frame budgets/memory/VRAM/load shedding/arena allocation, read `performance.md`.
+[REQ] For GPU compute/kernels/dispatch sizing/buffers/barriers/async readback, read `compute.md` with `rendering.md` and `performance.md`.
+[REQ] For networking/rollback/co-op readiness/Merkle/state deltas/reconciliation, read `networking.md`; do not claim multiplayer without runtime proof.
+[REQ] For authoring/editor tools/CSV/SO facades/h8bin baking/data bridges, read `authoring.md` with `data.md`.
+[REQ] For DTO layout/NativeArray payloads/SignalBus packets/telemetry/GPU upload data, read `data.md`.
+[REQ] For AUP/floating-origin/deterministic RNG/hot-path math/CI math gate work, read `math.md`.
+[REQ] For telemetry/black-box rings/crash dumps/profiler markers/post-mortem evidence, read `telemetry.md`.
+[REQ] For modding/SDK/public API/UGC/command envelope/starter kit work, read `modding.md` and `Docs/Modding/README.md`; public runtime remains envelope-only unless the Modding runtime playbook proves otherwise.
+[REQ] For platform/hardware proof, MX350/i3, Steam Deck/Linux, macOS, XR, Quest/PICO, or console claims, read `platform.md`.
+[REQ] For XR/VR/headset comfort/foveation/stencil masking/XR input/UI proof, read `xr.md` with `platform.md`, `input.md`, `ui.md`, and `performance.md`.
+[REQ] For release readiness/build proof/platform proof/content lock/regression triage, read `release.md`.
+[REQ] For physics/pressure/damage/flooding/tethers/cables/collision truth, read `physics.md`.
+[REQ] For atmosphere/weather/tides/thermodynamics/gas/vents/macro environment, read `atmosphere.md` with `world.md`, `water.md`, `rendering.md`, and `audio.md`.
+[REQ] For celestial cycles/tides/moon/day-night relay/seismic macro timing, read `celestial.md` with `atmosphere.md`, `water.md`, and `world.md`.
+[REQ] For abyssal water/current/fog/silt/caustics/flooding presentation, read `water.md` with `physics.md`, `rendering.md`, and `world.md`.
+[REQ] For terrain/biomes/scatter masks/geology placement/traversal surface, read `terrain.md` with `world.md`, `voxels.md`, and `streaming.md`.
+[REQ] For animation/IK/rigs/player or creature motion/tool motion/VAT, read `animation.md`.
+[REQ] For streaming/Addressables/residency/HLOD/asset lifecycle, read `streaming.md`; for save/load/persistence/binary deltas/checksums, read `persistence.md`.
+[REQ] For voxel terrain/SDF caves/carving/seams/voxel persistence, read `voxels.md`.
+[REQ] For AI Director/cognition/navigation/flocking/encounter pacing, read `ai.md`.
+[REQ] For ecosystem/biome simulation/biomass migration/ecology placement, read `ecosystem.md` with `terrain.md`, `world.md`, `ai.md`, and `creatures.md`.
+[REQ] For rendering/URP/RenderGraph/shaders/fog/lighting/GPU budgets, read `rendering.md`.
+[REQ] For shader/material runtime/keywords/variants/SRP Batcher/material proof, read `shaders.md` with `rendering.md` and generated asset bibles.
+[REQ] For lighting/motivated lights/shadows/probes/biolum/darkness readability, read `lighting.md` with `rendering.md` and `presentation.md`.
+[REQ] For VFX/particles/leaks/sparks/silt/tool effects/pooling, read `vfx.md` with `presentation.md`, `rendering.md`, and `performance.md`.
+[REQ] For audio/sonar/warnings/soundscape work, read `audio.md`; for lighting/VFX/camera/screenshots/cinematic presentation, read `presentation.md`.
+[REQ] For cinematics/cutscenes/directed moments/capture truth/black-box replay, read `cinematics.md` with `camera.md`, `presentation.md`, and `textes.md` for public capture.
 [REQ] For creature behavior/encounters/ecology/AI presentation, read `creatures.md`; for acceptance/proof/review gates, read `quality.md`.
+[REQ] For testing/CI/verification evidence classes/regression proof, read `testing.md` with `quality.md` and `release.md`.
+[REQ] For accessibility/readability/subtitles/remapping/flashing or motion comfort, read `accessibility.md`.
 ---
 
 ## COMMUNICATION

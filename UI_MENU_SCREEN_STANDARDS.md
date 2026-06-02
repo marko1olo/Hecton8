@@ -144,7 +144,13 @@ Rejected:
 - motion that makes text harder to read;
 - menu intro longer than player tolerance.
 
-## 11. Menu QA Gates
+## 11. GlobalQualityWeight Scaling
+
+`GlobalQualityWeight` may scale screen material richness, scanline fidelity, background scene detail, route-instrument density, transition smoothness, archival corruption layers, and optional diagnostic overlays. It must not change command order, save/load truth, settings semantics, accessibility availability, input navigation, or text readability.
+
+Compact menus must still read as a physical HECTON-8 instrument, not a plain flat launcher. Middle may add stronger panel material and route telemetry. High may add richer boot/verify transitions. Ultra may add cinematic console material, live background response, and layered archive damage only if it remains readable and zero-GC in runtime menu paths.
+
+## 12. Menu QA Gates
 
 Reject if:
 
@@ -156,3 +162,7 @@ Reject if:
 - color roles do not match `ui.md`;
 - interactive UI violates diegetic/performance rules without approved bridge reason;
 - no screenshot exists for compact and normal layouts.
+
+## 13. Acceptance Sentence
+
+A menu screen is accepted only when it reads as a physical HECTON-8 operating surface, presents the primary command within 3 seconds, preserves settings/save/accessibility truth, scales through `GlobalQualityWeight` without changing command semantics, and has compact plus normal screenshots proving text, controls, and state remain readable.

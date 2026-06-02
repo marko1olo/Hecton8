@@ -1732,7 +1732,9 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public void BeginBootstrap()
         {
-            ClaimRuntimeBootstrapInstance(this);
+            if (!ClaimRuntimeBootstrapInstance(this))
+                return;
+
             RecoverReloadDisabledStaleBootstrapRun();
             EnsureBootstrapPresentationFallbackCold();
 
@@ -1979,12 +1981,10 @@ namespace Hecton8.Bootstrap
             text.raycastTarget = false;
         }
 
-        private static void ClaimRuntimeBootstrapInstance(GameBootstrapper instance)
+        private static bool ClaimRuntimeBootstrapInstance(GameBootstrapper instance)
         {
             if (instance == null)
-                return;
-
-            s_activeRuntimeInstance = instance;
+                return false;
 
             if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Uninitialized)
                 GlobalRegistry.BeginRegistration();
@@ -1997,10 +1997,27 @@ namespace Hecton8.Bootstrap
                  ReferenceEquals(registeredBootstrapper.gameObject, instance.gameObject)))
             {
                 GlobalRegistry.ClearBootstrapperRuntime(null);
+                registeredBootstrapper = null;
             }
 
+            if (!ReferenceEquals(registeredBootstrapper, null) &&
+                !ReferenceEquals(registeredBootstrapper, instance))
+            {
+                s_activeRuntimeInstance = registeredBootstrapper;
+                instance._bootstrapRunInProgress = false;
+                instance._sceneActivationRunInProgress = false;
+                instance._sceneActivationRequested = false;
+                instance._sceneActivationStarted = false;
+                instance._slowTickableRegistered = false;
+                instance.enabled = false;
+                return false;
+            }
+
+            s_activeRuntimeInstance = instance;
             if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Registering)
                 GlobalRegistry.RegisterBootstrapperRuntime(instance);
+
+            return true;
         }
 
         private void RecoverReloadDisabledStaleBootstrapRun()
@@ -2608,6 +2625,13 @@ namespace Hecton8.Bootstrap
                     ct);
 
                 if (result.Loaded)
+                {
+                    _lastDataMonolithBootstrapStatus = ResolveDataMonolithStatusLabel(result.Status);
+                    return true;
+                }
+
+                if (result.Status == global::Hecton8.Data.H8DataBlobLoadStatus.ReadyLocked &&
+                    global::Hecton8.Data.H8StaticDataArena.IsLoaded)
                 {
                     _lastDataMonolithBootstrapStatus = ResolveDataMonolithStatusLabel(result.Status);
                     return true;

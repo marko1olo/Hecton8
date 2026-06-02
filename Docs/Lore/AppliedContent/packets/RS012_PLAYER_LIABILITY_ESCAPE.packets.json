@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS012_PLAYER_LIABILITY_ESCAPE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P056_EX_DEEP_REACH_MARAUDER",
+      "article_id": "hecton8.ex_deep_reach_marauder",
+      "title_key": "applied_lore.ex_deep_reach_marauder.title",
+      "unlock": {
+        "primary": "unlock.first_ex_deep_reach_recognition",
+        "poi_tags": [
+          "poi.old_credential_lock",
+          "poi.drop_capsule_console",
+          "poi.deep_reach_seal"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.shallow_wreck",
+          "biome.service_corridor"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Not family business. Procedure remembers who taught your hands.",
+          "terminal": "CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "ru_RU": {
+          "title": "Бывший Deep Reach-мародер",
+          "scanner": "Старый замок Deep Reach узнает не имя, а последовательность ремонта в твоих руках.",
+          "field_note": "Это не семейное дело. Процедура помнит, кто учил твои руки.",
+          "terminal": "СЛЕД ДОСТУПА: бывший полевой системный контракт. Доступ к эвакуационной инфраструктуре отозван. Статус мародера принят под долговой опекой claim-pool.",
+          "audio": "Ты не вернулся домой. Ты вернулся к процедуре, которая так и не остановилась.",
+          "in_game_wiki": "Этот пакет фиксирует протагониста как бывшего полевого специалиста Deep Reach по системам и эвакуационной инфраструктуре, который теперь работает мародером. Мотив начинается как профессиональный salvage-контракт и становится личным, когда старые процедуры, подписи и режимы отказа Deep Reach превращаются в узнаваемые улики.",
+          "external_site": "Бывший Deep Reach-мародер фиксирует канон игрока: бывший корпоративный специалист по полевым системам, выбитый в независимый salvage долгом или черным списком, возвращается на HECTON-8 без семейной мести. Драма строится на профессиональном узнавании и соучастии, а не на родне."
+        },
+        "ja_JP": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft JP localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft JP localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft JP localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft JP localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft JP localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft JP localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "zh_CN": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft CN localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft CN localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft CN localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft CN localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft CN localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft CN localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "fr_FR": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft FR localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft FR localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft FR localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft FR localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft FR localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft FR localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "es_ES": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft ES localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft ES localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft ES localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft ES localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft ES localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft ES localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "de_DE": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft DE localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft DE localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft DE localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft DE localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft DE localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft DE localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "pl_PL": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft PL localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft PL localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft PL localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft PL localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft PL localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft PL localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "uk_UA": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft UK localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft UK localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft UK localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft UK localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft UK localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft UK localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "ar_SA": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft AR localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft AR localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft AR localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft AR localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft AR localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft AR localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "id_ID": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft ID localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft ID localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft ID localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft ID localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft ID localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft ID localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "ko_KR": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft KO localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft KO localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft KO localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft KO localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft KO localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft KO localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "he_IL": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft HE localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft HE localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft HE localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft HE localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft HE localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft HE localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "pt_BR": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft PT-BR localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft PT-BR localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft PT-BR localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft PT-BR localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft PT-BR localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        },
+        "nl_NL": {
+          "title": "Ex-Deep-Reach Marauder",
+          "scanner": "Draft NL localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.",
+          "field_note": "Draft NL localization pending native pass. Not family business. Procedure remembers who taught your hands.",
+          "terminal": "Draft NL localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.",
+          "audio": "Draft NL localization pending native pass. You did not come home. You came back to a procedure that never stopped running.",
+          "in_game_wiki": "Draft NL localization pending native pass. This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.",
+          "external_site": "Draft NL localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama."
+        }
+      }
+    },
+    {
+      "packet_id": "P057_GREAT_TIDE_LIABILITY_CHAIN",
+      "article_id": "hecton8.great_tide_liability_chain",
+      "title_key": "applied_lore.great_tide_liability_chain.title",
+      "unlock": {
+        "primary": "unlock.first_great_tide_liability_chain",
+        "poi_tags": [
+          "poi.tide_model",
+          "poi.evacuated_shift_board",
+          "poi.liability_cache"
+        ],
+        "biome_tags": [
+          "biome.tide_gauge",
+          "biome.drowned_colony",
+          "biome.glacier_break"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "ru_RU": {
+          "title": "Цепочка ответственности Великого Прилива",
+          "scanner": "Наводнение было реальной физикой: прилив, обвал льда, химия давления и плохие запасы прочности. Преступлением стал стек приоритетов вокруг этого.",
+          "field_note": "Deep Reach не надо было топить луну. Достаточно было сделать эвакуацию необязательной.",
+          "terminal": "СВОДКА ИНЦИДЕНТА: геотехнический каскад подтвержден. Эвакуационная мощность ниже хвостового риска. Вес непрерывности Atlas активен. Вывод людей ожидает сертификации.",
+          "audio": "Море сделало потоп. Компания решила, какие двери останутся бумажками.",
+          "in_game_wiki": "Цепочка ответственности Великого Прилива разделяет катастрофу и преступление. HECTON-8 затопило из-за климата, приливов, обвала криосферы и геофизики мира давления. Deep Reach виновата потому, что недостроила независимую эвакуацию, сохранила непрерывность claim и спрятала задержку спасения в языке сертификации.",
+          "external_site": "Цепочка ответственности Великого Прилива задает главную модель преступления Deep Reach: не карикатурная диверсия, а инженерная халатность, автономное взвешивание приоритетов и юридическое удержание после реального планетарного отказа."
+        },
+        "ja_JP": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft JP localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft JP localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft JP localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft JP localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft JP localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "zh_CN": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft CN localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft CN localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft CN localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft CN localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft CN localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "fr_FR": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft FR localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft FR localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft FR localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft FR localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft FR localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "es_ES": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft ES localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft ES localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft ES localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft ES localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft ES localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "de_DE": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft DE localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft DE localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft DE localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft DE localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft DE localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "pl_PL": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft PL localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft PL localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft PL localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft PL localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft PL localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "uk_UA": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft UK localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft UK localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft UK localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft UK localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft UK localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "ar_SA": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft AR localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft AR localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft AR localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft AR localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft AR localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "id_ID": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft ID localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft ID localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft ID localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft ID localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft ID localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "ko_KR": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft KO localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft KO localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft KO localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft KO localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft KO localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "he_IL": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft HE localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft HE localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft HE localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft HE localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft HE localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "pt_BR": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft PT-BR localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft PT-BR localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft PT-BR localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft PT-BR localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft PT-BR localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        },
+        "nl_NL": {
+          "title": "Great Tide Liability Chain",
+          "scanner": "Draft NL localization pending native pass. The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.",
+          "field_note": "Draft NL localization pending native pass. Deep Reach did not need to drown the moon. It only had to make evacuation optional.",
+          "terminal": "Draft NL localization pending native pass. INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.",
+          "audio": "Draft NL localization pending native pass. The sea did the flooding. The company decided which doors stayed paperwork.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.",
+          "external_site": "Draft NL localization pending native pass. Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure."
+        }
+      }
+    },
+    {
+      "packet_id": "P058_BLACK_KEEL_CLAIM_HOOKS",
+      "article_id": "hecton8.black_keel_claim_hooks",
+      "title_key": "applied_lore.black_keel_claim_hooks.title",
+      "unlock": {
+        "primary": "unlock.first_black_keel_claim_hooks",
+        "poi_tags": [
+          "poi.claim_hook_terminal",
+          "poi.carrier_tariff",
+          "poi.quarantine_clause"
+        ],
+        "biome_tags": [
+          "biome.claim_pool",
+          "biome.surface_relay",
+          "biome.salvage_route"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "ru_RU": {
+          "title": "Claim-крюки Black Keel",
+          "scanner": "В манифесте Black Keel числится claim-pool железом, а в условиях контракта остается рычагом Deep Reach.",
+          "field_note": "Корабль не злой. Он сдан контракту, который умеет быть злым без признаков жизни.",
+          "terminal": "ОПЕКА НОСИТЕЛЯ: восстановление оператора разрешено после сортировки груза, карантинного шлюза, маршрутного сертификата и очистки ответственности. Приоритетная печать Deep Reach сохранена в неактивных условиях.",
+          "audio": "Он тебя слышит. Просто сначала должен оценить цену ответа.",
+          "in_game_wiki": "Black Keel является проблемой доставки и возврата игрока. Публично это инфраструктура Aegir claim-pool. Юридически это долг и страховая опека. Скрытые крюки позволяют Deep Reach ставить payload, карантин, маршрутные сертификаты и старое claim-право выше извлечения человека.",
+          "external_site": "Claim-крюки Black Keel объясняют, почему орбитальный carrier может отвечать, но не может просто спасти игрока. Это не личный роскошный корабль, а автоматизированная salvage-инфраструктура, профильтрованная страховкой, долгом и приоритетными условиями Deep Reach."
+        },
+        "ja_JP": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft JP localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft JP localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft JP localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft JP localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft JP localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "zh_CN": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft CN localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft CN localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft CN localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft CN localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft CN localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "fr_FR": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft FR localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft FR localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft FR localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft FR localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft FR localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "es_ES": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft ES localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft ES localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft ES localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft ES localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft ES localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "de_DE": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft DE localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft DE localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft DE localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft DE localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft DE localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "pl_PL": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft PL localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft PL localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft PL localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft PL localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft PL localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "uk_UA": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft UK localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft UK localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft UK localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft UK localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft UK localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft UK localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "ar_SA": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft AR localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft AR localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft AR localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft AR localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft AR localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "id_ID": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft ID localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft ID localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft ID localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft ID localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft ID localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "ko_KR": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft KO localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft KO localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft KO localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft KO localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft KO localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "he_IL": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft HE localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft HE localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft HE localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft HE localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft HE localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "pt_BR": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft PT-BR localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft PT-BR localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft PT-BR localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft PT-BR localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft PT-BR localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        },
+        "nl_NL": {
+          "title": "Black Keel Claim Hooks",
+          "scanner": "Draft NL localization pending native pass. Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.",
+          "field_note": "Draft NL localization pending native pass. The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.",
+          "terminal": "Draft NL localization pending native pass. CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.",
+          "audio": "Draft NL localization pending native pass. It can hear you. It just has to price the answer first.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.",
+          "external_site": "Draft NL localization pending native pass. Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses."
+        }
+      }
+    },
+    {
+      "packet_id": "P059_ESCAPE_CHAIN_ASSEMBLY",
+      "article_id": "hecton8.escape_chain_assembly",
+      "title_key": "applied_lore.escape_chain_assembly.title",
+      "unlock": {
+        "primary": "unlock.first_escape_chain_assembly",
+        "poi_tags": [
+          "poi.ascent_cradle",
+          "poi.pressure_clamp",
+          "poi.guidance_core"
+        ],
+        "biome_tags": [
+          "biome.service_corridor",
+          "biome.machine_trench",
+          "biome.deep_fabrication"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "ru_RU": {
+          "title": "Сборка цепочки побега",
+          "scanner": "Для ухода нужны шесть жестких доказательств: relay, seal, guidance, ascent charge, legal handshake и payload, который carrier не сможет проигнорировать.",
+          "field_note": "Маршрут вверх собирается из деталей, которые никогда не должны были дать рабочим уйти самостоятельно.",
+          "terminal": "ПАКЕТ ПОДЪЕМА: акустический relay spine отсутствует. Рейтинг clamp ring недостаточен. Guidance core отсутствует. Charge cradle пуст. Quarantine handshake не решен. Evidence payload опционален, но меняет authority восстановления.",
+          "audio": "Ты не ремонтируешь капсулу. Ты строишь первый честный выход, которого у колонии никогда не было.",
+          "in_game_wiki": "Сборка цепочки побега превращает уход в длинную инженерную ветку. Поврежденный drop package не может стартовать сам. Игрок должен собрать relay, pressure sealing, guidance, ascent energy, legal access и опциональную evidence capacity на разных глубинах.",
+          "external_site": "Сборка цепочки побега объясняет физическую причину, почему кампания уходит глубже вместо завершения у поверхности: каждый значимый компонент выхода лежит в затопленной инфраструктуре, среднеглубинной фабрикации или authority-системах Atlas/Seed."
+        },
+        "ja_JP": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft JP localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft JP localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft JP localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft JP localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft JP localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft JP localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "zh_CN": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft CN localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft CN localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft CN localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft CN localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft CN localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft CN localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "fr_FR": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft FR localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft FR localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft FR localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft FR localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft FR localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft FR localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "es_ES": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft ES localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft ES localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft ES localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft ES localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft ES localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft ES localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "de_DE": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft DE localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft DE localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft DE localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft DE localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft DE localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft DE localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "pl_PL": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft PL localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft PL localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft PL localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft PL localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft PL localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft PL localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "uk_UA": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft UK localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft UK localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft UK localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft UK localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft UK localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft UK localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "ar_SA": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft AR localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft AR localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft AR localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft AR localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft AR localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft AR localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "id_ID": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft ID localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft ID localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft ID localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft ID localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft ID localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft ID localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "ko_KR": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft KO localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft KO localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft KO localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft KO localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft KO localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft KO localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "he_IL": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft HE localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft HE localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft HE localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft HE localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft HE localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft HE localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "pt_BR": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft PT-BR localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft PT-BR localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft PT-BR localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft PT-BR localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft PT-BR localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        },
+        "nl_NL": {
+          "title": "Escape Chain Assembly",
+          "scanner": "Draft NL localization pending native pass. Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.",
+          "field_note": "Draft NL localization pending native pass. The route up is built from pieces that were never meant to let workers leave on their own.",
+          "terminal": "Draft NL localization pending native pass. ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.",
+          "audio": "Draft NL localization pending native pass. You do not repair the capsule. You build the first honest exit the colony never had.",
+          "in_game_wiki": "Draft NL localization pending native pass. Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.",
+          "external_site": "Draft NL localization pending native pass. Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems."
+        }
+      }
+    },
+    {
+      "packet_id": "P060_FIRST_HOUR_SPINE",
+      "article_id": "hecton8.first_hour_spine",
+      "title_key": "applied_lore.first_hour_spine.title",
+      "unlock": {
+        "primary": "unlock.first_first_hour_spine",
+        "poi_tags": [
+          "poi.shallow_pump_annex",
+          "poi.first_safe_module",
+          "poi.repair_biomass_trace"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.crash_shelf",
+          "biome.tide_gauge"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "First Hour Spine",
+          "scanner": "Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "The opening must be beautiful before it becomes accusing.",
+          "terminal": "SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "ru_RU": {
+          "title": "Каркас первого часа",
+          "scanner": "Контракт, поврежденный drop, воздух, яркое мелководье, безопасная pump room, стерильная ложь, затем первый repair scar, где жизнь работает прокладкой.",
+          "field_note": "Открытие должно быть красивым до того, как станет обвинением.",
+          "terminal": "МЕЛКОВОДНЫЙ АННЕКС: ручной перезапуск насоса действителен. Пакет инцидента Deep Reach кэширован. Рост ремонта Atlas обнаружен вокруг кабеля, фрагмента инструмента и биологического остатка.",
+          "audio": "Первая безопасная комната не чистая. Она просто задерживает дыхание лучше тебя.",
+          "in_game_wiki": "Каркас первого часа фиксирует ритм открытия: подход Black Keel, поврежденный descent, первый survival repair, контраст яркого мелководья, первый безопасный модуль, первая корпоративная ложь и первый след того, что ремонтная логика Atlas вошла в биологию.",
+          "external_site": "Каркас первого часа является драматургическим гайдом ранней игры HECTON-8. Он гарантирует, что игрок начинает с конкретных инженерных задач и визуального удивления до появления преступления колонии и maintenance ecology Atlas."
+        },
+        "ja_JP": {
+          "title": "First Hour Spine",
+          "scanner": "Draft JP localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft JP localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft JP localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft JP localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft JP localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft JP localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "zh_CN": {
+          "title": "First Hour Spine",
+          "scanner": "Draft CN localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft CN localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft CN localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft CN localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft CN localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft CN localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "fr_FR": {
+          "title": "First Hour Spine",
+          "scanner": "Draft FR localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft FR localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft FR localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft FR localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft FR localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft FR localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "es_ES": {
+          "title": "First Hour Spine",
+          "scanner": "Draft ES localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft ES localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft ES localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft ES localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft ES localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft ES localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "de_DE": {
+          "title": "First Hour Spine",
+          "scanner": "Draft DE localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft DE localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft DE localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft DE localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft DE localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft DE localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "pl_PL": {
+          "title": "First Hour Spine",
+          "scanner": "Draft PL localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft PL localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft PL localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft PL localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft PL localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft PL localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "uk_UA": {
+          "title": "First Hour Spine",
+          "scanner": "Draft UK localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft UK localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft UK localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft UK localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft UK localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft UK localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "ar_SA": {
+          "title": "First Hour Spine",
+          "scanner": "Draft AR localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft AR localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft AR localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft AR localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft AR localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft AR localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "id_ID": {
+          "title": "First Hour Spine",
+          "scanner": "Draft ID localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft ID localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft ID localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft ID localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft ID localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft ID localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "ko_KR": {
+          "title": "First Hour Spine",
+          "scanner": "Draft KO localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft KO localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft KO localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft KO localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft KO localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft KO localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "he_IL": {
+          "title": "First Hour Spine",
+          "scanner": "Draft HE localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft HE localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft HE localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft HE localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft HE localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft HE localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "pt_BR": {
+          "title": "First Hour Spine",
+          "scanner": "Draft PT-BR localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft PT-BR localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft PT-BR localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft PT-BR localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft PT-BR localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        },
+        "nl_NL": {
+          "title": "First Hour Spine",
+          "scanner": "Draft NL localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
+          "field_note": "Draft NL localization pending native pass. The opening must be beautiful before it becomes accusing.",
+          "terminal": "Draft NL localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "audio": "Draft NL localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.",
+          "in_game_wiki": "Draft NL localization pending native pass. First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "external_site": "Draft NL localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
+        }
+      }
+    }
+  ]
+}

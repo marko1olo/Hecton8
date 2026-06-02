@@ -53,7 +53,13 @@ Large and irregular geology should prefer triplanar or world/object-space materi
 
 Triplanar does not excuse missing UVs. UV0 still stores decal/manifest coordinates or a fallback unwrap. UV1 may store lightmap/detail scale. Generated triplanar materials must expose scale, sharpness, normal strength, cavity strength, and wetness strength as material properties.
 
-## 6. LOD And Decimation
+## 6. Continuous Quality Scaling
+
+`GlobalQualityWeight` scales offline geology fidelity through SDF resolution, fracture plane count, erosion pass count, decal density, texture resolution, mask precision, and LOD transition distance. It never changes ore node identity, collision proxy route, navigation blocker identity, material channel semantics, or runtime generation law.
+
+Compact geology must still show a believable process in silhouette. Higher tiers add richer mineral veins, sharper fracture detail, better wetness masks, and denser near-field bakes; they do not permit smooth blobs with expensive shaders.
+
+## 7. LOD And Decimation
 
 Geology LOD must preserve silhouette and major fracture planes.
 
@@ -75,7 +81,7 @@ Default budgets:
 - Medium boulder/ore: LOD0 9,000, LOD1 3,000, LOD2 600.
 - Large vent/cliff chunk: LOD0 18,000, LOD1 7,000, LOD2 1,200.
 
-## 7. Collision
+## 8. Collision
 
 Geology collision uses:
 
@@ -86,7 +92,7 @@ Geology collision uses:
 
 LOD0 MeshCollider is banned. Collision proxy must be saved as `COL_*` mesh or primitive child set and cooked offline when a mesh proxy is unavoidable.
 
-## 8. Rejection Gates
+## 9. Rejection Gates
 
 Reject if:
 
@@ -96,3 +102,21 @@ Reject if:
 - Collision proxy exceeds budget or references LOD0.
 - LOD1/LOD2 destroys ore/vent gameplay readability.
 - Marching cubes output has holes, degenerate triangles, or unbounded seams.
+
+## 10. Proof Artifacts
+
+Geology generation must output:
+
+- asset family, seed, geological process tag, biome/depth route, and material family;
+- SDF, voxel, fracture, erosion, or profile parameters used to generate the mesh;
+- manifold/open-shell validation report;
+- degenerate triangle, island, seam, and normal validation report;
+- vertex color channel summary for chip/mineral reveal, wetness/stain/heat, AO, and blend/emission masks;
+- triplanar scale, UV fallback, decal UV, and material property report;
+- LOD triangle counts and decimation method with boundary, UV seam, material border, and sharp edge preservation flags;
+- collider proxy type, primitive count, convex hull triangle count, or SDF/nav proxy route;
+- screenshots with flat material override and final material to prove the silhouette carries geology before texture detail.
+
+## 11. Acceptance Sentence
+
+A generated geology asset is accepted only when its silhouette and topology reveal a believable geological process, its masks and materials support abyssal wet mineral truth, its LODs preserve gameplay-readable ore/vent/fracture forms, and its collision proxy remains separate from decorative visual triangles.

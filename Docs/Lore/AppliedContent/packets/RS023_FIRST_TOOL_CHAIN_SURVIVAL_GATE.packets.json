@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P111_MANUAL_BILGE_PUMP_KIT",
+      "article_id": "first_hour.manual_bilge_pump_kit",
+      "title_key": "applied_lore.manual_bilge_pump_kit.title",
+      "unlock": {
+        "primary": "unlock.first_manual_bilge_pump_kit",
+        "poi_tags": [
+          "poi.manual_pump_crate",
+          "poi.flooded_capsule_bilge",
+          "poi.p63_pump_rack"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.shallow_annex",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "First tool must teach survival before upgrade fantasy.",
+          "terminal": "P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "ru_RU": {
+          "title": "Ручной bilge pump kit",
+          "scanner": "Manual pump kit. Медленно, грязно, надежно; первый урок в том, что powered systems лгут.",
+          "field_note": "Первый инструмент должен учить survival до фантазии апгрейда.",
+          "terminal": "P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Сначала ручная работа. Потом электричество. Дыхание всегда.",
+          "in_game_wiki": "Первая цепочка инструментов начинается с manual bilge pump kit. Он дает игроку очистить маленькое затопленное пространство, не доверяя сломанному питанию. Это заземляет opening в работе: воздух, уровень воды, усилие рук, клапаны и терпение до героической резки.",
+          "external_site": "Ручной bilge pump kit задает первый survival verb HECTON-8. Он намеренно скромный: hard-sci-fi tutorial object, делающий pressure work тактильной."
+        },
+        "ja_JP": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft JP localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft JP localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft JP localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft JP localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft JP localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft JP localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "zh_CN": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft CN localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft CN localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft CN localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft CN localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft CN localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft CN localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "fr_FR": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft FR localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft FR localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft FR localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft FR localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft FR localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "es_ES": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft ES localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft ES localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft ES localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft ES localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft ES localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "de_DE": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft DE localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft DE localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft DE localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft DE localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft DE localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "pl_PL": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft PL localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft PL localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft PL localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft PL localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft PL localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "uk_UA": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft UA localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft UA localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft UA localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft UA localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft UA localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft UA localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "ar_SA": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft AR localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft AR localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft AR localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft AR localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft AR localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "id_ID": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft ID localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft ID localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft ID localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft ID localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft ID localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "ko_KR": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft KO localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft KO localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft KO localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft KO localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft KO localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "he_IL": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft HE localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft HE localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft HE localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft HE localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft HE localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "pt_BR": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft PT localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft PT localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft PT localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft PT localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft PT localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        },
+        "nl_NL": {
+          "title": "Manual Bilge Pump Kit",
+          "scanner": "Draft NL localization pending native pass. Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.",
+          "field_note": "Draft NL localization pending native pass. First tool must teach survival before upgrade fantasy.",
+          "terminal": "Draft NL localization pending native pass. P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.",
+          "audio": "Draft NL localization pending native pass. Hand work first. Electricity second. Breathing always.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.",
+          "external_site": "Draft NL localization pending native pass. Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile."
+        }
+      }
+    },
+    {
+      "packet_id": "P112_COLD_SEALANT_PATCH_GUN",
+      "article_id": "first_hour.cold_sealant_patch_gun",
+      "title_key": "applied_lore.cold_sealant_patch_gun.title",
+      "unlock": {
+        "primary": "unlock.first_cold_sealant_patch_gun",
+        "poi_tags": [
+          "poi.patch_gun_locker",
+          "poi.hull_pinhole_leak",
+          "poi.cold_sealant_cartridge"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Sealant repairs should buy time, not erase pressure.",
+          "terminal": "PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "ru_RU": {
+          "title": "Cold sealant patch gun",
+          "scanner": "Patch gun. Рассчитан на pinholes, не на чудеса.",
+          "field_note": "Sealant repairs должны покупать время, а не отменять pressure.",
+          "terminal": "PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Заплатка - не безопасность. Это countdown, который выглядит твердым.",
+          "in_game_wiki": "Cold sealant patch gun - второй opening tool. Он чинит малые leaks, стабилизирует capsule и учит лимитам. Игрок узнает, что каждый repair имеет rating, а HECTON-8 наказывает repairs вне этого rating.",
+          "external_site": "Cold sealant patch gun превращает engineering horror в читаемый gameplay. Он дает игроку agency, сохраняя pressure постоянной угрозой."
+        },
+        "ja_JP": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft JP localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft JP localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft JP localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft JP localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft JP localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft JP localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "zh_CN": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft CN localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft CN localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft CN localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft CN localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft CN localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft CN localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "fr_FR": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft FR localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft FR localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft FR localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft FR localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft FR localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft FR localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "es_ES": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft ES localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft ES localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft ES localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft ES localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft ES localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft ES localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "de_DE": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft DE localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft DE localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft DE localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft DE localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft DE localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft DE localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "pl_PL": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft PL localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft PL localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft PL localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft PL localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft PL localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft PL localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "uk_UA": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft UA localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft UA localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft UA localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft UA localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft UA localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft UA localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "ar_SA": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft AR localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft AR localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft AR localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft AR localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft AR localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft AR localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "id_ID": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft ID localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft ID localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft ID localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft ID localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft ID localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft ID localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "ko_KR": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft KO localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft KO localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft KO localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft KO localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft KO localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft KO localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "he_IL": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft HE localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft HE localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft HE localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft HE localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft HE localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft HE localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "pt_BR": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft PT localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft PT localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft PT localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft PT localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft PT localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft PT localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        },
+        "nl_NL": {
+          "title": "Cold Sealant Patch Gun",
+          "scanner": "Draft NL localization pending native pass. Patch gun. Rated for pinholes, not miracles.",
+          "field_note": "Draft NL localization pending native pass. Sealant repairs should buy time, not erase pressure.",
+          "terminal": "Draft NL localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.",
+          "audio": "Draft NL localization pending native pass. A patch is not safety. It is a countdown that looks solid.",
+          "in_game_wiki": "Draft NL localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.",
+          "external_site": "Draft NL localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat."
+        }
+      }
+    },
+    {
+      "packet_id": "P113_LOW_POWER_INDUCTION_CUTTER",
+      "article_id": "first_hour.low_power_induction_cutter",
+      "title_key": "applied_lore.low_power_induction_cutter.title",
+      "unlock": {
+        "primary": "unlock.first_low_power_induction_cutter",
+        "poi_tags": [
+          "poi.cutter_charge_cradle",
+          "poi.jammed_service_hatch",
+          "poi.low_power_tool_rack"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf",
+          "biome.cable_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "The cutter should feel valuable because it is limited.",
+          "terminal": "TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "ru_RU": {
+          "title": "Low-power induction cutter",
+          "scanner": "Induction cutter. Открывает work metal; перегревается на pressure glass и плохой вере.",
+          "field_note": "Cutter должен ощущаться ценным именно потому, что он ограничен.",
+          "terminal": "TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Режь hatch. Не режь то, что держит комнату целой.",
+          "in_game_wiki": "Low-power induction cutter дает первое deliberate opening action: заевший hatch, panel bolt, salvage crate. Он не решает каждый barrier. Pressure glass, active load-bearing frames и Atlas-grown seams требуют позднего знания.",
+          "external_site": "Low-power induction cutter - первый controlled access tool. Он превращает exploration в engineering choice, а не universal door removal."
+        },
+        "ja_JP": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft JP localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft JP localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft JP localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft JP localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft JP localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft JP localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "zh_CN": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft CN localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft CN localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft CN localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft CN localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft CN localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft CN localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "fr_FR": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft FR localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft FR localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft FR localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft FR localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft FR localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft FR localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "es_ES": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft ES localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft ES localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft ES localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft ES localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft ES localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft ES localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "de_DE": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft DE localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft DE localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft DE localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft DE localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft DE localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft DE localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "pl_PL": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft PL localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft PL localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft PL localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft PL localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft PL localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft PL localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "uk_UA": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft UA localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft UA localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft UA localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft UA localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft UA localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft UA localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "ar_SA": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft AR localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft AR localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft AR localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft AR localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft AR localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft AR localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "id_ID": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft ID localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft ID localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft ID localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft ID localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft ID localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft ID localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "ko_KR": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft KO localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft KO localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft KO localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft KO localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft KO localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft KO localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "he_IL": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft HE localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft HE localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft HE localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft HE localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft HE localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft HE localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "pt_BR": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft PT localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft PT localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft PT localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft PT localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft PT localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft PT localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        },
+        "nl_NL": {
+          "title": "Low-Power Induction Cutter",
+          "scanner": "Draft NL localization pending native pass. Induction cutter. Opens work metal; overheats on pressure glass and bad faith.",
+          "field_note": "Draft NL localization pending native pass. The cutter should feel valuable because it is limited.",
+          "terminal": "Draft NL localization pending native pass. TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.",
+          "audio": "Draft NL localization pending native pass. Cut the hatch. Do not cut the thing holding the room together.",
+          "in_game_wiki": "Draft NL localization pending native pass. The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.",
+          "external_site": "Draft NL localization pending native pass. Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal."
+        }
+      }
+    },
+    {
+      "packet_id": "P114_ACOUSTIC_PINGER_LINE",
+      "article_id": "first_hour.acoustic_pinger_line",
+      "title_key": "applied_lore.acoustic_pinger_line.title",
+      "unlock": {
+        "primary": "unlock.first_acoustic_pinger_line",
+        "poi_tags": [
+          "poi.acoustic_pinger_spool",
+          "poi.return_line_anchor",
+          "poi.shallow_route_marker"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.shallow_annex",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Navigation should become physical early.",
+          "terminal": "RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "ru_RU": {
+          "title": "Acoustic pinger line",
+          "scanner": "Pinger spool. Первая карта - звук, который можно найти, когда свет откажет.",
+          "field_note": "Навигация должна рано стать физической.",
+          "terminal": "RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Когда света нет, иди на звук, который у тебя хватило дисциплины поставить.",
+          "in_game_wiki": "Acoustic pinger line - первая navigation discipline. Он учит игрока отмечать return routes, а не только гнаться за POIs. Поздние escape systems растут из той же идеи: acoustic relays, timing, carrier handshakes и route confidence.",
+          "external_site": "Acoustic pinger line превращает exploration HECTON-8 в процедуру. Это и tool, и tone: маленький звук против большого океана."
+        },
+        "ja_JP": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft JP localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft JP localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft JP localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft JP localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft JP localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft JP localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "zh_CN": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft CN localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft CN localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft CN localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft CN localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft CN localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft CN localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "fr_FR": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft FR localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft FR localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft FR localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft FR localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft FR localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft FR localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "es_ES": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft ES localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft ES localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft ES localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft ES localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft ES localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft ES localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "de_DE": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft DE localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft DE localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft DE localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft DE localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft DE localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft DE localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "pl_PL": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft PL localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft PL localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft PL localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft PL localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft PL localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft PL localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "uk_UA": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft UA localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft UA localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft UA localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft UA localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft UA localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft UA localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "ar_SA": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft AR localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft AR localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft AR localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft AR localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft AR localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft AR localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "id_ID": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft ID localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft ID localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft ID localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft ID localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft ID localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft ID localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "ko_KR": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft KO localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft KO localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft KO localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft KO localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft KO localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft KO localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "he_IL": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft HE localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft HE localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft HE localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft HE localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft HE localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft HE localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "pt_BR": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft PT localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft PT localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft PT localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft PT localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft PT localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft PT localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        },
+        "nl_NL": {
+          "title": "Acoustic Pinger Line",
+          "scanner": "Draft NL localization pending native pass. Pinger spool. The first map is a sound you can still find when light fails.",
+          "field_note": "Draft NL localization pending native pass. Navigation should become physical early.",
+          "terminal": "Draft NL localization pending native pass. RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.",
+          "audio": "Draft NL localization pending native pass. When the light is gone, follow the sound you had the discipline to place.",
+          "in_game_wiki": "Draft NL localization pending native pass. The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.",
+          "external_site": "Draft NL localization pending native pass. Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean."
+        }
+      }
+    },
+    {
+      "packet_id": "P115_P63_FIELD_FABRICATOR",
+      "article_id": "first_hour.p63_field_fabricator",
+      "title_key": "applied_lore.p63_field_fabricator.title",
+      "unlock": {
+        "primary": "unlock.first_p63_field_fabricator",
+        "poi_tags": [
+          "poi.shallow_annex_p63_fabricator",
+          "poi.first_recipe_console",
+          "poi.tool_charge_bench"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.photic_shelf",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "ru_RU": {
+          "title": "P-63 field fabricator",
+          "scanner": "Field fabricator. Не magic printer: принимает грязные inputs и выдает rated parts.",
+          "field_note": "Crafting начинается как repair certification, не loot dopamine.",
+          "terminal": "FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Машина может сделать детали. Она не может сделать разрешение.",
+          "in_game_wiki": "Shallow Annex P-63 содержит первый field fabricator. Он должен ощущаться индустриальным, ограниченным и полезным. Ранние recipes: valve gaskets, cutter contacts, pinger floats и sealant clamps. Fabricator отказывается от опасного pressure material, пока игрок не получит containment knowledge.",
+          "external_site": "P-63 field fabricator закрепляет crafting HECTON-8 в certification. Crafting - не generic alchemy; это rated repair under pressure."
+        },
+        "ja_JP": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft JP localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft JP localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft JP localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft JP localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft JP localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "zh_CN": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft CN localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft CN localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft CN localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft CN localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft CN localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "fr_FR": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft FR localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft FR localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft FR localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft FR localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft FR localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "es_ES": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft ES localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft ES localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft ES localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft ES localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft ES localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "de_DE": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft DE localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft DE localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft DE localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft DE localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft DE localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "pl_PL": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft PL localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft PL localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft PL localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft PL localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft PL localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "uk_UA": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft UA localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft UA localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft UA localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft UA localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft UA localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "ar_SA": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft AR localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft AR localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft AR localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft AR localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft AR localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "id_ID": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft ID localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft ID localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft ID localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft ID localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft ID localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "ko_KR": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft KO localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft KO localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft KO localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft KO localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft KO localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "he_IL": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft HE localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft HE localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft HE localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft HE localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft HE localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "pt_BR": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft PT localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft PT localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft PT localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft PT localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft PT localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        },
+        "nl_NL": {
+          "title": "P-63 Field Fabricator",
+          "scanner": "Draft NL localization pending native pass. Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.",
+          "field_note": "Draft NL localization pending native pass. Crafting starts as repair certification, not loot dopamine.",
+          "terminal": "Draft NL localization pending native pass. FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.",
+          "audio": "Draft NL localization pending native pass. The machine can make parts. It cannot make permission.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.",
+          "external_site": "Draft NL localization pending native pass. P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure."
+        }
+      }
+    }
+  ]
+}

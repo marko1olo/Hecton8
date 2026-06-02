@@ -6,6 +6,8 @@ Use this file before writing advertising copy, social posts, profile bios, store
 
 This is not a lore bible and not a campaign document. This is the rule set for making the text sound like a real developer instead of a content machine.
 
+Route note: game-world text, missions, logs, and evidence use `narrative.md`. Public marketing text, store copy, social posts, creator outreach, community replies, captions, and profile text use this file. If public copy references visuals, performance, platforms, demo state, Steam status, mechanics, or release scope, `quality.md` evidence rules also apply.
+
 ## 1. Prime Rule
 
 Write like a developer showing one real thing he is currently fighting with.
@@ -592,7 +594,57 @@ New room pass.
 The old version looked expensive and said nothing. This one at least tells you where the mistake is.
 ```
 
-## 19. Final Publish Checklist
+## 19. Truth Boundary
+
+Public text does not create project truth. It reports only what the current build, proof asset, public page, or owner-approved plan can support.
+
+Public copy must never:
+
+- upgrade an internal prototype into a shipped feature;
+- call a capture gameplay unless it is gameplay;
+- call a render a screenshot unless it is an engine screenshot;
+- imply a demo, Steam page, release window, platform target, optimization state, or creator program exists before it exists;
+- turn mood, concept art, or aspirational design into a promise.
+
+When a claim touches performance, platform, visual quality, gameplay scope, or release readiness, attach the proof source internally before publication. If the proof source is missing, rewrite the sentence until it only says what is true.
+
+## 20. GlobalQualityWeight And Public Claim Scaling
+
+`GlobalQualityWeight` may change how much visual detail appears in a capture, but it must not change what public text claims. A Compact capture can support statements about readability, restraint, and survival pressure. A High or Ultra capture can support statements about richer lighting, materials, particles, and presentation only when the capture is current and labeled.
+
+Public copy must never use high-tier overkill to imply compact-tier performance, gameplay scope, platform readiness, demo availability, or release state. If a sentence says or implies "realistic", "AAA", "optimized", "VR", "Steam-ready", "demo", "release", or "multiplayer", the proof artifact must exist and be named in the internal review packet.
+
+## 21. Proof Artifacts
+
+Public text going out for review must identify:
+
+- target channel;
+- attached asset or proof source;
+- exact claim being made;
+- unsupported claims removed;
+- call to action, or explicit reason there is no call to action;
+- language/region target;
+- owner approval state if it mentions demo, Steam, build access, pricing, release, platform, or creator outreach.
+
+Copy without an asset or concrete observed fact is allowed only for profile/bio housekeeping. Marketing claims without proof are rejected.
+
+## 22. Public Text Rejection Gates
+
+Reject the draft if:
+
+- it sounds like a trailer voice-over;
+- it says `immersive`, `haunting`, `unique`, `AAA`, `realistic`, or `next-gen` without a physical fact doing the work;
+- it sells mood instead of a player-readable decision;
+- it claims readiness without a current proof asset;
+- it compares the game to competitors as a shortcut;
+- it uses internal ambition as public fact;
+- it uses public hype to compensate for weak screenshots or weak footage.
+
+## 23. Acceptance Sentence
+
+Public text is accepted only when it is short, factual, asset-backed, physically specific, free of unsupported readiness claims, and readable as a developer showing one real problem or one real proof point instead of a campaign deck.
+
+## 24. Final Publish Checklist
 
 Before any public text goes out, answer:
 
@@ -607,7 +659,7 @@ Before any public text goes out, answer:
 
 If two answers are no, do not publish.
 
-## 20. The One-Line Rule
+## 25. The One-Line Rule
 
 When unsure, write the ugly true version first.
 

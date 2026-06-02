@@ -1,0 +1,782 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS015_HUMAN_DOMAINS_ROUTE_ECONOMY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P071_SOL_CORE_AUTHORITY",
+      "article_id": "human.sol_core_authority",
+      "title_key": "applied_lore.sol_core_authority.title",
+      "unlock": {
+        "primary": "unlock.first_sol_core_authority",
+        "poi_tags": [
+          "poi.old_law_plate",
+          "poi.sol_cert_seal",
+          "poi.insurance_stamp"
+        ],
+        "biome_tags": [
+          "biome.drowned_admin",
+          "biome.contract_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sol Core Authority",
+          "scanner": "Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "ru_RU": {
+          "title": "Власть Sol Core",
+          "scanner": "Старая печать закона Sol. Она может владеть фронтирным трупом, не будучи достаточно близко, чтобы почувствовать утечку давления.",
+          "field_note": "Sol здесь не дом. Это самая старая подпись на документе, который все еще может тебя уничтожить.",
+          "terminal": "SOL CORE STANDARD: claim continuity признана через licensed carrier custody, route insurance и delayed adjudication. Human recovery priority не решен до local hazard certification.",
+          "audio": "Печать пришла из земного пространства. Пункт спасения - нет.",
+          "in_game_wiki": "Sol Core - юридический и финансовый корень человеческой экспансии, но не происхождение игрока и не кнопка спасения. На HECTON-8 он выжил как печати, liability forms, safety plates и страховой язык, который пережил людей, которых должен был защищать.",
+          "external_site": "Власть Sol Core объясняет, почему HECTON-8 может быть далекой и все равно юридически присвоенной. В HECTON-8 старая цивилизация приходит как бумага, стандарты и долг раньше, чем приходит помощь."
+        },
+        "ja_JP": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft JP localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft JP localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft JP localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft JP localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft JP localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "zh_CN": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft CN localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft CN localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft CN localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft CN localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft CN localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "fr_FR": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft FR localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft FR localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft FR localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft FR localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft FR localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "es_ES": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft ES localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft ES localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft ES localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft ES localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft ES localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "de_DE": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft DE localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft DE localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft DE localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft DE localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft DE localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "pl_PL": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft PL localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft PL localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft PL localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft PL localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft PL localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "uk_UA": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft UK localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft UK localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft UK localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft UK localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft UK localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "ar_SA": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft AR localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft AR localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft AR localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft AR localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft AR localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "id_ID": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft ID localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft ID localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft ID localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft ID localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft ID localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "ko_KR": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft KO localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft KO localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft KO localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft KO localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft KO localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "he_IL": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft HE localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft HE localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft HE localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft HE localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft HE localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "pt_BR": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft PT-BR localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft PT-BR localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft PT-BR localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft PT-BR localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft PT-BR localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        },
+        "nl_NL": {
+          "title": "Sol Core Authority",
+          "scanner": "Draft NL localization pending native pass. Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+          "field_note": "Draft NL localization pending native pass. Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+          "terminal": "Draft NL localization pending native pass. SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+          "audio": "Draft NL localization pending native pass. The seal came from Earth space. The rescue clause did not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+          "external_site": "Draft NL localization pending native pass. Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
+        }
+      }
+    },
+    {
+      "packet_id": "P072_CENTAURI_COMPACT_LEGITIMACY",
+      "article_id": "human.centauri_compact_legitimacy",
+      "title_key": "applied_lore.centauri_compact_legitimacy.title",
+      "unlock": {
+        "primary": "unlock.first_centauri_compact_legitimacy",
+        "poi_tags": [
+          "poi.centauri_hardware_stamp",
+          "poi.compact_audit_tag",
+          "poi.old_pressure_case"
+        ],
+        "biome_tags": [
+          "biome.wreck_claim",
+          "biome.route_depot"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "ru_RU": {
+          "title": "Легитимность Centauri Compact",
+          "scanner": "Аудиторская бирка Centauri. Ранняя extrasolar legitimacy, поздние frontier excuses.",
+          "field_note": "Compact сделал дальние claims респектабельными. Респектабельность не спасает.",
+          "terminal": "CENTAURI COMPACT HARDWARE: pressure case сертифицирован для civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Первая легитимность стала старым металлом под новой ложью.",
+          "in_game_wiki": "Centauri Compact - ранний якорь внеземной легитимности: настоящие колонии, настоящие стандарты, настоящий гражданский престиж. На HECTON-8 он виден как импортные pressure cases и audit tags, которые Deep Reach могла цитировать, игнорируя их смысл.",
+          "external_site": "Легитимность Centauri Compact заземляет большой сеттинг: человеческая экспансия уже работает в некоторых местах, поэтому Aegir выглядит не героическим, а коррумпированным."
+        },
+        "ja_JP": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft JP localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft JP localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft JP localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft JP localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft JP localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "zh_CN": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft CN localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft CN localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft CN localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft CN localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft CN localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "fr_FR": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft FR localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft FR localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft FR localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft FR localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft FR localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "es_ES": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft ES localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft ES localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft ES localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft ES localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft ES localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "de_DE": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft DE localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft DE localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft DE localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft DE localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft DE localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "pl_PL": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft PL localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft PL localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft PL localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft PL localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft PL localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "uk_UA": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft UK localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft UK localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft UK localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft UK localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft UK localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "ar_SA": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft AR localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft AR localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft AR localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft AR localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft AR localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "id_ID": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft ID localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft ID localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft ID localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft ID localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft ID localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "ko_KR": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft KO localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft KO localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft KO localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft KO localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft KO localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "he_IL": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft HE localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft HE localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft HE localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft HE localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft HE localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "pt_BR": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft PT-BR localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft PT-BR localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft PT-BR localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft PT-BR localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft PT-BR localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        },
+        "nl_NL": {
+          "title": "Centauri Compact Legitimacy",
+          "scanner": "Draft NL localization pending native pass. Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+          "field_note": "Draft NL localization pending native pass. The Compact made distant claims respectable. Respectability is not rescue.",
+          "terminal": "Draft NL localization pending native pass. CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+          "audio": "Draft NL localization pending native pass. First legitimacy became old metal under a newer lie.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+          "external_site": "Draft NL localization pending native pass. Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+        }
+      }
+    },
+    {
+      "packet_id": "P073_BARNARD_YARDS_MARAUDER_ORIGIN",
+      "article_id": "human.barnard_yards_marauder_origin",
+      "title_key": "applied_lore.barnard_yards_marauder_origin.title",
+      "unlock": {
+        "primary": "unlock.first_barnard_yards_marauder_origin",
+        "poi_tags": [
+          "poi.barnard_tool_stamp",
+          "poi.salvage_belt_patch",
+          "poi.cutters_license_plate"
+        ],
+        "biome_tags": [
+          "biome.shallow_cache",
+          "biome.marauder_route"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "ru_RU": {
+          "title": "Marauder-корни Barnard Yards",
+          "scanner": "Штамп инструмента Barnard. Культура разборки кораблей. Место, где учат не доверять чистым rescue clauses.",
+          "field_note": "Это ближе к игроку, чем Земля: арендованные резаки, старые pressure habits, долг и stripped hulls.",
+          "terminal": "BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Ты выучил это движение рукой до HECTON-8. В этом и проблема.",
+          "in_game_wiki": "Barnard Yards - рабочая культура происхождения игрока: industrial salvage, shipbreaking, pressure hardware и работа с dead claims. Это делает протагониста компетентным, не превращая его в туриста с Земли или избранного героя.",
+          "external_site": "Marauder-корни Barnard Yards определяют класс протагониста HECTON-8. Игрок приходит из salvage-культуры, где dead claim - не загадочный туризм, а работа с плохой математикой."
+        },
+        "ja_JP": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft JP localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft JP localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft JP localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft JP localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft JP localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft JP localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "zh_CN": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft CN localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft CN localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft CN localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft CN localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft CN localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft CN localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "fr_FR": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft FR localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft FR localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft FR localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft FR localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft FR localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft FR localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "es_ES": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft ES localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft ES localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft ES localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft ES localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft ES localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft ES localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "de_DE": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft DE localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft DE localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft DE localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft DE localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft DE localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft DE localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "pl_PL": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft PL localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft PL localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft PL localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft PL localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft PL localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft PL localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "uk_UA": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft UK localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft UK localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft UK localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft UK localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft UK localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft UK localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "ar_SA": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft AR localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft AR localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft AR localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft AR localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft AR localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft AR localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "id_ID": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft ID localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft ID localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft ID localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft ID localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft ID localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft ID localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "ko_KR": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft KO localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft KO localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft KO localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft KO localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft KO localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft KO localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "he_IL": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft HE localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft HE localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft HE localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft HE localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft HE localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft HE localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "pt_BR": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft PT-BR localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft PT-BR localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft PT-BR localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft PT-BR localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft PT-BR localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        },
+        "nl_NL": {
+          "title": "Barnard Yards Marauder Origin",
+          "scanner": "Draft NL localization pending native pass. Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+          "field_note": "Draft NL localization pending native pass. This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+          "terminal": "Draft NL localization pending native pass. BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+          "audio": "Draft NL localization pending native pass. You learned this hand motion before HECTON-8. That is the problem.",
+          "in_game_wiki": "Draft NL localization pending native pass. Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.",
+          "external_site": "Draft NL localization pending native pass. Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math."
+        }
+      }
+    },
+    {
+      "packet_id": "P074_TAU_CETI_PUBLIC_LEDGER",
+      "article_id": "human.tau_ceti_public_ledger",
+      "title_key": "applied_lore.tau_ceti_public_ledger.title",
+      "unlock": {
+        "primary": "unlock.first_tau_ceti_public_ledger",
+        "poi_tags": [
+          "poi.public_ledger_node",
+          "poi.civic_law_cache",
+          "poi.redacted_hearing_file"
+        ],
+        "biome_tags": [
+          "biome.admin_spine",
+          "biome.relay_spine"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "ru_RU": {
+          "title": "Публичный реестр Tau Ceti",
+          "scanner": "Фрагмент гражданского реестра Tau Ceti. Достаточно публичный, чтобы пугать Deep Reach, слишком задержанный, чтобы спасти колонию.",
+          "field_note": "Надзор может прийти честно и поздно. Поздно - все равно мертво.",
+          "terminal": "TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Суд может быть честным и бесполезным, когда сам свет опаздывает.",
+          "in_game_wiki": "Tau Ceti League дает сеттингу правдоподобный публично-правовой противовес. Он важен для evidence endings и давления на Deep Reach, но не может спасти человека под HECTON-8 в реальном времени.",
+          "external_site": "Публичный реестр Tau Ceti - hard-sci-fi версия ответственности: настоящие публичные институты существуют, но расстояние превращает справедливость в послесвечение, если игрок не сохранит evidence правильно."
+        },
+        "ja_JP": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft JP localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft JP localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft JP localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft JP localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft JP localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "zh_CN": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft CN localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft CN localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft CN localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft CN localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft CN localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "fr_FR": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft FR localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft FR localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft FR localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft FR localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft FR localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "es_ES": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft ES localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft ES localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft ES localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft ES localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft ES localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "de_DE": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft DE localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft DE localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft DE localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft DE localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft DE localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "pl_PL": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft PL localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft PL localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft PL localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft PL localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft PL localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "uk_UA": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft UK localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft UK localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft UK localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft UK localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft UK localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "ar_SA": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft AR localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft AR localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft AR localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft AR localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft AR localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "id_ID": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft ID localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft ID localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft ID localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft ID localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft ID localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "ko_KR": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft KO localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft KO localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft KO localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft KO localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft KO localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "he_IL": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft HE localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft HE localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft HE localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft HE localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft HE localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "pt_BR": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft PT-BR localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft PT-BR localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft PT-BR localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft PT-BR localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft PT-BR localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        },
+        "nl_NL": {
+          "title": "Tau Ceti Public Ledger",
+          "scanner": "Draft NL localization pending native pass. Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+          "field_note": "Draft NL localization pending native pass. Oversight can arrive clean and late. Late is still dead.",
+          "terminal": "Draft NL localization pending native pass. TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+          "audio": "Draft NL localization pending native pass. A court can be honest and useless when light itself is late.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.",
+          "external_site": "Draft NL localization pending native pass. Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly."
+        }
+      }
+    },
+    {
+      "packet_id": "P075_LUYTEN_JUNCTION_PACKET_CUSTODY",
+      "article_id": "human.luyten_junction_packet_custody",
+      "title_key": "applied_lore.luyten_junction_packet_custody.title",
+      "unlock": {
+        "primary": "unlock.first_luyten_junction_packet_custody",
+        "poi_tags": [
+          "poi.packet_custody_spool",
+          "poi.relay_tariff_panel",
+          "poi.luyten_route_key"
+        ],
+        "biome_tags": [
+          "biome.relay_spine",
+          "biome.drowned_comms"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "ru_RU": {
+          "title": "Packet custody Luyten Junction",
+          "scanner": "Custody spool Luyten. Сообщения не летят бесплатно; правда тоже.",
+          "field_note": "Relay - это машина, которая решает, какому горю дать bandwidth.",
+          "terminal": "LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Нет ansible. Нет милости. Только custody, tariff и время.",
+          "in_game_wiki": "Luyten Junction - скорее инфраструктура, чем общество: relays, beam custody, depot law и packet accounting. Он объясняет, как Deep Reach может давить на Aegir без live FTL command и как evidence можно задержать, купить, потерять или превратить в оружие.",
+          "external_site": "Packet custody Luyten Junction превращает межзвездную связь в игровое давление. В HECTON-8 нет магического радио, поэтому каждое сообщение должно пережить custody, cost и orbital timing."
+        },
+        "ja_JP": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft JP localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft JP localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft JP localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft JP localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft JP localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft JP localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "zh_CN": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft CN localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft CN localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft CN localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft CN localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft CN localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft CN localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "fr_FR": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft FR localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft FR localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft FR localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft FR localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft FR localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft FR localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "es_ES": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft ES localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft ES localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft ES localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft ES localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft ES localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft ES localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "de_DE": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft DE localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft DE localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft DE localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft DE localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft DE localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft DE localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "pl_PL": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft PL localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft PL localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft PL localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft PL localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft PL localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft PL localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "uk_UA": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft UK localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft UK localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft UK localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft UK localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft UK localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft UK localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "ar_SA": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft AR localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft AR localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft AR localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft AR localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft AR localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft AR localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "id_ID": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft ID localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft ID localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft ID localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft ID localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft ID localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft ID localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "ko_KR": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft KO localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft KO localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft KO localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft KO localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft KO localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft KO localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "he_IL": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft HE localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft HE localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft HE localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft HE localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft HE localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft HE localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "pt_BR": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft PT-BR localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft PT-BR localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft PT-BR localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft PT-BR localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft PT-BR localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        },
+        "nl_NL": {
+          "title": "Luyten Junction Packet Custody",
+          "scanner": "Draft NL localization pending native pass. Luyten custody spool. Messages do not travel free; neither does truth.",
+          "field_note": "Draft NL localization pending native pass. A relay is a machine that decides which grief gets bandwidth.",
+          "terminal": "Draft NL localization pending native pass. LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+          "audio": "Draft NL localization pending native pass. No ansible. No mercy. Just custody, tariff and time.",
+          "in_game_wiki": "Draft NL localization pending native pass. Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+          "external_site": "Draft NL localization pending native pass. Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing."
+        }
+      }
+    }
+  ]
+}

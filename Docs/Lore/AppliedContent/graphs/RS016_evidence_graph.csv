@@ -1,0 +1,6 @@
+packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface
+P076_RAN_AEGIR_ANCHOR,ran_aegir_anchor,0-1200m,ran_aegir_anchor,P016_AEGIR_HOST_STAR,,starfield nav plate,Aegir has real dim starlight; depth and storms make darkness.,Why is HECTON-8 not fantasy-dark?,2,scanner
+P077_AEGIR_MOON_LADDER,aegir_moon_ladder,0-2600m,aegir_moon_ladder,P017_AEGIR_MOON_LADDER,,moon ladder chart,HECTON-8 is one moon in a multi-body claim system.,What else moves around Aegir?,2,terminal
+P078_INNER_MOON_RELAY_HAZARDS,inner_moon_relay_hazards,0-3200m,inner_moon_relay_hazards,P012_RELAY_SPINE;P077_AEGIR_MOON_LADDER,,radiation shutter,"Radiation, eclipse and scatter can be real hazards exploited by contracts.",Why do rescue windows fail physically?,2,terminal
+P079_HECTON8_ORBIT_TIDE_GEOMETRY,hecton8_orbit_tide_geometry,100-4200m,hecton8_orbit_tide_geometry,P017_AEGIR_MOON_LADDER;P057_GREAT_TIDE_LIABILITY_CHAIN,,tide geometry panel,HECTON-8's orbit and tide model created a real disaster chain.,Was the Great Tide physically real?,2,terminal
+P080_OUTER_MOON_COLD_CLAIMS,outer_moon_cold_claims,0-2600m,outer_moon_cold_claims,P006_DEAD_CLAIM_CACHE;P077_AEGIR_MOON_LADDER,,outer claim beacon,Other Aegir moons seed the salvage economy and buried patterns.,Is HECTON-8 the only dead claim?,2,scanner

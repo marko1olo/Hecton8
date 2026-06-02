@@ -402,10 +402,49 @@ namespace Hecton8.Power
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ShutdownActiveRuntimeForEditorReload();
             s_active = null;
 #if UNITY_EDITOR
+            DisposeStandaloneVaultForEditorReload();
+#endif
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActiveRuntimeForEditorReload();
+            }
+        }
+
+        private static void DisposeStandaloneVaultForEditorReload()
+        {
             s_standaloneVault?.Dispose();
             s_standaloneVault = null;
+        }
+#endif
+
+        private static void ShutdownActiveRuntimeForEditorReload()
+        {
+            SubmarineOsThermalGridRuntime runtime = s_active;
+            if (runtime != null)
+                runtime.Dispose();
+#if UNITY_EDITOR
+            DisposeStandaloneVaultForEditorReload();
 #endif
         }
 

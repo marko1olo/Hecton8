@@ -1,0 +1,30 @@
+---
+packet_id: P093_ACCESSIBLE_SEAFLOOR_WINDOWS
+article_id: hecton8.accessible_seafloor_windows
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Accessible Seafloor Windows
+
+Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+
+## Scanner
+
+Ridge window. The bottom is not a floor; it is a rare exposure.
+
+## Terminal
+
+SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+
+## Audio
+
+You land where the moon lets stone show through.
+
+## Field Note
+
+Good traversal comes from scarce footholds, not endless flat seabed.
+
+<!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/en_US. -->

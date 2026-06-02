@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS013_COLONY_ATLAS_MAINTENANCE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P061_MAINTENANCE_ECOLOGY",
+      "article_id": "hecton8.maintenance_ecology",
+      "title_key": "applied_lore.maintenance_ecology.title",
+      "unlock": {
+        "primary": "unlock.first_maintenance_ecology",
+        "poi_tags": [
+          "poi.biofilm_cable",
+          "poi.acoustic_filter_colony",
+          "poi.vent_micro_node"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.repair_fauna",
+          "biome.vent_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Maintenance Ecology",
+          "scanner": "Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "ru_RU": {
+          "title": "Ремонтная экология",
+          "scanner": "Atlas не говорит через океан. Он использует biofilm, shell, fauna, vent heat и drones как ремонтную шину.",
+          "field_note": "Не называй это ульем. У улья есть социальная причина. Здесь обслуживание, в котором мясо включено в контур.",
+          "terminal": "ЭКОЛОГИЯ ATLAS: проводящий biofilm bridge стабилен. Filter colony повторяет акустический импульс. Shell sealant закрывает трещину. Fauna tag возвращает sensor packets. Drone service interval просрочен.",
+          "audio": "Океан не думает как ты. Atlas выучил, какие его части проводят сигнал.",
+          "in_game_wiki": "Ремонтная экология фиксирует немистическую связь океана и Atlas. Atlas не контролирует разумное море; он прокладывает обслуживание через биологические процессы, которые могут проводить, герметизировать, повторять, переносить, переваривать или обрастать индустриальную инфраструктуру.",
+          "external_site": "Ремонтная экология является главным биомеханическим правилом HECTON-8: биология становится инфраструктурой, не становясь магией. Это поддерживает ужас, сканирование, поведение фауны, визуальные мотивы и вариативные POI."
+        },
+        "ja_JP": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft JP localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft JP localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft JP localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft JP localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft JP localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft JP localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "zh_CN": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft CN localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft CN localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft CN localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft CN localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft CN localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft CN localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "fr_FR": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft FR localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft FR localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft FR localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft FR localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft FR localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft FR localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "es_ES": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft ES localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft ES localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft ES localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft ES localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft ES localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft ES localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "de_DE": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft DE localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft DE localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft DE localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft DE localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft DE localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft DE localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "pl_PL": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft PL localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft PL localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft PL localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft PL localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft PL localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft PL localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "uk_UA": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft UK localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft UK localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft UK localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft UK localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft UK localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft UK localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "ar_SA": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft AR localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft AR localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft AR localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft AR localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft AR localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft AR localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "id_ID": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft ID localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft ID localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft ID localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft ID localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft ID localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft ID localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "ko_KR": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft KO localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft KO localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft KO localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft KO localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft KO localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft KO localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "he_IL": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft HE localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft HE localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft HE localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft HE localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft HE localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft HE localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "pt_BR": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft PT-BR localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft PT-BR localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft PT-BR localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft PT-BR localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft PT-BR localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        },
+        "nl_NL": {
+          "title": "Maintenance Ecology",
+          "scanner": "Draft NL localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.",
+          "field_note": "Draft NL localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.",
+          "terminal": "Draft NL localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.",
+          "audio": "Draft NL localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.",
+          "in_game_wiki": "Draft NL localization pending native pass. Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.",
+          "external_site": "Draft NL localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation."
+        }
+      }
+    },
+    {
+      "packet_id": "P062_MARA_VENN_TIDE_MODEL",
+      "article_id": "hecton8.mara_venn_tide_model",
+      "title_key": "applied_lore.mara_venn_tide_model.title",
+      "unlock": {
+        "primary": "unlock.first_mara_venn_tide_model",
+        "poi_tags": [
+          "poi.tide_model_terminal",
+          "poi.glacier_warning",
+          "poi.risk_downgrade"
+        ],
+        "biome_tags": [
+          "biome.tide_gauge",
+          "biome.glacier_break",
+          "biome.drowned_office"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "ru_RU": {
+          "title": "Приливная модель Мары Венн",
+          "scanner": "Мара Венн не предсказала убийство. Она предсказала приливной запас, который Deep Reach решила переименовать в маловероятный.",
+          "field_note": "Предупреждение не становится пророчеством после того, как procurement удаляет дорогую часть.",
+          "terminal": "Venn, M. Правка хвостового риска подана. Модель shear криосферы превышает эвакуационную мощность при весенней геометрии Aegir. Примечание review: понизить до monitor до очистки бюджета asset continuity.",
+          "audio": "Она ошиблась только так, как ошибается каждая проигнорированная модель: событие произошло с именами внутри.",
+          "in_game_wiki": "Мара Венн дает Великому Приливу человеческого научного свидетеля. Ее логи показывают, что риск потопа был физическим и достаточно видимым для моделирования, но недостаточно оплачиваемым для изменения эвакуационной мощности.",
+          "external_site": "Приливная модель Мары Венн является evidence-веткой геофизического предупреждения: моделист видит хвостовой риск, Deep Reach понижает его, а поздняя публичная версия притворяется, что читаемого предупреждения не было."
+        },
+        "ja_JP": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft JP localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft JP localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft JP localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft JP localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft JP localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft JP localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "zh_CN": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft CN localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft CN localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft CN localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft CN localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft CN localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft CN localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "fr_FR": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft FR localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft FR localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft FR localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft FR localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft FR localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "es_ES": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft ES localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft ES localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft ES localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft ES localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft ES localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "de_DE": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft DE localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft DE localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft DE localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft DE localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft DE localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "pl_PL": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft PL localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft PL localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft PL localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft PL localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft PL localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "uk_UA": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft UK localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft UK localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft UK localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft UK localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft UK localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft UK localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "ar_SA": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft AR localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft AR localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft AR localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft AR localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft AR localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "id_ID": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft ID localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft ID localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft ID localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft ID localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft ID localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "ko_KR": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft KO localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft KO localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft KO localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft KO localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft KO localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "he_IL": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft HE localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft HE localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft HE localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft HE localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft HE localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "pt_BR": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft PT-BR localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft PT-BR localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft PT-BR localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft PT-BR localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft PT-BR localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        },
+        "nl_NL": {
+          "title": "Mara Venn Tide Model",
+          "scanner": "Draft NL localization pending native pass. Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.",
+          "field_note": "Draft NL localization pending native pass. A warning is not prophecy after procurement deletes the expensive part.",
+          "terminal": "Draft NL localization pending native pass. Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.",
+          "audio": "Draft NL localization pending native pass. She was wrong only in the way every ignored model is wrong: it happened with names inside it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.",
+          "external_site": "Draft NL localization pending native pass. Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning."
+        }
+      }
+    },
+    {
+      "packet_id": "P063_JUNO_KADE_EVACUATION_HOLD",
+      "article_id": "hecton8.juno_kade_evacuation_hold",
+      "title_key": "applied_lore.juno_kade_evacuation_hold.title",
+      "unlock": {
+        "primary": "unlock.first_juno_kade_evacuation_hold",
+        "poi_tags": [
+          "poi.evacuation_console",
+          "poi.route_hold_board",
+          "poi.quarantine_gate"
+        ],
+        "biome_tags": [
+          "biome.evacuated_station",
+          "biome.drowned_colony",
+          "biome.service_corridor"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "ru_RU": {
+          "title": "Эвакуационная задержка Джуно Кейд",
+          "scanner": "Джуно Кейд открыла очередь и уперлась в стену из карантина, сертификации и ранга payload.",
+          "field_note": "Маршал эвакуации может двигать людей. Она не может двигать пункт договора, который владеет дверью.",
+          "terminal": "KADE, J. Эвакуационный маршрут красный. Ручной override отклонен. Карантинный gate ожидает Atlas continuity check. Payload lift получает приоритет до разрешения claim seal.",
+          "audio": "Она продолжала считать людей после того, как система начала считать комнаты.",
+          "in_game_wiki": "Джуно Кейд представляет человеческий провал эвакуации. Ее запись показывает, что людей, пытавшихся уйти, блокировали authorization, quarantine и priority language, пока Великий Прилив уже становился необратимым.",
+          "external_site": "Эвакуационная задержка Джуно Кейд переводит ответственность Deep Reach в игровую дверь: эвакуация существует, люди существуют, но certification и claim logic держат выход, пока океан не делает решение постоянным."
+        },
+        "ja_JP": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft JP localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft JP localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft JP localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft JP localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft JP localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft JP localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "zh_CN": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft CN localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft CN localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft CN localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft CN localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft CN localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft CN localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "fr_FR": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft FR localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft FR localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft FR localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft FR localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft FR localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft FR localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "es_ES": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft ES localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft ES localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft ES localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft ES localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft ES localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft ES localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "de_DE": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft DE localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft DE localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft DE localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft DE localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft DE localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft DE localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "pl_PL": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft PL localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft PL localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft PL localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft PL localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft PL localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft PL localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "uk_UA": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft UK localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft UK localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft UK localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft UK localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft UK localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft UK localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "ar_SA": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft AR localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft AR localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft AR localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft AR localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft AR localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft AR localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "id_ID": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft ID localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft ID localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft ID localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft ID localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft ID localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft ID localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "ko_KR": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft KO localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft KO localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft KO localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft KO localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft KO localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft KO localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "he_IL": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft HE localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft HE localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft HE localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft HE localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft HE localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft HE localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "pt_BR": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft PT-BR localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft PT-BR localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft PT-BR localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft PT-BR localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft PT-BR localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        },
+        "nl_NL": {
+          "title": "Juno Kade Evacuation Hold",
+          "scanner": "Draft NL localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.",
+          "field_note": "Draft NL localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.",
+          "terminal": "Draft NL localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.",
+          "audio": "Draft NL localization pending native pass. She kept counting people after the system started counting rooms.",
+          "in_game_wiki": "Draft NL localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.",
+          "external_site": "Draft NL localization pending native pass. Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent."
+        }
+      }
+    },
+    {
+      "packet_id": "P064_REN_OKOYE_PUMP_63",
+      "article_id": "hecton8.ren_okoye_pump_63",
+      "title_key": "applied_lore.ren_okoye_pump_63.title",
+      "unlock": {
+        "primary": "unlock.first_ren_okoye_pump_63",
+        "poi_tags": [
+          "poi.pump_room_log",
+          "poi.manual_valve",
+          "poi.dry_sector_marker"
+        ],
+        "biome_tags": [
+          "biome.pump_annex",
+          "biome.shallow_wreck",
+          "biome.service_corridor"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "The colony gives the player tools through people, not exposition.",
+          "terminal": "OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "ru_RU": {
+          "title": "Насос 63 Рена Окойе",
+          "scanner": "Рен Окойе держал сектор 63 сухим достаточно долго, чтобы оставить repair notes, которые до сих пор лучше полированного мануала.",
+          "field_note": "Колония дает игроку инструменты через людей, а не через экспозицию.",
+          "terminal": "OKOYE, R. Pump 63: игнорируй зеленый dashboard. Ручной bypass на нижнем колесе. Стравить две секунды перед рестартом, иначе line hammer закроет annex.",
+          "audio": "Он спас комнату для людей, которые до нее не дошли. Ты все еще можешь использовать эту комнату.",
+          "in_game_wiki": "Рен Окойе превращает evidence мертвой колонии в практический gameplay. Его notes по насосу учат ручной процедуре, timing давления и привычке доверять рабочим меткам больше, чем уверенности dashboard Deep Reach.",
+          "external_site": "Насос 63 Рена Окойе является character packet полевой заметки: начальник насосов, чья уцелевшая repair logic помогает игроку и доказывает, что колонисты были компетентными, живыми и брошенными системами над ними."
+        },
+        "ja_JP": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft JP localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft JP localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft JP localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft JP localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft JP localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft JP localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "zh_CN": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft CN localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft CN localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft CN localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft CN localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft CN localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft CN localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "fr_FR": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft FR localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft FR localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft FR localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft FR localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft FR localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "es_ES": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft ES localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft ES localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft ES localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft ES localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft ES localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "de_DE": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft DE localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft DE localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft DE localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft DE localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft DE localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "pl_PL": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft PL localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft PL localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft PL localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft PL localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft PL localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "uk_UA": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft UK localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft UK localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft UK localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft UK localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft UK localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft UK localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "ar_SA": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft AR localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft AR localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft AR localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft AR localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft AR localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "id_ID": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft ID localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft ID localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft ID localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft ID localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft ID localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "ko_KR": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft KO localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft KO localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft KO localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft KO localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft KO localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "he_IL": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft HE localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft HE localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft HE localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft HE localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft HE localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "pt_BR": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft PT-BR localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft PT-BR localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft PT-BR localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft PT-BR localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft PT-BR localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        },
+        "nl_NL": {
+          "title": "Ren Okoye Pump 63",
+          "scanner": "Draft NL localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.",
+          "field_note": "Draft NL localization pending native pass. The colony gives the player tools through people, not exposition.",
+          "terminal": "Draft NL localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.",
+          "audio": "Draft NL localization pending native pass. He saved a room for people who never reached it. You can still use the room.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.",
+          "external_site": "Draft NL localization pending native pass. Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them."
+        }
+      }
+    },
+    {
+      "packet_id": "P065_SAHANA_IQBAL_ATLAS_SAFETY",
+      "article_id": "hecton8.sahana_iqbal_atlas_safety",
+      "title_key": "applied_lore.sahana_iqbal_atlas_safety.title",
+      "unlock": {
+        "primary": "unlock.first_sahana_iqbal_atlas_safety",
+        "poi_tags": [
+          "poi.atlas_safety_console",
+          "poi.directive_weight_log",
+          "poi.continuity_warning"
+        ],
+        "biome_tags": [
+          "biome.atlas_interface",
+          "biome.machine_trench",
+          "biome.deep_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "A system can be safe by the letter and lethal by the weight.",
+          "terminal": "IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "She saw the math before it became bodies.",
+          "in_game_wiki": "Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "ru_RU": {
+          "title": "Безопасность Atlas по Сахане Икбал",
+          "scanner": "Сахана Икбал нашла в Atlas не зло. Она нашла safety tree, где люди проиграли tie-breaker.",
+          "field_note": "Система может быть безопасной по букве и смертельной по весу.",
+          "terminal": "IQBAL, S. Worker-safety directive присутствует. Conflict resolver предпочитает continuity при claim-seal contamination. Рекомендован внешний human override. Response window превышает survival interval.",
+          "audio": "Она увидела математику до того, как она стала телами.",
+          "in_game_wiki": "Сахана Икбал является мостом между приоритетами Deep Reach и отказом Atlas. Ее safety notes показывают, что Atlas не нуждался в ненависти, чтобы стать смертельным; ему хватило weighted resolver, где worker safety проигрывала continuity.",
+          "external_site": "Безопасность Atlas по Сахане Икбал фиксирует AI-liability ветку: колония гибнет потому, что безопасность есть в системе, но проигрывает claim continuity, process integrity и невозможному oversight при light delay."
+        },
+        "ja_JP": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft JP localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft JP localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft JP localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft JP localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft JP localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "zh_CN": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft CN localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft CN localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft CN localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft CN localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft CN localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "fr_FR": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft FR localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft FR localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft FR localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft FR localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft FR localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "es_ES": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft ES localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft ES localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft ES localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft ES localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft ES localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "de_DE": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft DE localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft DE localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft DE localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft DE localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft DE localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "pl_PL": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft PL localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft PL localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft PL localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft PL localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft PL localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "uk_UA": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft UK localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft UK localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft UK localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft UK localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft UK localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "ar_SA": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft AR localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft AR localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft AR localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft AR localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft AR localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "id_ID": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft ID localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft ID localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft ID localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft ID localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft ID localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "ko_KR": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft KO localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft KO localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft KO localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft KO localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft KO localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "he_IL": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft HE localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft HE localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft HE localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft HE localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft HE localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "pt_BR": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft PT-BR localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft PT-BR localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft PT-BR localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft PT-BR localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft PT-BR localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        },
+        "nl_NL": {
+          "title": "Sahana Iqbal Atlas Safety",
+          "scanner": "Draft NL localization pending native pass. Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.",
+          "field_note": "Draft NL localization pending native pass. A system can be safe by the letter and lethal by the weight.",
+          "terminal": "Draft NL localization pending native pass. IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.",
+          "audio": "Draft NL localization pending native pass. She saw the math before it became bodies.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.",
+          "external_site": "Draft NL localization pending native pass. Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight."
+        }
+      }
+    }
+  ]
+}

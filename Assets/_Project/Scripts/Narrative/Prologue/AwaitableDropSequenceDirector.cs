@@ -167,7 +167,7 @@ namespace Hecton8.Narrative.Prologue
 
         private void OnDisable()
         {
-            CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel);
+            CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel, publishTelemetry: false);
             TryUnregisterHotSwap();
         }
 
@@ -181,7 +181,7 @@ namespace Hecton8.Narrative.Prologue
             if (_disposed)
                 return;
 
-            CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel);
+            CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel, publishTelemetry: false);
 
             _disposed = true;
             TryUnregisterHotSwap();
@@ -690,7 +690,7 @@ namespace Hecton8.Narrative.Prologue
             ReleaseInputLockNoThrow();
         }
 
-        private void CancelActiveSequenceNoThrow(byte reason)
+        private void CancelActiveSequenceNoThrow(byte reason, bool publishTelemetry = true)
         {
             if (!_running)
                 return;
@@ -698,7 +698,8 @@ namespace Hecton8.Narrative.Prologue
             byte normalizedReason = reason == 0 ? PrologueCancelReasons.ExplicitCancel : reason;
             _cancelRequested = true;
             _cancelReason = normalizedReason;
-            RecordStage(PrologueStage.Cancelled, CancelHash, normalizedReason);
+            if (publishTelemetry)
+                RecordStage(PrologueStage.Cancelled, CancelHash, normalizedReason);
             CompleteSequenceRun();
             PublishFinalizedReentryStateNoThrow();
         }

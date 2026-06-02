@@ -1,0 +1,783 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS016_AEGIR_SYSTEM_MOON_LADDER",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P076_RAN_AEGIR_ANCHOR",
+      "article_id": "aegir.ran_aegir_anchor",
+      "title_key": "applied_lore.ran_aegir_anchor.title",
+      "unlock": {
+        "primary": "unlock.first_ran_aegir_anchor",
+        "poi_tags": [
+          "poi.starfield_nav_plate",
+          "poi.ran_spectrum_card",
+          "poi.aegir_orbit_buoy"
+        ],
+        "biome_tags": [
+          "biome.surface_relay",
+          "biome.orbital_window"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "A real star is enough. The ocean does the rest.",
+          "terminal": "RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "ru_RU": {
+          "title": "Якорь Ran / Aegir",
+          "scanner": "Спектральная табличка K-dwarf. Aegir тусклее Sol, но не мертвый. Темнота здесь - глубина, погода и долг.",
+          "field_note": "Настоящей звезды достаточно. Остальное делает океан.",
+          "terminal": "RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Звезда не отсутствует. Она просто не может спуститься за тобой.",
+          "in_game_wiki": "Aegir привязан к нормальной K-class star модели, не к brown dwarf и не к fantasy-dark системе. У HECTON-8 могут быть яркие мелководья, потому что свет существует; ужас начинается, когда давление, погода, глубина и индустрия стирают этот свет.",
+          "external_site": "Якорь Ran / Aegir фиксирует визуальный и астрофизический вкус HECTON-8: hard-sci-fi тусклый солнечный свет, а не сверхъестественная тьма. Сеттинг читаем наверху, враждебен внизу."
+        },
+        "ja_JP": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft JP localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft JP localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft JP localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft JP localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft JP localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft JP localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "zh_CN": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft CN localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft CN localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft CN localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft CN localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft CN localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft CN localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "fr_FR": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft FR localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft FR localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft FR localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft FR localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft FR localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft FR localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "es_ES": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft ES localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft ES localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft ES localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft ES localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft ES localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "de_DE": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft DE localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft DE localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft DE localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft DE localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft DE localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft DE localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "pl_PL": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft PL localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft PL localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft PL localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft PL localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft PL localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft PL localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "uk_UA": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft UK localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft UK localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft UK localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft UK localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft UK localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft UK localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "ar_SA": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft AR localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft AR localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft AR localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft AR localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft AR localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft AR localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "id_ID": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft ID localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft ID localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft ID localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft ID localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft ID localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft ID localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "ko_KR": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft KO localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft KO localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft KO localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft KO localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft KO localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft KO localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "he_IL": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft HE localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft HE localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft HE localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft HE localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft HE localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft HE localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "pt_BR": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft PT-BR localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft PT-BR localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft PT-BR localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft PT-BR localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft PT-BR localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        },
+        "nl_NL": {
+          "title": "Ran / Aegir Anchor",
+          "scanner": "Draft NL localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "field_note": "Draft NL localization pending native pass. A real star is enough. The ocean does the rest.",
+          "terminal": "Draft NL localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
+          "audio": "Draft NL localization pending native pass. The star is not absent. It just cannot follow you down.",
+          "in_game_wiki": "Draft NL localization pending native pass. Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
+          "external_site": "Draft NL localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+        }
+      }
+    },
+    {
+      "packet_id": "P077_AEGIR_MOON_LADDER",
+      "article_id": "aegir.moon_ladder",
+      "title_key": "applied_lore.aegir_moon_ladder.title",
+      "unlock": {
+        "primary": "unlock.first_aegir_moon_ladder",
+        "poi_tags": [
+          "poi.moon_ladder_chart",
+          "poi.transfer_window_strip",
+          "poi.eclipsing_schedule"
+        ],
+        "biome_tags": [
+          "biome.orbital_window",
+          "biome.relay_spine"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "The map has more moons than mercy.",
+          "in_game_wiki": "The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "ru_RU": {
+          "title": "Лунная лестница Aegir",
+          "scanner": "Карта moon ladder. HECTON-8 - один рабочий риск в движущейся системе, не изолированный уровень.",
+          "field_note": "Skarn жжет, Vela сбрасывает лед, Anvil кормит металлом, Kestrel режет relays, HECTON-8 тонет.",
+          "terminal": "MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "На карте больше лун, чем милости.",
+          "in_game_wiki": "Лунная лестница Aegir удерживает HECTON-8 внутри физической системы. Внутренние луны создают radiation и relay hazards; средние держат металл, лед и старые depots; внешние несут cold claims и dead beacons. HECTON-8 не внутренняя и не самая дальняя.",
+          "external_site": "Лунная лестница Aegir дает игре рабочий слой локальной астрономии. Другие луны объясняют route windows, dead claims, salvage rumors и почему Black Keel не может всегда ответить с удобной орбиты."
+        },
+        "ja_JP": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft JP localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft JP localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft JP localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft JP localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft JP localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "zh_CN": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft CN localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft CN localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft CN localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft CN localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft CN localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "fr_FR": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft FR localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft FR localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft FR localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft FR localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft FR localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "es_ES": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft ES localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft ES localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft ES localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft ES localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft ES localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "de_DE": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft DE localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft DE localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft DE localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft DE localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft DE localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "pl_PL": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft PL localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft PL localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft PL localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft PL localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft PL localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "uk_UA": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft UK localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft UK localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft UK localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft UK localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft UK localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "ar_SA": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft AR localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft AR localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft AR localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft AR localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft AR localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "id_ID": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft ID localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft ID localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft ID localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft ID localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft ID localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "ko_KR": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft KO localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft KO localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft KO localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft KO localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft KO localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "he_IL": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft HE localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft HE localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft HE localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft HE localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft HE localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "pt_BR": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft PT-BR localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft PT-BR localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft PT-BR localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft PT-BR localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft PT-BR localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        },
+        "nl_NL": {
+          "title": "Aegir Moon Ladder",
+          "scanner": "Draft NL localization pending native pass. Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
+          "field_note": "Draft NL localization pending native pass. Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
+          "terminal": "Draft NL localization pending native pass. MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "audio": "Draft NL localization pending native pass. The map has more moons than mercy.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
+          "external_site": "Draft NL localization pending native pass. Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+        }
+      }
+    },
+    {
+      "packet_id": "P078_INNER_MOON_RELAY_HAZARDS",
+      "article_id": "aegir.inner_moon_relay_hazards",
+      "title_key": "applied_lore.inner_moon_relay_hazards.title",
+      "unlock": {
+        "primary": "unlock.first_inner_moon_relay_hazards",
+        "poi_tags": [
+          "poi.radiation_shutter",
+          "poi.inner_relay_dead_zone",
+          "poi.shepherd_moon_warning"
+        ],
+        "biome_tags": [
+          "biome.orbital_window",
+          "biome.drowned_comms"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "ru_RU": {
+          "title": "Relay-опасности внутренних лун",
+          "scanner": "Лог inner-moon relay shutter. Aegir не глушит тебя намеренно; у неба плохой тайминг.",
+          "field_note": "Radiation и eclipse могут выглядеть как заговор, пока контракт ими не воспользуется.",
+          "terminal": "INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Орбитальная модель невиновна. Пункт контракта вокруг нее - нет.",
+          "in_game_wiki": "Опасности внутренних лун объясняют, почему contact, rescue и ascent windows срываются без магического вмешательства. Radiation belts, ice scatter, eclipses и magnetic weather - реальные физические ограничения, которые Deep Reach и контракты Black Keel используют.",
+          "external_site": "Relay-опасности внутренних лун сохраняют hard-sci-fi tension: потеря контакта может быть настоящей орбитальной погодой и все равно стать корпоративным рычагом."
+        },
+        "ja_JP": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft JP localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft JP localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft JP localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft JP localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft JP localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft JP localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "zh_CN": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft CN localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft CN localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft CN localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft CN localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft CN localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft CN localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "fr_FR": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft FR localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft FR localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft FR localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft FR localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft FR localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "es_ES": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft ES localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft ES localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft ES localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft ES localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft ES localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "de_DE": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft DE localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft DE localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft DE localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft DE localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft DE localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "pl_PL": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft PL localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft PL localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft PL localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft PL localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft PL localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "uk_UA": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft UK localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft UK localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft UK localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft UK localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft UK localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft UK localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "ar_SA": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft AR localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft AR localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft AR localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft AR localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft AR localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "id_ID": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft ID localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft ID localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft ID localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft ID localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft ID localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "ko_KR": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft KO localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft KO localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft KO localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft KO localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft KO localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "he_IL": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft HE localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft HE localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft HE localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft HE localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft HE localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "pt_BR": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft PT-BR localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft PT-BR localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft PT-BR localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft PT-BR localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft PT-BR localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        },
+        "nl_NL": {
+          "title": "Inner Moon Relay Hazards",
+          "scanner": "Draft NL localization pending native pass. Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
+          "field_note": "Draft NL localization pending native pass. Radiation and eclipse can look like conspiracy until the contract uses them.",
+          "terminal": "Draft NL localization pending native pass. INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
+          "audio": "Draft NL localization pending native pass. The orbital model is innocent. The clause written around it is not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
+          "external_site": "Draft NL localization pending native pass. Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+        }
+      }
+    },
+    {
+      "packet_id": "P079_HECTON8_ORBIT_TIDE_GEOMETRY",
+      "article_id": "aegir.hecton8_orbit_tide_geometry",
+      "title_key": "applied_lore.hecton8_orbit_tide_geometry.title",
+      "unlock": {
+        "primary": "unlock.first_hecton8_orbit_tide_geometry",
+        "poi_tags": [
+          "poi.tide_geometry_panel",
+          "poi.orbital_timing_core",
+          "poi.great_tide_model"
+        ],
+        "biome_tags": [
+          "biome.surface_relay",
+          "biome.tide_pump",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "A moon can drown a colony without hating it.",
+          "terminal": "HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "ru_RU": {
+          "title": "Орбита и приливная геометрия HECTON-8",
+          "scanner": "Модель tide geometry. Great Tide не была метафорой. Математика всегда была на стене.",
+          "field_note": "Луна может утопить колонию, не ненавидя ее.",
+          "terminal": "HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Физика открыла дверь. Deep Reach решила, кто выйдет через нее.",
+          "in_game_wiki": "Орбита HECTON-8 делает Great Tide правдоподобным: resonance, ice stress, storm surge, thermal discharge и ocean pressure собрали реальную цепочку катастрофы. Преступление не в том, что Deep Reach изобрела физику; преступление в том, что они построили колонию и evacuation model, которые ее не пережили.",
+          "external_site": "Орбита и приливная геометрия HECTON-8 - ключевая hard-sci-fi статья катастрофы. Луна гибнет от tides, heat и pressure; корпоративный приоритет превращает бедствие в преступление."
+        },
+        "ja_JP": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft JP localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft JP localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft JP localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft JP localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft JP localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "zh_CN": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft CN localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft CN localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft CN localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft CN localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft CN localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "fr_FR": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft FR localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft FR localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft FR localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft FR localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "es_ES": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft ES localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft ES localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft ES localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft ES localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "de_DE": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft DE localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft DE localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft DE localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft DE localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "pl_PL": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft PL localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft PL localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft PL localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft PL localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "uk_UA": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft UK localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft UK localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft UK localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft UK localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "ar_SA": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft AR localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft AR localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft AR localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft AR localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "id_ID": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft ID localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft ID localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft ID localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft ID localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "ko_KR": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft KO localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft KO localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft KO localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft KO localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "he_IL": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft HE localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft HE localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft HE localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft HE localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "pt_BR": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft PT-BR localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft PT-BR localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft PT-BR localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft PT-BR localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft PT-BR localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        },
+        "nl_NL": {
+          "title": "HECTON-8 Orbit / Tide Geometry",
+          "scanner": "Draft NL localization pending native pass. Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "field_note": "Draft NL localization pending native pass. A moon can drown a colony without hating it.",
+          "terminal": "Draft NL localization pending native pass. HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "audio": "Draft NL localization pending native pass. Physics opened the door. Deep Reach decided who got to leave through it.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+        }
+      }
+    },
+    {
+      "packet_id": "P080_OUTER_MOON_COLD_CLAIMS",
+      "article_id": "aegir.outer_moon_cold_claims",
+      "title_key": "applied_lore.outer_moon_cold_claims.title",
+      "unlock": {
+        "primary": "unlock.first_outer_moon_cold_claims",
+        "poi_tags": [
+          "poi.outer_claim_beacon",
+          "poi.mute_moon_packet",
+          "poi.cold_cache_manifest"
+        ],
+        "biome_tags": [
+          "biome.orbital_window",
+          "biome.dead_claim_cache"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "ru_RU": {
+          "title": "Холодные claims внешних лун",
+          "scanner": "Outer claim beacon. Не все мертвое в Aegir находится на HECTON-8.",
+          "field_note": "Cold claims делают Marauders возможными. Они же учат компании хоронить закономерности.",
+          "terminal": "OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Aegir научилась терять людей до того, как HECTON-8 закончила урок.",
+          "in_game_wiki": "Cold claims внешних лун показывают, что Aegir - система, а не одна haunted moon. Failed brine prospects, mothballed metal routes и dead beacons создают salvage economy, которая приводит Marauders в систему.",
+          "external_site": "Cold claims внешних лун расширяют Aegir за пределы playable moon и остаются полезными: другие тела питают route rumors, salvage law, abandoned caches и ощущение, что HECTON-8 - худший видимый случай более широкой claim economy."
+        },
+        "ja_JP": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft JP localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft JP localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft JP localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft JP localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft JP localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft JP localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "zh_CN": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft CN localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft CN localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft CN localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft CN localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft CN localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft CN localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "fr_FR": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft FR localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft FR localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft FR localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft FR localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft FR localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft FR localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "es_ES": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft ES localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft ES localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft ES localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft ES localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft ES localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft ES localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "de_DE": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft DE localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft DE localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft DE localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft DE localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft DE localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft DE localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "pl_PL": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft PL localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft PL localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft PL localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft PL localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft PL localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft PL localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "uk_UA": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft UK localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft UK localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft UK localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft UK localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft UK localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft UK localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "ar_SA": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft AR localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft AR localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft AR localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft AR localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft AR localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft AR localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "id_ID": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft ID localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft ID localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft ID localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft ID localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft ID localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft ID localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "ko_KR": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft KO localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft KO localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft KO localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft KO localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft KO localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft KO localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "he_IL": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft HE localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft HE localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft HE localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft HE localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft HE localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft HE localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "pt_BR": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft PT-BR localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft PT-BR localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft PT-BR localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft PT-BR localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft PT-BR localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        },
+        "nl_NL": {
+          "title": "Outer Moon Cold Claims",
+          "scanner": "Draft NL localization pending native pass. Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
+          "field_note": "Draft NL localization pending native pass. Cold claims make Marauders possible. They also teach companies how to bury patterns.",
+          "terminal": "Draft NL localization pending native pass. OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "audio": "Draft NL localization pending native pass. Aegir learned to lose people before HECTON-8 finished the lesson.",
+          "in_game_wiki": "Draft NL localization pending native pass. Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
+          "external_site": "Draft NL localization pending native pass. Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+        }
+      }
+    }
+  ]
+}

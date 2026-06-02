@@ -350,7 +350,43 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ShutdownActiveRuntimeForEditorReload();
+            s_activeRuntimeInstance = null;
             GlobalRegistry.ClearPlayerRuntimeContextRuntime(null);
+            HectonXRRuntimeState.BindPlayerContextFallbackCold(null);
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActiveRuntimeForEditorReload();
+            }
+        }
+#endif
+
+        private static void ShutdownActiveRuntimeForEditorReload()
+        {
+            PlayerRuntimeContextService runtime =
+                s_activeRuntimeInstance ??
+                GlobalRegistry.PlayerRuntimeContextRuntime ??
+                GlobalRegistry.RegisteredPlayer as PlayerRuntimeContextService;
+            if (runtime != null)
+                runtime.ShutdownServiceState();
         }
 
         /// <summary>
@@ -1127,6 +1163,17 @@ namespace Hecton8.Core
         {
             if (_registeredContext)
                 return;
+
+            IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
+            if (registeredContext != null && !ReferenceEquals(registeredContext, this))
+            {
+                if (registeredContext is PlayerRuntimeContextService staleContextService)
+                    staleContextService.ShutdownServiceState();
+
+                registeredContext = GlobalRegistry.RegisteredPlayer;
+                if (registeredContext != null && !ReferenceEquals(registeredContext, this))
+                    return;
+            }
 
             GlobalRegistry.RegisterPlayerRuntimeContext(this);
             _registeredContext = ReferenceEquals(GlobalRegistry.Player, this);

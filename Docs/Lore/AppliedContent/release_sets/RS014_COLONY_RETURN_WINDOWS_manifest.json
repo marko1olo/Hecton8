@@ -1,0 +1,70 @@
+{
+  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS014_COLONY_RETURN_WINDOWS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS014_COLONY_RETURN_WINDOWS.packets.json"
+  ],
+  "packets": [
+    "P066_LIAN_TORRES_LAST_PACKET",
+    "P067_OSKAR_NEUMANN_PRESSURE_FORGE",
+    "P068_AYA_MORITA_REPAIR_MEDICINE",
+    "P069_PAVEL_SORN_PROCEDURE_HOLD",
+    "P070_DEEP_REACH_PRESENT_WINDOWS"
+  ],
+  "locales_present_in_packet_bundle": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "markdown_publication_locales_present": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "runtime_contract": {
+    "runtime_must_not_parse_markdown": true,
+    "runtime_must_not_generate_translation": true,
+    "expected_bake_output": [
+      "packet_id_hash",
+      "loc_id_hashes",
+      "surface_enum",
+      "unlock_id",
+      "domain_tag",
+      "route_window_id",
+      "localized_string_pool_offsets"
+    ]
+  }
+}

@@ -57,7 +57,13 @@ Minimum material zones:
 
 Use material slots or packed masks. Do not create one material per small body part. Instancing and SRP Batcher compatibility matter more than arbitrary material variety.
 
-## 6. LOD And Animation
+## 6. GlobalQualityWeight Scaling
+
+`GlobalQualityWeight` may scale LOD0 segment density, shell plate count, membrane subdivision, secondary appendage count, material mask richness, VAT frame density, near-field wetness/detail maps, and optional diagnostic captures. It must not change hitbox truth, attack reach, weak spot identity, locomotion authority, save identity, or creature AI decisions.
+
+Compact fauna must keep the body plan, attack silhouette, weak spots, deformation masks, and collision proxies readable. Middle may add better deformation loops and material separation. High may add richer appendages, scars, shell overlaps, and VAT smoothness. Ultra may add hero-only silhouette breaks and bake detail, but never uses runtime mesh generation or visual triangles as physics truth.
+
+## 7. LOD And Animation
 
 LOD0:
 
@@ -78,7 +84,7 @@ LOD2:
 
 Fauna LODs must maintain hitbox alignment. A creature cannot visually shrink away from its attack/hit truth.
 
-## 7. Collision And Hitboxes
+## 8. Collision And Hitboxes
 
 Fauna collision uses primitives:
 
@@ -89,7 +95,7 @@ Fauna collision uses primitives:
 
 LOD0 render mesh is never used as MeshCollider. Bite, lunge, and damage routing must reference hitbox primitives or authored sockets, not visual triangles.
 
-## 8. Rejection Gates
+## 9. Rejection Gates
 
 Reject if:
 
@@ -99,3 +105,23 @@ Reject if:
 - Material slots exceed need and break instancing without proof.
 - LOD2 destroys threat silhouette or weak spot readability.
 - Any runtime path generates creature geometry during gameplay.
+
+## 10. Proof Artifacts
+
+Fauna generation must output:
+
+- creature family, seed, body-plan declaration, locomotion type, and deformation route;
+- skeleton, VAT, blendshape, or rigid-socket ownership note;
+- LOD triangle counts and silhouette screenshots at expected encounter distances;
+- topology debug capture showing deformation loops around joints, jaws, fin roots, tentacles, and tail bases;
+- vertex color channel summary for deformation, bioluminescence, AO, and damage/wetness masks;
+- UV/material zone report for head, weak spots, organs, shell, flesh, membrane, and emission;
+- hitbox/collider proxy layout aligned to visible attack and weak zones;
+- animation fallback route for Compact, Middle, High, and Ultra quality lanes;
+- render capture with textures on and with flat material override, proving the mesh is not primitive anatomy hidden by shaders.
+
+Runtime claims require profiler and GC proof. Static mesh standards alone do not prove animation cost, skinning cost, VAT upload cost, or encounter behavior.
+
+## 11. Acceptance Sentence
+
+A generated fauna asset is accepted only when its mesh, deformation topology, semantic vertex streams, material zones, LODs, and hitboxes make the creature readable, threatening, animatable, and performant without runtime geometry generation or texture tricks hiding primitive forms.

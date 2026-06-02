@@ -1,0 +1,30 @@
+---
+packet_id: P118_DEEP_REACH_PRESSURE_CERAMICS
+article_id: resources.deep_reach_pressure_ceramics
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Deep Reach pressure ceramics
+
+Deep Reach pressure ceramics отделяет corporate engineering от pure evil. Компания делала рабочие материалы и затем использовала компетентность, чтобы оправдать смертельные priorities.
+
+## Scanner
+
+Amplified resource. Человеческий процесс сделал local minerals лучше держащими pressure и злее ломающимися.
+
+## Terminal
+
+RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+
+## Audio
+
+Компания умела строить вещи. Это часть преступления.
+
+## Field Note
+
+Deep Reach действительно создала value. Поэтому ложь соблазнительна.
+
+<!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/ru_RU. -->

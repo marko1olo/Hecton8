@@ -1,0 +1,30 @@
+---
+packet_id: P114_ACOUSTIC_PINGER_LINE
+article_id: first_hour.acoustic_pinger_line
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Acoustic pinger line
+
+Acoustic pinger line превращает exploration HECTON-8 в процедуру. Это и tool, и tone: маленький звук против большого океана.
+
+## Scanner
+
+Pinger spool. Первая карта - звук, который можно найти, когда свет откажет.
+
+## Terminal
+
+RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+
+## Audio
+
+Когда света нет, иди на звук, который у тебя хватило дисциплины поставить.
+
+## Field Note
+
+Навигация должна рано стать физической.
+
+<!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/ru_RU. -->

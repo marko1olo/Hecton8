@@ -1,0 +1,242 @@
+# HECTON-8 Abyssal Water Bible
+
+Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Scope: abyssal water presentation, current fields, silt, turbidity, caustics, flow cues, flooding presentation, wetness, buoyancy cues, exterior/interior water state, and water-related proof gates.
+
+## 1. Prime Law
+
+Water in HECTON-8 is not a full fluid simulator. It is a controlled pressure medium that makes route, danger, scale, machinery, and visibility readable.
+
+The project rejects two failures equally:
+
+- fake water that is only blue fog, bloom, and particles;
+- expensive water simulation whose result the player cannot read, exploit, or fear.
+
+Any water feature must name its job before implementation:
+
+- route visibility;
+- pressure or depth cue;
+- current direction;
+- flooding state;
+- hull or seal failure;
+- sonar/noise interference;
+- silt disturbance;
+- creature concealment or reveal;
+- salvage risk;
+- cinematic material response.
+
+If the feature cannot name a player-readable job, it is decoration and must not enter runtime.
+
+## 2. Truth Ownership
+
+Water truth is split deliberately:
+
+- `physics.md` owns pressure, hull damage, flooding scalar state, buoyancy force packets, collision consequences, and tether/cable force interaction.
+- `vehicles.md` owns submarine/suit motion response, docking/EVA water handoff, cockpit instruments, and vehicle pressure envelope.
+- `world.md` owns depth zones, biome turbidity, flow corridors, vents, sediment fields, and authored water landmarks.
+- `rendering.md` owns fog, water material, caustic projection, silt particles, wetness shaders, and GPU budget.
+- `audio.md` owns muffling, sonar, pressure groans, water ingress sound, and mix-state response.
+- `ui.md` owns instrument readout and warning presentation.
+
+No water script may become a hidden global owner for pressure, route, damage, AI, save, or vehicle truth. It must consume snapshots from the named owners and publish only its assigned presentation or authored field data.
+
+## 3. Cinematic Fake First
+
+Before adding any dynamic water simulation, prove that these cheaper routes are insufficient:
+
+- scalar room fill ratio for flooding;
+- 1D or 2D flowfield texture for currents;
+- signed distance or volume mask for local wetness/flood boundary;
+- vertex color wetness masks baked into generated assets;
+- shader-space normal flow for surface shimmer;
+- screen-space distortion limited to local glass/water interfaces;
+- particle impostors for silt bursts and leak jets;
+- audio/UI/haptic warnings for pressure and ingress;
+- authored animation or VAT for cables, flora, and debris.
+
+Continuous fluid simulation is allowed only for a local, inspectable, gameplay-critical event where the player can react to the result. Background compartments, distant ocean volume, ambient currents, decorative leaks, and noninteractive water turbulence use fakes.
+
+## 4. Current And Flow Field Law
+
+Currents must be data fields, not random forces.
+
+Each current zone must declare:
+
+- field ID;
+- owner chunk or biome;
+- vector source: baked texture, spline lane, analytic function, or DataVault payload;
+- update cadence;
+- affected systems: particles, flora sway, debris drift, AI navigation cost, vehicle assist/resist, audio;
+- maximum force or presentation displacement;
+- quality scaling;
+- fallback when the field is missing.
+
+Runtime current sampling must be bounded, cache-friendly, and allocation-free. Do not search scene objects to find water zones. Do not allocate lists of affected objects. Do not publish per-object managed events for every current sample.
+
+Compact lane may sample coarse flow cells or a baked 2D field. High and Ultra may add richer local turbulence, eddy masks, secondary particle response, and finer shader detail, but the gameplay-affecting current vector must remain stable and deterministic.
+
+## 5. Visibility, Turbidity, And Fog
+
+Underwater visibility is a gameplay resource. Fog must expose route and danger, not hide weak art.
+
+Every water volume must define:
+
+- near clarity;
+- far extinction;
+- color absorption;
+- silt density;
+- particulate response;
+- route cue visibility distance;
+- emergency readability distance;
+- cockpit/visor readability override.
+
+Pure black void is rejected. Generic blue fog is rejected. The correct look is black water with structure: suspended matter, weak lights, silhouettes, sonar hits, route glints, pressure haze, and dirty glass.
+
+Fog density may scale with depth, biome, silt, damage, and current, but it must never remove the only readable return path. At Compact quality, route cues and hazard silhouettes must survive even when secondary particles, caustics, and volumetric layers are reduced.
+
+## 6. Silt, Particles, And Debris
+
+Silt is evidence. It tells the player that something moved, leaked, collapsed, or disturbed the floor.
+
+Silt systems must obey:
+
+- pooled particles only;
+- no per-frame managed allocation;
+- bounded emission counts;
+- no collision-heavy particles without proof;
+- texture atlas use for particle sprites;
+- deterministic trigger source where gameplay needs replayability;
+- visible decay curve;
+- no global always-on cloud that flattens the scene.
+
+Silt bursts should come from physical events:
+
+- door pressure equalization;
+- tool cut;
+- landing impact;
+- creature movement;
+- rock collapse;
+- water ingress;
+- current shear;
+- salvage removal.
+
+If silt appears everywhere at the same density, it becomes noise and is rejected.
+
+## 7. Caustics And Light Interaction
+
+Caustics are not a decoration pass. In deep water, strong caustics need a believable light source, shallow volume, artificial projector, glass tank, floodlight, or local optical reason.
+
+Allowed caustic routes:
+
+- baked or flipbook caustic texture projected near lamps, glass, pools, or shallow flooded interiors;
+- low-frequency shader caustics on close wet surfaces;
+- local RenderGraph pass only with GPU proof;
+- static decal caustics in authored interiors;
+- material response tied to wetness mask.
+
+Rejected:
+
+- global dancing caustics across abyssal terrain without light reason;
+- high-sample volumetric caustics without proof;
+- caustics that hide geometry or confuse interactables;
+- baked lighting inside albedo textures pretending to be water response.
+
+## 8. Flooding Presentation
+
+Flooding state is owned by physics or persistence. Water presentation reads it.
+
+Preferred implementation:
+
+1. Room owner publishes scalar fill ratio, breach ID, pressure delta, ingress direction, and confidence.
+2. Presentation maps scalar state to water plane, wetness masks, leak jets, sound, UI warning, particles, and material darkening.
+3. Gameplay contact uses simplified volumes or physics owner data, not visual mesh triangles.
+4. Save/load restores scalar truth first, then presentation rebuilds from it.
+
+Do not simulate free-surface water for every compartment. Do not let the visual water plane become the save truth. Do not let particles decide damage.
+
+## 9. Wetness And Material Response
+
+Wetness must be material truth, not a glossy overlay sprayed everywhere.
+
+Wetness data may come from:
+
+- vertex color G/A in generated meshes;
+- packed MRAO or wetness masks;
+- local volume masks;
+- decal masks;
+- scalar flooding state;
+- tool or leak contact records.
+
+Wetness response should affect roughness, darkening, normal intensity, drip decals, and local specular behavior. It must preserve material identity: painted metal, rubber, glass, stone, flesh, and algae do not become the same shiny surface.
+
+## 10. GlobalQualityWeight Scaling
+
+Compact:
+
+- coarse flow fields;
+- scalar flooding presentation;
+- low-count pooled particles;
+- static or low-frequency fog layers;
+- limited caustics near justified lights;
+- strong route silhouettes and UI/audio redundancy.
+
+Middle:
+
+- finer flow zones near gameplay;
+- richer silt bursts;
+- wetness masks on key assets;
+- more local fog variation;
+- better cockpit/glass response.
+
+High:
+
+- local turbulence masks;
+- denser silt near impacts;
+- layered wetness and drip decals;
+- improved caustic projection where justified;
+- richer underwater light shafts within budget.
+
+Ultra:
+
+- cinematic local water response for hero events;
+- higher-resolution flow/turbidity fields;
+- richer secondary particle motion;
+- better material-specific wetness;
+- presentation overkill while gameplay truth, save identity, and owner routes remain unchanged.
+
+No quality tier may change pressure truth, route truth, save data, collider truth, or vehicle authority.
+
+## 11. Proof Artifacts
+
+Water work must provide:
+
+- named truth owner route;
+- current/flooding/turbidity field manifest;
+- Compact and High screenshot or capture;
+- debug view for flow direction, turbidity, fog volume, or fill ratio when relevant;
+- profiler proof for runtime water features;
+- GC proof for update/sampling paths;
+- GPU proof for caustics, particles, volumetrics, or custom render passes;
+- save/load proof for flooding or persistent wetness;
+- rejection note for any proposed real simulation.
+
+Static documentation may only claim `STATIC VERIFIED`. Runtime claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
+
+## 12. Rejection Gates
+
+Reject water work if:
+
+- it is generic blue fog;
+- it is pure darkness without route structure;
+- it simulates fluid that does not change a player-readable decision;
+- it allocates in current sampling, flooding updates, UI warning routes, or particle triggers;
+- it uses global always-on particles to hide weak art;
+- it changes gameplay truth by quality tier;
+- it makes caustics appear without a believable light reason;
+- it stores save truth in visual water objects;
+- it hides interactables, doors, return routes, or hazard silhouettes;
+- it claims low-end readiness without Compact capture and profiler proof.
+
+## 13. Acceptance Sentence
+
+Water is accepted only when it makes pressure, route, damage, current, visibility, and material state more readable through controlled fakes, named truth owners, continuous quality scaling, zero-GC runtime paths, and measured proof where runtime behavior exists.

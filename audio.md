@@ -138,3 +138,30 @@ Reject if:
 - cue lookup uses strings;
 - silence is never used;
 - player cannot infer anything from the sound.
+
+## 10. Truth Ownership
+
+Audio owns presentation of sound, mix, priority, cue identity, spatialization, and warning cadence. Audio does not own pressure, oxygen, AI, tool, route, damage, or mission truth. It consumes stable events and snapshots from the owning systems.
+
+Critical audio must have a source fact. If the cue implies hull breach, creature proximity, oxygen collapse, route signal, or archive corruption, the owning system must publish that fact.
+
+## 11. GlobalQualityWeight Scaling
+
+Compact preserves warning priority, sonar meaning, threat cues, suit breath, and core machine state with fewer layers and cheaper spatialization. Middle adds richer ambience and occlusion. High adds stronger hydrophone detail and mix transitions. Ultra adds dense secondary layers, richer reverb/occlusion, and cinematic detail without hiding critical cues.
+
+## 12. Proof Artifacts
+
+Audio work must provide:
+
+- cue ID list;
+- owner event/source fact;
+- priority/mix behavior;
+- spam suppression rule;
+- low-tier mix path;
+- hot-path allocation note;
+- capture or test scene where practical;
+- subtitle/caption route for critical speech or warnings.
+
+## 13. Acceptance Sentence
+
+Audio is accepted only when it carries information under pressure, has a clear truth source, respects mix priority, scales without losing critical cues, and proves it does not allocate or spam in hot paths.

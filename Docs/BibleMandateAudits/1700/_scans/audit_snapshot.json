@@ -1,0 +1,182 @@
+﻿[
+    {
+        "Id":  "00_mandate_registry",
+        "Title":  "Mandate Registry Currency and Routing",
+        "Verdict":  "GREEN_STATIC_ALIGNMENT_PENDING_RUNTIME_PROOF",
+        "BibleCount":  4,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  80,
+        "EvidenceFiles":  4,
+        "RuntimeRiskSuspects":  0,
+        "EditorRiskSuspects":  22,
+        "RiskSuspects":  22,
+        "RequiredProof":  "Mandate files exist, route docs point agents to the right bibles, and stale or conflicting mandate language is promoted into root authority before implementation."
+    },
+    {
+        "Id":  "00_project_routes",
+        "Title":  "Project Routes, Taste, Quality, Agent Entry",
+        "Verdict":  "GREEN_STATIC_ALIGNMENT_PENDING_RUNTIME_PROOF",
+        "BibleCount":  6,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  12,
+        "EvidenceFiles":  1458,
+        "RuntimeRiskSuspects":  0,
+        "EditorRiskSuspects":  70,
+        "RiskSuspects":  70,
+        "RequiredProof":  "All routes exist, root bibles carry owner/proof/rejection/quality clauses, and runtime claims remain separated from static docs."
+    },
+    {
+        "Id":  "01_generated_assets",
+        "Title":  "Generated Meshes, Textures, Materials, LOD, Collision",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  10,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  6,
+        "EvidenceFiles":  2038,
+        "RuntimeRiskSuspects":  249,
+        "EditorRiskSuspects":  626,
+        "RiskSuspects":  875,
+        "RequiredProof":  "Generator manifests, LOD chain, flat material screenshot, wireframe screenshot, UV/atlas report, collider proxy report, import settings, and pre-save mesh validation."
+    },
+    {
+        "Id":  "02_ui_frontend_hud",
+        "Title":  "UI, Menus, HUD, Terminals, Localization, Settings",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  7,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  6,
+        "EvidenceFiles":  207,
+        "RuntimeRiskSuspects":  241,
+        "EditorRiskSuspects":  128,
+        "RiskSuspects":  369,
+        "RequiredProof":  "Desktop/mobile screenshots, controller navigation proof, localization expansion capture, 0 B UI text update proof, and menu/HUD state-truth trace."
+    },
+    {
+        "Id":  "03_rendering_visuals",
+        "Title":  "Rendering, Shaders, Lighting, VFX, Water Presentation",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  10,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  19,
+        "EvidenceFiles":  183,
+        "RuntimeRiskSuspects":  109,
+        "EditorRiskSuspects":  658,
+        "RiskSuspects":  767,
+        "RequiredProof":  "Frame Debugger/RenderGraph capture, URP asset proof, shader variant count, material batching proof, compact/high screenshots, GPU/VRAM profiler captures."
+    },
+    {
+        "Id":  "04_runtime_architecture_data_telemetry",
+        "Title":  "Runtime Architecture, Data, Bootstrap, Telemetry, Performance",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  8,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  10,
+        "EvidenceFiles":  387,
+        "RuntimeRiskSuspects":  275,
+        "EditorRiskSuspects":  123,
+        "RiskSuspects":  398,
+        "RequiredProof":  "Owner phase map, route cards, SignalBus/DataVault payload layouts, profiler markers, 300-frame black-box dump, no hot registry polling scan."
+    },
+    {
+        "Id":  "05_physics_vehicles_water",
+        "Title":  "Physics, Vehicles, Pressure, Water Truth, Survival Physiology",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  7,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  12,
+        "EvidenceFiles":  266,
+        "RuntimeRiskSuspects":  281,
+        "EditorRiskSuspects":  490,
+        "RiskSuspects":  771,
+        "RequiredProof":  "Fixed-step owner proof, force packet routing, NonAlloc query proof, collision proxy report, compact/high vehicle capture, NaN/black-box dump proof."
+    },
+    {
+        "Id":  "06_world_terrain_voxels_ecosystem",
+        "Title":  "World, Terrain, Voxels, Geology, Ecosystem, Celestial",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  8,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  8,
+        "EvidenceFiles":  317,
+        "RuntimeRiskSuspects":  254,
+        "EditorRiskSuspects":  539,
+        "RiskSuspects":  793,
+        "RequiredProof":  "Seed manifest, terrain mask proof, voxel seam proof, chunk/residency proof, compact/high route screenshots, biome/ecosystem owner cadence proof."
+    },
+    {
+        "Id":  "07_gameplay_construction_tools_inventory_combat",
+        "Title":  "Gameplay, Tools, Construction, Inventory, Combat, Economy",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  8,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  6,
+        "EvidenceFiles":  316,
+        "RuntimeRiskSuspects":  193,
+        "EditorRiskSuspects":  74,
+        "RiskSuspects":  267,
+        "RequiredProof":  "First-20-min route proof, interaction target proof, inventory/economy data proof, construction graph proof, combat proxy/hitbox proof, zero-GC interaction scan."
+    },
+    {
+        "Id":  "08_ai_creatures_sonar_drones",
+        "Title":  "AI, Creatures, Sonar, Drones, Navigation",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  7,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  9,
+        "EvidenceFiles":  185,
+        "RuntimeRiskSuspects":  70,
+        "EditorRiskSuspects":  137,
+        "RiskSuspects":  207,
+        "RequiredProof":  "AI state/cadence proof, pathfinding proof, sensory truth proof, sonar confidence/staleness proof, black-box last-300-frame ring for critical AI."
+    },
+    {
+        "Id":  "09_audio_narrative_presentation",
+        "Title":  "Audio, Narrative, PDA, Cinematics, Public Text",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  7,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  6,
+        "EvidenceFiles":  161,
+        "RuntimeRiskSuspects":  149,
+        "EditorRiskSuspects":  107,
+        "RiskSuspects":  256,
+        "RequiredProof":  "DSP/voice budget proof, soundscape capture, narrative evidence-before-text proof, subtitle/accessibility proof, capture-truth label proof for public material."
+    },
+    {
+        "Id":  "10_persistence_streaming_release_platform",
+        "Title":  "Persistence, Streaming, Release, Platform, Modding, Testing",
+        "Verdict":  "YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED",
+        "BibleCount":  8,
+        "MissingBibles":  [
+
+                          ],
+        "MandateMatches":  13,
+        "EvidenceFiles":  630,
+        "RuntimeRiskSuspects":  126,
+        "EditorRiskSuspects":  1336,
+        "RiskSuspects":  1462,
+        "RequiredProof":  "Save/load binary proof, Addressables/residency proof, build/import/player proof, platform device proof, mod envelope proof, testing evidence class proof."
+    }
+]

@@ -1,0 +1,30 @@
+---
+packet_id: P087_KEELMARK_MUTUAL_CUSTODY
+article_id: carrier.keelmark_mutual_custody
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Keelmark Mutual Custody
+
+Keelmark Mutual - страховая custody-оболочка, через которую Black Keel работает в Aegir без живой спасательной власти на месте. На бумаге это не Deep Reach. На практике хуже: старый risk schedule, которым можно рулить через правильный priority clause.
+
+## Scanner
+
+Страховая оболочка цела. Keelmark Mutual владеет lien раньше, чем телом.
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
+
+## Audio
+
+Полис старше твоего сигнала бедствия.
+
+## Field Note
+
+Не делай страховщика тайным злодеем. Делай машину, которой никогда не нужно было заботиться.
+
+<!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/ru_RU. -->

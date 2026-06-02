@@ -16,16 +16,64 @@ Use it during reviews when a screenshot, mechanic, shader, UI panel, sound, crea
 Taste decides if the work belongs in HECTON-8. Production standards decide how to build it:
 
 - Generated meshes, textures, materials, LODs, and collision proxies: `3dmodel.md`.
+- Procedural asset package pipeline, manifests, prefab assembly, proof artifacts: `PROCEDURAL_ASSET_PIPELINE.md`.
 - Hero/close-camera generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`.
 - Texture family generation and PBR source rules: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`.
 - UI, HUD, menus, terminals, cockpit panels, and interface screens: `ui.md`.
 - Menu/frontend screens: `UI_MENU_SCREEN_STANDARDS.md`.
 - Diegetic HUD and physical panels: `UI_DIEGETIC_HUD_STANDARDS.md`.
+- Settings, options, quality profiles, and user configuration: `settings.md`.
+- Localization, subtitles, font atlases, and zero-GC runtime text: `localization.md`.
 - Core gameplay loop, survival, salvage, progression, and failure: `gameplay.md`.
+- Survival physiology, oxygen, pressure, trauma, gas, temperature, and death/recovery: `survival.md`.
+- Combat, damage routing, hitboxes, penetration, and threat contact: `combat.md`.
+- Input, rebinding, device abstraction, haptics, and UI navigation: `input.md`.
+- Player feel, controls, movement, camera, vehicles, and haptics: `player.md`.
+- Camera, view, cockpit camera, shake, and capture rigs: `camera.md`.
+- Sonar, scanner, navigation, acoustic radar, and cartography: `sonar.md`.
+- Submarines, suits, docking, EVA handoff, vehicle interiors, and cockpit truth: `vehicles.md`.
+- Tools, equipment, repair, scanning, cutting, welding, and interaction targets: `tools.md`.
+- Construction, resources, crafting, logistics, inventory, and base systems: `construction.md`.
+- Logistics, power, oxygen, fluid/coolant/data networks, and graph flow: `logistics.md`.
+- Drones, automation, repair/mining/scanner probes, remote systems, and tether relays: `drones.md`.
+- Inventory, resources, crafting, storage, and salvage economy: `inventory.md`.
+- Narrative, missions, evidence, black-box records, quest state, and text taste: `narrative.md`.
+- Public copy, store text, social posts, creator outreach, and marketing captions: `textes.md`.
+- Accessibility, readability, subtitles, remapping, flashing, and motion comfort: `accessibility.md`.
+- Bootstrap, startup, initialization, GlobalRegistry cold setup, and scene transition: `bootstrap.md`.
+- Runtime architecture, phases, ownership, signal lanes, and hot-path access: `systems.md`.
+- Performance, zero-GC, frame budgets, memory/VRAM, load shedding, and arena allocation: `performance.md`.
+- GPU compute, kernels, dispatch sizing, buffers, barriers, and async readback: `compute.md`.
+- Networking, rollback, co-op readiness, Merkle/delta sync, and reconciliation: `networking.md`.
+- Authoring/editor tools, CSV/SO facades, h8bin baking, and data bridges: `authoring.md`.
+- Data architecture, DTO layout, NativeArray payloads, SignalBus packets, telemetry, and GPU upload records: `data.md`.
+- Math, determinism, AUP/floating origin, RNG, hot-path math, and CI math gates: `math.md`.
+- Telemetry, black-box rings, crash dumps, profiler markers, and post-mortem evidence: `telemetry.md`.
+- Modding, SDK, public API, envelope-only UGC, starter kits, and command envelopes: `modding.md`.
+- Platform and hardware proof, MX350/i3, Steam Deck/Linux, macOS, XR, and consoles: `platform.md`.
+- XR, VR, headset comfort, foveation, stencil masking, and XR input/UI proof: `xr.md`.
+- Release readiness, build proof, platform proof, content lock, and regression triage: `release.md`.
+- Physics, pressure, damage, flooding, tethers, cables, and collision truth: `physics.md`.
+- Atmosphere, weather, tides, thermodynamics, gas, vents, and macro environment: `atmosphere.md`.
+- Celestial cycles, tides, moon/day-night relay, and seismic macro timing: `celestial.md`.
+- Abyssal water, currents, turbidity, silt, caustics, and flooding presentation: `water.md`.
+- Terrain, biomes, scatter masks, geology placement, and traversal surface: `terrain.md`.
+- Animation, IK, rigs, player/creature/tool motion, and VAT strategy: `animation.md`.
+- Streaming, Addressables, residency, HLOD, and asset lifecycle: `streaming.md`.
+- Persistence, save/load, binary deltas, checksums, and black-box records: `persistence.md`.
+- Voxel terrain, SDF caves, carving, seams, and voxel persistence: `voxels.md`.
+- AI Director, cognition, navigation, flocking, and encounter pacing: `ai.md`.
+- Ecosystem, biome simulation, biomass migration, and ecology placement: `ecosystem.md`.
 - World composition, biomes, routes, habitats, wrecks, and landmarks: `world.md`.
 - Audio, sonar, warnings, soundscape, and mix taste: `audio.md`.
-- Lighting, fog, VFX, camera, screenshots, and render presentation: `presentation.md`.
+- Rendering, URP, RenderGraph, shaders, fog, lighting, and GPU budgets: `rendering.md`.
+- Shader/material runtime, keywords, variants, SRP Batcher, and material proof: `shaders.md`.
+- Lighting, motivated lights, shadows, probes, bioluminescence, and darkness readability: `lighting.md`.
+- VFX, particles, leaks, sparks, silt, tool effects, and pooling: `vfx.md`.
+- Lighting, VFX, camera, screenshots, and cinematic presentation: `presentation.md`.
+- Cinematics, cutscenes, directed moments, capture truth, and black-box replay: `cinematics.md`.
 - Creature behavior, encounters, ecology, telegraphing, and AI taste: `creatures.md`.
+- Testing, CI, verification evidence classes, and regression proof: `testing.md`.
 - Cross-system proof and acceptance gates: `quality.md`.
 
 These files do not replace taste. They turn taste into rejection gates.
@@ -447,6 +495,7 @@ Bad:
 - "AAA quality" without evidence;
 - concept-art mood sold as gameplay;
 - performance promises without hardware proof.
+- "release ready" without current Unity/player/profiler/device proof.
 
 ## Rejection List
 
@@ -459,8 +508,10 @@ Reject on sight unless a current proof artifact and strong reason exist:
 - Clean sci-fi plastic.
 - Purple/blue gradient sci-fi identity.
 - Empty black fog.
+- Generic blue water/fog pretending to be ocean.
 - Feature parity panic.
 - Simulation for invisible causes.
+- Jitter, float drift, or nondeterministic randomness hidden behind visuals.
 - One balanced quality profile.
 - Ultra-only readability.
 - UI that decorates instead of informs.
@@ -468,6 +519,11 @@ Reject on sight unless a current proof artifact and strong reason exist:
 - Generated models that read as primitive shapes after textures are disabled.
 - AI/procedural textures with baked lighting, random noise, or false PBR channels.
 - Lore that arrives before evidence.
+- Public copy that claims readiness, scope, or quality without proof assets.
+- Release reports that use static docs as runtime proof.
+- Modding claims that promise runtime `.dll` execution, Harmony/BepInEx patching, loose asset loading, or direct Unity object access.
+- Platform claims that skip compact hardware/device proof.
+- Critical systems without black-box evidence.
 - Optimization that buys nothing visible.
 
 ## Review Questions

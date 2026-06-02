@@ -1,0 +1,30 @@
+---
+packet_id: P086_AEGIR_RECLAMATION_POOL
+article_id: carrier.aegir_reclamation_pool
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Aegir Reclamation Pool
+
+The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+
+## Scanner
+
+Claim-pool stamp. Black Keel was assigned, not gifted.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+
+## Audio
+
+The pool owns the route. You only rent the answer.
+
+## Field Note
+
+A shared pool makes rescue cheaper, slower, and easier to hide behind.
+
+<!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/en_US. -->

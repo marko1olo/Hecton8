@@ -119,3 +119,26 @@ Reject if:
 - Any dense flora material uses alpha blend on compact lane.
 - Any LOD removes the anchor or changes harvest point identity.
 - Any generated asset has no atlas/UV proof or triplanar justification.
+
+## 9. Continuous Quality Scaling
+
+`GlobalQualityWeight` scales flora and coral fidelity through offline branch count, pore density, blade serration density, texture resolution, mask precision, LOD transition distance, and field population density. It never changes harvest point identity, root anchor identity, collider proxy route, shader vertex color semantics, or runtime generation law.
+
+Compact flora still requires organic taper, asymmetry, anchor geometry, correct vertex color R/G/B/A semantics, and readable silhouette. Higher tiers add richer branching, pore fields, emissive organs, scar detail, and near-camera mesh density; they do not permit primitive cylinders, flat cards, or noisy blobs as final assets.
+
+## 10. Proof Artifacts
+
+Flora and coral generation must output:
+
+- asset family, seed, biome/depth route, growth algorithm, and material family;
+- branch/blade/coral topology report with weld, knuckle, seam, and anchor validation;
+- vertex color channel summary for sway amplitude, bioluminescence phase, AO darkness, and optional stiffness/interaction mask;
+- UV unwrap or triplanar justification with atlas rects, padding, texel density, and material slot report;
+- LOD triangle counts, simplification method, preserved anchor identity, and shader semantic preservation;
+- collision/interaction proxy report or explicit no-collision justification;
+- flat-material screenshot proving the silhouette is biological before texture detail;
+- final-material screenshot proving wetness, translucency, bioluminescence, scars, pores, and abyssal coloration support the organism.
+
+## 11. Acceptance Sentence
+
+A generated flora or coral asset is accepted only when it reads as grown biological structure, carries required vertex color shader data, preserves harvest/anchor identity across LODs, avoids alpha-blend and primitive-card failure modes on compact hardware, and proves that texture detail enhances a real mesh instead of hiding one.

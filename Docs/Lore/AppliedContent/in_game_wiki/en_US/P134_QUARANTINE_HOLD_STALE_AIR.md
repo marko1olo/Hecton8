@@ -1,0 +1,30 @@
+---
+packet_id: P134_QUARANTINE_HOLD_STALE_AIR
+article_id: endings.quarantine_hold_stale_air
+locale: en_US
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Quarantine Hold Stale Air
+
+Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+
+## Scanner
+
+You are alive, sealed, and still not free.
+
+## Terminal
+
+QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+
+## Audio
+
+The hatch opens only to another closed hatch.
+
+## Field Note
+
+This is the bureaucratic version of drowning.
+
+<!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/en_US. -->

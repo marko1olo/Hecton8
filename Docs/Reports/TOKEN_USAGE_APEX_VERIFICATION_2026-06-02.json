@@ -1,7 +1,7 @@
 ﻿{
   "schema": "hecton8.token_usage_apex_verification.v1",
-  "generated_at_utc": "2026-06-02T09:06:28.731042+00:00",
-  "generated_at_samara": "2026-06-02T13:06:28.731063+04:00",
+  "generated_at_utc": "2026-06-02T12:16:08.602797+00:00",
+  "generated_at_samara": "2026-06-02T16:16:08.602807+04:00",
   "agent_id": "TOKEN_USAGE_AUDIT",
   "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
   "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE",
@@ -744,26 +744,26 @@
   "owned_artifacts": [
     {
       "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-02.json",
-      "sha256": "78d27465706265fe73c2ccf0c21e1cbd227d85f5fe7de94b80c329f157f59c76",
-      "bytes": 569539,
+      "sha256": "2cb68f16673b08287239e798f20dc1626761faf42a9bbf0d740c6e8aca448486",
+      "bytes": 569465,
       "line_count": 9474
     },
     {
       "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-02.md",
-      "sha256": "c20df2963e0d5eaa9c41c582d75194d9cebc173f45ec55ec8a0d03c6500c32c6",
-      "bytes": 3224,
+      "sha256": "2c3670912d1917af9d943dad61994d9154c8c90689694e98d5b3388faf40c343",
+      "bytes": 3206,
       "line_count": 78
     },
     {
       "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-02.json",
-      "sha256": "16daeb1c4a42d53b90f9b29b9fcd520fea1e9e9a38f4fcdd769d09deae702984",
-      "bytes": 172138,
-      "line_count": 6412
+      "sha256": "dd7161171695c321238744f2b0d515e16b708372fd7312f026a269092d5d7370",
+      "bytes": 176930,
+      "line_count": 6670
     },
     {
       "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-02.md",
-      "sha256": "9b60536a57f783d81b76a3c8853af249e682f898ee9d1d541b8c7856700089ab",
-      "bytes": 29081,
+      "sha256": "6c6983069acce85c5e2dc0514fced221c9ef3700883cbc5c67db69fad8dd2859",
+      "bytes": 29078,
       "line_count": 685
     }
   ],
@@ -771,575 +771,575 @@
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/avg_bytes_per_file_by_extension.png",
       "dashboard_path": "MetricCharts/2026-06-02/avg_bytes_per_file_by_extension.png",
-      "sha256": "31a13003a63f302e833349b055670b1f957409bdce956d32ff9017d169ea5682",
-      "bytes": 88590,
+      "sha256": "cfd3e34b87e1b24c04e3097cd15523d724a8735a405ac03f7e696a2814af62b2",
+      "bytes": 88582,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/avg_lines_per_file_by_extension.png",
       "dashboard_path": "MetricCharts/2026-06-02/avg_lines_per_file_by_extension.png",
-      "sha256": "04adb9e07e88ac67be7c20d43324a789731e579a86b033eb78ca8b96a821d5aa",
-      "bytes": 76228,
+      "sha256": "ec92ac07b065aefc56ac71660b7fc2b5694a566eea51fc4f2c09965bf5cd4be9",
+      "bytes": 76212,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/bytes_by_extension.png",
       "dashboard_path": "MetricCharts/2026-06-02/bytes_by_extension.png",
-      "sha256": "2145c1b0164c4a8774215cebd5314a11249b77704bc43c807b2b5e2604021db5",
-      "bytes": 76037,
+      "sha256": "6a8ca2d1f1bdb44b7dd9bf2e692ff649c8bee1a9bb438cfd13757e9361cfcb14",
+      "bytes": 76043,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/cost_per_1k_chars_by_scope.png",
       "dashboard_path": "MetricCharts/2026-06-02/cost_per_1k_chars_by_scope.png",
-      "sha256": "bb9e49274ee8ac961d1bb9cdc393af456b35de4297ce41591f9748ba4bd483f2",
-      "bytes": 95478,
+      "sha256": "dce34fb9b6f75fc80d9c70c512f740a746dda1789e4dd6118d0c7c46a777c1b5",
+      "bytes": 95443,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/cost_per_1k_lines_by_scope.png",
       "dashboard_path": "MetricCharts/2026-06-02/cost_per_1k_lines_by_scope.png",
-      "sha256": "b46cecd9f6f25f1150063772c2ecacf4eda60a080176d928795f43433fccf68e",
-      "bytes": 95761,
+      "sha256": "f006494785c9855b5b04addd2d1dde42b87f0123036e5ae6a89043c67a809979",
+      "bytes": 95775,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/cost_weekday_hour_heatmap_all.png",
       "dashboard_path": "MetricCharts/2026-06-02/cost_weekday_hour_heatmap_all.png",
-      "sha256": "9093cf28e792f79b0286c15c28a7af3a201e3d3c3d8c282293a06ea10af14a05",
-      "bytes": 57911,
+      "sha256": "9186460475bad386d5c13201871fa9177fc3356a594de5e90e5ffee32723db64",
+      "bytes": 57906,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/current_snapshot_code_velocity.png",
       "dashboard_path": "MetricCharts/2026-06-02/current_snapshot_code_velocity.png",
-      "sha256": "a4ea5a147be008e2c762ae81f097a4f3457a06e8130fbc0b50d2edd04d268806",
-      "bytes": 71481,
+      "sha256": "02c6efc4fffbb90819ae44b0ee969a73a81b65e725c9471cb638f95995586cc0",
+      "bytes": 68487,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/current_snapshot_money_velocity.png",
       "dashboard_path": "MetricCharts/2026-06-02/current_snapshot_money_velocity.png",
-      "sha256": "8a80ad15bbe70a4b108b70be4c4c89ba0a986574f6aab17fad87bb7fb89fa20a",
-      "bytes": 75838,
+      "sha256": "d5ee35501bd0eb99eb44beb7d86cc45338c9ed62bb42a1522ff14bdc65abdd8a",
+      "bytes": 73967,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/current_snapshot_token_velocity.png",
       "dashboard_path": "MetricCharts/2026-06-02/current_snapshot_token_velocity.png",
-      "sha256": "8177b69553694119db761722365536b4bfa2b3da11775dd0509b68af250458aa",
-      "bytes": 59706,
+      "sha256": "2b5ffad958daf34c3afde66846f5e22a0f94a587f00dd427e152f9098966dc2e",
+      "bytes": 62477,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_actual_vs_no_cache_cost.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_actual_vs_no_cache_cost.png",
-      "sha256": "92916f6209a200e0bb821960c723d26b9660e798037113004f859155bcc05a66",
-      "bytes": 134489,
+      "sha256": "6d26a363daeb099a858c2c6f46265fe19bf00c3668fa2c6c90eab90e37a80ccf",
+      "bytes": 134224,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings.png",
-      "sha256": "5cc2ba7ef55751a54d850603d4ada8a6f884bcbeabeb703206b4afc73980da02",
-      "bytes": 107191,
+      "sha256": "82dc684ef89233b9e9456a6365a3196ee76a5fdc2254e210de43e7846cfd344a",
+      "bytes": 106713,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings_last_14d.png",
-      "sha256": "42c986121afb4e59258d0b74bcb98ff82a9095f7a44155a9a7b6966d68ae8e96",
-      "bytes": 90883,
+      "sha256": "b727668b244ea28bafaa97d0614e9795a2f69e3a4bd5207db00595a2f9bccc23",
+      "bytes": 91102,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings_last_30d.png",
-      "sha256": "9068f4f39f648ed7d190ea2062745984757aa4ce90a5ef015891a6b718ae07ab",
-      "bytes": 113105,
+      "sha256": "bf6f8a3fc1560c409a8bfca15ca481991adde560449f23a5b8b2a99c5f70e6c4",
+      "bytes": 112890,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings_last_60d.png",
-      "sha256": "4f8b4c6015f048da1db8b52b1477500f8fcb5c9fc19dc0c24d7f0421a15a7936",
-      "bytes": 111319,
+      "sha256": "3348a617f40fb3868452443f739836933bd368a4ab22d55ccde6820b4cdf3039",
+      "bytes": 110874,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings_last_7d.png",
-      "sha256": "d53ac6ef534ea9476c10460756577bbc9e3997380c4728caeed9459eca0eebba",
-      "bytes": 98651,
+      "sha256": "c31805e7a4af070f48246b93725b75a1ffc1a92a4121a78baa18e2241e3f4ecf",
+      "bytes": 97054,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cache_savings_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cache_savings_last_90d.png",
-      "sha256": "4b9745e210311258285a6796baf82d8468d1e653a104e470781d64b86e45d741",
-      "bytes": 107585,
+      "sha256": "486b5724d5d8ed54df57fdf9ab11e2235a73b7d7d11c4923df549461c271c940",
+      "bytes": 107274,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost.png",
-      "sha256": "e978db7396b51cf8a71f171b926c27fe8076ab67b39fda117655675d6f0ddc2f",
-      "bytes": 102397,
+      "sha256": "87fd6ab4725252ac93436a0bac93988c9ee73c4acff8a1cf713cde334d92b500",
+      "bytes": 102515,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_last_14d.png",
-      "sha256": "59eb003e04d1de36482baf0b2da8f3d3b2f08251b429f78ae4401c2258b04097",
-      "bytes": 119834,
+      "sha256": "6668e48e9680281fdd5791704a25d03713641f12d02981d9a38cdfce99854cca",
+      "bytes": 120334,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_last_30d.png",
-      "sha256": "97c7cf4bd40b597e6dfd6d94e7662784b411e42bd9ea4a898296b29d2be279c1",
-      "bytes": 136761,
+      "sha256": "1d3f370e14eb064987666737ae7c39d192a9af40fe4ba18c9343df3fc5f0303d",
+      "bytes": 137413,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_last_60d.png",
-      "sha256": "5fead3439103293d193afbafa0ab78475c7a4a646810031afdf30398e98b3690",
-      "bytes": 138116,
+      "sha256": "9166281530ba77e969d45945cdba3ca2323c07cebef9b4388554d3a2236988d0",
+      "bytes": 138751,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_last_7d.png",
-      "sha256": "8c626edd1a234c551a8f5e2769a3dd8ffb156c8b54ec66d6d32b8513fdb9ac18",
-      "bytes": 119525,
+      "sha256": "df88ba758fa60e471beaf404a186978232e02af910f24d3556ef86a7e029222a",
+      "bytes": 119676,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_last_90d.png",
-      "sha256": "a9a76076a83a8851370fefe46522136613c421c370c069f019f65efaba1f3159",
-      "bytes": 127571,
+      "sha256": "2ed5cb8b3f44e4ece5a5d3a634678a3f6192fe3603ca5c4145ef7ca3fc0691da",
+      "bytes": 128168,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_per_git_changed_line.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_per_git_changed_line.png",
-      "sha256": "bfd766e51eda5183af5ba9e79316bd8ce907c94a8b876e272340cbd31e289f8e",
-      "bytes": 85799,
+      "sha256": "f363d011ecb3367b37a136106eb9f650e69c3e340956c1454993b0aacac68842",
+      "bytes": 85887,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_cost_vs_git_churn.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_cost_vs_git_churn.png",
-      "sha256": "5a2282fb985828dc37f006ee6a1f92bb71ac7df9e073b84383f927fb25e99958",
-      "bytes": 123625,
+      "sha256": "71b1938f312da472e12b6e8084c29280efcfe4f49360031ebd96ce1de8a9b773",
+      "bytes": 124711,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m.png",
-      "sha256": "44997749fad8b8601a735dfb4cfd0e043b0d916e63d816edc0c3218475420806",
-      "bytes": 148414,
+      "sha256": "a7b6735b248a2ca6d709f5f97c416a7e95489ebda433ec3ef5a6e81ee7652c4a",
+      "bytes": 148197,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_14d.png",
-      "sha256": "892e52a093f4bb6a0b4291fb56074fe7280707607dca1965de09f57418ca0663",
-      "bytes": 106172,
+      "sha256": "d4168168f19e0d65ef08863dd187e4069ce3c56dd809665ef7632ddc6b0d3988",
+      "bytes": 105396,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_30d.png",
-      "sha256": "78a58660daa5d5ecabca791be951397f7194491e07b6eee54212380416782aad",
-      "bytes": 139581,
+      "sha256": "bb0a85dd0b71c61e1b14bb4c2f2cc619a2c890613adb28b3f9405e52631e2cd2",
+      "bytes": 139093,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_60d.png",
-      "sha256": "e411ba6a2e0eb30238ac3fe14ddf92a4cf600934b4c8088b1c4d59889f584294",
-      "bytes": 150157,
+      "sha256": "7d9160b4849f1ae6143048c01205a9258ecd786ef4a7e92ce5c1b700b228c9b9",
+      "bytes": 149914,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_7d.png",
-      "sha256": "7a58e50de291171e176be1245841ae65ce1f0fd2abd5d1a4865089fc7e7c5378",
-      "bytes": 101560,
+      "sha256": "505e063f75980f97de790af7bdc972e01ae9c27c4465aeb7c2a07531a5d6bf7a",
+      "bytes": 100053,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_effective_cost_per_1m_last_90d.png",
-      "sha256": "e6ed6e4683a7e3b6c950e9218c5894b215007d6ebef7d920a66f5d3795d54c69",
-      "bytes": 99796,
+      "sha256": "dda386e303c4de761c1f746887d98607b9895ab02beb7f31b1173d6524a10458",
+      "bytes": 99693,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack.png",
-      "sha256": "0a944e85647ead1c97124c10328afed1a29e2556f24544b7c3837fa9aee997a8",
-      "bytes": 90965,
+      "sha256": "d1ed7c94bc08c727cc1d9cc8192fb13535b000926cb7c8f1ca23bbf4972ceb5f",
+      "bytes": 90745,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack_last_14d.png",
-      "sha256": "d6f48bacb1b178e3aecc8a118b17638d3f9c877c358909374ed77b52466a1c56",
-      "bytes": 85070,
+      "sha256": "fbed9c9e51aa5963fb932af7c0c2705e2b7c6f5ad167a19c0196e6624456f0a2",
+      "bytes": 85032,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack_last_30d.png",
-      "sha256": "2aeab5a14c5b76d647e6ec68cd4a1fddeefa681959f6bae755cb8c6494882afd",
-      "bytes": 98731,
+      "sha256": "2f9321dbb91a22d1096306a501a444159923b269ecf2f9fc01a2d25aa2ec16cd",
+      "bytes": 99068,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack_last_60d.png",
-      "sha256": "3bd78ab6997cb886e5a4b4a7b5c30cdec9d4eba5e85aa67c5ecbd45279c16c03",
-      "bytes": 94243,
+      "sha256": "7709fc89f814267770159dcc6928b11e526d715fcf5f8e80560a98eb90d0fff8",
+      "bytes": 94054,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack_last_7d.png",
-      "sha256": "b348a530716792f2e5e7b8cb30b5fa0161934abf774bd3405b3c0bb1e830e56a",
-      "bytes": 86676,
+      "sha256": "7d789ade07d70b264af60ad871faf8fc916779946afa4e922ccb0007ee117899",
+      "bytes": 86695,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_io_stack_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_io_stack_last_90d.png",
-      "sha256": "e877366c94d0b95673913c04216ce2dcbe36e7b550c76cadd3d048217616b44e",
-      "bytes": 92411,
+      "sha256": "78943822c6cd8dbf0a06586722cc33af0046a258f128b3149df7a921c98a8328",
+      "bytes": 92246,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_output_cost_share.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_output_cost_share.png",
-      "sha256": "a6d069940bf1b7439d24d9bb2b78644d8968f8c7930027e78c4c05308f8c1ca5",
-      "bytes": 115125,
+      "sha256": "4df7cb5256f016a7299221a42825ff9bff24a9c1b571bd5f0b36ccd0c6da7e1d",
+      "bytes": 115192,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_output_reasoning.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_output_reasoning.png",
-      "sha256": "1a583455a38d9b6db3e9acf91f4665324ba70bc4cf9e2ddef80950ae4a798585",
-      "bytes": 131862,
+      "sha256": "93d91ee207c96a283de68d04ece33d9b721cc57a73d986f5544b38973b6b2f5c",
+      "bytes": 131766,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_printed_pages.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_printed_pages.png",
-      "sha256": "1573d7c80606320586b0fbb6fa4962a049610dc4a6a30612a0816195ea82b3fe",
-      "bytes": 108094,
+      "sha256": "dd78026da14a08879017f7d09aadfcd5fe34fae2a7b101d5160a22d95794cd24",
+      "bytes": 107777,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios.png",
-      "sha256": "fe32414f17599e8ac82421f89c4175a0ba1a44a94258468bcf4cd29f30295c44",
-      "bytes": 112753,
+      "sha256": "4454ff4ebd63e6dcae691a9e7d1bc4e03091e1685775aff90a08a197b4e0a651",
+      "bytes": 112899,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios_last_14d.png",
-      "sha256": "3c02d8a34cb44a84d81810c866a3e3c2b3f1828a6ac468b83fd001442b4c6bde",
-      "bytes": 71464,
+      "sha256": "9ee7eb11b3261c7ee542aca3ceef9ffbe3c7d2976948b94033a492b44b795a67",
+      "bytes": 71791,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios_last_30d.png",
-      "sha256": "886da47cc5f8a9b5ff1e5db907c7907e1f6f59ff68ecdb7a7c2438d026c9acf2",
-      "bytes": 87449,
+      "sha256": "6983975683ba45b92c376af24fd93a2b6bf7f0b07f9949e7b10270d6da09f705",
+      "bytes": 87737,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios_last_60d.png",
-      "sha256": "1a9ccd03e39cd149dbdb34dc8c1612f5116b738c306ad195060f1a9e9112b136",
-      "bytes": 113727,
+      "sha256": "50bb44efb8ae44948ae49f8359effe3b613a9f2d159ccb73b0d512119ee19cea",
+      "bytes": 113911,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios_last_7d.png",
-      "sha256": "58b1a17caef7e068011b06d1c011c9511493a0cad916c98941ed263e2214fd83",
-      "bytes": 65044,
+      "sha256": "543c3d62ded4461ff5a8c777d9ba597ed69ec4a3de97ec006922548d4f05171e",
+      "bytes": 66897,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_ratios_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_ratios_last_90d.png",
-      "sha256": "796a2bbd2b7272139a174409e81fc173de0c8ee61c6ae47e0d0fa6b89694d0a6",
-      "bytes": 119781,
+      "sha256": "955e17c49c77f0a7a97b827c0ed708342a43dc9bc1114e24fce6441ea5daf755",
+      "bytes": 119890,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_tokens_per_git_changed_line.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_tokens_per_git_changed_line.png",
-      "sha256": "753bd5e590051652875e5a4d503187b352f05bb3b5dff9d0934826740e4bec3b",
-      "bytes": 94062,
+      "sha256": "fd7c0c0c0492ccd1f8acef51279117dca5cc5fd55f4e17ba1c494b2091ff23e8",
+      "bytes": 94176,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_tokens_vs_git_churn.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_tokens_vs_git_churn.png",
-      "sha256": "b7a1e9689c7bf303b5cbcde499380895965725c063f1937e174c1132928a5587",
-      "bytes": 121004,
+      "sha256": "659564baae34f998118580fea6f0c123afc34c02393bf05c0494acbd39de0071",
+      "bytes": 122349,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens.png",
-      "sha256": "23fda03e5a1364e57d0521c4e2d1c6de18863172524408bf5bafe0c7524eb2b7",
-      "bytes": 92960,
+      "sha256": "deb8e7e5bc705039b435c6e976d9186cfcd332e1872c44f1cbe840a1828227f3",
+      "bytes": 92600,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens_last_14d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens_last_14d.png",
-      "sha256": "75709dd6fdaf352d894c6e87bfa7c04de337d11cfff325edafdd5956a9c627b1",
-      "bytes": 114235,
+      "sha256": "9ac8457c9846e2690cb5dda76adf588511c33ad70d1d660ed3767ff5d13e3d26",
+      "bytes": 113805,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens_last_30d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens_last_30d.png",
-      "sha256": "e5a3ff1e3415ab760047748530cc9fcef58338d0551d53e4832d3bd43151c539",
-      "bytes": 130382,
+      "sha256": "a5d6aa55d30f3792fa037d1ad06c8056c9a51c963f9be8dd402ee3cbcba5e447",
+      "bytes": 130029,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens_last_60d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens_last_60d.png",
-      "sha256": "a2c9c127b8d5baf34d2804571c6f69d93691628530fc24204e42e1c7bba18e14",
-      "bytes": 134003,
+      "sha256": "42eb59258d772a6c5df0a36692f42bf2661de003531d584e95ba1feed405e529",
+      "bytes": 133871,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens_last_7d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens_last_7d.png",
-      "sha256": "e6549dc7eb1b3c74d26e98c1e5e7567e335c54866b4b3fae9980637023b5492a",
-      "bytes": 115384,
+      "sha256": "996d6c2015f18128061b55493a2faa2d8e485c8493d4183c8b12c91d47fba3b8",
+      "bytes": 114486,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/daily_total_tokens_last_90d.png",
       "dashboard_path": "MetricCharts/2026-06-02/daily_total_tokens_last_90d.png",
-      "sha256": "a1336b8500632e1ffb3532316fd36d6856e435ebe32e25ec0020a86195878a72",
-      "bytes": 123661,
+      "sha256": "33996a81afe6b801d2886e16ff43524a57cbeebcd4dcb3b644ab46c6566bc569",
+      "bytes": 123348,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/docs_artifact_counts.png",
       "dashboard_path": "MetricCharts/2026-06-02/docs_artifact_counts.png",
-      "sha256": "d3583cefe8abbf9964623cec7af13585caadf6887e53428316594af744f75e42",
-      "bytes": 83633,
+      "sha256": "afdb0abfa16b336be4452316a86d1e7f6f9342759938346d858bad5134f89044",
+      "bytes": 83699,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/file_counts_by_extension.png",
       "dashboard_path": "MetricCharts/2026-06-02/file_counts_by_extension.png",
-      "sha256": "35ddd5ae8ca2db776734269284ffcc8758503402e97b7d4c4575f9f14f183dec",
-      "bytes": 90759,
+      "sha256": "ee2d243223d519909747f19e5f774b93dba8f75e4896d05646def6076aa11d83",
+      "bytes": 90863,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/file_counts_by_root.png",
       "dashboard_path": "MetricCharts/2026-06-02/file_counts_by_root.png",
-      "sha256": "86fe0316587a42b38ca3198dd2fb58701115ff0413cf65cf95297fe9b1cf3380",
+      "sha256": "0770ece0c6a97b53edf195392ce080780316b6777a0450f1013b3c8045ffd08e",
       "bytes": 114300,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_churn_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_churn_by_day.png",
-      "sha256": "8a76c5587ea5db9820da798e8342e777e613e2df2900946ed1fda7f5e3b7841f",
-      "bytes": 94862,
+      "sha256": "18d291274da9ab10944dcb263146abe47250086197d3f9d66b2fd21034482c44",
+      "bytes": 95949,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_churn_by_week.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_churn_by_week.png",
-      "sha256": "e58ed7e77facbe1759172b2304675ce90314ffe14430b8731442fa72ec3dec57",
-      "bytes": 76076,
+      "sha256": "54fb068cdf33ba6dcad2920190b66082f114f351ec25a9296f29ecd85b81e66b",
+      "bytes": 89039,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_churn_per_commit_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_churn_per_commit_by_day.png",
-      "sha256": "b09f02384cd26a8d7b2f5c0c56fc1dbd127cef858e37fb62a714d802d0d2d4d0",
-      "bytes": 88897,
+      "sha256": "8ac509f25fa1fc487c7e9ce1c6b3a8fd8a3fdeae4b72925eb27babeaca4d3cc0",
+      "bytes": 91595,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_churn_per_commit_by_week.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_churn_per_commit_by_week.png",
-      "sha256": "2ac9dd7d8da64d6c8068c3c5530d76f1b44b0cc71f5e82f2f45d226d6712442c",
-      "bytes": 91334,
+      "sha256": "3c922a51f1d8ea85f94b473b960c612e31bcf369209c19bc09e9a919f70c5056",
+      "bytes": 92745,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_churn_weekday_hour_heatmap.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_churn_weekday_hour_heatmap.png",
-      "sha256": "f45cb76be5ad5976d894d9bbbd2df171901d313f03d0369ec3ae8272f53ffb12",
-      "bytes": 57475,
+      "sha256": "e533c93d9b95355c6681cb4a9abd765b958cdb5a617a3cf5634fea7fa3624bdc",
+      "bytes": 57505,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_commit_weekday_hour_heatmap.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_commit_weekday_hour_heatmap.png",
-      "sha256": "828a86dda9d10a53f1a49e825355bd468b04bebe6340f6197d1dadaf3fe92349",
-      "bytes": 54612,
+      "sha256": "8f672712ceba79fee007d49aede930ed5ba28ea0d14e1523d19eec58511a3342",
+      "bytes": 54635,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_commits_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_commits_by_day.png",
-      "sha256": "26ee06ce00cd526b7cda957d3cda02182aa7f25a1d3e5087b3e80f0ca0375458",
-      "bytes": 90975,
+      "sha256": "7b080e29d55bf34e0ef8a8ec0cb73b2bb86fa6810bcfc85d87b988acbef07871",
+      "bytes": 92438,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_commits_by_week.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_commits_by_week.png",
-      "sha256": "c5095dc7662ef4e39e3397ca7035dfa167594497aecfd48837d914cd925b43bb",
-      "bytes": 76344,
+      "sha256": "096535fd3c82c154f8a41c8090db2b087d54cad56c65bf22a9083ebb0b3df58e",
+      "bytes": 84965,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_files_changed_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_files_changed_by_day.png",
-      "sha256": "5ef88ea9a7f9ef6235eb2680936ab29e4e4691189e689d1e79585f2d7f0f5f0f",
-      "bytes": 150189,
+      "sha256": "7fd7b08c888ddbdde2c814ae9d8c88cd24ab839d3c5618dd022fc3a6c78e6e17",
+      "bytes": 153991,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_files_changed_by_week.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_files_changed_by_week.png",
-      "sha256": "d26cdcb9c70320e805769f5da38bc902bff957e0c4d5e6b59f7ffe9e280e355b",
-      "bytes": 98564,
+      "sha256": "100a2e20d75321043fee8d76fde2741993f0fe51416be7e23b72b275c51a21f0",
+      "bytes": 107605,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_insertions_deletions_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_insertions_deletions_by_day.png",
-      "sha256": "961199354c128d375112ff67a9841cd67d3b6efda290c8aa5a1494c6df0d8ec4",
-      "bytes": 100386,
+      "sha256": "a6cf75c298474028810a1d08dbbb65eb7aa23af1b38487a79d6d249910246039",
+      "bytes": 102693,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_net_lines_by_day.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_net_lines_by_day.png",
-      "sha256": "220952774812b37a23d67ba65dea75a2d69a2cf75a0cbbdd9ec862c5b8efb3fc",
-      "bytes": 88705,
+      "sha256": "ec969761e53ceefecfbbe98ad04505f8b411f4bfa6b88950f0b39d8c292f649b",
+      "bytes": 90691,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/git_net_lines_by_week.png",
       "dashboard_path": "MetricCharts/2026-06-02/git_net_lines_by_week.png",
-      "sha256": "4bb3d28555424c50eaa8703ee6bd595654274c3ab4956d99c5990df76e04fa42",
-      "bytes": 69959,
+      "sha256": "1c9cc90004bf343d9191feda73d4acc483f92865a4f825bcb509fb10dab930b5",
+      "bytes": 82575,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_actual_vs_no_cache_cost_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_actual_vs_no_cache_cost_last_96h.png",
-      "sha256": "13730c63adfdb6238832a0926495aab8b394688576bed2a83d9923a7f9208d9b",
-      "bytes": 180103,
+      "sha256": "8825b0690d40019235f8d284a98fabcd738f0cb936d50cf0f098f4f3e62460a7",
+      "bytes": 176745,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_cache_savings_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_cache_savings_last_96h.png",
-      "sha256": "85cf8f98a3a04e7bc243ec4df9ab6e3ae09992385c5c6cd835813c6cf9ff0ae9",
-      "bytes": 149775,
+      "sha256": "9601aea368570a29ceb4f0d62c4cfefa569d43b0af455dbd7d3d55c931503201",
+      "bytes": 147952,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_cached_to_uncached_ratio_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_cached_to_uncached_ratio_last_96h.png",
-      "sha256": "9707a3c79c7b257bcdf81c91c28e9a213f4b4f8a8c64a1d7244201f0765588b6",
-      "bytes": 161179,
+      "sha256": "1d1125e5f6bd54ad1266afe55d34991c6f9901bb660909e76b5422857a88d8cc",
+      "bytes": 159639,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_cost_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_cost_last_96h.png",
-      "sha256": "254b0271c241520d912159650781df5cf359b6787f0e7ea0706547302e5e5ace",
-      "bytes": 144012,
+      "sha256": "b65d7f80b8e7ad80a2fffb5634587189385905ba171c3ad8b64f4a33b06df39d",
+      "bytes": 141280,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_effective_cost_per_1m_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_effective_cost_per_1m_last_96h.png",
-      "sha256": "d23d4d87e4fd0f4e154ed709d9ccc526f695bf92a5886d4cb12a17c4afc706a1",
-      "bytes": 124600,
+      "sha256": "f5825cf21576139b1273ac4114913ce42fc7c05921bc70733d4c9518cf8398a0",
+      "bytes": 124036,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_io_stack_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_io_stack_last_96h.png",
-      "sha256": "f0e398d2c469fa12713a1d712b5e058994403801ff52bd8c01b5943f05736131",
-      "bytes": 124740,
+      "sha256": "abfb1872dfd5b6620d6539d09e87ca1d46390356ad51de174ceee0e2b6912997",
+      "bytes": 122350,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_output_cost_share_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_output_cost_share_last_96h.png",
-      "sha256": "2a91dba0ee2e4c9a0b0fafdb5b4bb5be9af8727f5a1dad673de734f810455535",
-      "bytes": 120584,
+      "sha256": "87f1a87aae2771dd966962ae6807af978b7e16a4f6fccd467f6faa9edec7847b",
+      "bytes": 119964,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_output_reasoning_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_output_reasoning_last_96h.png",
-      "sha256": "0db078f646e7cc79c14a485043bb2370e9f80867057be846470ee901cd2ed4ea",
-      "bytes": 194143,
+      "sha256": "454be2a702ffb6cd9637c1205f8a3930ecb14554c4232b1a69cd1079f5213137",
+      "bytes": 191169,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_printed_pages_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_printed_pages_last_96h.png",
-      "sha256": "983a1b6cf0e9ffab6b5c540cfc4121ad672c25cae4371ae89c63db274ff62b13",
-      "bytes": 153500,
+      "sha256": "001ac99f67d32e0562b14d09d2ab16a1cd8486547d12280155c2ae1db3b76c2c",
+      "bytes": 151000,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_ratios_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_ratios_last_96h.png",
-      "sha256": "2ecb9a969fa4125b3bcd30c9cb7032a90bdb6229c41b5da3cc71083d6bd810d6",
-      "bytes": 146156,
+      "sha256": "3950ce2f080b5ccf0510b92654fb2bb19713a0f6b971a496ad9a160ab40239e8",
+      "bytes": 146354,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_token_day_hour_heatmap_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_token_day_hour_heatmap_last_96h.png",
-      "sha256": "b3b289805be8b78d43728d84eaf1a917f96b4b14c5b3c7a11396e307d9ff2046",
-      "bytes": 57257,
+      "sha256": "c34314189f67a339fea64babe61d5bbfc6d21a568eaf3fac485ef7640664d9cb",
+      "bytes": 57151,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/hourly_total_tokens_last_96h.png",
       "dashboard_path": "MetricCharts/2026-06-02/hourly_total_tokens_last_96h.png",
-      "sha256": "864f2661c4380bdc28e9f9ec261e71bb0cf598c1eeb5410d4fb1993b781d37fd",
-      "bytes": 133052,
+      "sha256": "c35058d881d4e00d1e2cea3156298ef877fd3f770ec616181e42ba85e02c9a65",
+      "bytes": 130609,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/largest_files_by_bytes.png",
       "dashboard_path": "MetricCharts/2026-06-02/largest_files_by_bytes.png",
-      "sha256": "4b147570e49d9095a44c710ab3d00104b61aa893c3b3fb97e69e32572250490d",
-      "bytes": 418070,
+      "sha256": "d1379246852cbfcc064ca5357f7217e9e78afc5a736a6d0870845ad562f8d65e",
+      "bytes": 416001,
       "png_signature_ok": true
     },
     {
@@ -1352,22 +1352,22 @@
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/layperson_all_time_scale.png",
       "dashboard_path": "MetricCharts/2026-06-02/layperson_all_time_scale.png",
-      "sha256": "1e7375ed88bd6a625ae7d5c1b5a81e104a53872f6ac2170bd7295c2a7d24a902",
-      "bytes": 74683,
+      "sha256": "8a359a9241095de01b84514bd33e13aca4df286e66f10ac8bee98b9b107cd1bc",
+      "bytes": 74739,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/layperson_current_burn_rate.png",
       "dashboard_path": "MetricCharts/2026-06-02/layperson_current_burn_rate.png",
-      "sha256": "af2a17babd9c32e538981b177256c64e336bdafabd54b3c1207a264e85458c2a",
-      "bytes": 73663,
+      "sha256": "54e564a080a9788e6d8ad205cb93c5b56ee78dcb2716229af16510ecc36c9918",
+      "bytes": 68511,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/lines_by_extension.png",
       "dashboard_path": "MetricCharts/2026-06-02/lines_by_extension.png",
-      "sha256": "405dd9f9a74cf13f5dacc29e0e414b2f311d6038b28f09730532abeaccc9ea75",
-      "bytes": 75792,
+      "sha256": "c11b760684f6dd5a26e5866e41e98e88fabc9f9ed92e8821adef4e597f689fab",
+      "bytes": 77476,
       "png_signature_ok": true
     },
     {
@@ -1408,29 +1408,29 @@
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/output_tokens_per_1k_chars_by_scope.png",
       "dashboard_path": "MetricCharts/2026-06-02/output_tokens_per_1k_chars_by_scope.png",
-      "sha256": "f22dc6df21e73459dd431c0973ac622eaea1e651d83d9b79b58cc1b591e65319",
-      "bytes": 106053,
+      "sha256": "aed2acab0f6b3f090f25f59726be03fbe7133b23eb831a729e2c8c00f601bd84",
+      "bytes": 106147,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/project_lines_by_scope.png",
       "dashboard_path": "MetricCharts/2026-06-02/project_lines_by_scope.png",
-      "sha256": "149bff1f69f64bde3372236f70de6225cbec43448c40c5daf693904d9341dacb",
-      "bytes": 91710,
+      "sha256": "27e4a75b4752252247566c1b00b7ab2892b8c0edd181672fce2f997bf0651d27",
+      "bytes": 91741,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/token_density_by_scope.png",
       "dashboard_path": "MetricCharts/2026-06-02/token_density_by_scope.png",
-      "sha256": "10fdae13ef9bc7a81edc70a1b764da64b199149041dae7057ffe53a05986676a",
-      "bytes": 86755,
+      "sha256": "873484d91ddd2e3364e4d98b4ca8a8dd3bee2fcc3fdf24d47ebdb3a7cb7f8675",
+      "bytes": 86779,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/token_weekday_hour_heatmap_all.png",
       "dashboard_path": "MetricCharts/2026-06-02/token_weekday_hour_heatmap_all.png",
-      "sha256": "6b454cb6355a65736ca16f339c1ed51949c7d1f4af51cbcd16c96329ba704022",
-      "bytes": 56922,
+      "sha256": "c8a844ef658bdedaed4081a6bdd95b62d9f08864510ae668afb73159df564681",
+      "bytes": 56908,
       "png_signature_ok": true
     },
     {
@@ -1499,57 +1499,57 @@
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_cache_savings.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_cache_savings.png",
-      "sha256": "728789f919d39bd88b88055e3d237851f26ede328370a9445a3c7dc9d72c3c38",
-      "bytes": 96671,
+      "sha256": "920206a12b5530a200e36f523b341a927be7f9a0f4b658995d90fb1d1f3f1984",
+      "bytes": 96581,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_cost.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_cost.png",
-      "sha256": "dcd764d70019d7b5a6f0e2b0987d77a7488cc908eb792b5e8f246a08673f605d",
-      "bytes": 91008,
+      "sha256": "1e69b3ca0841e92079a3d3e3b925498b424a31da06b70edffb54c3a7567cacc6",
+      "bytes": 90983,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_effective_cost_per_1m.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_effective_cost_per_1m.png",
-      "sha256": "e1d4c781aa8fce6ec398538c0c602b9a00f9b5fcf3a9166934c349ee33da5fef",
-      "bytes": 108750,
+      "sha256": "0a1013dfa549bb79df4fe5dbc93ece2c31b9c10e80ed21d3509e226c37392844",
+      "bytes": 109009,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_io_stack.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_io_stack.png",
-      "sha256": "6e508bbf6606d982edb762dae5420633dd898749f255f3d35856a19d2d68ea85",
-      "bytes": 85035,
+      "sha256": "0561d6f26a8185dfd5dcf3ce1aa52aa09e6da051fceb583b16c5a9c97a36c343",
+      "bytes": 85205,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_output_cost_share.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_output_cost_share.png",
-      "sha256": "8797d910176308835ba7c5f2e7580ca8117cb2b1c74a8ff4ae23ca6e1daadfb0",
-      "bytes": 84257,
+      "sha256": "edec4edcb6a270d37922335f85dbd15bfa281734a16b2989bfa1fba1522ee8df",
+      "bytes": 84431,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_output_reasoning.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_output_reasoning.png",
-      "sha256": "22e2474f4fd64cb2a96df901952226cf62ccf49d830e80ad5d8272e6b2873623",
-      "bytes": 108132,
+      "sha256": "8dfc96706791c775b4420ab29ed4aee67d52cbcb0ea69541122c66e716029aba",
+      "bytes": 108154,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_ratios.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_ratios.png",
-      "sha256": "adf56c9cb4daf8f5d7cc2da58ab8a7d26ab90f5685dba2360fae187ea42a4cc4",
-      "bytes": 74661,
+      "sha256": "19979c6de27d7c65c365c7b6f8e456327c30d57fc4327ea0ee3cf0fefcad9e13",
+      "bytes": 74665,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-06-02/weekly_total_tokens.png",
       "dashboard_path": "MetricCharts/2026-06-02/weekly_total_tokens.png",
-      "sha256": "ffb9c2243ed8930dc78024cf0c0fbf3b11709a0103fbfbf0e7c36c53c598c457",
-      "bytes": 76801,
+      "sha256": "4d4e0ce4cdb6cca1599ab7cd110d481c22dbd50a09dfe736e2713c081f2200f9",
+      "bytes": 76691,
       "png_signature_ok": true
     }
   ],
@@ -1576,28 +1576,28 @@
     "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so fake-first and continuous GlobalQualityWeight scaling are not invoked."
   },
   "token_report_headline": {
-    "total_tokens": 129368782512,
-    "input_tokens": 128922250049,
-    "cached_input_tokens": 123992808192,
-    "output_tokens": 445498863,
-    "reasoning_output_tokens": 137440455,
+    "total_tokens": 129631981374,
+    "input_tokens": 129184482782,
+    "cached_input_tokens": 124245990784,
+    "output_tokens": 446464992,
+    "reasoning_output_tokens": 137637121,
     "sessions_with_usage": 3080,
-    "gpt_5_5_standard_api_equivalent_usd": 100008.579271,
-    "delta_total_tokens": 4842709564,
-    "tokens_per_hour": 108306438.04170771,
-    "tokens_per_second": 30085.12167825214,
-    "gpt_5_5_standard_usd_per_hour": 81.89241144349457
+    "gpt_5_5_standard_api_equivalent_usd": 100209.405142,
+    "delta_total_tokens": 263198862,
+    "tokens_per_hour": 81199699.19248042,
+    "tokens_per_second": 22555.471997911227,
+    "gpt_5_5_standard_usd_per_hour": 61.956956011719164
   },
   "pricing_context_rules": {
     "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
     "long_context_trigger_input_tokens": 272000,
     "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
     "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-    "gpt_5_5_long_context_upper_bound_usd": 193334.675597,
-    "gpt_5_5_long_context_upper_bound_delta_usd": 93326.096326,
-    "gpt_5_5_regional_10pct_usd": 110009.4371981,
-    "gpt_5_5_regional_10pct_delta_usd": 10000.857927100005,
-    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 212668.1431567,
+    "gpt_5_5_long_context_upper_bound_usd": 193721.835404,
+    "gpt_5_5_long_context_upper_bound_delta_usd": 93512.43026200001,
+    "gpt_5_5_regional_10pct_usd": 110230.34565619999,
+    "gpt_5_5_regional_10pct_delta_usd": 10020.940514199989,
+    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 213094.01894440004,
     "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
     "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
     "post_cutoff_long_context_event_count": 0,
@@ -1610,7 +1610,7 @@
     },
     "post_cutoff_long_context_event_base_usd": 0.0,
     "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-    "post_cutoff_base_delta_cost_usd": 3661.658266
+    "post_cutoff_base_delta_cost_usd": 200.82587099999998
   },
   "official_pricing_sources_checked": [
     {
@@ -1986,9 +1986,9 @@
     "final_compile_check": "SKIPPED_BLOCKED_BY_COMPILER_CONTENTION",
     "cpu_sample_before_final_compile": {
       "source": "runtime_powershell_sample",
-      "sampled_at_samara": "2026-06-02T13:06:27.063743+04:00",
-      "cpu_total_percent": 52,
-      "dotnet_or_csc_process_count": 3,
+      "sampled_at_samara": "2026-06-02T16:16:07.038311+04:00",
+      "cpu_total_percent": 11,
+      "dotnet_or_csc_process_count": 2,
       "processes": [
         {
           "ProcessName": "dotnet",
@@ -1999,18 +1999,12 @@
           "ProcessName": "dotnet",
           "Id": 16700,
           "CPU": 0.375
-        },
-        {
-          "ProcessName": "dotnet",
-          "Id": 26752,
-          "CPU": 689.96875
         }
       ],
       "error": null
     },
     "blocked_reasons": [
-      "compiler_process_active",
-      "cpu_above_50_percent"
+      "compiler_process_active"
     ],
     "throttling_interpretation": "No dotnet build or Unity build was invoked. Python bytecode compile is skipped if CPU is above 50 percent or another compiler process remains active, to avoid ambiguous contention proof."
   },

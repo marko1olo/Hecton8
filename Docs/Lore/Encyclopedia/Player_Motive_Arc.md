@@ -22,6 +22,8 @@ The player starts with professional interest:
 
 They are not a tourist, chosen-one hero, clean corporate employee, or noble rescuer.
 
+Current canon adds a hard constraint: the player is former Deep Reach field-systems / evacuation-infrastructure labor and now an independent, debt-bound Marauder. This is not a family-revenge hook. The personal turn comes from recognizing old procedures, old access language, bad emergency standards, and signatures from the system that trained them.
+
 ## Personalization Path
 
 The motive becomes personal through evidence, not opening monologue.
@@ -41,12 +43,12 @@ Later evidence shows the contract was shaped around the player's background, deb
 Stage 5 - Choice:
 The player must decide whether to remain a contractor, become a witness, sell the crime scene, preserve Atlas, or break the recovery chain.
 
-## Rejected Baseline
+## Retired Baseline
 
-Do not make the player openly ex-Deep Reach from the start unless a later control pass reverses this.
+The old guard against an openly ex-Deep-Reach protagonist is retired. The current player canon is explicit ex-Deep-Reach / current Marauder.
 
 Reason:
-It shrinks the world and makes the mystery too personal too early.
+The user-controlled canon now wants professional recognition to be present from the start. The mystery should stay broad by making the player a trained witness to procedure, not a family-avenger or tourist.
 
 ## Marauder Field Note
 
@@ -58,6 +60,6 @@ But it gets worse when one of them knew your home port.
 
 The best arc is:
 
-professional interest -> procedural disgust -> local human link -> manipulated contract -> final agency.
+professional interest -> ex-Deep-Reach recognition -> procedural disgust -> local human link -> manipulated contract -> final agency.
 
 This supports tens of hours because the player earns personal stakes by exploring.

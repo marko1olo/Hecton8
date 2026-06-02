@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P091_COLLISION_FRACTURED_MOON",
+      "article_id": "hecton8.collision_fractured_moon",
+      "title_key": "applied_lore.collision_fractured_moon.title",
+      "unlock": {
+        "primary": "unlock.first_collision_fractured_moon",
+        "poi_tags": [
+          "poi.impact_fracture_map",
+          "poi.tidal_heat_core_note",
+          "poi.old_crust_sample"
+        ],
+        "biome_tags": [
+          "biome.drowned_geology",
+          "biome.brine_canyon",
+          "biome.vent_forge"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "ru_RU": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Old crust sample. HECTON-8 сформировалась здесь, потом сломалась достаточно плохо, чтобы стать полезной.",
+          "field_note": "Драма captured moon слабее, чем местная луна с раной, которую можно читать.",
+          "terminal": "ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Планета ее не украла. Она была собрана здесь и сломана здесь.",
+          "in_game_wiki": "HECTON-8 фиксируется как луна, сформированная в системе Aegir, позднее collision-fractured и resonance-heated. Это держит астрономию стабильной и дает дизайну причины для brine canyons, vent forges, fractured crust routes и неровной глубины океана.",
+          "external_site": "Collision-Fractured Moon задает физическое происхождение HECTON-8: не fantasy captured object, а местная ocean moon, чье позднее повреждение создало route geography и pressure economy."
+        },
+        "ja_JP": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft JP localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft JP localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft JP localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft JP localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft JP localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "zh_CN": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft CN localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft CN localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft CN localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft CN localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft CN localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "fr_FR": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft FR localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft FR localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft FR localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft FR localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft FR localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "es_ES": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft ES localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft ES localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft ES localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft ES localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft ES localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "de_DE": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft DE localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft DE localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft DE localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft DE localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft DE localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "pl_PL": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft PL localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft PL localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft PL localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft PL localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft PL localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "uk_UA": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft UK localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft UK localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft UK localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft UK localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft UK localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "ar_SA": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft AR localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft AR localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft AR localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft AR localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft AR localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "id_ID": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft ID localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft ID localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft ID localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft ID localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft ID localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "ko_KR": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft KO localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft KO localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft KO localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft KO localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft KO localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "he_IL": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft HE localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft HE localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft HE localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft HE localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft HE localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "pt_BR": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft PT-BR localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft PT-BR localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft PT-BR localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft PT-BR localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft PT-BR localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        },
+        "nl_NL": {
+          "title": "Collision-Fractured Moon",
+          "scanner": "Draft NL localization pending native pass. Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.",
+          "field_note": "Draft NL localization pending native pass. Captured moon drama is weaker than a local moon with a wound you can read.",
+          "terminal": "Draft NL localization pending native pass. ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.",
+          "audio": "Draft NL localization pending native pass. It was not stolen by the planet. It was built here and damaged here.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.",
+          "external_site": "Draft NL localization pending native pass. Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy."
+        }
+      }
+    },
+    {
+      "packet_id": "P092_GLOBAL_OCEAN_DEPTH_BANDS",
+      "article_id": "hecton8.global_ocean_depth_bands",
+      "title_key": "applied_lore.global_ocean_depth_bands.title",
+      "unlock": {
+        "primary": "unlock.first_global_ocean_depth_bands",
+        "poi_tags": [
+          "poi.depth_band_chart",
+          "poi.suit_rating_panel",
+          "poi.pressure_ladder_console"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.cable_reef",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Depth is not a number. It is a ruleset.",
+          "terminal": "BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Every band changes what the world allows you to do.",
+          "in_game_wiki": "HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "ru_RU": {
+          "title": "Глубинные зоны глобального океана",
+          "scanner": "Depth chart. Мелководье приглашает; нижние зоны берут плату давлением.",
+          "field_note": "Глубина - не число. Это набор правил.",
+          "terminal": "BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Каждая зона меняет то, что мир разрешает делать.",
+          "in_game_wiki": "Океанские зоны HECTON-8 задают темп исследования. Первый shelf может быть ярким и живым. Mid-depth учит industrial ruins и cable reefs. Brine canyons ломают навигацию. Abyssal machine fields делают ремонт враждебным. Atlas basin превращает геологию в финальную власть.",
+          "external_site": "Global Ocean Depth Bands дает HECTON-8 конкретный gameplay atlas от photic shelf до Atlas basin, поддерживая десятки часов прогрессии без произвольных locked doors."
+        },
+        "ja_JP": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft JP localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft JP localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft JP localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft JP localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft JP localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "zh_CN": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft CN localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft CN localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft CN localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft CN localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft CN localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "fr_FR": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft FR localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft FR localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft FR localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft FR localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft FR localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "es_ES": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft ES localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft ES localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft ES localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft ES localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft ES localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "de_DE": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft DE localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft DE localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft DE localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft DE localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft DE localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "pl_PL": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft PL localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft PL localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft PL localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft PL localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft PL localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "uk_UA": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft UK localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft UK localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft UK localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft UK localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft UK localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "ar_SA": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft AR localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft AR localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft AR localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft AR localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft AR localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "id_ID": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft ID localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft ID localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft ID localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft ID localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft ID localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "ko_KR": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft KO localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft KO localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft KO localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft KO localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft KO localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "he_IL": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft HE localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft HE localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft HE localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft HE localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft HE localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "pt_BR": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft PT-BR localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft PT-BR localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft PT-BR localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft PT-BR localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft PT-BR localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        },
+        "nl_NL": {
+          "title": "Global Ocean Depth Bands",
+          "scanner": "Draft NL localization pending native pass. Depth chart. Shallows invite you; the lower bands start charging rent in pressure.",
+          "field_note": "Draft NL localization pending native pass. Depth is not a number. It is a ruleset.",
+          "terminal": "Draft NL localization pending native pass. BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.",
+          "audio": "Draft NL localization pending native pass. Every band changes what the world allows you to do.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.",
+          "external_site": "Draft NL localization pending native pass. Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors."
+        }
+      }
+    },
+    {
+      "packet_id": "P093_ACCESSIBLE_SEAFLOOR_WINDOWS",
+      "article_id": "hecton8.accessible_seafloor_windows",
+      "title_key": "applied_lore.accessible_seafloor_windows.title",
+      "unlock": {
+        "primary": "unlock.first_accessible_seafloor_windows",
+        "poi_tags": [
+          "poi.exposed_ridge_marker",
+          "poi.vent_scar_floor",
+          "poi.collapsed_shelf_landing"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.vent_forge",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "You land where the moon lets stone show through.",
+          "in_game_wiki": "Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "ru_RU": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Ridge window. Дно - не пол; это редкое exposed место.",
+          "field_note": "Хороший traversal рождается из редких footholds, а не бесконечного плоского seabed.",
+          "terminal": "SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Ты садишься там, где луна разрешает камню показаться.",
+          "in_game_wiki": "Твердое дно на HECTON-8 доступно не везде. Игрок выходит к ridges, vent scars, collapsed shelves и service basins. Это позволяет процедурно менять маршруты и сохранять ощущение, что океан луны больше игровой дорожки.",
+          "external_site": "Accessible Seafloor Windows объясняет, почему traversal HECTON-8 может быть структурированным без притворства, что весь ocean floor - walkable map."
+        },
+        "ja_JP": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft JP localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft JP localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft JP localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft JP localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft JP localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft JP localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "zh_CN": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft CN localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft CN localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft CN localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft CN localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft CN localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft CN localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "fr_FR": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft FR localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft FR localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft FR localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft FR localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft FR localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft FR localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "es_ES": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft ES localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft ES localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft ES localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft ES localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft ES localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft ES localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "de_DE": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft DE localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft DE localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft DE localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft DE localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft DE localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft DE localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "pl_PL": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft PL localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft PL localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft PL localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft PL localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft PL localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft PL localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "uk_UA": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft UK localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft UK localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft UK localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft UK localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft UK localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft UK localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "ar_SA": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft AR localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft AR localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft AR localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft AR localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft AR localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft AR localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "id_ID": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft ID localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft ID localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft ID localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft ID localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft ID localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft ID localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "ko_KR": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft KO localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft KO localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft KO localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft KO localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft KO localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft KO localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "he_IL": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft HE localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft HE localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft HE localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft HE localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft HE localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft HE localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "pt_BR": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft PT-BR localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft PT-BR localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft PT-BR localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft PT-BR localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft PT-BR localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        },
+        "nl_NL": {
+          "title": "Accessible Seafloor Windows",
+          "scanner": "Draft NL localization pending native pass. Ridge window. The bottom is not a floor; it is a rare exposure.",
+          "field_note": "Draft NL localization pending native pass. Good traversal comes from scarce footholds, not endless flat seabed.",
+          "terminal": "Draft NL localization pending native pass. SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.",
+          "audio": "Draft NL localization pending native pass. You land where the moon lets stone show through.",
+          "in_game_wiki": "Draft NL localization pending native pass. Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.",
+          "external_site": "Draft NL localization pending native pass. Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map."
+        }
+      }
+    },
+    {
+      "packet_id": "P094_SEED_GEOLOGY_INVARIANTS",
+      "article_id": "hecton8.seed_geology_invariants",
+      "title_key": "applied_lore.seed_geology_invariants.title",
+      "unlock": {
+        "primary": "unlock.first_seed_geology_invariants",
+        "poi_tags": [
+          "poi.seed_invariant_chart",
+          "poi.route_generation_note",
+          "poi.geology_truth_marker"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.brine_canyon",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "New seed, same moon. Different wound.",
+          "in_game_wiki": "Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "ru_RU": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Procedural note. Маршрут меняется; луна не забывает свои законы.",
+          "field_note": "Реиграбельность должна двигать evidence и geography, а не переписывать physics в каждом seed.",
+          "terminal": "SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Новый seed, та же луна. Другая рана.",
+          "in_game_wiki": "Seed geology invariants определяют, что может менять replayability. Canyons, loot, evidence order, species density и safe routes могут сдвигаться. Star, Aegir, moon ladder, depth bands, Great Tide physics и Atlas-basin truth остаются стабильными.",
+          "external_site": "Seed Geology Invariants защищает лор HECTON-8 от procedural chaos и оставляет длинные перепрохождения с разными routes, evidence order, ecology и resource exposure."
+        },
+        "ja_JP": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft JP localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft JP localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft JP localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft JP localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft JP localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft JP localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "zh_CN": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft CN localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft CN localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft CN localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft CN localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft CN localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft CN localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "fr_FR": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft FR localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft FR localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft FR localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft FR localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft FR localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft FR localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "es_ES": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft ES localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft ES localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft ES localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft ES localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft ES localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft ES localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "de_DE": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft DE localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft DE localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft DE localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft DE localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft DE localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft DE localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "pl_PL": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft PL localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft PL localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft PL localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft PL localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft PL localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft PL localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "uk_UA": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft UK localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft UK localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft UK localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft UK localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft UK localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft UK localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "ar_SA": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft AR localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft AR localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft AR localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft AR localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft AR localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft AR localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "id_ID": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft ID localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft ID localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft ID localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft ID localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft ID localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft ID localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "ko_KR": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft KO localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft KO localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft KO localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft KO localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft KO localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft KO localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "he_IL": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft HE localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft HE localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft HE localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft HE localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft HE localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft HE localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "pt_BR": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft PT-BR localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft PT-BR localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft PT-BR localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft PT-BR localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft PT-BR localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        },
+        "nl_NL": {
+          "title": "Seed Geology Invariants",
+          "scanner": "Draft NL localization pending native pass. Procedural note. The route changes; the moon does not forget its laws.",
+          "field_note": "Draft NL localization pending native pass. Replayability must move evidence and geography, not rewrite physics every seed.",
+          "terminal": "Draft NL localization pending native pass. SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.",
+          "audio": "Draft NL localization pending native pass. New seed, same moon. Different wound.",
+          "in_game_wiki": "Draft NL localization pending native pass. Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.",
+          "external_site": "Draft NL localization pending native pass. Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure."
+        }
+      }
+    },
+    {
+      "packet_id": "P095_PRESSURE_CONTAINMENT_FAILURE",
+      "article_id": "hecton8.pressure_containment_failure",
+      "title_key": "applied_lore.pressure_containment_failure.title",
+      "unlock": {
+        "primary": "unlock.first_pressure_containment_failure",
+        "poi_tags": [
+          "poi.pressure_casket_stage_chart",
+          "poi.blue_debt_seal_failure",
+          "poi.contamination_bloom_meter"
+        ],
+        "biome_tags": [
+          "biome.resource_pressure",
+          "biome.vent_forge",
+          "biome.payload_gantry"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "ru_RU": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Casket stage chart. Blue debt ломается давлением, сигналом и bloom, не проклятием.",
+          "field_note": "Containment дает gameplay thresholds без превращения ресурса в magic.",
+          "terminal": "CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Образец тебя не ненавидит. Он просто помнит неправильное давление.",
+          "in_game_wiki": "Pressure containment failure дает blue debt ясную gameplay model. Материал деградирует через signal drift, lattice fracture, brine-biological bloom и dead-sample contamination. Это создает риск, salvage choices и crafting pressure без supernatural infection.",
+          "external_site": "Pressure Containment Failure задает стадии обращения с Xenon-Omega для gameplay и wiki: sealed, drifting, fractured, blooming, dead-but-contaminating."
+        },
+        "ja_JP": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft JP localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft JP localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft JP localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft JP localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft JP localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft JP localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "zh_CN": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft CN localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft CN localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft CN localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft CN localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft CN localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft CN localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "fr_FR": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft FR localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft FR localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft FR localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft FR localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft FR localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "es_ES": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft ES localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft ES localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft ES localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft ES localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft ES localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "de_DE": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft DE localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft DE localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft DE localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft DE localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft DE localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "pl_PL": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft PL localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft PL localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft PL localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft PL localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft PL localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "uk_UA": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft UK localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft UK localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft UK localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft UK localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft UK localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft UK localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "ar_SA": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft AR localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft AR localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft AR localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft AR localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft AR localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "id_ID": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft ID localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft ID localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft ID localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft ID localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft ID localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "ko_KR": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft KO localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft KO localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft KO localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft KO localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft KO localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "he_IL": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft HE localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft HE localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft HE localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft HE localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft HE localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "pt_BR": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft PT-BR localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft PT-BR localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft PT-BR localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft PT-BR localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft PT-BR localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        },
+        "nl_NL": {
+          "title": "Pressure Containment Failure",
+          "scanner": "Draft NL localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.",
+          "field_note": "Draft NL localization pending native pass. Containment gives gameplay thresholds without making the resource magic.",
+          "terminal": "Draft NL localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.",
+          "audio": "Draft NL localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.",
+          "external_site": "Draft NL localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating."
+        }
+      }
+    }
+  ]
+}

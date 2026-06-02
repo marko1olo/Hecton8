@@ -1,0 +1,107 @@
+﻿Assets\_Project\Scripts\Audio\Editor\SabineReverbDspTunerWindow.cs:215:            return UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
+Assets\_Project\Scripts\Audio\Synthesis\Editor\VocalStateLayoutValidator.cs:25:            Hecton8.Core.H8Debug.Log("[1308] Vocal bank ABI validated: header=64, record=32, state=32, codec=64, telemetry=64, cue=64.");
+Assets\_Project\Scripts\Audio\Editor\OOP_Voice_Scanner_X_011.cs:28:            new RoutePattern("tmp_text_assignment", ".text =", "warning", "Use SetCharArray through ApplySubtitleBuffer."),
+Assets\_Project\Scripts\Audio\Editor\OOP_Voice_Scanner_X_011.cs:37:            Hecton8.Core.H8Debug.Log("X_011 UX scanner " + (result.Pass ? "PASS" : "FAIL") + " with " + result.Findings.Count + " findings.");
+Assets\_Project\Scripts\Audio\Editor\VocalWarningStormTorture_X_011.cs:15:            Hecton8.Core.H8Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + ".");
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:121:                _status.text = "voice_baker.py missing.";
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:156:            _status.text = "voice_baker.py running.";
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:181:                    _status.text = code == 0 ? stdout.Trim() : stderr.Trim();
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:188:                _stateLabel.text = string.Concat(
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:200:                _stateLabel.text = "Phrase 00000000 | speed 0.00 | volume 0.00 | q 0.00";
+Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:230:            Hecton8.Core.H8Debug.Log("[1308] Digital Voice Forge ABI validation passed.");
+Assets\_Project\Scripts\Audio\Editor\OOP_Voice_Scanner_SHINOBU_352.cs:45:            Hecton8.Core.H8Debug.Log("SHINOBU_352 voice scanner found " + result.Findings.Count + " OOP voice findings; no report files written.");
+Assets\_Project\Scripts\Audio\Editor\DSPThreadSafetySmokeTester.cs:26:                Hecton8.Core.H8Debug.Log(report);
+Assets\_Project\Scripts\Audio\Editor\DSPThreadSafetySmokeTester.cs:28:                Hecton8.Core.H8Debug.LogError(report);
+Assets\_Project\Scripts\Audio\Editor\DSPThreadSafetySmokeTester.cs:157:                AssertNotContains(bufferJobs, ".Complete(", "PlayerCriticalBufferJobs.Clear has no JobHandle.Complete barrier", builder, ref failureCount);
+Assets\_Project\Scripts\Audio\Editor\OOP_AudioSource_Scanner.cs:38:            Hecton8.Core.H8Debug.Log("SHINOBU_351 OOP_AudioSource_Scanner found " + result.ActiveViolationCount + " active violations.");
+Assets\_Project\Scripts\Audio\Editor\OOP_AudioSource_Scanner.cs:194:                        token = "Resources.Load<AudioClip>";
+Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:31:                Hecton8.Core.H8Debug.Log(jsonReport);
+Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:33:                Hecton8.Core.H8Debug.LogError(jsonReport);
+Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:73:            AppendCheck("hot DSP block has no JobHandle completion", !ExtractMethodBody(renderer, "private void MixAndFilterBlock").Contains(".Complete()"), ref passedCount, ref failedCount, checks);
+Assets\_Project\Scripts\Audio\Editor\GranularSynthTunerWindow.cs:207:            return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
+Assets\_Project\Scripts\Audio\Editor\AudioMemorySovereigntyValidator1320.cs:27:            H8Debug.Log("[1320] Procedural audio memory sovereignty validator passed.");
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AbyssalSynthTunerWindow.cs:197:                _statusLabel.text = loaded ? "synth_presets.csv applied." : "synth_presets.csv unavailable.";
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AbyssalSynthTunerWindow.cs:213:            _statusLabel.text =
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AbyssalSynthTunerWindow.cs:311:            return UnityEngine.Object.FindObjectOfType<DynamicMusicGranularSynthesizer>();
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AbyssalSynthTunerWindow.cs:329:                Hecton8.Core.H8Debug.LogError("[1308] SynthVoiceDTO layout violation. Expected explicit 64 bytes with hot fields at offsets 0,4,8,12,16,20 and padding 24-63.");
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AbyssalSynthTunerWindow.cs:331:                Hecton8.Core.H8Debug.Log("[1308] SynthVoiceDTO layout verified: 64 bytes.");
+Assets\_Project\Scripts\Audio\Editor\ShinobuAcousticDspSmokeTester.cs:39:                Hecton8.Core.H8Debug.Log(report);
+Assets\_Project\Scripts\Audio\Editor\ShinobuAcousticDspSmokeTester.cs:41:                Hecton8.Core.H8Debug.LogError(report);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:40:            Hecton8.Core.H8Debug.Log("[1308] Audio synthesis memory sovereignty validator passed.");
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:135:                        trimmed.Contains(".Complete(") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:136:                        trimmed.Contains("FindObjectOfType") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:137:                        trimmed.Contains("GameObject.Find") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:138:                        trimmed.Contains("Camera.main") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:139:                        trimmed.Contains("GetComponent<") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:141:                        trimmed.Contains("StartCoroutine") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:143:                        trimmed.Contains("Resources.Load") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:145:                        trimmed.Contains("Debug.Log") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:146:                        trimmed.Contains("H8Debug.Log") ||
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:499:                bank = new NativeArray<byte>(MockBankBytes, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:500:                records = new NativeArray<VocalBankIndexRecordDTO>(MockRecordCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:501:                output = new NativeArray<float>(OutputSamples * Channels, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:502:                state = new NativeArray<VocalStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:503:                codec = new NativeArray<VocalCodecStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:504:                telemetry = new NativeArray<VocalTelemetryEntryDTO>((int)VocalBankConstants.TelemetryRingCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:505:                counters = new NativeArray<VocalDecodeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Synthesis\Editor\AudioSynthesisMemorySovereigntyValidator.cs:506:                waveform = new NativeArray<float>(WaveformSamples, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Audio\Editor\Shinobu351HullStressDspSmokeTester.cs:32:                Hecton8.Core.H8Debug.Log(jsonReport);
+Assets\_Project\Scripts\Audio\Editor\Shinobu351HullStressDspSmokeTester.cs:34:                Hecton8.Core.H8Debug.LogError(jsonReport);
+Assets\_Project\Scripts\Audio\Editor\Shinobu351HullStressDspSmokeTester.cs:91:            AppendCheck("kernel contains no Unity AudioSource/AudioClip path", !ContainsAny(kernel, "AudioSource", "AudioClip", "PlayClipAtPoint", "PlayOneShot", "Resources.Load"), ref passedCount, ref failedCount, checks);
+Assets\_Project\Scripts\Audio\Editor\VocalWarningAlarmBitmaskAudit_1629.cs:95:            Hecton8.Core.H8Debug.Log("[1629] VWS alarm bitmask audit PASS.");
+Assets\_Project\Scripts\Audio\Editor\VocalWarningAlarmBitmaskAudit_1629.cs:151:            Require(body.IndexOf("GameObject.Find", StringComparison.Ordinal) < 0, "GameObject.Find in hot method: " + signature);
+Assets\_Project\Scripts\Audio\Editor\AbyssalDspTunerWindow.cs:142:                _statusLabel.text = hasRenderer
+Assets\_Project\Scripts\Audio\Editor\AbyssalDspTunerWindow.cs:287:            return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:40:            H8Debug.Log("[1307] Acoustic portal memory sovereignty validator passed.");
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:125:                nodes = new NativeArray<AcousticPortalNode>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:129:                edges = new NativeArray<AcousticPortalEdge>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:133:                result = new NativeArray<AcousticPathResult>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:137:                openSet = new NativeArray<int>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:141:                closedSet = new NativeArray<int>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:145:                costs = new NativeArray<float>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:149:                cameFrom = new NativeArray<int>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:153:                states = new NativeArray<byte>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:157:                queries = new NativeArray<AcousticPathQuery>(
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:175:                loadHandle.Complete();
+Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:218:                    pathHandle.Complete();
+Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:189:                    _statsLabel.text = "Material CSV missing: " + MaterialCsvAssetPath;
+Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:196:                _statsLabel.text = "Material rows loaded: " + rows;
+Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:204:            _statsLabel.text =
+Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:241:            return UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
+Assets\_Project\Scripts\Audio\Editor\VocalWarningQueueTunerWindow.cs:139:                    _status.text = "No VocalWarningSystem in loaded scene.";
+Assets\_Project\Scripts\Audio\Editor\VocalWarningQueueTunerWindow.cs:177:                _status.text = _statusBuilder.ToString();
+Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:58:                Hecton8.Core.H8Debug.Log(report);
+Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:60:                Hecton8.Core.H8Debug.LogError(report);
+Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:574:                AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
+Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:575:                AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:81:                Hecton8.Core.H8Debug.LogError(LogUnstable);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:307:            Hecton8.Core.H8Debug.Log("[AudioImportDictator:0xA1D10005] Applied import policy to " +
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:590:            Hecton8.Core.H8Debug.LogError(reportText);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:629:            Hecton8.Core.H8Debug.LogError(reportText);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:710:                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:756:            Hecton8.Core.H8Debug.LogError(report);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:847:                    AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:867:            Hecton8.Core.H8Debug.Log("[EnvironmentAudioSourcePurgeGate:0xA1D10003] Removed " +
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:889:                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:904:            Hecton8.Core.H8Debug.LogError(report);
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:30:            json.AppendLine("  \"scanner\": \"Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes\",");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:64:            json.AppendLine("  \"manualProof\": \"Scanner covers Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, and hot transform.localPosition/localRotation/localEulerAngles writes. Runtime route is projection DTO output, not hierarchy mutation.\"");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:68:            Debug.Log($"[SHINOBU_354] OOP camera shake scan wrote {report} with {findings} findings.");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:79:            AppendIfFound(file, text, source, "Camera.main.transform", "DIRECT_CAMERA_MAIN_TRANSFORM", ref findings, ref first, json);
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:111:            _traumaLabel.text = "Trauma: " + state.x.ToString("0.000");
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:112:            _translationLabel.text = "Max translation: " + state.y.ToString("0.0000") + " m";
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:113:            _signalsLabel.text = "Signals: " + ((int)state.z).ToString();
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:114:            _burstLabel.text = "Burst us: " + state.w.ToString("0.00");
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:122:            CameraJuiceSystem[] runtimes = Resources.FindObjectsOfTypeAll<CameraJuiceSystem>();
+Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:140:                _runtimeLabel.text = resolved ? "Runtime: CameraJuiceSystem" : "Runtime: unresolved";
+Assets\_Project\Scripts\VFX\Bioluminescence\Editor\BioluminescenceTunerWindow.cs:270:                    _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
+Assets\_Project\Scripts\VFX\JacobianFoam\Editor\JacobianFoamTunerWindow.cs:181:                _statusLabel.text = value;
+Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:43:                ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
+Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:61:                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
+Assets\_Project\Scripts\Visor\Editor\VisorHudArTunerWindow.cs:71:                    _status.text = "Telemetry unavailable";
+Assets\_Project\Scripts\Visor\Editor\VisorHudArTunerWindow.cs:81:                _status.text = $"Targets {entry.TargetCount:0} | CPU {entry.ProjectionMicroseconds:0.00} us | GPU est {entry.EstimatedGpuMicroseconds:0.00} us | Q {entry.QualityWeight:0.00}";
+Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:214:            _csvLabel.text = loaded
+Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:241:            _statsLabel.text = string.Concat(
+Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:269:                _bridgeLabel.text = string.Concat(
+Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:285:                _layoutLabel.text =
+Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:298:                _validationLabel.text = string.Concat(

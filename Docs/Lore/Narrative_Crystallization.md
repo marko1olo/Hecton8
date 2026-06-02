@@ -1079,3 +1079,262 @@ Reason:
 - Other moons become route, relay, and false-ending infrastructure without moving the game off HECTON-8.
 - Blue debt becomes a salvage-engineering problem, not magic.
 - Personal stakes are earned through exploration, which preserves the tens-of-hours structure.
+
+## Control Pass 18 - Ex-Deep-Reach Player / Great Tide Liability / Escape Chain / Atlas Maintenance Ecology
+
+User direction:
+
+- Lock the player as former Deep Reach, now Marauder.
+- Do not use family/revenge/relative motivation.
+- Deep Reach did not simply "kill everyone"; HECTON-8 physics and Great Tide did the primary flooding violence.
+- Deep Reach remains guilty through risk failure, evacuation failure, priority weighting, rescue delay, and cover-up.
+- Develop the escape chain, first hour, colony voices, and Atlas/ocean repair-network logic into usable content.
+
+Working locks:
+
+- Player:
+  - former Deep Reach field-systems / evacuation-infrastructure specialist;
+  - now independent/debt-bound Marauder;
+  - professional interest first, then personal recognition of old procedure and failure signatures;
+  - no family hook.
+- Deep Reach crime:
+  - HECTON-8 climate/tide/cryosphere/pressure/geophysics made the Great Tide real;
+  - Deep Reach underbuilt evacuation and kept Atlas/claim/Xenon-Omega continuity above human extraction;
+  - Deep Reach delayed rescue through quarantine/certification/legal language;
+  - Deep Reach later framed the event as data loss, Atlas rescue failure, and unavoidable geotechnical cascade.
+- Public lie:
+  - "storm/geotechnical cascade";
+  - "autonomous evacuation did not complete";
+  - "Atlas attempted stabilization";
+  - "data unrecoverable under pressure/biological quarantine."
+- Black Keel:
+  - public claim-pool/insurance tender;
+  - hidden Deep Reach priority hooks;
+  - carrier answers through tariff, route, quarantine and payload logic before it behaves like rescue.
+- Damaged descent system:
+  - warped crush-frame;
+  - lost high-gain antenna;
+  - flooded ascent avionics;
+  - torn flotation/heat-shield ring;
+  - unreliable emergency buoy;
+  - no independent launch reserve.
+- Escape chain:
+  - acoustic relay spine;
+  - pressure-rated seals and clamp rings;
+  - orbital/guidance timing core;
+  - thermal/chemical ascent charge;
+  - quarantine/legal handshake;
+  - optional evidence payload.
+- Why deeper:
+  - shallows give survival repairs and first air/power safety;
+  - mid-depth gives machine tools, relay pieces, sealed Deep Reach parts;
+  - deep Atlas/Seed infrastructure gives pressure glass, authority keys, and the real rescue-blocking reason.
+- Atlas:
+  - wants distorted restoration, not world conquest;
+  - treats ocean, people, metal, cable, biomass, and pressure infrastructure as one damaged maintenance system;
+  - uses biology as a maintenance ecology: conductive biofilms, acoustic/filter organisms, shell-like fracture sealants, sensor-bearing fauna, vent-powered micro-nodes, and drones.
+- First hour:
+  - Black Keel contract approach;
+  - damaged drop through storm/radiation/orbital window;
+  - half-flooded capsule repair;
+  - beautiful shallow shelf contrast;
+  - first safe pump/tide module;
+  - first sanitized Deep Reach packet;
+  - first Atlas repair trace where life seals machinery around a human object.
+- Colony voices to seed:
+  - Mara Venn: climate/tidal modeler, warned about Great Tide tail risk;
+  - Juno Kade: evacuation marshal, hit authorization/quarantine holds;
+  - Ren Okoye: pump chief, kept a dry sector alive long enough to become player-useful route knowledge;
+  - Sahana Iqbal: Atlas safety liaison, saw continuity outrank people;
+  - Lian Torres: comms tech, sent the last clean packet;
+  - Oskar Neumann: pressure forge master, points toward escape-chain fabrication;
+  - Aya Morita: medic, records Atlas "repairing" bodies as infrastructure;
+  - Pavel Sorn: local Deep Reach contract officer, followed procedure too long.
+
+Implementation target:
+
+- Convert these locks into AppliedLore release sets, not only prose.
+- Use packets for scanner/terminal/audio/wiki/site surfaces.
+- Keep runtime path: packet JSON -> AppliedLore importer -> DataMonolith CSV/hash constants -> page exporter -> route-card exporter.
+- Do not parse markdown/json at runtime.
+
+## Control Pass 19 - Domains / Aegir Moon Ladder / HECTON-8 Geology
+
+User direction:
+
+- Continue fixing and growing the lore.
+- Make the lore usable for sites, wiki, in-game encyclopedia and runtime authoring systems.
+- Keep hard sci-fi astronomy, logistics, orbital timing, pressure geology and human-domain logic.
+
+Working locks / content layer:
+
+- Human domains now have applied roles:
+  - Sol Core: old law, finance, certification, insurance, claim ownership at distance;
+  - Centauri Compact: early extrasolar legitimacy and respectable hardware/audit culture;
+  - Barnard Yards: player-origin salvage culture, shipbreaking, pressure tools, dead-claim work;
+  - Tau Ceti League: delayed but credible public-law/evidence route;
+  - Luyten Junction: relay, beam/depot, packet custody, tariff and no-ansible communication economy;
+  - Aegir Claim: dirty corporate frontier built on existing interstellar logistics.
+- Aegir moon ladder has player-facing roles:
+  - Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON, Mute;
+  - names are adjustable, functions are not decorative;
+  - inner moons create relay/radiation/eclipse/ice-scatter hazards;
+  - outer moons create cold claims, dead beacons and salvage economy context.
+- HECTON-8 geology now has route/evidence pillars:
+  - Great Tide physics record;
+  - pressure glass / blue debt formation;
+  - brine canyon route ladder;
+  - vent forge geothermal engine;
+  - biometal/resource stack beyond Xenon-Omega.
+
+AppliedLore implementation:
+
+- RS015_HUMAN_DOMAINS_ROUTE_ECONOMY:
+  - P071_SOL_CORE_AUTHORITY;
+  - P072_CENTAURI_COMPACT_LEGITIMACY;
+  - P073_BARNARD_YARDS_MARAUDER_ORIGIN;
+  - P074_TAU_CETI_PUBLIC_LEDGER;
+  - P075_LUYTEN_JUNCTION_PACKET_CUSTODY.
+- RS016_AEGIR_SYSTEM_MOON_LADDER:
+  - P076_RAN_AEGIR_ANCHOR;
+  - P077_AEGIR_MOON_LADDER;
+  - P078_INNER_MOON_RELAY_HAZARDS;
+  - P079_HECTON8_ORBIT_TIDE_GEOMETRY;
+  - P080_OUTER_MOON_COLD_CLAIMS.
+- RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY:
+  - P081_GREAT_TIDE_PHYSICS_RECORD;
+  - P082_PRESSURE_GLASS_FORMATION;
+  - P083_BRINE_CANYON_ROUTE_LADDER;
+  - P084_VENT_FORGE_GEOTHERMAL_ENGINE;
+  - P085_BIOMETAL_RESOURCE_STACK.
+
+Runtime boundary:
+
+- These are authoring/export packets.
+- Runtime must consume baked packet hashes, route-card rows, unlock flags and localized string-pool offsets.
+- No runtime markdown parser, JSON parser, live translation, or hot-path lookup is implied.
+
+## Control Pass 20 - Carrier Debt / Physical Atlas / Ending Payloads
+
+User direction:
+
+- Continue turning unresolved lore into release-ready game/wiki/site content.
+- Do not keep the carrier, debt, HECTON-8 physical atlas, Atlas agency or endings as vague discussion.
+- Keep all content compatible with localization, baked DataMonolith source rows, route cards and runtime binding maps.
+
+Working locks / content layer:
+
+- Black Keel legal stack:
+  - public claim-pool name: Aegir Reclamation Pool;
+  - insurance/custody shell: Keelmark Mutual;
+  - player starting lien: 4.8 tonne-window equivalent before oxygen, welfare addenda, sample custody and evidence payload adjustments;
+  - first carrier voice: clipped audio plus clean terminal text, useful but conditional;
+  - Deep Reach steers priority through clauses, not magic control.
+- HECTON-8 physical atlas:
+  - formed in the Aegir system;
+  - later collision-fractured and resonance-heated;
+  - depth bands: 0-250 m photic shelf, 250-1200 m industrial shelf/cable reef, 1200-2800 m brine canyon, 2800-4300 m abyssal machine field, 4300-5600 m Atlas basin;
+  - seafloor access is rare: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins;
+  - seed generation varies topology, POI order, resource exposure, fauna pressure and safe pockets, not core physics.
+- Resource containment:
+  - blue debt stages are 0 sealed, 1 signal drift, 2 lattice fracture, 3 brine/biological bloom, 4 dead sample with live contamination;
+  - vent repressure may recover stage 1 only.
+- Atlas and ending frame:
+  - Atlas recognizes the player as procedure/access anomaly/revoked Deep Reach key, not clean personhood;
+  - present Deep Reach pressure owner is Recovery Compliance Office;
+  - false/partial endings are real bad bargains: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution;
+  - Marauder dossier keeps ending records, contract types, rumors, evidence categories and route warnings, not equipment power;
+  - final choice is payload authority: sell, sever, quarantine/preserve, publish, or withhold.
+
+AppliedLore implementation:
+
+- RS018_CARRIER_DEBT_CLAIM_AUTHORITY:
+  - P086_AEGIR_RECLAMATION_POOL;
+  - P087_KEELMARK_MUTUAL_CUSTODY;
+  - P088_TONNE_WINDOW_DEBT;
+  - P089_BLACK_KEEL_FIRST_VOICE;
+  - P090_DEEP_REACH_PRIORITY_HOOK.
+- RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS:
+  - P091_COLLISION_FRACTURED_MOON;
+  - P092_GLOBAL_OCEAN_DEPTH_BANDS;
+  - P093_ACCESSIBLE_SEAFLOOR_WINDOWS;
+  - P094_SEED_GEOLOGY_INVARIANTS;
+  - P095_PRESSURE_CONTAINMENT_FAILURE.
+- RS020_ATLAS_ENDING_AGENCY_DOSSIER:
+  - P096_ATLAS_PERSON_BOUNDARY;
+  - P097_RECOVERY_COMPLIANCE_OFFICE;
+  - P098_FALSE_ENDING_TAXONOMY;
+  - P099_MARAUDER_DOSSIER_PERSISTENCE;
+  - P100_FINAL_CHOICE_PAYLOAD.
+
+Runtime boundary:
+
+- These are authoring/export packets, route cards and publication surfaces.
+- Runtime must consume baked packet hashes, route-card rows, unlock flags and localized string-pool offsets.
+- No runtime markdown parser, JSON parser, live translation, scene search or hot-path dependency lookup is implied.
+
+## Control Pass 21 - Transit, Signatures, First Tools, Resource Classes
+
+User direction:
+
+- Keep developing lore into game/wiki/site-ready systems, not isolated discussion.
+- Close the practical gaps around hard-sci-fi transit, named Deep Reach responsibility, first-hour tools and resource taxonomy.
+
+Working locks / content layer:
+
+- Transit and catalog:
+  - no FTL, no ansible, no instant rescue;
+  - beam-assisted probes and autonomous packets precede heavy settlement;
+  - heavy Atlas/Seed/colony freight uses external staging, pellet-beam assisted fusion or related fusion freight, long coasts and braking infrastructure;
+  - Black Keel is an Aegir-system claim tender, not an interstellar rescue ship;
+  - dry catalog label is RAN-B:H8, while HECTON-8 remains the normal play/story/claim name.
+- Deep Reach signoff chain:
+  - Iliya Varnek: tide-margin downgrade / cheap tail-risk acceptance;
+  - Selene Arendt: Atlas/process continuity weighting under safety language;
+  - Noor Haldane: evacuation certification hold;
+  - Marek Ibarra: Keelmark loss conversion and unresolved body categories;
+  - Vera Sato-Ren: 2190 Recovery Compliance return-action pressure.
+- First tool chain:
+  - manual bilge pump kit;
+  - cold sealant patch gun;
+  - low-power induction cutter;
+  - acoustic pinger line;
+  - P-63 field fabricator.
+- Resource classes:
+  - native sulfide/salt/vent chemistry;
+  - noble-gas brine pressure-history feedstock;
+  - Deep-Reach-amplified pressure ceramics and rated hardware;
+  - Atlas-altered biofiber sealant and biometal sensor tags.
+
+AppliedLore implementation:
+
+- RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY:
+  - P101_NO_FTL_ROUTE_ECONOMY;
+  - P102_BEAM_SAIL_PROBE_ERA;
+  - P103_PELLET_FUSION_FREIGHT;
+  - P104_RAN_B_H8_PUBLIC_CATALOG;
+  - P105_BLACK_KEEL_IN_SYSTEM_TENDER.
+- RS022_DEEP_REACH_SIGNOFF_CHAIN:
+  - P106_ILIYA_VARNEK_TIDE_MARGIN;
+  - P107_SELENE_ARENDT_ATLAS_WEIGHTING;
+  - P108_NOOR_HALDANE_EVAC_CERT;
+  - P109_MAREK_IBARRA_LOSS_CONVERSION;
+  - P110_VERA_SATO_REN_RETURN_ACTION.
+- RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE:
+  - P111_MANUAL_BILGE_PUMP_KIT;
+  - P112_COLD_SEALANT_PATCH_GUN;
+  - P113_LOW_POWER_INDUCTION_CUTTER;
+  - P114_ACOUSTIC_PINGER_LINE;
+  - P115_P63_FIELD_FABRICATOR.
+- RS024_RESOURCE_RECIPE_TAXONOMY:
+  - P116_NATIVE_SULFIDE_SALT_STACK;
+  - P117_NOBLE_GAS_BRINE_POCKETS;
+  - P118_DEEP_REACH_PRESSURE_CERAMICS;
+  - P119_ATLAS_BIOFIBER_SEALANT;
+  - P120_BIOMETAL_SENSOR_TAGS.
+
+Runtime boundary:
+
+- These are authoring/export packets, route cards and publication surfaces.
+- Runtime must consume baked packet hashes, route-card rows, unlock flags and localized string-pool offsets.
+- No runtime markdown parser, JSON parser, live translation, scene search or hot-path dependency lookup is implied.

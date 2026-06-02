@@ -136,3 +136,24 @@ Reject the generated asset if:
 - Any material is an instance clone created for one prefab without reason.
 - Any socket seam creates a visible crack or overlap.
 - Any generated module cannot state its LOD triangle counts and collision proxy count.
+
+## 10. Proof Artifacts
+
+Hard-surface generation must output a compact proof packet before the prefab is accepted:
+
+- asset family, seed, module ID, socket IDs, and deterministic generation parameters;
+- LOD0/LOD1/LOD2/HLOD triangle counts;
+- bevel threshold, bevel width range, and segment count by quality lane;
+- smoothing split report: hard edges, UV seams, material borders, socket cuts;
+- UV density and atlas padding report;
+- material slot list with shared material asset paths;
+- vertex color channel summary for wear, grime, AO, and decal/emissive masks;
+- collision proxy count and primitive/convex hull triangle budgets;
+- screenshots or renders with textures enabled and disabled;
+- wireframe, collider, and material-ID debug captures for hero or close-view modules.
+
+Static documents may only claim `STATIC VERIFIED`. Unity import, batching, collider, and profiler claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
+
+## 11. Acceptance Sentence
+
+A hard-surface generated asset is accepted only when it reads as pressure-rated manufactured machinery before textures are applied, proves bevels and weighted normals, keeps sockets and collision deterministic, uses shared PBR material routes, ships a full LOD/proxy chain, and provides the proof packet above.

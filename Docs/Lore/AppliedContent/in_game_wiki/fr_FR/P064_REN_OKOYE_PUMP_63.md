@@ -1,0 +1,30 @@
+---
+packet_id: P064_REN_OKOYE_PUMP_63
+article_id: hecton8.ren_okoye_pump_63
+locale: fr_FR
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Ren Okoye Pump 63
+
+Draft FR localization pending native pass. Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.
+
+## Scanner
+
+Draft FR localization pending native pass. Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
+
+## Terminal
+
+Draft FR localization pending native pass. OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
+
+## Audio
+
+Draft FR localization pending native pass. He saved a room for people who never reached it. You can still use the room.
+
+## Field Note
+
+Draft FR localization pending native pass. The colony gives the player tools through people, not exposition.
+
+<!-- In-Game Wiki; generated from P064_REN_OKOYE_PUMP_63/fr_FR. -->

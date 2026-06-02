@@ -1,0 +1,30 @@
+---
+packet_id: P131_MATERIAL_EXIT_BITTER_CREDITS
+article_id: endings.material_exit_bitter_credits
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Горькие титры материального выхода
+
+Материальный выход платит игроку, но не решает HECTON-8. Это валидная концовка для мародера, который видит луну как работу. Она становится горькой потому, что payout усиливает системы, которые удержали преступление мелким.
+
+## Scanner
+
+Можно улететь богаче и все равно провалить это место.
+
+## Terminal
+
+MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+
+## Audio
+
+Счет закрывается раньше имен.
+
+## Field Note
+
+Эта концовка должна быть настоящими титрами, а не fake game over.
+
+<!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ru_RU. -->

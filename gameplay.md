@@ -161,3 +161,26 @@ Reject if:
 - failure leaves no evidence;
 - high-end feature becomes necessary for understanding;
 - the system could belong unchanged in any generic survival game.
+
+## 11. Truth Ownership
+
+Gameplay owns verbs, resource meaning, progression decisions, and failure consequences. It does not directly own mesh generation, UI rendering, audio playback, physics force application, persistence layout, or AI cognition. Those domains publish and consume through their own bibles.
+
+Every gameplay mechanic must name the owner of its truth: oxygen, pressure, power, route, salvage, mission, tool, vehicle, construction, or creature pressure.
+
+## 12. Proof Artifacts
+
+Gameplay work must provide:
+
+- player decision statement;
+- physical state changed;
+- resource cost or explicit reason no resource is involved;
+- failure evidence;
+- owner/authority route;
+- save/persistence note if state survives;
+- compact-tier readability proof;
+- play repro or explicit `PENDING VERIFICATION`.
+
+## 13. Acceptance Sentence
+
+Gameplay is accepted only when it sharpens a physical decision, changes world or player state, leaves evidence, has explicit authority ownership, remains readable on compact hardware, and proves its runtime claims.

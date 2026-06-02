@@ -130,3 +130,30 @@ Reject if:
 - post stack does the work of art direction;
 - low-tier capture collapses into mud;
 - profiler/render proof is absent after implementation.
+
+## 9. Truth Boundary
+
+Presentation consumes truth from rendering, physics, world, AI, audio, UI, and gameplay owners. It does not invent damage, route state, threat state, lighting eligibility, or objective truth.
+
+If a presentation element implies a playable system, that system must exist or the element must be reframed as atmosphere. Fake UI, fake damage, fake threats, and fake routes are rejected when they mislead the player.
+
+## 10. GlobalQualityWeight Scaling
+
+Compact uses silhouette, LUT, dither, static light cones, baked AO, simple VFX, and strong composition. Middle adds richer local lights, silt, camera response, and tool effects. High adds stronger material response, limited volumetric zones, and richer capture composition. Ultra adds sensory density, not new gameplay truth.
+
+## 11. Proof Artifacts
+
+Presentation work must provide:
+
+- target screenshot;
+- compact-tier screenshot;
+- route/decision read statement;
+- render/performance proof when runtime pass changed;
+- VFX cause/owner;
+- color/palette role;
+- camera comfort note;
+- comparison against `rendering.md` if shader/render path changed.
+
+## 12. Acceptance Sentence
+
+Presentation is accepted only when it makes pressure, machinery, route, scale, evidence, and danger more readable without hiding weak assets or stealing truth from owning systems.

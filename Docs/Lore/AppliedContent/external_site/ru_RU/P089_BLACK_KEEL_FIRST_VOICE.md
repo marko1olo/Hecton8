@@ -1,0 +1,30 @@
+---
+packet_id: P089_BLACK_KEEL_FIRST_VOICE
+article_id: carrier.black_keel_first_voice
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+---
+
+# Первый голос Black Keel
+
+Black Keel First Voice задает стартовый тон: hard-sci-fi машинная поддержка, а не эмоциональный AI. Carrier помогает игроку выжить, но сразу показывает, что acknowledgement не равно rescue.
+
+## Scanner
+
+Carrier voice cache. Аудио рваное, текст чистый, сочувствие отсутствует.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+
+## Audio
+
+Operator signal acquired. Не путай подтверждение со спасением.
+
+## Field Note
+
+Первый голос должен быть полезным раньше, чем купленным.
+
+<!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ru_RU. -->

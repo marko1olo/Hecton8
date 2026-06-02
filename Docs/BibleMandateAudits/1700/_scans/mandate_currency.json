@@ -1,0 +1,1778 @@
+﻿[
+    {
+        "mandate":  "AI_Creature_Cognition_States.txt",
+        "prefix":  "AI",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "ai.md",
+                               "creatures.md",
+                               "sonar.md",
+                               "drones.md",
+                               "ecosystem.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "AI_Director_Encounter_Manager.txt",
+        "prefix":  "AI",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "ai.md",
+                               "creatures.md",
+                               "sonar.md",
+                               "drones.md",
+                               "ecosystem.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "AI_DYNAMIC_NAVGRID_SDF_INTEGRATION.txt",
+        "prefix":  "AI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "ai.md",
+                               "creatures.md",
+                               "sonar.md",
+                               "drones.md",
+                               "ecosystem.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt",
+        "prefix":  "AI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "ai.md",
+                               "creatures.md",
+                               "sonar.md",
+                               "drones.md",
+                               "ecosystem.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt",
+        "prefix":  "AI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "ai.md",
+                               "creatures.md",
+                               "sonar.md",
+                               "drones.md",
+                               "ecosystem.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "ANIM_Contextual_Physical_IK.txt",
+        "prefix":  "ANIM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "animation.md",
+                               "creatures.md",
+                               "player.md",
+                               "tools.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "ANIM_IK_FABRIK_GroundSnapping_Procedural.txt",
+        "prefix":  "ANIM",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "animation.md",
+                               "creatures.md",
+                               "player.md",
+                               "tools.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "ARCH_Execution_Phases.txt",
+        "prefix":  "ARCH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "systems.md",
+                               "bootstrap.md",
+                               "telemetry.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
+        "prefix":  "ARCH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "systems.md",
+                               "bootstrap.md",
+                               "telemetry.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "ARCH_Pentarchy_Audit.txt",
+        "prefix":  "ARCH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "systems.md",
+                               "bootstrap.md",
+                               "telemetry.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING",
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "ARCH_Project_Bootstrap_Sequence_Init_Safety.txt",
+        "prefix":  "ARCH",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "systems.md",
+                               "bootstrap.md",
+                               "telemetry.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "ARCH_Signal_Lane_Segregation.txt",
+        "prefix":  "ARCH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "systems.md",
+                               "bootstrap.md",
+                               "telemetry.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING",
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt",
+        "prefix":  "AUD",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "audio.md",
+                               "sonar.md",
+                               "narrative.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "08_ai_creatures_sonar_drones",
+                            "09_audio_narrative_presentation"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt",
+        "prefix":  "AUD",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "audio.md",
+                               "sonar.md",
+                               "narrative.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "09_audio_narrative_presentation"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "AUDIO_Hrtf_Binaural_Spatialization.txt",
+        "prefix":  "AUDIO",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "audio.md",
+                               "accessibility.md",
+                               "presentation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "09_audio_narrative_presentation"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "CI_MATH_VIOLATIONS_Gate.txt",
+        "prefix":  "CI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "testing.md",
+                               "quality.md",
+                               "math.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt",
+        "prefix":  "CORE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt",
+        "prefix":  "CORE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water",
+                            "07_gameplay_construction_tools_inventory_combat"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CORE_Global_State_Reset_NonReload_Transitions.txt",
+        "prefix":  "CORE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CORE_Submarine_Vehicles_Kinematics_AUP.txt",
+        "prefix":  "CORE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CORE_Tools_Equipment_Interaction_Raycast_Heat.txt",
+        "prefix":  "CORE",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "07_gameplay_construction_tools_inventory_combat",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "CORE_Weather_Abyssal_FlowField_Currents.txt",
+        "prefix":  "CORE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "gameplay.md",
+                               "player.md",
+                               "survival.md",
+                               "vehicles.md",
+                               "tools.md",
+                               "water.md",
+                               "combat.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "CTRL_Device_Abstraction_Haptics.txt",
+        "prefix":  "CTRL",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "input.md",
+                               "player.md",
+                               "accessibility.md",
+                               "settings.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "02_ui_frontend_hud"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "DATA_Inventory_Resources_Items_SOA_Layout.txt",
+        "prefix":  "DATA",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "data.md",
+                               "persistence.md",
+                               "inventory.md",
+                               "authoring.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "07_gameplay_construction_tools_inventory_combat"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "DATA_Runtime_Struct_Layout_ARM64.txt",
+        "prefix":  "DATA",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "data.md",
+                               "persistence.md",
+                               "inventory.md",
+                               "authoring.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "DATA_Save_Persistence_Binary_Delta_Checksum.txt",
+        "prefix":  "DATA",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "data.md",
+                               "persistence.md",
+                               "inventory.md",
+                               "authoring.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+        "prefix":  "DBG",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "telemetry.md",
+                               "quality.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "GPU_Compute_Kernels_Kernels_Optimization_MX350.txt",
+        "prefix":  "GPU",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "compute.md",
+                               "rendering.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "GPU_Compute_Warp_Sizing_Mobile.txt",
+        "prefix":  "GPU",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "compute.md",
+                               "rendering.md",
+                               "performance.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt",
+        "prefix":  "LOGI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "logistics.md",
+                               "construction.md",
+                               "drones.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "07_gameplay_construction_tools_inventory_combat"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD",
+                              "NO_EXPLICIT_PROOF_WORD"
+                          ]
+    },
+    {
+        "mandate":  "MANDATE_VERSION_6.0.txt",
+        "prefix":  "MANDATE",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "AGENTS.md",
+                               "PROJECT_BIBLES.md",
+                               "quality.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "MATH_AUP_Determinism_Sync.txt",
+        "prefix":  "MATH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "math.md",
+                               "data.md",
+                               "physics.md",
+                               "networking.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "MATH_Coordinate_Precision_AUP_FloatingOrigin.txt",
+        "prefix":  "MATH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "math.md",
+                               "data.md",
+                               "physics.md",
+                               "networking.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "MATH_Deterministic_RNG_SlotMachine.txt",
+        "prefix":  "MATH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "math.md",
+                               "data.md",
+                               "physics.md",
+                               "networking.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "MATH_Rsqrt_i3_SIMD.txt",
+        "prefix":  "MATH",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "math.md",
+                               "data.md",
+                               "physics.md",
+                               "networking.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "NET_Logistics_Quantum.txt",
+        "prefix":  "NET",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "networking.md",
+                               "data.md",
+                               "logistics.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "NET_Logistics_Sync_BitPacking_Reconciliation.txt",
+        "prefix":  "NET",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "networking.md",
+                               "data.md",
+                               "logistics.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+        "prefix":  "OPT",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "performance.md",
+                               "systems.md",
+                               "quality.md",
+                               "compute.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "03_rendering_visuals",
+                            "05_physics_vehicles_water",
+                            "09_audio_narrative_presentation"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "OPT_HectonArenaAllocator_2_0.txt",
+        "prefix":  "OPT",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "performance.md",
+                               "systems.md",
+                               "quality.md",
+                               "compute.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+        "prefix":  "OPT",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "performance.md",
+                               "systems.md",
+                               "quality.md",
+                               "compute.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "04_runtime_architecture_data_telemetry"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+        "prefix":  "OPT",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "performance.md",
+                               "systems.md",
+                               "quality.md",
+                               "compute.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "02_ui_frontend_hud",
+                            "03_rendering_visuals",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+        "prefix":  "OPT",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "performance.md",
+                               "systems.md",
+                               "quality.md",
+                               "compute.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "01_generated_assets",
+                            "02_ui_frontend_hud",
+                            "07_gameplay_construction_tools_inventory_combat"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Destructible_Organic_Entropy.txt",
+        "prefix":  "PHYS",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Determinism_Multithreaded_Body_Solving.txt",
+        "prefix":  "PHYS",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Fluid_Incursion_Interior.txt",
+        "prefix":  "PHYS",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Kinematic_Interaction_Hands.txt",
+        "prefix":  "PHYS",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Physics_Integrity_Determinism_ForceMode.txt",
+        "prefix":  "PHYS",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "01_generated_assets",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "PHYS_Tether_Cable_Acceleration_Constraints.txt",
+        "prefix":  "PHYS",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "physics.md",
+                               "vehicles.md",
+                               "water.md",
+                               "survival.md",
+                               "animation.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "05_physics_vehicles_water"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "PROG_Quest_State_Graph_Logic.txt",
+        "prefix":  "PROG",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "narrative.md",
+                               "gameplay.md",
+                               "testing.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "07_gameplay_construction_tools_inventory_combat",
+                            "09_audio_narrative_presentation"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "PROJECT_LTS_Compatibility_Layer.txt",
+        "prefix":  "PROJECT",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "platform.md",
+                               "release.md",
+                               "systems.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "QA_Evidence_Text_Filter_Audit.txt",
+        "prefix":  "QA",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "quality.md",
+                               "testing.md",
+                               "release.md",
+                               "textes.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "00_project_routes",
+                            "09_audio_narrative_presentation",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING",
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_DescriptorBinding_Reality_Check.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_Foveated_Simulation_LOD.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_GPU_Driven_Animation_VAT.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING",
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_GPU_Occlusion_Culling_6000.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_GPU_Sovereignty.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_Instanced_Flora_Physics.txt",
+        "prefix":  "REND",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "01_generated_assets",
+                            "03_rendering_visuals",
+                            "08_ai_creatures_sonar_drones"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "REND_Shader_Noir_Aesthetics_Dithering_Fog.txt",
+        "prefix":  "REND",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "REND_Shader_Stutter_Linux_Vulkan.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_Terrain_VirtualTexturing.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_URP_Graphics_HotPath_Optimization_HLOD.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "01_generated_assets",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "REND_VFX_Fluid_Aesthetics_Compute_Particles.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_VR_Stencil_Masking.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "REND_VRS_MX350_Reality_Check.txt",
+        "prefix":  "REND",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "rendering.md",
+                               "shaders.md",
+                               "lighting.md",
+                               "vfx.md",
+                               "terrain.md",
+                               "water.md",
+                               "xr.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "03_rendering_visuals"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt",
+        "prefix":  "STRM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "STRM_Async_Asset_Upload_Texture_Settings.txt",
+        "prefix":  "STRM",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "01_generated_assets",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "STRM_Async_Standard.txt",
+        "prefix":  "STRM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "STRM_DirectStorage_Reality_Check.txt",
+        "prefix":  "STRM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "STRM_ModuleDTO_LZ4_Dictionary.txt",
+        "prefix":  "STRM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "STRM_Persistent_Object_Registry.txt",
+        "prefix":  "STRM",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "STRM_World_Streaming_Residency_Chunk_Management.txt",
+        "prefix":  "STRM",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "streaming.md",
+                               "persistence.md",
+                               "platform.md",
+                               "release.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+        "prefix":  "TOOL",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "tools.md",
+                               "authoring.md",
+                               "PROCEDURAL_ASSET_PIPELINE.md",
+                               "3dmodel.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "10_persistence_streaming_release_platform"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "TOOL_Procedural_Wreckage_Generator.txt",
+        "prefix":  "TOOL",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "tools.md",
+                               "authoring.md",
+                               "PROCEDURAL_ASSET_PIPELINE.md",
+                               "3dmodel.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "01_generated_assets",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "UI_Data_Streaming_ZeroGC_Optimization.txt",
+        "prefix":  "UI",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "ui.md",
+                               "UI_MENU_SCREEN_STANDARDS.md",
+                               "UI_DIEGETIC_HUD_STANDARDS.md",
+                               "localization.md",
+                               "settings.md",
+                               "accessibility.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "02_ui_frontend_hud"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "UI_Diegetic_Physical_Interfaces.txt",
+        "prefix":  "UI",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "ui.md",
+                               "UI_MENU_SCREEN_STANDARDS.md",
+                               "UI_DIEGETIC_HUD_STANDARDS.md",
+                               "localization.md",
+                               "settings.md",
+                               "accessibility.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "02_ui_frontend_hud"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+        "prefix":  "UI",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "ui.md",
+                               "UI_MENU_SCREEN_STANDARDS.md",
+                               "UI_DIEGETIC_HUD_STANDARDS.md",
+                               "localization.md",
+                               "settings.md",
+                               "accessibility.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "02_ui_frontend_hud"
+                        ],
+        "currencyFlags":  [
+                              "NO_EXPLICIT_QUALITY_SCALING_WORD"
+                          ]
+    },
+    {
+        "mandate":  "VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt",
+        "prefix":  "VOX",
+        "status":  "YELLOW_CURRENCY_REVIEW",
+        "expectedRoutes":  [
+                               "voxels.md",
+                               "terrain.md",
+                               "world.md",
+                               "streaming.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+                              "DEPRECATED_OR_LEGACY_WORDING"
+                          ]
+    },
+    {
+        "mandate":  "VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt",
+        "prefix":  "VOX",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "voxels.md",
+                               "terrain.md",
+                               "world.md",
+                               "streaming.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    },
+    {
+        "mandate":  "VOX_Voxel_World_Logic_Carving_Persistence.txt",
+        "prefix":  "VOX",
+        "status":  "GREEN_ROUTE_COVERED",
+        "expectedRoutes":  [
+                               "voxels.md",
+                               "terrain.md",
+                               "world.md",
+                               "streaming.md"
+                           ],
+        "missingRoutes":  [
+
+                          ],
+        "auditGroups":  [
+                            "00_mandate_registry",
+                            "06_world_terrain_voxels_ecosystem"
+                        ],
+        "currencyFlags":  [
+
+                          ]
+    }
+]

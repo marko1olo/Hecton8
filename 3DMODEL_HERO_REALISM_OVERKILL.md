@@ -216,3 +216,7 @@ Hero model implementation must proceed in this order:
 10. Save only validated `.mesh`, `.prefab`, `.mat`, `.png`, `.asset`, and proof reports.
 
 Any generator that skips high-poly source, bake maps, render proof, or collider separation is not a hero generator. It is a prototype generator.
+
+## 17. Acceptance Sentence
+
+A hero generated asset is accepted only when reference contract, high-poly source, deliberate retopology, protected silhouette, bake maps, trim/decal strategy, LOD chain, collision proxy, material proof, and multi-light render proof all agree that the object survives close inspection without reading as primitive, low-poly, texture-hidden, or runtime-corrected.

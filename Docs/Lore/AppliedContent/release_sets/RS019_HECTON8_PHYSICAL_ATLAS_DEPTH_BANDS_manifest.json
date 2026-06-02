@@ -1,0 +1,70 @@
+{
+  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS.packets.json"
+  ],
+  "packets": [
+    "P091_COLLISION_FRACTURED_MOON",
+    "P092_GLOBAL_OCEAN_DEPTH_BANDS",
+    "P093_ACCESSIBLE_SEAFLOOR_WINDOWS",
+    "P094_SEED_GEOLOGY_INVARIANTS",
+    "P095_PRESSURE_CONTAINMENT_FAILURE"
+  ],
+  "locales_present_in_packet_bundle": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "markdown_publication_locales_present": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site",
+    "image_brief"
+  ],
+  "runtime_contract": {
+    "runtime_must_not_parse_markdown": true,
+    "runtime_must_not_generate_translation": true,
+    "expected_bake_output": [
+      "packet_id_hash",
+      "loc_id_hashes",
+      "surface_enum",
+      "unlock_id",
+      "domain_tag",
+      "route_window_id",
+      "localized_string_pool_offsets"
+    ]
+  }
+}

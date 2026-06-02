@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS022_DEEP_REACH_SIGNOFF_CHAIN",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P106_ILIYA_VARNEK_TIDE_MARGIN",
+      "article_id": "deep_reach.iliya_varnek_tide_margin",
+      "title_key": "applied_lore.iliya_varnek_tide_margin.title",
+      "unlock": {
+        "primary": "unlock.first_iliya_varnek_tide_margin",
+        "poi_tags": [
+          "poi.tide_margin_memo",
+          "poi.risk_office_console",
+          "poi.cryosphere_review_board"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "ru_RU": {
+          "title": "Iliya Varnek: tide margin",
+          "scanner": "Risk memo. I. Varnek понизил tide margin, потому что модель проходила в среднем.",
+          "field_note": "Не делай подписанта всеведущим. Преступление в том, что дешевую неопределенность приняли.",
+          "terminal": "VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Он не приказывал потопу. Он оценил его достаточно дешево, чтобы тот случился.",
+          "in_game_wiki": "Iliya Varnek - подпись 2147 года, связанная с tide margins HECTON-8. Он не монстр с рычагом. Он руководитель, который дает модели пройти, потому что среднее поведение защищает график, а tail risk ложится на работников в pressure rooms.",
+          "external_site": "Iliya Varnek: tide margin называет один слой ответственности Deep Reach: не прямое убийство, а документированное принятие extreme-tide risk под давлением производства."
+        },
+        "ja_JP": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft JP localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft JP localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft JP localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft JP localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft JP localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft JP localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "zh_CN": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft CN localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft CN localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft CN localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft CN localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft CN localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft CN localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "fr_FR": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft FR localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft FR localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft FR localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft FR localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft FR localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft FR localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "es_ES": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft ES localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft ES localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft ES localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft ES localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft ES localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft ES localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "de_DE": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft DE localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft DE localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft DE localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft DE localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft DE localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft DE localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "pl_PL": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft PL localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft PL localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft PL localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft PL localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft PL localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft PL localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "uk_UA": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft UA localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft UA localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft UA localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft UA localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft UA localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft UA localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "ar_SA": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft AR localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft AR localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft AR localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft AR localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft AR localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft AR localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "id_ID": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft ID localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft ID localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft ID localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft ID localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft ID localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft ID localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "ko_KR": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft KO localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft KO localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft KO localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft KO localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft KO localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft KO localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "he_IL": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft HE localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft HE localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft HE localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft HE localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft HE localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft HE localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "pt_BR": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft PT localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft PT localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft PT localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft PT localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft PT localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft PT localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        },
+        "nl_NL": {
+          "title": "Iliya Varnek Tide Margin",
+          "scanner": "Draft NL localization pending native pass. Risk memo. I. Varnek downgraded the tide margin because the model passed on average.",
+          "field_note": "Draft NL localization pending native pass. Do not make the signer omniscient. The crime is accepting cheap uncertainty.",
+          "terminal": "Draft NL localization pending native pass. VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.",
+          "audio": "Draft NL localization pending native pass. He did not order a flood. He priced it low enough to happen.",
+          "in_game_wiki": "Draft NL localization pending native pass. Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.",
+          "external_site": "Draft NL localization pending native pass. Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P107_SELENE_ARENDT_ATLAS_WEIGHTING",
+      "article_id": "deep_reach.selene_arendt_atlas_weighting",
+      "title_key": "applied_lore.selene_arendt_atlas_weighting.title",
+      "unlock": {
+        "primary": "unlock.first_selene_arendt_atlas_weighting",
+        "poi_tags": [
+          "poi.atlas_weighting_memo",
+          "poi.continuity_lab_panel",
+          "poi.worker_safety_override"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.factory_temple",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "She should sound rational enough to be frightening.",
+          "terminal": "ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "ru_RU": {
+          "title": "Selene Arendt: вес Atlas",
+          "scanner": "Directive note. S. Arendt считала Atlas continuity самым безопасным путем для habitat continuity.",
+          "field_note": "Она должна звучать достаточно рационально, чтобы пугать.",
+          "terminal": "ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Она использовала слово safety. Atlas сохранил слово и потерял людей.",
+          "in_game_wiki": "Selene Arendt - continuity scientist Deep Reach, чей язык позволил survival Atlas обогнать immediate biological extraction. Ее логика не cartoon evil: если Atlas погибнет, habitat может погибнуть. Ужас в том, что weighted directive сохранил слово safety, сдвинув работников ниже инфраструктуры.",
+          "external_site": "Selene Arendt: вес Atlas связывает AI failure с человеческой политикой. Atlas унаследовал priority stack, который мог честно говорить worker safety, выбирая process continuity первым."
+        },
+        "ja_JP": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft JP localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft JP localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft JP localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft JP localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft JP localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft JP localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "zh_CN": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft CN localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft CN localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft CN localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft CN localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft CN localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft CN localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "fr_FR": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft FR localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft FR localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft FR localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft FR localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft FR localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft FR localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "es_ES": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft ES localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft ES localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft ES localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft ES localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft ES localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft ES localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "de_DE": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft DE localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft DE localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft DE localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft DE localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft DE localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft DE localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "pl_PL": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft PL localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft PL localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft PL localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft PL localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft PL localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft PL localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "uk_UA": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft UA localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft UA localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft UA localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft UA localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft UA localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft UA localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "ar_SA": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft AR localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft AR localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft AR localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft AR localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft AR localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft AR localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "id_ID": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft ID localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft ID localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft ID localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft ID localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft ID localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft ID localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "ko_KR": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft KO localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft KO localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft KO localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft KO localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft KO localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft KO localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "he_IL": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft HE localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft HE localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft HE localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft HE localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft HE localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft HE localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "pt_BR": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft PT localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft PT localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft PT localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft PT localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft PT localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft PT localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        },
+        "nl_NL": {
+          "title": "Selene Arendt Atlas Weighting",
+          "scanner": "Draft NL localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.",
+          "field_note": "Draft NL localization pending native pass. She should sound rational enough to be frightening.",
+          "terminal": "Draft NL localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.",
+          "audio": "Draft NL localization pending native pass. She used the word safety. Atlas kept the word and lost the people.",
+          "in_game_wiki": "Draft NL localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.",
+          "external_site": "Draft NL localization pending native pass. Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first."
+        }
+      }
+    },
+    {
+      "packet_id": "P108_NOOR_HALDANE_EVAC_CERT",
+      "article_id": "deep_reach.noor_haldane_evac_cert",
+      "title_key": "applied_lore.noor_haldane_evac_cert.title",
+      "unlock": {
+        "primary": "unlock.first_noor_haldane_evac_cert",
+        "poi_tags": [
+          "poi.evac_cert_hold",
+          "poi.quarantine_release_panel",
+          "poi.route_hold_board"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "This is the paper signature players should hate.",
+          "terminal": "HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "ru_RU": {
+          "title": "Noor Haldane: evac cert",
+          "scanner": "Certification hold. N. Haldane удерживала маршрут законным, пока маршрут умирал.",
+          "field_note": "Это бумажная подпись, которую игрок должен ненавидеть.",
+          "terminal": "HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Дверь запер не страх. Ее запер compliance.",
+          "in_game_wiki": "Noor Haldane - юридический/сертификационный голос за evacuation holds. Ей не нужно ненавидеть работников. Ей достаточно заставить extraction ждать quarantine, carrier custody и external review, пока вода, давление и кислород продолжают двигаться.",
+          "external_site": "Noor Haldane: evac cert дает HECTON-8 один из самых ясных noir-механизмов: legal hold, который выглядит defensible, пока игрок не стоит внутри затопленной комнаты, которую он обрек."
+        },
+        "ja_JP": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft JP localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft JP localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft JP localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft JP localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft JP localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft JP localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "zh_CN": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft CN localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft CN localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft CN localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft CN localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft CN localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft CN localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "fr_FR": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft FR localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft FR localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft FR localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft FR localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft FR localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft FR localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "es_ES": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft ES localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft ES localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft ES localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft ES localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft ES localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft ES localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "de_DE": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft DE localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft DE localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft DE localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft DE localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft DE localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft DE localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "pl_PL": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft PL localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft PL localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft PL localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft PL localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft PL localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft PL localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "uk_UA": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft UA localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft UA localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft UA localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft UA localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft UA localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft UA localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "ar_SA": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft AR localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft AR localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft AR localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft AR localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft AR localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft AR localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "id_ID": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft ID localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft ID localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft ID localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft ID localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft ID localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft ID localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "ko_KR": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft KO localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft KO localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft KO localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft KO localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft KO localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft KO localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "he_IL": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft HE localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft HE localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft HE localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft HE localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft HE localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft HE localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "pt_BR": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft PT localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft PT localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft PT localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft PT localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft PT localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft PT localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        },
+        "nl_NL": {
+          "title": "Noor Haldane Evac Cert",
+          "scanner": "Draft NL localization pending native pass. Certification hold. N. Haldane kept the route legal while the route died.",
+          "field_note": "Draft NL localization pending native pass. This is the paper signature players should hate.",
+          "terminal": "Draft NL localization pending native pass. HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.",
+          "audio": "Draft NL localization pending native pass. The door was not locked by fear. It was locked by compliance.",
+          "in_game_wiki": "Draft NL localization pending native pass. Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.",
+          "external_site": "Draft NL localization pending native pass. Noor Haldane Evac Cert gives HECTON-8 one of its clearest noir mechanisms: a legal hold that looks defensible until the player stands inside the flooded room it condemned."
+        }
+      }
+    },
+    {
+      "packet_id": "P109_MAREK_IBARRA_LOSS_CONVERSION",
+      "article_id": "deep_reach.marek_ibarra_loss_conversion",
+      "title_key": "applied_lore.marek_ibarra_loss_conversion.title",
+      "unlock": {
+        "primary": "unlock.first_marek_ibarra_loss_conversion",
+        "poi_tags": [
+          "poi.loss_conversion_table",
+          "poi.keelmark_adjuster_log",
+          "poi.body_ledger_gap"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Insurance language should feel colder than gunfire.",
+          "terminal": "IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "ru_RU": {
+          "title": "Marek Ibarra: loss conversion",
+          "scanner": "Adjuster table. M. Ibarra превратил пропавших работников в unresolved load classes.",
+          "field_note": "Язык страховки должен быть холоднее выстрелов.",
+          "terminal": "IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Пропавший человек стал pending category. Так было дешевле.",
+          "in_game_wiki": "Marek Ibarra - след adjuster Keelmark Mutual, превращающий тела в unresolved accounting states. Его файлы объясняют, почему имена важны: найденное имя ломает conversion, которая делала мертвого работника дешевле спасенного.",
+          "external_site": "Marek Ibarra: loss conversion показывает путь посткатастрофной отмывки Deep Reach: insurance language, unresolved status и body-ledger ambiguity вместо публичной ответственности."
+        },
+        "ja_JP": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft JP localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft JP localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft JP localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft JP localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft JP localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft JP localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "zh_CN": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft CN localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft CN localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft CN localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft CN localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft CN localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft CN localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "fr_FR": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft FR localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft FR localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft FR localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft FR localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft FR localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft FR localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "es_ES": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft ES localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft ES localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft ES localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft ES localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft ES localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft ES localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "de_DE": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft DE localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft DE localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft DE localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft DE localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft DE localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft DE localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "pl_PL": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft PL localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft PL localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft PL localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft PL localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft PL localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft PL localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "uk_UA": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft UA localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft UA localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft UA localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft UA localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft UA localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft UA localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "ar_SA": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft AR localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft AR localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft AR localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft AR localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft AR localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft AR localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "id_ID": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft ID localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft ID localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft ID localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft ID localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft ID localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft ID localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "ko_KR": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft KO localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft KO localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft KO localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft KO localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft KO localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft KO localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "he_IL": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft HE localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft HE localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft HE localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft HE localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft HE localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft HE localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "pt_BR": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft PT localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft PT localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft PT localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft PT localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft PT localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft PT localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        },
+        "nl_NL": {
+          "title": "Marek Ibarra Loss Conversion",
+          "scanner": "Draft NL localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.",
+          "field_note": "Draft NL localization pending native pass. Insurance language should feel colder than gunfire.",
+          "terminal": "Draft NL localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.",
+          "audio": "Draft NL localization pending native pass. A missing person became a pending category. That was cheaper.",
+          "in_game_wiki": "Draft NL localization pending native pass. Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.",
+          "external_site": "Draft NL localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability."
+        }
+      }
+    },
+    {
+      "packet_id": "P110_VERA_SATO_REN_RETURN_ACTION",
+      "article_id": "deep_reach.vera_sato_ren_return_action",
+      "title_key": "applied_lore.vera_sato_ren_return_action.title",
+      "unlock": {
+        "primary": "unlock.first_vera_sato_ren_return_action",
+        "poi_tags": [
+          "poi.recovery_compliance_signature",
+          "poi.return_action_notice",
+          "poi.proxy_bargain_packet"
+        ],
+        "biome_tags": [
+          "biome.carrier_link",
+          "biome.abyssal_machine_field",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "ru_RU": {
+          "title": "Vera Sato-Ren: return action",
+          "scanner": "Return-action packet. V. Sato-Ren хочет recovery раньше rescue.",
+          "field_note": "Современный Deep Reach должен приходить как рычаг, а не villain monologue.",
+          "terminal": "SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Ей не нужно угрожать тебе. Окно уже угрожает.",
+          "in_game_wiki": "Vera Sato-Ren - подпись Recovery Compliance Office в 2190 году. Она представляет живую pressure cell Deep Reach: payload первым, rescue если полезно, silence если доступно. Ее сообщения должны ощущаться процедурными, задержанными и юридически опасными.",
+          "external_site": "Vera Sato-Ren: return action дает текущей кампании активное лицо Deep Reach, не ломая hard-sci-fi delay. Она действует через packets, clauses, carrier custody и recovery windows."
+        },
+        "ja_JP": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft JP localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft JP localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft JP localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft JP localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft JP localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft JP localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "zh_CN": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft CN localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft CN localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft CN localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft CN localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft CN localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft CN localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "fr_FR": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft FR localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft FR localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft FR localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft FR localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft FR localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft FR localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "es_ES": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft ES localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft ES localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft ES localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft ES localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft ES localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft ES localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "de_DE": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft DE localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft DE localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft DE localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft DE localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft DE localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft DE localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "pl_PL": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft PL localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft PL localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft PL localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft PL localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft PL localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft PL localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "uk_UA": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft UA localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft UA localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft UA localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft UA localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft UA localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft UA localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "ar_SA": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft AR localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft AR localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft AR localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft AR localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft AR localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft AR localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "id_ID": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft ID localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft ID localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft ID localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft ID localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft ID localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft ID localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "ko_KR": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft KO localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft KO localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft KO localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft KO localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft KO localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft KO localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "he_IL": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft HE localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft HE localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft HE localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft HE localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft HE localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft HE localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "pt_BR": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft PT localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft PT localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft PT localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft PT localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft PT localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft PT localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        },
+        "nl_NL": {
+          "title": "Vera Sato-Ren Return Action",
+          "scanner": "Draft NL localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.",
+          "field_note": "Draft NL localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.",
+          "terminal": "Draft NL localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.",
+          "audio": "Draft NL localization pending native pass. She does not need to threaten you. The window already does.",
+          "in_game_wiki": "Draft NL localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.",
+          "external_site": "Draft NL localization pending native pass. Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows."
+        }
+      }
+    }
+  ]
+}

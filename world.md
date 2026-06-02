@@ -138,3 +138,37 @@ Reject if:
 - no evidence cue exists;
 - player cannot describe why the place exists;
 - world composition depends on runtime generation in gameplay.
+
+## 10. Truth Ownership
+
+World composition owns placement logic, route grammar, biome identity, landmarks, and environmental evidence. It does not own runtime streaming, voxel rebuilds, generated mesh authoring, AI cognition, or rendering passes.
+
+World work must route to:
+
+- `streaming.md` for chunk residency and HLOD.
+- `voxels.md` for SDF caves, carving, and seams.
+- `3dmodel.md` for generated asset quality.
+- `rendering.md` and `presentation.md` for fog, lighting, and capture quality.
+- `ai.md` and `creatures.md` for ecology pressure.
+
+## 11. GlobalQualityWeight Scaling
+
+Compact keeps route silhouettes, landmarks, low-cost fog, simple scatter, HLOD, proxy collision, and readable evidence. Middle adds density and local biome detail. High adds richer lighting, material response, and ecology. Ultra adds sensory density and longer sightline richness without making navigation depend on expensive effects.
+
+## 12. Proof Artifacts
+
+World work must provide:
+
+- route sketch or description;
+- biome identity statement;
+- landmark list;
+- evidence cue list;
+- streaming/HLOD note;
+- collider/navigation note;
+- normal-tier screenshot;
+- compact-tier screenshot;
+- rejection check for random scatter.
+
+## 13. Acceptance Sentence
+
+A world area is accepted only when it has route decisions, physical reason, readable landmarks, believable geology/industry/ecology, evidence, streaming discipline, and compact-tier readability.

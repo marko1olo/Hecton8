@@ -3,8 +3,8 @@
 Status: active discussion matrix.
 Purpose: hold unresolved complex lore choices without prematurely locking them.
 
-Control Pass 17 note:
-The strongest hybrid recommendations below have been promoted to working locks in `Canon_Locks.md` and `Lore_Bible.md`. Names, exact thresholds, insurer shells, and final mission implementation remain adjustable.
+Control Pass 19 note:
+The strongest hybrid recommendations below have been promoted to working locks in `Canon_Locks.md` and `Lore_Bible.md`. The player identity is now explicitly former Deep Reach / current Marauder, with no family-revenge hook. Names, exact thresholds, insurer shells, and final mission implementation remain adjustable.
 
 ## Black Keel Ownership
 
@@ -208,7 +208,7 @@ Cons:
 Someone from Barnard Yards, old salvage culture, or the player's debt chain was tied to HECTON-8.
 
 Pros:
-- Gives personal hook without making player ex-Deep Reach.
+- Deepens the ex-Deep-Reach protagonist with a salvage-culture origin instead of family melodrama.
 - Deepens human-space lore.
 
 Cons:
@@ -236,4 +236,4 @@ Cons:
 - More conventional; risks shrinking the world around one protagonist.
 
 Current recommendation:
-Hybrid A + B + late C. The player starts with professional interest. Found names make it personal. One of those names links back to Barnard Yards / old salvage culture. Later, the player learns the contract was shaped to exploit that link.
+Superseded by current lock: the player is former Deep Reach field-systems / evacuation-infrastructure labor and now a Barnard/frontier Marauder. Keep A + B + late C, but reinterpret them through that identity: professional interest first, found names and recognized procedures make it personal, Barnard Yards explains the salvage body language, and late contract-trap evidence reveals the player was selected as useful disposable labor.

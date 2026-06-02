@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS018_CARRIER_DEBT_CLAIM_AUTHORITY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P086_AEGIR_RECLAMATION_POOL",
+      "article_id": "carrier.aegir_reclamation_pool",
+      "title_key": "applied_lore.aegir_reclamation_pool.title",
+      "unlock": {
+        "primary": "unlock.first_aegir_reclamation_pool",
+        "poi_tags": [
+          "poi.claim_pool_ledger",
+          "poi.aegir_reclamation_stamp",
+          "poi.black_keel_assignment"
+        ],
+        "biome_tags": [
+          "biome.arrival_shelf",
+          "biome.drowned_admin",
+          "biome.carrier_link"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "ru_RU": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Штамп claim-pool. Black Keel назначили, а не подарили.",
+          "field_note": "Общий пул делает спасение дешевле, медленнее и удобнее для чужой ответственности.",
+          "terminal": "AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Пул владеет маршрутом. Ты арендуешь только ответ.",
+          "in_game_wiki": "Aegir Reclamation Pool - публичная оболочка Black Keel. Он нужен, чтобы мертвые claims можно было проверять без личного межпланетного корабля у каждого Marauder. Но это же ловушка: тот же пул, который присылает помощь, решает, что важнее - груз, доказательство или человек.",
+          "external_site": "Aegir Reclamation Pool фиксирует Black Keel как инфраструктуру, а не личную роскошь. Протагонист прибывает через salvage-экономику, где спасение контрактуется, ставится в очередь, оплачивается и юридически условно."
+        },
+        "ja_JP": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft JP localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft JP localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft JP localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft JP localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft JP localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "zh_CN": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft CN localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft CN localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft CN localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft CN localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft CN localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "fr_FR": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft FR localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft FR localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft FR localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft FR localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft FR localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "es_ES": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft ES localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft ES localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft ES localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft ES localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft ES localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "de_DE": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft DE localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft DE localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft DE localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft DE localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft DE localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "pl_PL": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft PL localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft PL localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft PL localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft PL localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft PL localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "uk_UA": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft UK localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft UK localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft UK localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft UK localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft UK localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "ar_SA": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft AR localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft AR localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft AR localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft AR localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft AR localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "id_ID": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft ID localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft ID localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft ID localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft ID localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft ID localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "ko_KR": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft KO localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft KO localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft KO localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft KO localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft KO localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "he_IL": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft HE localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft HE localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft HE localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft HE localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft HE localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "pt_BR": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft PT-BR localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft PT-BR localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft PT-BR localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft PT-BR localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft PT-BR localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        },
+        "nl_NL": {
+          "title": "Aegir Reclamation Pool",
+          "scanner": "Draft NL localization pending native pass. Claim-pool stamp. Black Keel was assigned, not gifted.",
+          "field_note": "Draft NL localization pending native pass. A shared pool makes rescue cheaper, slower, and easier to hide behind.",
+          "terminal": "Draft NL localization pending native pass. AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.",
+          "audio": "Draft NL localization pending native pass. The pool owns the route. You only rent the answer.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.",
+          "external_site": "Draft NL localization pending native pass. Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional."
+        }
+      }
+    },
+    {
+      "packet_id": "P087_KEELMARK_MUTUAL_CUSTODY",
+      "article_id": "carrier.keelmark_mutual_custody",
+      "title_key": "applied_lore.keelmark_mutual_custody.title",
+      "unlock": {
+        "primary": "unlock.first_keelmark_mutual_custody",
+        "poi_tags": [
+          "poi.insurance_custody_plate",
+          "poi.keelmark_mutual_cache",
+          "poi.claim_lien_console"
+        ],
+        "biome_tags": [
+          "biome.drowned_admin",
+          "biome.carrier_link",
+          "biome.legal_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "The policy is older than your distress call.",
+          "in_game_wiki": "Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "ru_RU": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Страховая оболочка цела. Keelmark Mutual владеет lien раньше, чем телом.",
+          "field_note": "Не делай страховщика тайным злодеем. Делай машину, которой никогда не нужно было заботиться.",
+          "terminal": "KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Полис старше твоего сигнала бедствия.",
+          "in_game_wiki": "Keelmark Mutual - страховая custody-оболочка, через которую Black Keel работает в Aegir без живой спасательной власти на месте. На бумаге это не Deep Reach. На практике хуже: старый risk schedule, которым можно рулить через правильный priority clause.",
+          "external_site": "Keelmark Mutual Custody дает carrier правдоподобного юридического владельца: страховую оболочку с remote underwriting, lien control, quarantine reserves и payload custody rules."
+        },
+        "ja_JP": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft JP localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft JP localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft JP localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft JP localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft JP localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft JP localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "zh_CN": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft CN localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft CN localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft CN localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft CN localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft CN localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft CN localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "fr_FR": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft FR localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft FR localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft FR localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft FR localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft FR localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft FR localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "es_ES": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft ES localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft ES localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft ES localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft ES localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft ES localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft ES localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "de_DE": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft DE localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft DE localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft DE localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft DE localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft DE localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft DE localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "pl_PL": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft PL localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft PL localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft PL localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft PL localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft PL localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft PL localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "uk_UA": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft UK localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft UK localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft UK localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft UK localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft UK localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft UK localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "ar_SA": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft AR localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft AR localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft AR localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft AR localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft AR localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft AR localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "id_ID": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft ID localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft ID localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft ID localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft ID localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft ID localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft ID localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "ko_KR": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft KO localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft KO localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft KO localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft KO localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft KO localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft KO localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "he_IL": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft HE localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft HE localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft HE localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft HE localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft HE localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft HE localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "pt_BR": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft PT-BR localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft PT-BR localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft PT-BR localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft PT-BR localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft PT-BR localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        },
+        "nl_NL": {
+          "title": "Keelmark Mutual Custody",
+          "scanner": "Draft NL localization pending native pass. Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.",
+          "field_note": "Draft NL localization pending native pass. Do not make the insurer a secret villain. Make it a machine that never had to care.",
+          "terminal": "Draft NL localization pending native pass. KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.",
+          "audio": "Draft NL localization pending native pass. The policy is older than your distress call.",
+          "in_game_wiki": "Draft NL localization pending native pass. Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.",
+          "external_site": "Draft NL localization pending native pass. Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules."
+        }
+      }
+    },
+    {
+      "packet_id": "P088_TONNE_WINDOW_DEBT",
+      "article_id": "carrier.tonne_window_debt",
+      "title_key": "applied_lore.tonne_window_debt.title",
+      "unlock": {
+        "primary": "unlock.first_tonne_window_debt",
+        "poi_tags": [
+          "poi.tonne_window_meter",
+          "poi.debt_oxygen_ledger",
+          "poi.payload_mass_scale"
+        ],
+        "biome_tags": [
+          "biome.arrival_shelf",
+          "biome.carrier_link",
+          "biome.payload_gantry"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "You owe the orbit before you owe the money.",
+          "in_game_wiki": "Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "ru_RU": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Debt meter. 4.8 tonne-window до кислорода, образцов и доказательств.",
+          "field_note": "Деньги слишком мягкие. В Aegir долг - это масса через окно.",
+          "terminal": "OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Ты должен орбите раньше, чем деньгам.",
+          "in_game_wiki": "Стартовый долг перед Black Keel считается как lien на 4.8 tonne-window: масса, тайминг и риск carrier, а не просто валюта. Это объясняет, почему спасение, доказательства и образцы нельзя воображать отдельными задачами. Каждый килограмм, который выходит с HECTON-8, тратит одно и то же окно.",
+          "external_site": "Tonne-Window Debt переводит контрактное давление протагониста в hard-sci-fi экономику. Долг - это не только credits, а масса, выведенная через редкую recovery opportunity в Aegir."
+        },
+        "ja_JP": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft JP localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft JP localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft JP localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft JP localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft JP localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "zh_CN": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft CN localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft CN localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft CN localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft CN localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft CN localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "fr_FR": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft FR localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft FR localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft FR localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft FR localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft FR localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "es_ES": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft ES localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft ES localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft ES localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft ES localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft ES localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "de_DE": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft DE localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft DE localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft DE localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft DE localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft DE localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "pl_PL": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft PL localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft PL localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft PL localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft PL localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft PL localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "uk_UA": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft UK localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft UK localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft UK localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft UK localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft UK localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft UK localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "ar_SA": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft AR localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft AR localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft AR localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft AR localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft AR localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "id_ID": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft ID localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft ID localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft ID localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft ID localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft ID localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "ko_KR": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft KO localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft KO localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft KO localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft KO localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft KO localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "he_IL": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft HE localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft HE localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft HE localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft HE localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft HE localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "pt_BR": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft PT-BR localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft PT-BR localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft PT-BR localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft PT-BR localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft PT-BR localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        },
+        "nl_NL": {
+          "title": "Tonne-Window Debt",
+          "scanner": "Draft NL localization pending native pass. Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.",
+          "field_note": "Draft NL localization pending native pass. Money is too soft. In Aegir, debt is mass through a window.",
+          "terminal": "Draft NL localization pending native pass. OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.",
+          "audio": "Draft NL localization pending native pass. You owe the orbit before you owe the money.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.",
+          "external_site": "Draft NL localization pending native pass. Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity."
+        }
+      }
+    },
+    {
+      "packet_id": "P089_BLACK_KEEL_FIRST_VOICE",
+      "article_id": "carrier.black_keel_first_voice",
+      "title_key": "applied_lore.black_keel_first_voice.title",
+      "unlock": {
+        "primary": "unlock.first_black_keel_first_voice",
+        "poi_tags": [
+          "poi.first_carrier_voice_cache",
+          "poi.drop_capsule_speaker",
+          "poi.text_audio_failsafe"
+        ],
+        "biome_tags": [
+          "biome.arrival_shelf",
+          "biome.shallow_annex",
+          "biome.carrier_link"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel First Voice",
+          "scanner": "Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "The first voice should feel useful before it feels bought.",
+          "terminal": "BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "ru_RU": {
+          "title": "Первый голос Black Keel",
+          "scanner": "Carrier voice cache. Аудио рваное, текст чистый, сочувствие отсутствует.",
+          "field_note": "Первый голос должен быть полезным раньше, чем купленным.",
+          "terminal": "BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Operator signal acquired. Не путай подтверждение со спасением.",
+          "in_game_wiki": "Первый голос Black Keel должен прийти как рваное аудио и чистый terminal text. Это не дружелюбный companion и не villain monologue. Это carrier monitor: полезный, сухой, условный и страшный тем, что за каждым правильным предложением стоит billing class.",
+          "external_site": "Black Keel First Voice задает стартовый тон: hard-sci-fi машинная поддержка, а не эмоциональный AI. Carrier помогает игроку выжить, но сразу показывает, что acknowledgement не равно rescue."
+        },
+        "ja_JP": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft JP localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft JP localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft JP localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft JP localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft JP localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "zh_CN": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft CN localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft CN localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft CN localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft CN localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft CN localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "fr_FR": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft FR localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft FR localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft FR localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft FR localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft FR localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "es_ES": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft ES localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft ES localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft ES localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft ES localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft ES localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "de_DE": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft DE localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft DE localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft DE localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft DE localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft DE localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "pl_PL": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft PL localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft PL localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft PL localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft PL localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft PL localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "uk_UA": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft UK localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft UK localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft UK localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft UK localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft UK localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft UK localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "ar_SA": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft AR localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft AR localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft AR localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft AR localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft AR localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "id_ID": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft ID localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft ID localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft ID localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft ID localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft ID localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "ko_KR": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft KO localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft KO localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft KO localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft KO localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft KO localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "he_IL": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft HE localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft HE localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft HE localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft HE localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft HE localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "pt_BR": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft PT-BR localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft PT-BR localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft PT-BR localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft PT-BR localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft PT-BR localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        },
+        "nl_NL": {
+          "title": "Black Keel First Voice",
+          "scanner": "Draft NL localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.",
+          "field_note": "Draft NL localization pending native pass. The first voice should feel useful before it feels bought.",
+          "terminal": "Draft NL localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.",
+          "audio": "Draft NL localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.",
+          "external_site": "Draft NL localization pending native pass. Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue."
+        }
+      }
+    },
+    {
+      "packet_id": "P090_DEEP_REACH_PRIORITY_HOOK",
+      "article_id": "carrier.deep_reach_priority_hook",
+      "title_key": "applied_lore.deep_reach_priority_hook.title",
+      "unlock": {
+        "primary": "unlock.first_deep_reach_priority_hook",
+        "poi_tags": [
+          "poi.priority_hook_clause",
+          "poi.deep_reach_old_certificate",
+          "poi.carrier_route_override"
+        ],
+        "biome_tags": [
+          "biome.drowned_admin",
+          "biome.carrier_link",
+          "biome.legal_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "ru_RU": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Старый certificate hook. Deep Reach не владеет кораблем; она владеет clause.",
+          "field_note": "Это чище заговора: бумаги еще живы.",
+          "terminal": "ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Им не нужно быть на мостике, чтобы рулить ответом.",
+          "in_game_wiki": "Настоящее давление Deep Reach не требует магической remote command. Старые certificates, quarantine clauses и continuity payload rules сидят внутри юридического маршрута Black Keel. Компания может сдвигать ценность carrier, не владея им явно.",
+          "external_site": "Deep Reach Priority Hook удерживает антагониста в hard-sci-fi: современная корпоративная власть работает через clauses, legacy certificates, proxy packets и payload priority, а не через мгновенный FTL-control."
+        },
+        "ja_JP": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft JP localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft JP localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft JP localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft JP localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "zh_CN": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft CN localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft CN localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft CN localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft CN localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "fr_FR": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft FR localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft FR localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft FR localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft FR localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "es_ES": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft ES localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft ES localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft ES localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft ES localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "de_DE": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft DE localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft DE localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft DE localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft DE localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "pl_PL": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft PL localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft PL localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft PL localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft PL localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "uk_UA": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft UK localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft UK localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft UK localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft UK localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "ar_SA": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft AR localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft AR localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft AR localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft AR localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "id_ID": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft ID localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft ID localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft ID localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft ID localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "ko_KR": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft KO localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft KO localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft KO localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft KO localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "he_IL": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft HE localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft HE localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft HE localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft HE localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "pt_BR": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft PT-BR localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft PT-BR localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft PT-BR localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft PT-BR localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft PT-BR localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        },
+        "nl_NL": {
+          "title": "Deep Reach Priority Hook",
+          "scanner": "Draft NL localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.",
+          "field_note": "Draft NL localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.",
+          "terminal": "Draft NL localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.",
+          "audio": "Draft NL localization pending native pass. They do not need to be on the bridge to steer the answer.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control."
+        }
+      }
+    }
+  ]
+}

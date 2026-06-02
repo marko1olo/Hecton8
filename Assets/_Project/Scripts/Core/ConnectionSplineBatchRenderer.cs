@@ -31,15 +31,48 @@ namespace Hecton8.Core
         private static readonly int s_LogisticsPathHighlightId = Shader.PropertyToID("_HectonLogisticsPathHighlight");
         private static Mesh s_staticCylinderMesh;
         private static IConnectionSplineBatchRendererService s_activeService;
+        private static ConnectionSplineBatchRenderer s_activeRuntimeInstance;
         private static bool s_pendingLogisticsPathHighlightActive;
         private static bool s_logisticsPathHighlightDirty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticPresentationState()
         {
+            ShutdownActiveRuntimeForEditorReload();
+            s_activeRuntimeInstance = null;
             s_activeService = null;
             s_pendingLogisticsPathHighlightActive = false;
             s_logisticsPathHighlightDirty = false;
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActiveRuntimeForEditorReload();
+            }
+        }
+#endif
+
+        private static void ShutdownActiveRuntimeForEditorReload()
+        {
+            ConnectionSplineBatchRenderer runtime = s_activeRuntimeInstance;
+            if (runtime != null)
+                runtime.ShutdownServiceState();
         }
 
         private enum BatchKind : byte
@@ -195,6 +228,8 @@ namespace Hecton8.Core
                 Destroy(gameObject);
                 return;
             }
+
+            s_activeRuntimeInstance = this;
 
             Color pipeColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
             InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
@@ -461,6 +496,9 @@ namespace Hecton8.Core
 
             if (ReferenceEquals(s_activeService, this))
                 s_activeService = null;
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             _dispatcherAvailable = false;
             _serviceRegistered = false;

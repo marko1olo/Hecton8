@@ -169,7 +169,13 @@ Required:
 
 Accessibility is not a softness pass. It is instrument reliability.
 
-## 12. Diegetic UI QA Gates
+## 12. GlobalQualityWeight Scaling
+
+`GlobalQualityWeight` may scale visor glass detail, scanline fidelity, panel render resolution, scanner echo richness, warning animation smoothness, screen dirt, secondary telemetry density, and diagnostic overlays. It must not change gameplay truth, warning priority, command routing, localization availability, input semantics, or critical readout cadence.
+
+Compact HUD keeps oxygen, pressure, route, tool state, warnings, interaction affordance, and return cue readable at low resolution. Middle adds richer material and scanner confidence display. High adds better panel damage, cockpit lighting response, and state transitions. Ultra adds layered screen artifacts and cinematic carrier detail only around stable readable text and controls.
+
+## 13. Diegetic UI QA Gates
 
 Reject if:
 
@@ -183,3 +189,7 @@ Reject if:
 - UI cannot be operated by keyboard/gamepad/controller route;
 - low-tier screenshot loses critical state;
 - Frame Debugger/Profiler status is not recorded after implementation.
+
+## 14. Acceptance Sentence
+
+A diegetic HUD or world panel is accepted only when it is bound to a believable physical carrier, reads immutable owner truth, updates at justified cadence, allocates zero GC in hot paths, scales through `GlobalQualityWeight` without changing warning or command truth, and proves compact readability plus profiler state for runtime changes.

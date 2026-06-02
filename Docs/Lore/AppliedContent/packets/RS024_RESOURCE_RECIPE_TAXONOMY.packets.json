@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS024_RESOURCE_RECIPE_TAXONOMY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P116_NATIVE_SULFIDE_SALT_STACK",
+      "article_id": "resources.native_sulfide_salt_stack",
+      "title_key": "applied_lore.native_sulfide_salt_stack.title",
+      "unlock": {
+        "primary": "unlock.first_native_sulfide_salt_stack",
+        "poi_tags": [
+          "poi.sulfide_wall_sample",
+          "poi.salt_crust_shelf",
+          "poi.vent_mineral_rack"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.vent_forge",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "ru_RU": {
+          "title": "Native sulfide salt stack",
+          "scanner": "Natural resource. Полезный, corrosive, старше Deep Reach.",
+          "field_note": "Не каждый ресурс должен быть страшным. Иногда это просто геология, которая все равно может убить.",
+          "terminal": "RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Луна была ценной до того, как кто-то научил ее быть чудовищной.",
+          "in_game_wiki": "Native sulfide salts - базовая геология HECTON-8. Они поддерживают batteries, ceramics, conductor cleaning и corrosive hazards. Они должны появляться до blue debt, чтобы игрок понял: у луны есть реальная химия, а не только corporate horror material.",
+          "external_site": "Native sulfide salt stack задает природный ресурсный слой HECTON-8: опасный, полезный и независимый от намерений Deep Reach."
+        },
+        "ja_JP": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft JP localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft JP localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft JP localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft JP localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft JP localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "zh_CN": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft CN localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft CN localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft CN localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft CN localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft CN localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "fr_FR": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft FR localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft FR localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft FR localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft FR localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft FR localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "es_ES": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft ES localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft ES localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft ES localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft ES localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft ES localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "de_DE": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft DE localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft DE localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft DE localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft DE localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft DE localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "pl_PL": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft PL localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft PL localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft PL localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft PL localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft PL localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "uk_UA": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft UA localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft UA localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft UA localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft UA localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft UA localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "ar_SA": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft AR localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft AR localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft AR localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft AR localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft AR localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "id_ID": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft ID localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft ID localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft ID localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft ID localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft ID localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "ko_KR": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft KO localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft KO localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft KO localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft KO localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft KO localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "he_IL": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft HE localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft HE localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft HE localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft HE localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft HE localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "pt_BR": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft PT localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft PT localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft PT localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft PT localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft PT localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        },
+        "nl_NL": {
+          "title": "Native Sulfide Salt Stack",
+          "scanner": "Draft NL localization pending native pass. Natural resource. Useful, corrosive, older than Deep Reach.",
+          "field_note": "Draft NL localization pending native pass. Not every resource should be spooky. Some are just geology that can still kill you.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.",
+          "audio": "Draft NL localization pending native pass. The moon was valuable before anyone taught it to be monstrous.",
+          "in_game_wiki": "Draft NL localization pending native pass. Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.",
+          "external_site": "Draft NL localization pending native pass. Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent."
+        }
+      }
+    },
+    {
+      "packet_id": "P117_NOBLE_GAS_BRINE_POCKETS",
+      "article_id": "resources.noble_gas_brine_pockets",
+      "title_key": "applied_lore.noble_gas_brine_pockets.title",
+      "unlock": {
+        "primary": "unlock.first_noble_gas_brine_pockets",
+        "poi_tags": [
+          "poi.noble_gas_bubble_trap",
+          "poi.brine_pocket_vent",
+          "poi.pressure_sample_bell"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.vent_forge",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "ru_RU": {
+          "title": "Noble gas brine pockets",
+          "scanner": "Natural-to-process resource. Ценно только если pressure history survives extraction.",
+          "field_note": "Здесь Xenon-Omega начинается как химия, не как магия.",
+          "terminal": "RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Открой неправильно, и состояние станет погодой.",
+          "in_game_wiki": "Noble gas brine pockets - природный feedstock, делающий Xenon-Omega правдоподобным. Они не blue debt сами по себе. Ценность зависит от pressure history, mineral defects, brine chemistry и поздней обработки Deep Reach или Atlas.",
+          "external_site": "Noble gas brine pockets объясняют hard-sci-fi корень Xenon-Omega: редкую pressure chemistry, которая становится strategic material только через containment и industrial process."
+        },
+        "ja_JP": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft JP localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft JP localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft JP localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft JP localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft JP localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "zh_CN": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft CN localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft CN localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft CN localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft CN localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft CN localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "fr_FR": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft FR localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft FR localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft FR localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft FR localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft FR localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "es_ES": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft ES localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft ES localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft ES localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft ES localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft ES localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "de_DE": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft DE localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft DE localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft DE localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft DE localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft DE localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "pl_PL": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft PL localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft PL localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft PL localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft PL localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft PL localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "uk_UA": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft UA localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft UA localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft UA localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft UA localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft UA localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "ar_SA": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft AR localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft AR localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft AR localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft AR localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft AR localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "id_ID": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft ID localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft ID localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft ID localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft ID localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft ID localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "ko_KR": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft KO localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft KO localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft KO localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft KO localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft KO localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "he_IL": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft HE localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft HE localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft HE localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft HE localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft HE localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "pt_BR": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft PT localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft PT localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft PT localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft PT localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft PT localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        },
+        "nl_NL": {
+          "title": "Noble Gas Brine Pockets",
+          "scanner": "Draft NL localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.",
+          "field_note": "Draft NL localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.",
+          "audio": "Draft NL localization pending native pass. Open it wrong and the fortune becomes weather.",
+          "in_game_wiki": "Draft NL localization pending native pass. Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.",
+          "external_site": "Draft NL localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process."
+        }
+      }
+    },
+    {
+      "packet_id": "P118_DEEP_REACH_PRESSURE_CERAMICS",
+      "article_id": "resources.deep_reach_pressure_ceramics",
+      "title_key": "applied_lore.deep_reach_pressure_ceramics.title",
+      "unlock": {
+        "primary": "unlock.first_deep_reach_pressure_ceramics",
+        "poi_tags": [
+          "poi.pressure_ceramic_tile",
+          "poi.deep_reach_kiln",
+          "poi.clamp_ring_blank"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.vent_forge",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "ru_RU": {
+          "title": "Deep Reach pressure ceramics",
+          "scanner": "Amplified resource. Человеческий процесс сделал local minerals лучше держащими pressure и злее ломающимися.",
+          "field_note": "Deep Reach действительно создала value. Поэтому ложь соблазнительна.",
+          "terminal": "RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Компания умела строить вещи. Это часть преступления.",
+          "in_game_wiki": "Pressure ceramics - local minerals, прогнанные через печи Deep Reach, catalyst baths и vent-forge cycles. Это практичный crafting material для seals, clamp rings и ascent hardware. Они также делают старую инфраструктуру компании опасной, когда thermal shock превращает их в shard bloom.",
+          "external_site": "Deep Reach pressure ceramics отделяет corporate engineering от pure evil. Компания делала рабочие материалы и затем использовала компетентность, чтобы оправдать смертельные priorities."
+        },
+        "ja_JP": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft JP localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft JP localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft JP localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft JP localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "zh_CN": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft CN localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft CN localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft CN localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft CN localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "fr_FR": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft FR localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft FR localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft FR localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "es_ES": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft ES localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft ES localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft ES localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "de_DE": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft DE localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft DE localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft DE localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "pl_PL": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft PL localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft PL localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft PL localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "uk_UA": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft UA localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft UA localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft UA localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft UA localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft UA localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "ar_SA": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft AR localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft AR localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft AR localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "id_ID": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft ID localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft ID localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft ID localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "ko_KR": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft KO localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft KO localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft KO localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "he_IL": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft HE localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft HE localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft HE localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "pt_BR": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft PT localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft PT localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft PT localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        },
+        "nl_NL": {
+          "title": "Deep Reach Pressure Ceramics",
+          "scanner": "Draft NL localization pending native pass. Amplified resource. Human process made local minerals hold pressure better and fail meaner.",
+          "field_note": "Draft NL localization pending native pass. Deep Reach did create value. That is why the lie is tempting.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.",
+          "audio": "Draft NL localization pending native pass. The company was good at building things. That is part of the crime.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities."
+        }
+      }
+    },
+    {
+      "packet_id": "P119_ATLAS_BIOFIBER_SEALANT",
+      "article_id": "resources.atlas_biofiber_sealant",
+      "title_key": "applied_lore.atlas_biofiber_sealant.title",
+      "unlock": {
+        "primary": "unlock.first_atlas_biofiber_sealant",
+        "poi_tags": [
+          "poi.biofiber_seam",
+          "poi.living_patch_growth",
+          "poi.repair_tissue_sample"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.repair_ecology",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Useful body horror: the player wants it and distrusts it.",
+          "terminal": "RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "ru_RU": {
+          "title": "Atlas biofiber sealant",
+          "scanner": "Atlas-altered resource. Flexible sealant вырос там, где life и maintenance ошибочно стали одной категорией.",
+          "field_note": "Полезный body horror: игрок хочет это и не доверяет этому.",
+          "terminal": "RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Он закрывает течь, потому что Atlas считает течь раной.",
+          "in_game_wiki": "Atlas biofiber sealant полезен и неправилен. Он растет из repair ecology, где biology, cable jackets, wound tissue и sealant categories пересекаются. Он может чинить flexible seams и survival gear, но может нести sensor echoes и living maintenance behavior.",
+          "external_site": "Atlas biofiber sealant - один из самых ясных biomechanical resources HECTON-8: crafting material, который заставляет игрока получать пользу от той же misclassification, которая его пугает."
+        },
+        "ja_JP": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft JP localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft JP localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft JP localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft JP localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "zh_CN": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft CN localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft CN localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft CN localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft CN localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "fr_FR": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft FR localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft FR localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft FR localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft FR localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "es_ES": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft ES localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft ES localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft ES localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft ES localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "de_DE": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft DE localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft DE localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft DE localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft DE localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "pl_PL": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft PL localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft PL localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft PL localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft PL localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "uk_UA": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft UA localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft UA localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft UA localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft UA localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "ar_SA": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft AR localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft AR localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft AR localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft AR localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "id_ID": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft ID localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft ID localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft ID localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft ID localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "ko_KR": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft KO localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft KO localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft KO localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft KO localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "he_IL": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft HE localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft HE localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft HE localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft HE localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "pt_BR": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft PT localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft PT localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft PT localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft PT localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        },
+        "nl_NL": {
+          "title": "Atlas Biofiber Sealant",
+          "scanner": "Draft NL localization pending native pass. Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.",
+          "field_note": "Draft NL localization pending native pass. Useful body horror: the player wants it and distrusts it.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.",
+          "audio": "Draft NL localization pending native pass. It seals the leak because Atlas thinks the leak is wounded.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.",
+          "external_site": "Draft NL localization pending native pass. Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them."
+        }
+      }
+    },
+    {
+      "packet_id": "P120_BIOMETAL_SENSOR_TAGS",
+      "article_id": "resources.biometal_sensor_tags",
+      "title_key": "applied_lore.biometal_sensor_tags.title",
+      "unlock": {
+        "primary": "unlock.first_biometal_sensor_tags",
+        "poi_tags": [
+          "poi.sensor_tag_fauna",
+          "poi.biometal_scale_cluster",
+          "poi.atlas_tagging_drift"
+        ],
+        "biome_tags": [
+          "biome.repair_ecology",
+          "biome.abyssal_machine_field",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Make resource extraction feel like evidence handling.",
+          "terminal": "RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "ru_RU": {
+          "title": "Biometal sensor tags",
+          "scanner": "Atlas-altered resource. Metal tags в живых carriers; telemetry without consent.",
+          "field_note": "Resource extraction должна ощущаться как evidence handling.",
+          "terminal": "RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Рыба - не дрон. Метка не знает разницы.",
+          "in_game_wiki": "Biometal sensor tags появляются в fauna, cable growth и repair ecology. Они могут улучшать pingers, scanners и route confidence, но они также являются evidence того, что Atlas использует living carriers как telemetry. Их добыча должна быть полезной и этически грязной.",
+          "external_site": "Biometal sensor tags связывают resources, ecology и Atlas agency. Это не generic collectibles; это материальное доказательство, что repair network вошла в живые системы."
+        },
+        "ja_JP": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft JP localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft JP localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft JP localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft JP localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft JP localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "zh_CN": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft CN localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft CN localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft CN localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft CN localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft CN localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "fr_FR": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft FR localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft FR localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft FR localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft FR localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft FR localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "es_ES": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft ES localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft ES localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft ES localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft ES localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft ES localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "de_DE": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft DE localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft DE localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft DE localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft DE localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft DE localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "pl_PL": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft PL localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft PL localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft PL localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft PL localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft PL localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "uk_UA": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft UA localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft UA localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft UA localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft UA localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft UA localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "ar_SA": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft AR localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft AR localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft AR localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft AR localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft AR localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "id_ID": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft ID localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft ID localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft ID localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft ID localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft ID localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "ko_KR": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft KO localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft KO localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft KO localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft KO localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft KO localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "he_IL": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft HE localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft HE localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft HE localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft HE localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft HE localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "pt_BR": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft PT localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft PT localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft PT localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft PT localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft PT localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        },
+        "nl_NL": {
+          "title": "Biometal Sensor Tags",
+          "scanner": "Draft NL localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.",
+          "field_note": "Draft NL localization pending native pass. Make resource extraction feel like evidence handling.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.",
+          "audio": "Draft NL localization pending native pass. The fish is not a drone. The tag does not know the difference.",
+          "in_game_wiki": "Draft NL localization pending native pass. Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.",
+          "external_site": "Draft NL localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems."
+        }
+      }
+    }
+  ]
+}

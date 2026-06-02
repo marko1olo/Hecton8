@@ -26,8 +26,39 @@ namespace Hecton8.Power
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ShutdownActiveRuntimeForEditorReload();
             DisposeAllGrids();
             ActiveRuntimeInstance = null;
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorReloadHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting -= ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.quitting += ShutdownActiveRuntimeForEditorReload;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                state == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+                state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownActiveRuntimeForEditorReload();
+            }
+        }
+#endif
+
+        private static void ShutdownActiveRuntimeForEditorReload()
+        {
+            PowerGridManager runtime = ActiveRuntimeInstance;
+            if (runtime != null)
+                runtime.ShutdownServiceState();
         }
 
         internal static int RuntimeGridCount => _allGrids != null ? _allGrids.Count : 0;
@@ -101,10 +132,7 @@ namespace Hecton8.Power
         public void InitializeService()
         {
             EnsureStorage();
-            EnsureJacobiPowerVaultBuffers();
-            EnsureWfcOutpostPowerBoot();
-            EnsureShinobuLogisticsRouter();
-            EnsureSubmarineThermalGridRuntime();
+            EnsureRuntimeBackendsCold();
             TryRegister();
             TryRegisterService();
         }
@@ -170,21 +198,30 @@ namespace Hecton8.Power
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
 
-            EnsureJacobiPowerVaultBuffers();
-            EnsureWfcOutpostPowerBoot();
-            EnsureShinobuLogisticsRouter();
-            EnsureSubmarineThermalGridRuntime();
+            if (Application.isPlaying)
+                EnsureRuntimeBackendsCold();
         }
 
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            if (_allGrids == null)
+                _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
+
+            if (!Application.isPlaying)
+                return;
+
+            EnsureRuntimeBackendsCold();
+            TryRegister();
+            TryRegisterService();
+        }
+
+        private void EnsureRuntimeBackendsCold()
+        {
             EnsureJacobiPowerVaultBuffers();
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
             EnsureSubmarineThermalGridRuntime();
-            TryRegister();
-            TryRegisterService();
         }
 
         private void OnDisable()
@@ -323,7 +360,7 @@ namespace Hecton8.Power
                 ReleaseJacobiPowerVaultBuffers(previousService as IDataVault);
                 _nextSubmarineThermalGridTickTime = 0f;
                 _submarineThermalGridSimulationFrame = 0u;
-                if (currentService is IDataVault)
+                if (Application.isPlaying && currentService is IDataVault)
                 {
                     EnsureJacobiPowerVaultBuffers();
                     EnsureShinobuLogisticsRouter();
