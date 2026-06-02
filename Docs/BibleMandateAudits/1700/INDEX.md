@@ -66,6 +66,7 @@ Runtime boundary: this audit uses static file scans only. Unity import, Console,
 - MANUAL_REVIEW_PASS_4.md - human static review notes for runtime asset fallbacks, GPU scatter/readback, construction mock SDF, water/gas owner phases, and offline QA classification.
 - MANUAL_REVIEW_PASS_5.md - human static review notes for world fallback material pools, drone mock routes, Sargassum/brine runtime asset factories, thermal/cable effect roots, and UI runtime assembly.
 - MANUAL_REVIEW_PASS_6.md - human static review notes for raw Unity phases, non-editor scene lookup, GPU readback waits, direct debug logging, and Temp/TempJob payload classification.
+- MANUAL_REVIEW_PASS_7.md - human static review notes for top native lifetime hotspots, wreck runtime mesh method structure, radar/path/flow staging, UI font/menu cold paths, H8Memory tracking growth, audio ring shape, and scavenging host route.
 - MANUAL_FINDINGS_MATRIX.md - manual static verdict matrix by domain.
 - RELEASE_BLOCKER_REGISTER.md - static release blockers and proof/fix gates.
 - Per-system `MANUAL_REVIEW.md` files - human static review notes for system-local hotspot classification when present.

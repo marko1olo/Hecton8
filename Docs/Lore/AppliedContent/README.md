@@ -62,3 +62,7 @@ No runtime markdown parsing. No runtime translation. No scene search for content
 - `RS022_DEEP_REACH_SIGNOFF_CHAIN`: name the 2147/2190 Deep Reach liability chain through risk, Atlas weighting, evacuation certification, insurance conversion and Recovery Compliance signatures.
 - `RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE`: lock the first-hour tool chain around manual pumping, cold sealant, low-power cutting, acoustic return lines and the P-63 field fabricator.
 - `RS024_RESOURCE_RECIPE_TAXONOMY`: split HECTON-8 resources into native geology, natural process feedstock, Deep-Reach-amplified materials and Atlas-altered biomechanical resources.
+- `RS025_HUMAN_LAW_PUBLIC_MEMORY`: lock the civic/corporate authority split, Marauder legal loophole, salvage-truth evidence custody, public Aegir memory and Deep Reach origin chain.
+- `RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION`: lock Atlas public front, insurance/personhood gap, classified weighting layer, shutdown ethics and public memory after 2147.
+- `RS027_FALSE_EXIT_RETURN_PRESSURE`: make early exits real but bitter through material payout, same-seed return, corporate capture, quarantine hold and public ledger leak.
+- `RS028_REPLAY_CONTRACT_DOSSIER_RULES`: lock replay as dossier knowledge, riskier contract seeds, false-ending ladder, starting claim variants and knowledge-not-power persistence.
